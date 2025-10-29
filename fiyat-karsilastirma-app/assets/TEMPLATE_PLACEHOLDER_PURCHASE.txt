@@ -1,0 +1,32 @@
+SATINALMA TALEP FORMU.xlsx dosyası buraya yerleştirilmelidir.
+
+Template dosyası şu yapıya sahip olmalıdır:
+
+1. Sheet Name: "SATINALMA"
+2. Header row: 7
+3. Data starts at row: 9
+
+Meta bilgiler (H sütunundan sağa doğru):
+- Row 3: Şantiye
+- Row 4: STF No.
+- Row 5: STF Tarihi
+- Row 6: Alım Yeri
+- Row 13: Talep Eden
+- Row 16: İmza/Notlar
+
+Columns (Header row 7):
+- A: Sıra No.
+- B: Malzeme Kodu
+- C: Malzeme Tanımı
+- D: MARKA
+- E: Birimi
+- F: Miktarı
+- G: Istenilen Teslim Tarihi
+- H: Ambardaki Miktar
+- I: Sipariş Miktarı
+- J: Hedef Fiyat
+- K: (boş)
+- L: Genel Toplam TL
+- M: (boş)
+
+Lütfen gerçek "satın alma talep formu.xlsx" dosyasını bu klasöre koyun.

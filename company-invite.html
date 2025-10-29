@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Şirket Davetleri</title>
+  <style>
+    body {
+      font-family: system-ui, Segoe UI, Roboto, Arial, sans-serif;
+      margin: 16px
+    }
+    .row {
+      display: flex;
+      gap: 8px;
+      margin: 8px 0
+    }
+  </style>
+</head>
+<body>
+  <h2>Şirket Davetleri (Admin)</h2>
+  <div class="row">
+    <input id="companyId" placeholder="companyId" style="padding:8px;border:1px solid #ddd;border-radius:8px;width:280px"/>
+    <button id="btnNew" style="padding:8px 12px">Yeni Davet Kodu</button>
+  </div>
+  <div id="out"></div>
+
+  <script type="module">
+    import { db, auth, requireAuth } from "./firebase.js";
+    import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+    function randToken(len=10) {
+      const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let s='';
+      for(let i=0;i<len;i++) s+=a[Math.floor(Math.random()*a.length)];
+      return s;
+    }
+
+    await requireAuth();
+    const me = auth.currentUser;
+    const out = document.getElementById("out");
+    
+    document.getElementById("btnNew").onclick = async () => {
+      const companyId = document.getElementById("companyId").value.trim();
+      if (!companyId) return alert("companyId girin");
+      const token = randToken(12);
+      try {
+        await setDoc(doc(db,"companies",companyId,"invites",token), {
+          active: true, createdAt: new Date(), ownerId: me.uid
+        });
+        out.innerHTML = `<div class="row">Davet Kodu: <b>${token}</b>  (companyId: <b>${companyId}</b>)</div>
+        <div>Bu kodu kullanıcıya verin; <code>company-join.html</code> sayfasında kullanacak.</div>`;
+      } catch(e) {
+        alert("Davet oluşturulamadı: " + (e.code||e.message||e));
+      }
+    };
+  </script>
+</body>
+</html>

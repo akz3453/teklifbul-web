@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RFQ Bid Form Test</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%233b82f6' rx='6'/%3E%3Ctext x='16' y='22' font-family='Arial' font-size='18' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="assets/css/rfq-bid-form.css">
+  <style>
+    body { font-family: system-ui, Arial; margin: 0; padding: 20px; background: #f9fafb; }
+    .test-container { max-width: 1200px; margin: 0 auto; }
+    .test-header { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  </style>
+</head>
+<body>
+  <div class="test-container">
+    <div class="test-header">
+      <h1>🧪 RFQ Bid Form Test</h1>
+      <p>Bu sayfa RFQ bid form'unu test etmek için oluşturulmuştur.</p>
+    </div>
+    
+    <div id="rfq-bid-form-container">
+      <!-- RFQ Bid Form will be loaded here -->
+    </div>
+  </div>
+
+  <script type="module">
+    import { RFQBidForm } from './assets/js/ui/rfq-bid-form.js';
+    
+    // Test data
+    const demandData = {
+      id: 'test-demand-123',
+      title: 'Test Talep',
+      deliveryAddress: 'Test Adres, İstanbul'
+    };
+    
+    const itemsData = [
+      {
+        id: 'item-1',
+        name: 'Elektrik Kablosu',
+        sku: 'ELEK-001',
+        quantity: 100,
+        unit: 'metre'
+      },
+      {
+        id: 'item-2', 
+        name: 'Plastik Boru',
+        sku: 'PLAS-002',
+        quantity: 50,
+        unit: 'adet'
+      },
+      {
+        id: 'item-3',
+        name: 'Çelik Profil',
+        sku: 'CEL-003',
+        quantity: 25,
+        unit: 'adet'
+      }
+    ];
+    
+    // Initialize RFQ Bid Form
+    try {
+      const rfqBidForm = new RFQBidForm('rfq-bid-form-container', demandData, itemsData);
+      console.log('✅ RFQ Bid Form initialized successfully');
+    } catch (error) {
+      console.error('❌ Error initializing RFQ Bid Form:', error);
+      document.getElementById('rfq-bid-form-container').innerHTML = `
+        <div style="padding: 20px; text-align: center; color: #dc2626;">
+          <h3>❌ Test Hatası</h3>
+          <p>${error.message}</p>
+        </div>
+      `;
+    }
+  </script>
+</body>
+</html>

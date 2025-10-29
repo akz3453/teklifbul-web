@@ -1,0 +1,26 @@
+TEKLİF MUKAYESE FORMU.xlsx dosyası buraya yerleştirilmelidir.
+
+Template dosyası şu yapıya sahip olmalıdır:
+
+1. Header row: 7
+2. Data starts at row: 9
+3. Footer rows:
+   - ÖDEME row: 22
+   - TESLİM row: 24
+   - NOT row: 28
+   - "En uygun firma" line: 31
+
+Fixed columns:
+- A: NO
+- B: HİZMETİN ADI
+- C: MİKTAR
+- D: BİRİM
+
+Per-vendor 3-column groups (in header row 7):
+- Vendor 1 → F (BİRİM FİYAT), G (TOPLAM), H (TOPLAM (TL))
+- Vendor 2 → I (BİRİM FİYAT), J (TOPLAM), K (TOPLAM (TL))
+- Vendor 3 → L (BİRİM FİYAT), M (TOPLAM), N (TOPLAM (TL))
+- Vendor 4 → O (BİRİM FİYAT), P (TOPLAM), Q (TOPLAM (TL))
+- Vendor 5 → R (BİRİM FİYAT), S (TOPLAM), T (TOPLAM (TL))
+
+Lütfen gerçek TEKLİF MUKAYESE FORMU.xlsx dosyasını bu klasöre koyun.

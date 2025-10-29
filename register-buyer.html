@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Alıcı Kayıt - Teklifbul</title>
+  <link rel="stylesheet" href="./utils.css" />
+  <style>
+    body { margin: 0; font-family: system-ui, Arial; background: #f9fafb; }
+    .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+    .header { background: white; padding: 16px 20px; border-bottom: 1px solid #e5e7eb; margin-bottom: 24px; }
+    .card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .card h2 { margin: 0 0 20px 0; font-size: 20px; color: #1f2937; border-bottom: 2px solid #e5e7eb; padding-bottom: 12px; }
+    .card h3 { margin: 0 0 16px 0; font-size: 16px; color: #374151; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+    .full { grid-column: 1 / -1; }
+    label { font-weight: 600; font-size: 14px; color: #374151; display: block; margin-bottom: 6px; }
+    label.required::after { content: " *"; color: #dc2626; }
+    input[type="text"], input[type="email"], input[type="tel"], input[type="url"], textarea {
+      width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; 
+      font-size: 14px; box-sizing: border-box; transition: border-color 0.2s;
+    }
+    input:focus, textarea:focus { outline: none; border-color: #3b82f6; }
+    input:disabled { background: #f3f4f6; color: #6b7280; cursor: not-allowed; }
+    textarea { resize: vertical; font-family: inherit; }
+    .chip-wrap { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; min-height: 32px; }
+    .badge { display: inline-block; padding: 6px 12px; border-radius: 16px; background: #dbeafe; 
+             color: #1e40af; font-size: 13px; cursor: pointer; transition: all 0.2s; }
+    .badge:hover { background: #bfdbfe; }
+    .checkbox-group { display: flex; align-items: start; gap: 10px; margin: 12px 0; }
+    .checkbox-group input[type="checkbox"] { margin-top: 3px; width: 18px; height: 18px; cursor: pointer; }
+    .checkbox-group label { margin: 0; font-weight: 400; font-size: 14px; line-height: 1.5; cursor: pointer; }
+    .info-box { background: #f0f9ff; border-left: 4px solid #3b82f6; padding: 12px; 
+                margin: 16px 0; border-radius: 4px; font-size: 14px; color: #1e40af; line-height: 1.6; }
+    .info-box a { color: #1d4ed8; text-decoration: underline; }
+    .btn { padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; 
+           font-size: 14px; transition: all 0.2s; text-decoration: none; display: inline-block; }
+    .btn-primary { background: #3b82f6; color: white; }
+    .btn-primary:hover { background: #2563eb; }
+    .btn-primary:disabled { background: #9ca3af; cursor: not-allowed; }
+    .btn-secondary { background: #6b7280; color: white; }
+    .btn-secondary:hover { background: #4b5563; }
+    .btn-group { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; }
+    .muted { opacity: 0.7; font-size: 13px; color: #6b7280; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div style="max-width:900px; margin:0 auto; display:flex; justify-content:space-between; align-items:center;">
+      <strong style="font-size:18px; color:#1f2937;">Teklifbul - Alıcı Kaydı</strong>
+      <span id="userEmail" style="font-size:13px; color:#6b7280;"></span>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="info-box">
+      <strong>ℹ️ Hoş Geldiniz!</strong> Alıcı olarak kayıt oluyorsunuz. Formun tamamını doldurun ve talepnizi oluşturmaya başlayın.
+    </div>
+
+    <!-- Company Info -->
+    <div class="card">
+      <h2>📋 Firma Bilgileri</h2>
+      
+      <div class="row">
+        <div>
+          <label for="companyName" class="required">Firma Ünvanı</label>
+          <input type="text" id="companyName" placeholder="Örn. ABC İnşaat A.Ş." autocomplete="organization" />
+        </div>
+        <div>
+          <label for="website">Web Sitesi</label>
+          <input type="url" id="website" placeholder="https://www.sirketim.com" autocomplete="url" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="taxNumber" class="required">Vergi No</label>
+          <input type="text" id="taxNumber" placeholder="10 veya 11 hane" maxlength="11" autocomplete="off" />
+          <p class="muted">10 veya 11 haneli vergi numaranız</p>
+        </div>
+        <div>
+          <label for="taxOffice">Vergi Dairesi</label>
+          <input type="text" id="taxOffice" placeholder="Örn. Ataşehir" autocomplete="off" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="mersisNo">MERSİS No</label>
+          <input type="text" id="mersisNo" placeholder="16 haneli MERSİS numarası" maxlength="16" autocomplete="off" />
+        </div>
+        <div>
+          <label for="city">Şehir</label>
+          <input type="text" id="city" placeholder="İl" autocomplete="address-level2" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="full">
+          <label for="address" class="required">Adres</label>
+          <textarea id="address" rows="3" placeholder="Şirket açık adresi" autocomplete="street-address"></textarea>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="country">Ülke</label>
+          <input type="text" id="country" value="Türkiye" autocomplete="country" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Contact Info -->
+    <div class="card">
+      <h2>📞 İletişim Bilgileri</h2>
+      
+      <div class="row">
+        <div>
+          <label for="email">E-posta (Kayıt E-postası)</label>
+          <input type="email" id="email" disabled autocomplete="username" />
+          <p class="muted">Giriş yaptığınız e-posta adresi</p>
+        </div>
+        <div>
+          <label for="phone">Telefon</label>
+          <input type="tel" id="phone" placeholder="+90 5xx xxx xx xx" autocomplete="tel" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="full">
+          <label for="emailInput">Ek E-posta Adresleri</label>
+          <input type="email" id="emailInput" placeholder="E-posta ekleyin ve Enter'a basın" autocomplete="email" />
+          <div id="emailChips" class="chip-wrap"></div>
+          <p class="muted">Teklif bildirimleri için ek e-posta adresleri ekleyebilirsiniz</p>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="full">
+          <label for="phoneInput">Ek Telefon Numaraları</label>
+          <input type="tel" id="phoneInput" placeholder="+90 5xx xxx xx xx ekle ve Enter'a basın" autocomplete="tel" />
+          <div id="phoneChips" class="chip-wrap"></div>
+          <p class="muted">WhatsApp dahil ek iletişim numaraları</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Categories -->
+    <div class="card">
+      <h2>🏷️ Faaliyet Kategorileri</h2>
+      <p style="color:#6b7280; margin-bottom:16px; font-size:14px;">
+        Hangi alanlarda talep oluşturacaksınız? Bu kategoriler taleplerinizi organize etmek için kullanılır.
+      </p>
+      
+      <div style="margin-bottom:16px;">
+        <button type="button" id="selectAllCategories" style="padding:8px 16px; background:#e5e7eb; border:none; border-radius:6px; cursor:pointer; font-size:13px; margin-right:8px;">Tümünü Seç</button>
+        <button type="button" id="clearAllCategories" style="padding:8px 16px; background:#fee2e2; border:none; border-radius:6px; cursor:pointer; font-size:13px;">Tümünü Temizle</button>
+      </div>
+      
+      <label for="catInput">Alıcı Kategorileri</label>
+      <input type="text" id="catInput" list="catDatalist" placeholder="Kategori ara/ekle ve Enter'a basın" autocomplete="off" />
+      <datalist id="catDatalist"></datalist>
+      <div id="catChips" class="chip-wrap" style="min-height:40px; max-height:120px; overflow-y:auto; border:1px solid #e5e7eb; border-radius:6px; padding:8px;"></div>
+    </div>
+
+    <!-- Roles -->
+    <div class="card">
+      <h2>👤 Roller</h2>
+      
+      <div class="checkbox-group">
+        <input type="checkbox" id="roleBuyer" checked disabled />
+        <label for="roleBuyer">
+          <strong>Alıcı</strong> - Talep oluşturur ve teklif alır (Varsayılan)
+        </label>
+      </div>
+      
+      <div class="checkbox-group">
+        <input type="checkbox" id="roleSupplier" />
+        <label for="roleSupplier">
+          <strong>Tedarikçi</strong> - Taleplere teklif verir (Opsiyonel)
+        </label>
+      </div>
+      
+      <div id="supplierNote" style="display:none; margin-top:12px; padding:12px; background:#fef3c7; border-left:4px solid #f59e0b; border-radius:4px;">
+        <p style="margin:0; font-size:13px; color:#92400e;">
+          ⚠️ <strong>Not:</strong> Tedarikçi rolünü de seçerseniz, kategorilerinize uygun talepleri görebilir ve teklif verebilirsiniz. 
+          Detaylı tedarikçi bilgilerini daha sonra Ayarlar sayfasından ekleyebilirsiniz.
+        </p>
+      </div>
+    </div>
+
+    <!-- KVKK Consents -->
+    <div class="card">
+      <h2>✅ Onaylar</h2>
+      
+      <div class="info-box">
+        <strong>KVKK Aydınlatma ve Açık Rıza Metni:</strong><br/>
+        Teklifbul platformu tarafından sunulan hizmetler kapsamında, kimlik ve iletişim bilgilerim ile firma bilgilerimin; 
+        tedarikçi eşleştirme, talep iletimi, teklif süreç yönetimi ve yasal yükümlülüklerin yerine getirilmesi amaçlarıyla 
+        işlenmesini; yurt içi/yurt dışı hizmet sağlayıcılarına aktarılmasını kabul ediyorum.
+        <a href="#" target="_blank">Detaylı Aydınlatma Metni</a>
+      </div>
+      
+      <div class="checkbox-group">
+        <input type="checkbox" id="kvkkConsent" />
+        <label for="kvkkConsent" class="required">
+          KVKK Aydınlatma Metni'ni okudum ve Açık Rıza veriyorum.
+        </label>
+      </div>
+      
+      <div class="checkbox-group">
+        <input type="checkbox" id="contractConsent" />
+        <label for="contractConsent" class="required">
+          Kullanıcı Sözleşmesi ve Gizlilik Politikasını kabul ediyorum.
+        </label>
+      </div>
+      
+      <div class="checkbox-group">
+        <input type="checkbox" id="marketingConsent" />
+        <label for="marketingConsent">
+          Ticari elektronik ileti (e-posta, SMS) almayı kabul ediyorum.
+        </label>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="btn-group">
+      <a href="./index.html" class="btn btn-secondary">İptal</a>
+      <button id="btnSave" class="btn btn-primary">Kaydet ve Devam Et</button>
+    </div>
+  </div>
+
+  <script type="module">
+    // ==== Firebase modules ====
+    import { requireAuth, db } from "./firebase.js";
+    import {
+      doc, setDoc, getDoc, serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+    import { CATEGORIES } from "./categories.js";
+
+    // ==== Populate category datalist ====
+    const dataList = document.getElementById("catDatalist");
+    CATEGORIES.forEach(c => { 
+      const o = document.createElement("option"); 
+      o.value = c; 
+      dataList.appendChild(o); 
+    });
+
+    // ==== Chip state ====
+    const emailChips = new Set();
+    const phoneChips = new Set();
+    const catChips = new Set();
+
+    function renderChips(wrapId, set) {
+      const box = document.getElementById(wrapId);
+      box.innerHTML = "";
+      [...set].forEach(v => {
+        const span = document.createElement("span");
+        span.className = "badge";
+        span.textContent = v + " ✕";
+        span.title = "Kaldır";
+        span.onclick = () => { set.delete(v); renderChips(wrapId, set); };
+        box.appendChild(span);
+      });
+    }
+
+    // Email chip input
+    document.getElementById("emailInput").addEventListener("keydown", e => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        const v = e.target.value.trim();
+        if (v && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) {
+          emailChips.add(v);
+          renderChips("emailChips", emailChips);
+          e.target.value = "";
+        } else if (v) {
+          alert("Geçerli bir e-posta adresi giriniz");
+        }
+      }
+    });
+
+    // Phone chip input
+    document.getElementById("phoneInput").addEventListener("keydown", e => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        const v = e.target.value.trim();
+        if (v) {
+          phoneChips.add(v);
+          renderChips("phoneChips", phoneChips);
+          e.target.value = "";
+        }
+      }
+    });
+
+    // Category chip input
+    document.getElementById("catInput").addEventListener("keydown", e => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        const v = e.target.value.trim();
+        if (v) {
+          catChips.add(v);
+          renderChips("catChips", catChips);
+          e.target.value = "";
+        }
+      }
+    });
+
+    // ==== Bulk selection buttons ====
+    document.getElementById("selectAllCategories").onclick = () => {
+      CATEGORIES.forEach(cat => catChips.add(cat));
+      renderChips("catChips", catChips);
+    };
+    
+    document.getElementById("clearAllCategories").onclick = () => {
+      catChips.clear();
+      renderChips("catChips", catChips);
+    };
+
+    // ==== Supplier role toggle ====
+    document.getElementById("roleSupplier").addEventListener("change", e => {
+      document.getElementById("supplierNote").style.display = e.target.checked ? "block" : "none";
+    });
+
+    // ==== Get authenticated user and prefill ====
+    const user = await requireAuth();
+    document.getElementById("userEmail").textContent = user.email || "";
+    document.getElementById("email").value = user.email || "";
+
+    // Try to load existing profile if available
+    try {
+      const userRef = doc(db, "users", user.uid);
+      const snap = await getDoc(userRef);
+      if (snap.exists()) {
+        const data = snap.data();
+        
+        // Prefill form
+        document.getElementById("companyName").value = data.companyName || "";
+        document.getElementById("website").value = data.website || "";
+        document.getElementById("taxNumber").value = data.taxNumber || "";
+        document.getElementById("taxOffice").value = data.taxOffice || "";
+        document.getElementById("mersisNo").value = data.mersisNo || "";
+        document.getElementById("city").value = data.city || "";
+        document.getElementById("address").value = data.address || "";
+        document.getElementById("country").value = data.country || "Türkiye";
+        document.getElementById("phone").value = data.contactPhones?.[0] || "";
+        
+        // Load chips
+        (data.contactEmails || []).forEach(v => emailChips.add(v));
+        renderChips("emailChips", emailChips);
+        
+        (data.contactPhones?.slice(1) || []).forEach(v => phoneChips.add(v));
+        renderChips("phoneChips", phoneChips);
+        
+        (data.buyerCategories || []).forEach(v => catChips.add(v));
+        renderChips("catChips", catChips);
+        
+        // Check roles
+        if (Array.isArray(data.roles) && data.roles.includes("supplier")) {
+          document.getElementById("roleSupplier").checked = true;
+          document.getElementById("supplierNote").style.display = "block";
+        }
+      }
+      console.log("✅ Profile loaded successfully");
+    } catch (e) {
+      console.warn("Profile preload error:", e);
+      console.warn("❌ Error details:", { code: e.code, name: e.name, stack: e.stack });
+    }
+
+    // ==== Validation ====
+    function validate() {
+      const companyName = document.getElementById("companyName").value.trim();
+      const taxNumber = document.getElementById("taxNumber").value.trim();
+      const address = document.getElementById("address").value.trim();
+      
+      if (!companyName) return "Firma ünvanı zorunludur.";
+      if (!(taxNumber.length === 10 || taxNumber.length === 11)) {
+        return "Vergi No 10 veya 11 hane olmalıdır.";
+      }
+      if (!address) return "Adres zorunludur.";
+      if (!document.getElementById("kvkkConsent").checked) {
+        return "KVKK onayını işaretlemeniz gerekmektedir.";
+      }
+      if (!document.getElementById("contractConsent").checked) {
+        return "Kullanıcı Sözleşmesi onayını işaretlemeniz gerekmektedir.";
+      }
+      
+      return null;
+    }
+
+    // ==== Save ====
+    document.getElementById("btnSave").onclick = async () => {
+      const err = validate();
+      if (err) {
+        alert("❌ " + err);
+        return;
+      }
+
+      const btnSave = document.getElementById("btnSave");
+      btnSave.disabled = true;
+      btnSave.textContent = "Kaydediliyor...";
+
+      try {
+        // Determine roles
+        const roles = ["buyer"];
+        if (document.getElementById("roleSupplier").checked) {
+          roles.push("supplier");
+        }
+
+        // Collect all contact info
+        const allEmails = [user.email];
+        emailChips.forEach(e => allEmails.push(e));
+        
+        const allPhones = [];
+        const mainPhone = document.getElementById("phone").value.trim();
+        if (mainPhone) allPhones.push(mainPhone);
+        phoneChips.forEach(p => allPhones.push(p));
+
+        // Prepare payload (compatible with multi-role system)
+        const payload = {
+          // Multi-role fields
+          roles,
+          isPremium: false,
+          
+          // Company info
+          companyName: document.getElementById("companyName").value.trim(),
+          taxNumber: document.getElementById("taxNumber").value.trim(),
+          taxOffice: document.getElementById("taxOffice").value.trim() || null,
+          mersisNo: document.getElementById("mersisNo").value.trim() || null,
+          website: document.getElementById("website").value.trim() || null,
+          address: document.getElementById("address").value.trim(),
+          city: document.getElementById("city").value.trim() || null,
+          country: document.getElementById("country").value.trim() || "Türkiye",
+          
+          // Contact info
+          contactEmails: allEmails.filter(e => e),
+          contactPhones: allPhones.filter(p => p),
+          
+          // Categories (buyer categories for organizing)
+          buyerCategories: [...catChips],
+          supplierCategories: [], // Will be filled in settings if supplier role active
+          
+          // KVKK consents
+          kvkkConsent: true,
+          contractConsent: true,
+          marketingConsent: document.getElementById("marketingConsent").checked || false,
+          consentAt: serverTimestamp(),
+          
+          // Timestamps
+          updatedAt: serverTimestamp()
+        };
+
+        // Add createdAt only if new user
+        const userRef = doc(db, "users", user.uid);
+        const existingSnap = await getDoc(userRef);
+        if (!existingSnap.exists()) {
+          payload.createdAt = serverTimestamp();
+        }
+
+        // Save to Firestore
+        await setDoc(userRef, payload, { merge: true });
+
+        console.log("✅ User profile saved:", user.uid);
+        
+        alert("✅ Kayıt başarıyla tamamlandı!");
+        
+        // Redirect based on role
+        if (roles.includes("supplier")) {
+          // If supplier role selected, go to settings to complete supplier info
+          alert("ℹ️ Tedarikçi bilgilerinizi tamamlamak için Ayarlar sayfasına yönlendiriliyorsunuz.");
+          location.href = "./settings.html";
+        } else {
+          // Go to dashboard
+          location.href = "./dashboard.html";
+        }
+        
+      } catch (e) {
+        console.error("Save error:", e);
+        alert("❌ Kaydedilemedi: " + (e.message || e));
+        btnSave.disabled = false;
+        btnSave.textContent = "Kaydet ve Devam Et";
+      }
+    };
+  </script>
+</body>
+</html>

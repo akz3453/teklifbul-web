@@ -1,0 +1,501 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>Ana Talep Ekranı - Teklifbul</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%233b82f6' rx='6'/%3E%3Ctext x='16' y='22' font-family='Arial' font-size='18' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/utils.css" />
+  <link rel="stylesheet" href="/assets/css/company-selector.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <style>
+    body { margin: 0; font-family: system-ui, Arial; background: #f9fafb; }
+    
+    /* Header */
+    .page-header { 
+      background: white; 
+      border-radius: 12px; 
+      padding: 24px; 
+      margin-bottom: 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .page-header h1 {
+      margin: 0 0 8px 0;
+      font-size: 28px;
+      color: #1f2937;
+      font-weight: 700;
+    }
+    .page-header p {
+      margin: 0;
+      color: #6b7280;
+      font-size: 16px;
+    }
+
+    /* Filters */
+    .filters {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .filter-group label {
+      font-size: 13px;
+      color: #6b7280;
+      font-weight: 500;
+    }
+    .filter-group select,
+    .filter-group input {
+      padding: 8px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px;
+      min-width: 150px;
+    }
+    .filter-group input[type="text"] {
+      min-width: 200px;
+    }
+
+    /* Product Grid */
+    .products-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+    
+    .product-card {
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    .product-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .product-image {
+      width: 100%;
+      height: 200px;
+      background: #f3f4f6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #9ca3af;
+      font-size: 14px;
+      position: relative;
+      overflow: hidden;
+    }
+    .product-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .product-image-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .product-info {
+      padding: 16px;
+    }
+    .product-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1f2937;
+      margin: 0 0 8px 0;
+      line-height: 1.4;
+    }
+    .product-category {
+      font-size: 13px;
+      color: #3b82f6;
+      background: #eff6ff;
+      padding: 4px 8px;
+      border-radius: 4px;
+      display: inline-block;
+      margin-bottom: 8px;
+    }
+    .product-details {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 12px;
+    }
+    .product-detail {
+      font-size: 14px;
+      color: #6b7280;
+      display: flex;
+      justify-content: space-between;
+    }
+    .product-detail strong {
+      color: #374151;
+      width: 208.6px;
+    }
+    
+    .product-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #e5e7eb;
+    }
+    .product-price {
+      font-size: 18px;
+      font-weight: 700;
+      color: #059669;
+    }
+    .product-deadline {
+      font-size: 13px;
+      color: #6b7280;
+    }
+    
+    .premium-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: #fbbf24;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #6b7280;
+    }
+    .empty-state svg {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 16px;
+      opacity: 0.5;
+    }
+    .empty-state h3 {
+      margin: 0 0 8px 0;
+      font-size: 18px;
+      color: #374151;
+    }
+    .empty-state p {
+      margin: 0;
+      font-size: 14px;
+    }
+
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #6b7280;
+    }
+  </style>
+</head>
+<body>
+  <!-- Common Header -->
+  <header id="app-header"></header>
+
+  <div class="container--wide">
+    <!-- Page Header -->
+    <div class="page-header">
+      <h1>🛍️ Ana Talep Ekranı</h1>
+      <p>Tüm yayınlanmış talepleri görüntüleyin - tedarikçiler için genel talep listesi</p>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters">
+      <div class="filter-group">
+        <label for="categoryFilter">Kategori</label>
+        <select id="categoryFilter">
+          <option value="">Tüm Kategoriler</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label for="searchInput">Ara</label>
+        <input type="text" id="searchInput" placeholder="SATFK, ürün adı, marka, model...">
+      </div>
+      <div class="filter-group">
+        <label for="priceRange">Fiyat Aralığı</label>
+        <select id="priceRange">
+          <option value="">Tüm Fiyatlar</option>
+          <option value="0-1000">0 - 1.000 ₺</option>
+          <option value="1000-5000">1.000 - 5.000 ₺</option>
+          <option value="5000-10000">5.000 - 10.000 ₺</option>
+          <option value="10000+">10.000 ₺ ve üzeri</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label for="locationFilter">Teslim Yeri</label>
+        <input type="text" id="locationFilter" placeholder="Şehir, ilçe...">
+      </div>
+      <div class="filter-group">
+        <button id="clearFilters" class="btn-secondary">Filtreleri Temizle</button>
+      </div>
+    </div>
+
+    <!-- Products Grid -->
+    <div id="productsGrid" class="products-grid">
+      <!-- Products will be loaded here -->
+    </div>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="empty-state" style="display:none;">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+      </svg>
+      <h3>Arama kriterlerinize uygun talep bulunamadı</h3>
+      <p>Farklı filtreler deneyebilir veya arama terimlerinizi değiştirebilirsiniz</p>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loadingState" class="loading">
+      <p>Talep verileri yükleniyor...</p>
+    </div>
+  </div>
+
+  <!-- Main Script -->
+  <script type="module">
+    import { initGlobalHeader } from './assets/js/ui/header.js';
+    import { db, auth, requireAuth } from "./firebase.js";
+    
+    // Initialize global header
+    initGlobalHeader({ mount: '#app-header', activeRoute: 'main' });
+    import { handleError, renderEmptyState, showLoadingState, withErrorHandling } from "./assets/js/ui/errors.js";
+    import { getPublicDemands } from "./assets/js/services/demands.js";
+    import { findMatchingSuppliers } from "./assets/js/services/suppliers.js";
+    
+    // Setup common header functionality
+    const user = await requireAuth();
+
+    // Load categories for filter
+    async function loadCategories() {
+      try {
+        const mod = await import("./categories.js");
+        const categories = mod.CATEGORIES || [];
+        const categoryFilter = document.getElementById("categoryFilter");
+        
+        categories.forEach(category => {
+          const option = document.createElement("option");
+          option.value = category;
+          option.textContent = category;
+          categoryFilter.appendChild(option);
+        });
+      } catch (e) {
+        console.warn("Categories not loaded:", e);
+      }
+    }
+
+    // Load main demands with error handling
+    const loadMainDemands = withErrorHandling(async () => {
+      const productsGrid = document.getElementById("productsGrid");
+      const emptyState = document.getElementById("emptyState");
+      const loadingState = document.getElementById("loadingState");
+
+      loadingState.style.display = "block";
+      productsGrid.innerHTML = "";
+      emptyState.style.display = "none";
+
+      console.log("🔍 Loading main demands...");
+
+      // Get all published public demands using service
+      const demands = await getPublicDemands(50);
+      
+      console.log("📋 Found public demands:", demands.length);
+      console.log("📋 Demands data:", demands);
+
+      if (demands.length === 0) {
+        showEmptyState();
+        return;
+      }
+
+      // Filter demands based on current filters
+      const filteredDemands = filterDemands(demands);
+      
+      if (filteredDemands.length === 0) {
+        showEmptyState();
+        return;
+      }
+
+      // Sort by premium status first, then by date
+      filteredDemands.sort((a, b) => {
+        // Premium demands first (simplified check)
+        const aIsPremium = a.createdBy === user.uid;
+        const bIsPremium = b.createdBy === user.uid;
+        
+        if (aIsPremium && !bIsPremium) return -1;
+        if (!aIsPremium && bIsPremium) return 1;
+        
+        // Then by date (newest first) - handle both timestamp and date formats
+        const aDate = a.createdAt?.toDate?.() || new Date(a.createdAt || 0);
+        const bDate = b.createdAt?.toDate?.() || new Date(b.createdAt || 0);
+        return bDate - aDate;
+      });
+
+      // Render demands as product cards
+      renderProductCards(filteredDemands);
+      loadingState.style.display = "none";
+    }, document.getElementById("productsGrid"), {
+      context: "Main demands loading",
+      loadingMessage: "Talep verileri yükleniyor..."
+    });
+
+    // Filter demands based on current filter values
+    function filterDemands(demands) {
+      const categoryFilter = document.getElementById("categoryFilter").value;
+      const searchInput = document.getElementById("searchInput").value.toLowerCase();
+      const priceRange = document.getElementById("priceRange").value;
+      const locationFilter = document.getElementById("locationFilter").value.toLowerCase();
+
+      return demands.filter(demand => {
+        // Category filter
+        if (categoryFilter && !demand.categoryTags?.includes(categoryFilter)) {
+          return false;
+        }
+
+        // Search filter
+        if (searchInput) {
+          // Check if it's a SATFK search (exact match)
+          if (searchInput.match(/^SATFK-\d{8}-[0-9A-Z]+$/)) {
+            if (demand.satfk !== searchInput) {
+              return false;
+            }
+          } else {
+            // Regular text search
+            const searchText = `${demand.title || ""} ${demand.description || ""} ${demand.satfk || ""}`.toLowerCase();
+            if (!searchText.includes(searchInput)) {
+              return false;
+            }
+          }
+        }
+
+        // Price range filter
+        if (priceRange && demand.targetPrice) {
+          const price = parseFloat(demand.targetPrice);
+          if (priceRange === "0-1000" && (price < 0 || price > 1000)) return false;
+          if (priceRange === "1000-5000" && (price < 1000 || price > 5000)) return false;
+          if (priceRange === "5000-10000" && (price < 5000 || price > 10000)) return false;
+          if (priceRange === "10000+" && price < 10000) return false;
+        }
+
+        // Location filter
+        if (locationFilter && demand.deliveryLocation) {
+          if (!demand.deliveryLocation.toLowerCase().includes(locationFilter)) {
+            return false;
+          }
+        }
+
+        return true;
+      });
+    }
+
+    // Render product cards
+    function renderProductCards(demands) {
+      const grid = document.getElementById("productsGrid");
+      grid.innerHTML = "";
+
+      demands.forEach(demand => {
+        const card = createProductCard(demand);
+        grid.appendChild(card);
+      });
+    }
+
+    // Create product card element
+    function createProductCard(demand) {
+      const card = document.createElement("div");
+      card.className = "product-card";
+      card.onclick = () => location.href = `./demand-detail.html?id=${demand.id}`;
+
+      const category = demand.categoryTags?.[0] || "Genel";
+      const deadline = demand.deadline ? new Date(demand.deadline).toLocaleDateString("tr-TR") : "Belirtilmemiş";
+      const deliveryLocation = demand.deliveryLocation || "Belirtilmemiş";
+      const totalQuantity = demand.items?.reduce((sum, item) => sum + (item.qty || 0), 0) || 0;
+
+      // Check if user is premium (simplified check)
+      const isPremium = demand.createdBy === user.uid; // Simplified for demo
+
+      card.innerHTML = `
+        <div class="product-info">
+          <h3 class="product-title">${demand.title || "Başlıksız Talep"}</h3>
+          <div class="product-code" style="font-size: 12px; color: #6b7280; margin: 4px 0;">
+            <strong>SATFK:</strong> ${demand.satfk || "Kod yok"}
+          </div>
+          <span class="product-category">${category}</span>
+          <div class="product-details">
+            <div class="product-detail">
+              <span>Miktar:</span>
+              <strong>${totalQuantity} adet</strong>
+            </div>
+            <div class="product-detail">
+              <span>Teslim Yeri:</span>
+              <strong>${deliveryLocation}</strong>
+            </div>
+            <div class="product-detail">
+              <span>Teslim Tarihi:</span>
+              <strong>${deadline}</strong>
+            </div>
+          </div>
+          <div class="product-meta">
+            <div class="product-deadline">${demand.createdAt?.toDate?.()?.toLocaleDateString("tr-TR") || "Tarih yok"}</div>
+          </div>
+        </div>
+      `;
+
+      return card;
+    }
+
+    // Show empty state
+    function showEmptyState() {
+      const productsGrid = document.getElementById("productsGrid");
+      const emptyState = document.getElementById("emptyState");
+      
+      productsGrid.innerHTML = "";
+      emptyState.style.display = "block";
+    }
+
+    // Event listeners
+    document.getElementById("categoryFilter").addEventListener("change", loadMainDemands);
+    document.getElementById("searchInput").addEventListener("input", loadMainDemands);
+    document.getElementById("priceRange").addEventListener("change", loadMainDemands);
+    document.getElementById("locationFilter").addEventListener("input", loadMainDemands);
+    document.getElementById("clearFilters").addEventListener("click", () => {
+      document.getElementById("categoryFilter").value = "";
+      document.getElementById("searchInput").value = "";
+      document.getElementById("priceRange").value = "";
+      document.getElementById("locationFilter").value = "";
+      loadMainDemands();
+    });
+
+    // Initialize
+    await loadCategories();
+    await loadMainDemands();
+
+    // Listen for company changes
+    window.addEventListener('company:changed', async (e) => {
+      const { companyId } = e.detail;
+      console.log('🏢 Company changed, reloading main demands for:', companyId);
+      
+      // Re-run data loading
+      await loadMainDemands();
+    });
+  </script>
+
+  <!-- Theme Script -->
+  <script src="/assets/js/theme.js" defer></script>
+
+</body>
+</html>

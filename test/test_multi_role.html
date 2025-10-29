@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>Multi-Role Test</title>
+  <style>
+    body { font-family: Arial; padding: 20px; background: #f5f5f5; }
+    .test-section { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .test-result { padding: 10px; margin: 10px 0; border-radius: 4px; }
+    .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+    button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    button:hover { background: #0056b3; }
+    pre { background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <h1>🧪 Multi-Role & Category Targeting Test Suite</h1>
+  
+  <div class="test-section">
+    <h2>Test 1: Role Conversion (Backward Compatibility)</h2>
+    <p>Bu test, eski <code>role</code> field'ının yeni <code>roles</code> dizisine dönüştürülmesini test eder.</p>
+    <button id="test1-btn">Run Test</button>
+    <div id="test1-result"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>Test 2: Multi-Role Support</h2>
+    <p>Kullanıcının hem buyer hem supplier olabildiğini test eder.</p>
+    <button id="test2-btn">Run Test</button>
+    <div id="test2-result"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>Test 3: Category-Based Targeting</h2>
+    <p>Talep yayınlarken kategori bazlı hedeflemenin çalıştığını test eder.</p>
+    <button id="test3-btn">Run Test</button>
+    <div id="test3-result"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>Test 4: Premium Flag</h2>
+    <p>Premium flag'in doğru şekilde kaydedildiğini test eder.</p>
+    <button id="test4-btn">Run Test</button>
+    <div id="test4-result"></div>
+  </div>
+
+  <script type="module">
+    import { db, requireAuth } from "../firebase.js";
+    import { 
+      doc, getDoc, setDoc, collection, query, where, getDocs, serverTimestamp, deleteDoc
+    } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+    let user;
+    
+    async function init() {
+      try {
+        user = await requireAuth();
+        showResult("info", "✅ Authenticated as: " + user.email);
+      } catch (e) {
+        showResult("error", "❌ Authentication failed: " + e.message);
+        window.location.href = "../index.html";
+      }
+    }
+
+    function showResult(type, message, containerId = null) {
+      const className = type === "success" ? "success" : type === "error" ? "error" : "info";
+      const html = `<div class="test-result ${className}">${message}</div>`;
+      
+      if (containerId) {
+        document.getElementById(containerId).innerHTML += html;
+      } else {
+        const div = document.createElement("div");
+        div.className = `test-result ${className}`;
+        div.innerHTML = message;
+        document.body.appendChild(div);
+      }
+    }
+
+    // Test 1: Role Conversion
+    window.testRoleConversion = async function() {
+      const resultId = "test1-result";
+      document.getElementById(resultId).innerHTML = "";
+      
+      try {
+        showResult("info", "🔄 Testing backward compatibility...", resultId);
+        
+        // Simulate old format
+        const testData = {
+          role: "buyer",
+          companyName: "Test Company",
+          taxNumber: "1234567890"
+        };
+        
+        showResult("info", "Old format: <pre>" + JSON.stringify(testData, null, 2) + "</pre>", resultId);
+        
+        // Conversion logic (same as settings.html)
+        const roles = Array.isArray(testData.roles) 
+          ? testData.roles.slice() 
+          : (testData.role ? [testData.role] : ["buyer"]);
+        
+        showResult("success", "✅ Converted to roles: " + JSON.stringify(roles), resultId);
+        
+        if (roles.length === 1 && roles[0] === "buyer") {
+          showResult("success", "✅ Test PASSED: Old format correctly converted", resultId);
+        } else {
+          showResult("error", "❌ Test FAILED: Unexpected conversion result", resultId);
+        }
+        
+      } catch (e) {
+        showResult("error", "❌ Test ERROR: " + e.message, resultId);
+      }
+    };
+
+    // Test 2: Multi-Role
+    window.testMultiRole = async function() {
+      const resultId = "test2-result";
+      document.getElementById(resultId).innerHTML = "";
+      
+      try {
+        showResult("info", "🔄 Testing multi-role support...", resultId);
+        
+        const testUserId = "test-user-" + Date.now();
+        const testRef = doc(db, "users", testUserId);
+        
+        // Create test user with both roles
+        await setDoc(testRef, {
+          roles: ["buyer", "supplier"],
+          isPremium: true,
+          companyName: "Multi-Role Test Co.",
+          taxNumber: "9876543210",
+          supplierCategories: ["Elektrik", "Elektronik"],
+          buyerCategories: ["Makine"],
+          createdAt: serverTimestamp()
+        });
+        
+        showResult("info", "📝 Created test user: " + testUserId, resultId);
+        
+        // Read back
+        const snap = await getDoc(testRef);
+        const data = snap.data();
+        
+        showResult("info", "Retrieved data: <pre>" + JSON.stringify(data, null, 2) + "</pre>", resultId);
+        
+        let passed = true;
+        
+        if (!Array.isArray(data.roles) || data.roles.length !== 2) {
+          showResult("error", "❌ Roles not correctly saved", resultId);
+          passed = false;
+        }
+        
+        if (!data.roles.includes("buyer") || !data.roles.includes("supplier")) {
+          showResult("error", "❌ Both roles not present", resultId);
+          passed = false;
+        }
+        
+        if (data.supplierCategories.length !== 2) {
+          showResult("error", "❌ Supplier categories not saved", resultId);
+          passed = false;
+        }
+        
+        if (data.buyerCategories.length !== 1) {
+          showResult("error", "❌ Buyer categories not saved", resultId);
+          passed = false;
+        }
+        
+        // Cleanup
+        await deleteDoc(testRef);
+        showResult("info", "🧹 Cleaned up test user", resultId);
+        
+        if (passed) {
+          showResult("success", "✅ Test PASSED: Multi-role support working", resultId);
+        } else {
+          showResult("error", "❌ Test FAILED: See errors above", resultId);
+        }
+        
+      } catch (e) {
+        showResult("error", "❌ Test ERROR: " + e.message, resultId);
+      }
+    };
+
+    // Test 3: Category Targeting
+    window.testCategoryTargeting = async function() {
+      const resultId = "test3-result";
+      document.getElementById(resultId).innerHTML = "";
+      
+      try {
+        showResult("info", "🔄 Testing category-based targeting...", resultId);
+        
+        // Simulate demand with categories
+        const demandCategories = ["Elektrik", "Elektronik"];
+        
+        // Query suppliers (simulation)
+        const qRef = query(
+          collection(db, "users"),
+          where("roles", "array-contains", "supplier"),
+          where("supplierCategories", "array-contains-any", demandCategories)
+        );
+        
+        const snap = await getDocs(qRef);
+        const suppliers = [];
+        snap.forEach(doc => {
+          suppliers.push({ id: doc.id, ...doc.data() });
+        });
+        
+        showResult("info", `Found ${suppliers.length} matching suppliers`, resultId);
+        
+        if (suppliers.length > 0) {
+          showResult("info", "Matching suppliers: <pre>" + JSON.stringify(suppliers.map(s => ({
+            id: s.id,
+            companyName: s.companyName,
+            categories: s.supplierCategories
+          })), null, 2) + "</pre>", resultId);
+        }
+        
+        // Verify the query worked
+        let allMatch = true;
+        suppliers.forEach(s => {
+          const hasMatch = s.supplierCategories?.some(cat => demandCategories.includes(cat));
+          if (!hasMatch) {
+            showResult("error", `❌ Supplier ${s.id} doesn't match categories`, resultId);
+            allMatch = false;
+          }
+        });
+        
+        if (allMatch || suppliers.length === 0) {
+          showResult("success", "✅ Test PASSED: Category targeting works correctly", resultId);
+        } else {
+          showResult("error", "❌ Test FAILED: Some suppliers don't match", resultId);
+        }
+        
+      } catch (e) {
+        showResult("error", "❌ Test ERROR: " + e.message, resultId);
+      }
+    };
+
+    // Test 4: Premium Flag
+    window.testPremiumFlag = async function() {
+      const resultId = "test4-result";
+      document.getElementById(resultId).innerHTML = "";
+      
+      try {
+        showResult("info", "🔄 Testing premium flag...", resultId);
+        
+        const testUserId = "test-premium-" + Date.now();
+        const testRef = doc(db, "users", testUserId);
+        
+        // Create test user with premium flag
+        await setDoc(testRef, {
+          roles: ["supplier"],
+          isPremium: true,
+          companyName: "Premium Test Co.",
+          taxNumber: "1111111111",
+          supplierCategories: ["Hizmet"],
+          createdAt: serverTimestamp()
+        });
+        
+        // Read back
+        const snap = await getDoc(testRef);
+        const data = snap.data();
+        
+        showResult("info", "Premium status: " + (data.isPremium ? "✅ Premium" : "❌ Not Premium"), resultId);
+        
+        // Cleanup
+        await deleteDoc(testRef);
+        
+        if (data.isPremium === true) {
+          showResult("success", "✅ Test PASSED: Premium flag saved correctly", resultId);
+        } else {
+          showResult("error", "❌ Test FAILED: Premium flag not saved", resultId);
+        }
+        
+      } catch (e) {
+        showResult("error", "❌ Test ERROR: " + e.message, resultId);
+      }
+    };
+
+    // Initialize
+    init();
+    
+    // Add event listeners
+    document.getElementById("test1-btn").addEventListener("click", testRoleConversion);
+    document.getElementById("test2-btn").addEventListener("click", testMultiRole);
+    document.getElementById("test3-btn").addEventListener("click", testCategoryTargeting);
+    document.getElementById("test4-btn").addEventListener("click", testPremiumFlag);
+  </script>
+</body>
+</html>

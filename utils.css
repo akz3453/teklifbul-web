@@ -1,0 +1,846 @@
+/* ====== THEMED COMPONENTS ====== */
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--primary-dark);
+  margin: 8px 0 16px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+h1 { 
+  margin: 8px 0 16px; 
+  width: auto; 
+  font-size: 2rem;
+}
+
+h2 { font-size: 1.5rem; }
+h3 { font-size: 1.25rem; }
+
+/* Form Elements */
+input, textarea, select {
+  width: 100%;
+  padding: 12px;
+  margin: 8px 0;
+  box-sizing: border-box;
+  
+  /* Theme Styling */
+  background: var(--card-bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: var(--focus-ring);
+}
+
+/* Buttons */
+button, .btn {
+  width: 100%;
+  padding: 12px;
+  margin: 8px 0;
+  box-sizing: border-box;
+  cursor: pointer;
+  
+  /* Theme Styling */
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+button:hover, .btn:hover {
+  background: var(--primary-dark);
+  transform: translateY(-1px);
+}
+
+button:active, .btn:active {
+  transform: translateY(0);
+}
+
+/* Secondary Button Variants */
+.btn-secondary {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+  background: var(--hover-bg);
+  color: var(--text);
+}
+
+.btn-success {
+  background: var(--success);
+}
+
+.btn-success:hover {
+  background: #059669;
+}
+
+.btn-warning {
+  background: var(--warning);
+}
+
+.btn-warning:hover {
+  background: #d97706;
+}
+
+.btn-error {
+  background: var(--error);
+}
+
+.btn-error:hover {
+  background: #dc2626;
+}
+/* Links */
+a {
+  color: var(--primary);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--primary-dark);
+  text-decoration: underline;
+}
+
+/* Navigation Links */
+.nav {
+  transition: all 0.2s ease;
+}
+
+.nav:hover {
+  color: var(--primary) !important;
+  text-decoration: none !important;
+}
+
+.nav.active {
+  color: var(--primary-dark) !important;
+  font-weight: 600;
+  background: var(--surface);
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+
+/* Cards and Sections */
+section, .card, .section {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin: 16px 0;
+  box-shadow: 0 1px 3px var(--shadow);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+section:hover, .card:hover, .section:hover {
+  box-shadow: 0 4px 6px var(--shadow-lg);
+}
+
+/* Tables */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+  background: var(--card-bg);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px var(--shadow);
+}
+
+.table th, .table td {
+  border: 1px solid var(--border);
+  padding: 12px;
+  text-align: left;
+  color: var(--text);
+}
+
+.table th {
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.table tbody tr:hover {
+  background: var(--hover-bg);
+}
+
+/* Layout */
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* Badges */
+.badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--border);
+}
+
+.badge-primary {
+  background: var(--primary);
+  color: white;
+}
+
+.badge-success {
+  background: var(--success);
+  color: white;
+}
+
+.badge-warning {
+  background: var(--warning);
+  color: white;
+}
+
+.badge-error {
+  background: var(--error);
+  color: white;
+}
+
+/* ====== GLOBAL THEME SYSTEM ====== */
+
+/* Global Theme Variables - Light Mode (Default) */
+:root {
+  /* Background Colors */
+  --bg: #dbe0e6;
+  --card-bg: #ffffff;
+  --surface: #f8fafc;
+  
+  /* Primary Colors */
+  --primary: #2563eb;
+  --primary-dark: #1e40af;
+  --primary-light: #60a5fa;
+  
+  /* Text Colors */
+  --text: #1e293b;
+  --text-muted: #64748b;
+  --text-light: #94a3b8;
+  
+  /* Border & Shadow */
+  --border: #e2e8f0;
+  --border-light: #f1f5f9;
+  --shadow: rgba(0, 0, 0, 0.1);
+  --shadow-lg: rgba(0, 0, 0, 0.15);
+  
+  /* Status Colors */
+  --success: #10b981;
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --info: #3b82f6;
+  
+  /* Interactive States */
+  --hover-bg: #f1f5f9;
+  --active-bg: #e2e8f0;
+  --focus-ring: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Dark Mode Override */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Background Colors */
+    --bg: #0f172a;
+    --card-bg: #1e293b;
+    --surface: #334155;
+    
+    /* Primary Colors */
+    --primary: #3b82f6;
+    --primary-dark: #60a5fa;
+    --primary-light: #93c5fd;
+    
+    /* Text Colors */
+    --text: #e2e8f0;
+    --text-muted: #94a3b8;
+    --text-light: #64748b;
+    
+    /* Border & Shadow */
+    --border: #334155;
+    --border-light: #475569;
+    --shadow: rgba(0, 0, 0, 0.3);
+    --shadow-lg: rgba(0, 0, 0, 0.4);
+    
+    /* Status Colors */
+    --success: #34d399;
+    --warning: #fbbf24;
+    --error: #f87171;
+    --info: #60a5fa;
+    
+    /* Interactive States */
+    --hover-bg: #334155;
+    --active-bg: #475569;
+    --focus-ring: 0 0 0 3px rgba(96, 165, 250, 0.2);
+  }
+}
+
+/* MANUEL DARK (öncelik için sonda) */
+html.force-dark {
+  --bg: #0f172a !important;
+  --card-bg: #1e293b !important;
+  --surface: #334155 !important;
+  --text: #e2e8f0 !important;
+  --text-muted: #94a3b8 !important;
+  --text-light: #64748b !important;
+
+  --primary: #3b82f6 !important;
+  --primary-dark: #60a5fa !important;
+  --primary-light: #93c5fd !important;
+
+  --border: #334155 !important;
+  --border-light: #475569 !important;
+  --shadow: 0 1px 4px rgba(0,0,0,0.3) !important;
+  --shadow-lg: 0 4px 6px rgba(0,0,0,0.4) !important;
+
+  --success: #34d399 !important;
+  --warning: #fbbf24 !important;
+  --error: #f87171 !important;
+  --info: #60a5fa !important;
+
+  --hover-bg: #334155 !important;
+  --active-bg: #475569 !important;
+  --focus-ring: 0 0 0 3px rgba(96, 165, 250, 0.2) !important;
+}
+
+/* Test CSS - geçici */
+html.force-dark body { 
+  outline: 3px dashed #60a5fa; 
+}
+
+/* ====== SITE-WIDE: FULL-WIDTH LAYOUT ====== */
+
+/* Temel temizleme */
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  
+  /* Theme Application */
+  background: var(--bg);
+  color: var(--text);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+*, *::before, *::after { box-sizing: inherit; }
+
+/* Make images and media safe */
+img, picture, video, iframe {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* ---------- FULL WIDTH CONTAINER ---------- */
+/* Override dar container kurallarını kaldırıp siteyi tam genişlik yapar */
+.container,
+.page-wrapper,
+.app-container,
+.main-container,
+.site-container,
+main,
+#main,
+.page {
+  max-width: none !important;    /* Dar sınırları kaldır */
+  width: 100% !important;        /* Tam genişlik */
+  margin-left: 0 !important;     /* Sola yaslanma engelle */
+  margin-right: 0 !important;
+  padding-left: 20px;            /* kenar boşlukları */
+  padding-right: 20px;
+}
+
+/* Eğer bir layout içinde header/aside flex varsa düzgün durması için */
+body > .wrapper,
+body > .app,
+.layout,
+.layout-root {
+  width: 100%;
+}
+
+/* ---------- TABLES: RESPONSIVE BUT NEAT ---------- */
+/* Tablolar sayfa içinde taşmasın, tablo genişse sadece tablo içinde yatay kaydırma olsun */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-responsive table,
+.table, table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: auto;   /* kolon genişliği içeriğe göre ayarlansın */
+  min-width: 700px;     /* dar ekranlarda tablo içinde kaydırma sağlansın; ihtiyaca göre arttır */
+}
+
+/* Tek satırda gösterilmesi gereken sütunlar için bozma/kırpma davranışı */
+.table-responsive td,
+.table-responsive th,
+.table td, .table th {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 8px 12px;
+}
+
+/* Eğer bazı hücrelerin birden fazla satırda olmasını istiyorsanız override yapabilirsiniz:
+.table-responsive td.longtext { white-space: normal; word-break: break-word; }
+*/
+
+/* ---------- LONG TEXT / BADGES ---------- */
+.badge, .category-item, .long-text {
+  max-width: 100%;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+
+/* ---------- PREVENT GLOBAL HORIZONTAL SCROLLING CAUSED BY ODD ELEMENTS ---------- */
+/* (Bu kural, sayfanın taştığı durumlarda global yatay çubuğu engeller; içerik kaybolursa table-responsive ile görünür yap) */
+html, body { overflow-x: hidden; }
+
+/* ---------- OPTIONAL: READABILITY LIMIT ---------- */
+/* Eğer çok geniş ekranlarda metinlerin satır genişliği çok olursa okunması zor olur.
+   İsterseniz paragraf kısımlarına okuma kolaylığı için max-width verebilirsiniz: */
+.content, .article, .page-content {
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* =======================
+   CATEGORY & TABLE STYLES
+   ======================= */
+
+/* Genel yardımcılar */
+.flex-row { 
+  display: flex; 
+  align-items: center; 
+  gap: 12px; 
+}
+
+.section { 
+  margin: 24px 0; 
+  padding: 12px 16px; 
+  background: var(--card-bg); 
+  border-radius: 6px; 
+  box-shadow: 0 1px 3px var(--shadow);
+  border: 1px solid var(--border);
+}
+
+/* ---------- Kategori bölümü ---------- */
+.category-section {
+  width: 100%;
+  border: 2px solid var(--primary);
+  border-radius: 12px;
+  padding: 20px;
+  background: var(--surface);
+  margin: 16px 0;
+  box-shadow: 0 2px 8px var(--shadow);
+  transition: all 0.3s ease;
+}
+.category-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.category-header h3 {
+  color: var(--primary-dark);
+  font-weight: 600;
+  margin: 0;
+  font-size: 18px;
+}
+.category-search { flex: 0 0 260px; }
+
+/* Kategori-listesi: grid ile çip düzeni */
+.category-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px;
+  align-items: start;
+}
+
+/* Her bir kategori çipi / satırı */
+.category-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-light);
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+  font-size: 14px;
+  color: var(--text);
+}
+
+/* Hover ve seçili durum */
+.category-item:hover {
+  background: var(--hover-bg);
+  border-color: var(--primary-light);
+}
+.category-item input[type="checkbox"] { /* checkbox solda, sabit */ 
+  width: 18px; height: 18px;
+  margin: 0; flex: 0 0 auto;
+}
+
+/* Label kısmı, taşarsa kırp/alt satır izni ver (isteğe göre) */
+.category-item .label {
+  display: inline-block;
+  white-space: nowrap;          /* tek satır istersen */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: calc(100% - 30px);
+}
+
+/* Eğer etiketler çok uzun olacaksa ve birden fazla satır görünsün istersen:
+.category-item .label { white-space: normal; word-break: break-word; }
+*/
+
+/* Kontrol butonları (Tümünü Seç, Temizle) */
+.category-actions {
+  margin-top: 16px;
+  display:flex;
+  gap:8px;
+  align-items:center;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* Kategori bölümü içindeki info-box */
+.category-section .info-box {
+  background: var(--surface);
+  border-left: 4px solid var(--primary);
+  margin: 12px 0;
+  padding: 12px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  color: var(--primary-dark);
+  border: 1px solid var(--border-light);
+}
+
+/* ---------- Tablo (Ürün Kalemleri) ---------- */
+.table-responsive { width:100%; overflow-x:auto; -webkit-overflow-scrolling: touch; }
+
+.table {
+  width:100%;
+  border-collapse: collapse;
+  min-width: 900px; /* ihtiyaç varsa 1000 veya 1200 yap */
+}
+
+.table th, .table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #eef1f6;
+  vertical-align: middle;
+  text-align: left;
+  font-size: 14px;
+}
+
+/* Checkbox sütunu için sabit genişlik ve merkezleme */
+.table td.checkcell, .table th.checkcell {
+  width: 48px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Satır hover */
+.table tbody tr:hover {
+  background: var(--hover-bg);
+}
+
+/* Küçük ekranlar için */
+@media (max-width: 900px) {
+  .category-list { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+  .table th, .table td { font-size:13px; padding:8px; }
+  .table { min-width: 700px; }
+}
+
+/* ====== PAGE HEADER & TOOLBAR ====== */
+
+/* Page Header */
+.page-header {
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 0;
+  margin-bottom: 20px;
+}
+
+.page-header .container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.page-header .header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.page-header .header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Breadcrumb */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.breadcrumb a {
+  color: var(--primary);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.breadcrumb a:hover {
+  color: var(--primary-dark);
+  text-decoration: underline;
+}
+
+.breadcrumb .separator {
+  color: var(--text-light);
+  margin: 0 4px;
+}
+
+.breadcrumb .current {
+  color: var(--text);
+  font-weight: 500;
+}
+
+/* Page Title */
+.page-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+  line-height: 1.2;
+}
+
+/* Company Chip */
+.company-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--text);
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.company-chip:hover {
+  background: var(--hover-bg);
+  border-color: var(--primary);
+  text-decoration: none;
+  color: var(--text);
+}
+
+.company-chip .company-icon {
+  width: 20px;
+  height: 20px;
+  background: var(--primary);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.company-chip .company-name {
+  font-weight: 500;
+  color: var(--text);
+}
+
+.company-chip .company-email {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+/* Toolbar */
+.toolbar {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px var(--shadow);
+}
+
+.toolbar .toolbar-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.toolbar .toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.toolbar .toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+/* Search Form */
+.search-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  max-width: 400px;
+}
+
+.search-form .search-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card-bg);
+  color: var(--text);
+  font-size: 14px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.search-form .search-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: var(--focus-ring);
+}
+
+.search-form .search-input::placeholder {
+  color: var(--text-muted);
+}
+
+/* Button Variants */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+  transform: translateY(-1px);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.btn-outline:hover:not(:disabled) {
+  background: var(--hover-bg);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.btn-danger {
+  background: var(--error);
+  color: white;
+  border-color: var(--error);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #dc2626;
+  border-color: #dc2626;
+  transform: translateY(-1px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .page-header .container {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .page-header .header-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .toolbar .toolbar-content {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .toolbar .toolbar-left,
+  .toolbar .toolbar-right {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .search-form {
+    max-width: none;
+  }
+}

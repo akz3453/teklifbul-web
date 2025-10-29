@@ -1,0 +1,60 @@
+:root{
+  --bg:#F9FAFB; --surface:#FFFFFF; --surface-subtle:#F3F6FB; --surface-accent:#EFF6FF;
+  --border:#E5E7EB; --border-accent:#DBEAFE;
+  --text:#1F2937; --muted:#6B7280;
+  --primary:#2563EB; --primary-dark:#1E3A8A;
+}
+html[data-theme="dark"]{
+  --bg:#0f172a; --surface:#111827; --surface-subtle:#0b1324; --surface-accent:#0b1a33;
+  --border:#1f2937; --border-accent:#1f3b66; --text:#e5e7eb; --muted:#94a3b8;
+  --primary:#60a5fa; --primary-dark:#93c5fd;
+}
+
+/* Base */
+body{background:var(--bg);color:var(--text);font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.55}
+h1,h2,h3,h4{margin:0 0 8px}
+
+/* Section header (sayfa blok başlıkları: 📋/📦/📝/📊/Genel Teklif Bilgileri vs.) */
+.section-header{background:var(--surface);color:var(--text);font-weight:700;padding:8px 12px;border-left:4px solid var(--border);border-radius:6px 6px 0 0;margin-bottom:6px;display:flex;align-items:center;gap:8px;font-size:1.125rem}
+.section-header .icon{color:var(--primary)}
+
+/* Editable blok içindeki başlıklar vurgulu olsun */
+.block--editable .section-header{background:#E0EDFF;color:var(--primary-dark);border-left-color:var(--primary)}
+/* Force static header regardless of parent */
+.section-header.force-static{background:var(--surface)!important;color:var(--text)!important;border-left-color:var(--border)!important}
+
+/* Kart & genel kapsayıcı */
+.card,.item-card,.section-box,.panel,.box{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:20px}
+
+/* ==== Editable vs Static bloklar ==== */
+.block--editable{background:var(--surface-accent);border:1px solid var(--border-accent);border-radius:8px;padding:12px 14px}
+.block--static{background:var(--surface)}
+.heading--editable{color:var(--primary-dark);font-weight:600}
+.heading--static{color:var(--text);font-weight:600}
+
+/* Rol kapalıysa statik gibi görünsün */
+.is-readonly .heading--editable{color:var(--text)}
+.is-readonly.block--editable{background:var(--surface);border-color:var(--border)}
+
+/* Ürün kalemi iç alt bloklar (iskonto/teslim/sertifika…) */
+.item-card .info-block{background:var(--surface-accent);border:1px solid var(--border-accent);border-radius:8px;padding:10px 12px;margin-top:12px}
+.item-card .info-block + .info-block{margin-top:16px}
+.item-card .block-title{color:var(--primary-dark);font-weight:600;margin-bottom:6px}
+
+/* Tablo görünümleri (Talep Bilgisi) */
+.table-head{background:var(--surface-subtle);color:var(--text);font-weight:600}
+.table-row{background:var(--surface);color:var(--text);border-bottom:1px solid var(--border)}
+.table-foot{background:#F9FAFB;color:var(--muted)}
+
+/* Form kontrolleri + focus */
+input,select,textarea{border:1px solid #CBD5E1;border-radius:6px;padding:6px 8px;background:var(--surface);color:var(--text)}
+input:focus,select:focus,textarea:focus{border-color:var(--primary);box-shadow:0 0 0 2px rgba(37,99,235,.1);outline:none}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;font-size:.95rem;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;transition:all .2s}
+.btn:hover{transform:translateY(-1px)}
+.btn-primary{background:var(--primary);border-color:var(--primary);color:#fff}
+.btn-primary:hover{background:#1E40AF}
+.btn-outline{background:var(--surface);color:var(--primary);border:1px solid var(--primary)}
+.btn-outline:hover{background:#EFF6FF}
+

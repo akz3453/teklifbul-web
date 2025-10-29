@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Header Fix Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Header Fix Test</h1>
+    
+    <div class="test-section info">
+        <h3>📋 Test Senaryosu</h3>
+        <p>Bu sayfa header.js dosyasının düzgün çalışıp çalışmadığını test eder.</p>
+        <ol>
+            <li>Firma adı yükleniyor mu?</li>
+            <li>Kullanıcı bilgileri gösteriliyor mu?</li>
+            <li>Çıkış butonu çalışıyor mu?</li>
+            <li>Console'da hata var mı?</li>
+        </ol>
+    </div>
+    
+    <div class="test-section">
+        <h3>🎯 Header Test</h3>
+        
+        <!-- Common Header -->
+        <header style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #e5e7eb;background:white;margin-bottom:20px">
+            <div style="display:flex;gap:12px;align-items:center">
+                <strong style="font-size:18px;color:#1f2937">Teklifbul</strong>
+                <span id="clock" style="font-size:13px;color:#6b7280"></span>
+            </div>
+            <div style="display:flex;gap:12px;align-items:center">
+                <a href="./settings.html" style="text-decoration:none;color:#3b82f6;font-size:13px">⚙️ Ayarlar</a>
+                <label style="font-size:13px;color:#6b7280">Firma:</label>
+                <span id="firmName" style="font-size:13px;color:#6b7280">-</span>
+                <span id="userLabel" style="font-size:13px;color:#6b7280">-</span>
+                <button id="logoutBtn" style="padding:8px 14px;background:#dc2626;color:white;border:none;border-radius:6px;cursor:pointer;font-weight:500">Çıkış</button>
+            </div>
+        </header>
+        <script type="module" src="./header.js"></script>
+    </div>
+    
+    <div class="test-section">
+        <h3>🧪 Test Butonları</h3>
+        <button onclick="testHeaderElements()">Header Elementlerini Test Et</button>
+        <button onclick="testConsoleErrors()">Console Hatalarını Kontrol Et</button>
+        <button onclick="testAuthState()">Auth State Test Et</button>
+    </div>
+    
+    <div id="test-results"></div>
+    
+    <script>
+        function addResult(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `test-section ${type}`;
+            div.innerHTML = message;
+            document.getElementById('test-results').appendChild(div);
+        }
+        
+        function clearResults() {
+            document.getElementById('test-results').innerHTML = '';
+        }
+        
+        function testHeaderElements() {
+            clearResults();
+            addResult('<h3>🧪 Header Element Testi</h3>', 'info');
+            
+            // Firma adı kontrolü
+            const firmNameEl = document.getElementById('firmName');
+            if (firmNameEl) {
+                const firmName = firmNameEl.textContent;
+                if (firmName && firmName !== '-') {
+                    addResult(`✅ Firma adı yüklendi: ${firmName}`, 'success');
+                } else {
+                    addResult('⚠️ Firma adı yüklenmedi veya varsayılan değer', 'warning');
+                }
+            } else {
+                addResult('❌ firmName elementi bulunamadı!', 'error');
+            }
+            
+            // Kullanıcı etiketi kontrolü
+            const userLabelEl = document.getElementById('userLabel');
+            if (userLabelEl) {
+                const userLabel = userLabelEl.textContent;
+                if (userLabel && userLabel !== '-') {
+                    addResult(`✅ Kullanıcı etiketi yüklendi: ${userLabel}`, 'success');
+                } else {
+                    addResult('⚠️ Kullanıcı etiketi yüklenmedi veya varsayılan değer', 'warning');
+                }
+            } else {
+                addResult('❌ userLabel elementi bulunamadı!', 'error');
+            }
+            
+            // Çıkış butonu kontrolü
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                addResult('✅ Çıkış butonu mevcut', 'success');
+            } else {
+                addResult('❌ Çıkış butonu bulunamadı!', 'error');
+            }
+            
+            // Saat kontrolü
+            const clockEl = document.getElementById('clock');
+            if (clockEl) {
+                const clock = clockEl.textContent;
+                if (clock) {
+                    addResult(`✅ Saat güncelleniyor: ${clock}`, 'success');
+                } else {
+                    addResult('⚠️ Saat güncellenmiyor', 'warning');
+                }
+            } else {
+                addResult('❌ Clock elementi bulunamadı!', 'error');
+            }
+        }
+        
+        function testConsoleErrors() {
+            clearResults();
+            addResult('<h3>🧪 Console Hata Testi</h3>', 'info');
+            
+            // Console'da hata var mı kontrol et
+            const originalError = console.error;
+            const originalWarn = console.warn;
+            const errors = [];
+            const warnings = [];
+            
+            console.error = function(...args) {
+                errors.push(args.join(' '));
+                originalError.apply(console, args);
+            };
+            
+            console.warn = function(...args) {
+                warnings.push(args.join(' '));
+                originalWarn.apply(console, args);
+            };
+            
+            // 2 saniye bekle ve sonuçları kontrol et
+            setTimeout(() => {
+                console.error = originalError;
+                console.warn = originalWarn;
+                
+                if (errors.length === 0) {
+                    addResult('✅ Console\'da hata yok', 'success');
+                } else {
+                    addResult(`❌ Console\'da ${errors.length} hata var:`, 'error');
+                    errors.forEach(error => {
+                        addResult(`  - ${error}`, 'error');
+                    });
+                }
+                
+                if (warnings.length === 0) {
+                    addResult('✅ Console\'da uyarı yok', 'success');
+                } else {
+                    addResult(`⚠️ Console\'da ${warnings.length} uyarı var:`, 'warning');
+                    warnings.forEach(warning => {
+                        addResult(`  - ${warning}`, 'warning');
+                    });
+                }
+            }, 2000);
+        }
+        
+        function testAuthState() {
+            clearResults();
+            addResult('<h3>🧪 Auth State Testi</h3>', 'info');
+            
+            // Firebase auth state kontrolü
+            if (window.__auth) {
+                const user = window.__auth.currentUser;
+                if (user) {
+                    addResult(`✅ Kullanıcı giriş yapmış: ${user.email}`, 'success');
+                } else {
+                    addResult('⚠️ Kullanıcı giriş yapmamış', 'warning');
+                }
+            } else {
+                addResult('❌ Firebase auth bulunamadı!', 'error');
+            }
+        }
+        
+        // Sayfa yüklendiğinde otomatik test
+        window.addEventListener('load', () => {
+            addResult('<h3>🚀 Sayfa Yüklendi - Otomatik Test</h3>', 'info');
+            setTimeout(() => {
+                testHeaderElements();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

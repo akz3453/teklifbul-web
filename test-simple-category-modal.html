@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kategori Modal Test - Basit</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .btn {
+            padding: 10px 20px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        .btn:hover {
+            background: #2563eb;
+        }
+        .btn-success {
+            background: #10b981;
+        }
+        .btn-success:hover {
+            background: #059669;
+        }
+        
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80%;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .modal-title {
+            margin: 0;
+            color: #1f2937;
+        }
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #6b7280;
+        }
+        .category-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            background-color: #f8fafc;
+            border: 2px solid #e5e7eb;
+            min-height: 50px;
+            width: 100%;
+            font-size: 16px;
+            font-weight: 500;
+        }
+        .category-item:hover {
+            background-color: #e5e7eb;
+        }
+        .category-item.selected {
+            background-color: #dbeafe;
+            border-color: #3b82f6;
+        }
+        .category-checkbox {
+            margin-right: 12px;
+            width: 20px;
+            height: 20px;
+            transform: scale(1.2);
+        }
+        .category-name {
+            flex: 1;
+            color: #1f2937;
+        }
+        .category-list {
+            background: white;
+            border: 2px solid #3b82f6;
+            border-radius: 6px;
+            padding: 20px;
+            min-height: 300px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏷️ Basit Kategori Modal Test</h1>
+        <p>Bu sayfa tamamen basit bir kategori modal'ını test eder.</p>
+        
+        <div style="margin: 20px 0;">
+            <button id="openModal" class="btn btn-success">➕ Kategori Modal Aç</button>
+        </div>
+        
+        <div id="testResults" style="margin-top: 20px; padding: 15px; background: #f8fafc; border-radius: 6px; display: none;">
+            <h3>Test Sonuçları:</h3>
+            <div id="testOutput"></div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="categoryModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">🏷️ Kategori Seç</h2>
+                <button class="close-btn" id="closeModal">&times;</button>
+            </div>
+            
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">Kategoriler Seç *</label>
+                <input type="text" id="categorySearch" placeholder="Kategori ara..." style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
+            </div>
+            
+            <div style="border: 3px solid #3b82f6; background: #f0f9ff; padding: 20px; margin: 10px 0; border-radius: 8px;">
+                <h4 style="margin: 0 0 15px 0; color: #1e40af;">📋 Mevcut Kategoriler:</h4>
+                <div id="categoryList" class="category-list">
+                    <!-- Categories will be populated here -->
+                </div>
+            </div>
+            
+            <div style="margin-top: 16px;">
+                <p style="font-size: 12px; color: #6b7280; margin: 0;">
+                    <span id="selectedCount">0</span> kategori seçildi
+                </p>
+            </div>
+            
+            <div style="margin-top: 20px; display: flex; gap: 12px; justify-content: flex-end;">
+                <button id="cancelBtn" style="padding: 8px 16px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer;">İptal</button>
+                <button id="saveBtn" style="padding: 8px 16px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer;">Kaydet</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Categories
+        const CATEGORIES = [
+            "Sac/Metal",
+            "Elektrik", 
+            "Elektronik",
+            "Makine-İmalat",
+            "Hırdavat",
+            "Ambalaj",
+            "Kimyasal",
+            "İnşaat Malzemeleri",
+            "Mobilya",
+            "Boya",
+            "Plastik",
+            "Otomotiv Yan Sanayi",
+            "İş Güvenliği",
+            "Temizlik",
+            "Gıda",
+            "Hizmet",
+            "Lojistik"
+        ];
+
+        let selectedCategories = new Set();
+
+        // DOM Elements
+        const modal = document.getElementById('categoryModal');
+        const categoryList = document.getElementById('categoryList');
+        const selectedCount = document.getElementById('selectedCount');
+        const categorySearch = document.getElementById('categorySearch');
+        const openModalBtn = document.getElementById('openModal');
+        const closeModalBtn = document.getElementById('closeModal');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const saveBtn = document.getElementById('saveBtn');
+
+        // Event Listeners
+        openModalBtn.addEventListener('click', openModal);
+        closeModalBtn.addEventListener('click', closeModal);
+        cancelBtn.addEventListener('click', closeModal);
+        saveBtn.addEventListener('click', saveCategories);
+        categorySearch.addEventListener('input', filterCategories);
+
+        // Functions
+        function openModal() {
+            console.log('🔄 Modal açılıyor...');
+            selectedCategories.clear();
+            populateCategories();
+            updateSelectedCount();
+            modal.style.display = 'block';
+            console.log('✅ Modal açıldı');
+        }
+
+        function closeModal() {
+            modal.style.display = 'none';
+            console.log('✅ Modal kapandı');
+        }
+
+        function populateCategories() {
+            console.log('🔄 Kategoriler yükleniyor...');
+            categoryList.innerHTML = '';
+            
+            CATEGORIES.forEach(category => {
+                const div = document.createElement('div');
+                div.className = 'category-item';
+                
+                div.innerHTML = `
+                    <input type="checkbox" class="category-checkbox">
+                    <span class="category-name">${category}</span>
+                `;
+                
+                div.addEventListener('click', (e) => {
+                    if (e.target.type !== 'checkbox') {
+                        const checkbox = div.querySelector('.category-checkbox');
+                        checkbox.checked = !checkbox.checked;
+                    }
+                    
+                    const checkbox = div.querySelector('.category-checkbox');
+                    if (checkbox.checked) {
+                        selectedCategories.add(category);
+                        div.classList.add('selected');
+                    } else {
+                        selectedCategories.delete(category);
+                        div.classList.remove('selected');
+                    }
+                    
+                    updateSelectedCount();
+                });
+                
+                categoryList.appendChild(div);
+                console.log(`✅ Kategori "${category}" eklendi`);
+            });
+            
+            console.log(`✅ ${CATEGORIES.length} kategori yüklendi`);
+        }
+
+        function updateSelectedCount() {
+            selectedCount.textContent = selectedCategories.size;
+        }
+
+        function filterCategories() {
+            const searchTerm = categorySearch.value.toLowerCase();
+            const categoryItems = categoryList.querySelectorAll('.category-item');
+            
+            categoryItems.forEach(item => {
+                const categoryName = item.querySelector('.category-name').textContent.toLowerCase();
+                item.style.display = categoryName.includes(searchTerm) ? 'flex' : 'none';
+            });
+        }
+
+        function saveCategories() {
+            const categories = Array.from(selectedCategories);
+            console.log('💾 Seçilen kategoriler:', categories);
+            
+            document.getElementById('testOutput').innerHTML = `
+                <p><strong>✅ Seçilen Kategoriler:</strong></p>
+                <ul>
+                    ${categories.map(cat => `<li>${cat}</li>`).join('')}
+                </ul>
+            `;
+            document.getElementById('testResults').style.display = 'block';
+            
+            closeModal();
+        }
+
+        // Close modal when clicking outside
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+
+        console.log('✅ Basit kategori modal hazır!');
+    </script>
+</body>
+</html>

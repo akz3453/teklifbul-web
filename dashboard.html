@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>Teklifbul — Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%233b82f6' rx='6'/%3E%3Ctext x='16' y='22' font-family='Arial' font-size='18' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/utils.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <style>
+    body { margin: 0; font-family: system-ui, Arial; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin: 16px 0; }
+    .card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; background: white; }
+    .card h2 { margin: 8px 0 0 0; font-size: 32px; color: #1f2937; }
+    .card-title { font-size: 14px; color: #6b7280; font-weight: 500; }
+    .metric-card { cursor: pointer; transition: all 0.2s; }
+    .metric-card:hover { box-shadow: 0 4px 6px rgba(0,0,0,0.1); transform: translateY(-2px); }
+    .badge { display: inline-block; padding: 4px 8px; border-radius: 12px; background: #e5e7eb; font-size: 12px; }
+    .badge.success { background: #d1fae5; color: #065f46; }
+    .badge.warn { background: #fef3c7; color: #92400e; }
+    .table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    .table th, .table td { border-bottom: 1px solid #e5e7eb; padding: 10px; text-align: left; }
+    .table th { background: #f9fafb; font-weight: 600; font-size: 13px; color: #374151; }
+    .table td { font-size: 14px; }
+    .fx-row { display: flex; justify-content: space-between; align-items: center; margin: 6px 0; }
+    .fx-label { font-size: 13px; color: #6b7280; }
+    .fx-value { font-size: 18px; font-weight: 600; color: #1f2937; }
+    .quick-links { display: flex; gap: 12px; margin-top: 12px; }
+    .quick-links a { text-decoration: none; color: #3b82f6; font-weight: 500; }
+    
+    /* Navigation Cards */
+    .nav-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px;
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      text-decoration: none;
+      color: inherit;
+      transition: all 0.2s;
+    }
+    .nav-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      border-color: #3b82f6;
+    }
+    .nav-icon {
+      font-size: 24px;
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f8fafc;
+      border-radius: 8px;
+    }
+    .nav-content h4 {
+      margin: 0 0 4px 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: #1f2937;
+    }
+    .nav-content p {
+      margin: 0;
+      font-size: 13px;
+      color: #6b7280;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+  <!-- Common Header -->
+  <header id="app-header"></header>
+
+  <main class="container--wide" style="padding:20px 0">
+    <h1 style="margin:0 0 20px 0">Dashboard</h1>
+    
+    <!-- Quick Navigation -->
+    <div class="card" style="margin-bottom:24px">
+      <h3 style="margin:0 0 16px 0">📋 Sayfa Navigasyonu</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px">
+        <a href="./demands.html" class="nav-card">
+          <div class="nav-icon">📋</div>
+          <div class="nav-content">
+            <h4>Taleplerim</h4>
+            <p>Oluşturduğum ve aldığım talepleri görüntüle</p>
+          </div>
+        </a>
+        <a href="./bids.html" class="nav-card">
+          <div class="nav-icon">💰</div>
+          <div class="nav-content">
+            <h4>Teklifler</h4>
+            <p>Gelen ve gönderdiğim teklifleri yönet</p>
+          </div>
+        </a>
+        <a href="./main-demands.html" class="nav-card">
+          <div class="nav-icon">🛍️</div>
+          <div class="nav-content">
+            <h4>Ana Talep Ekranı</h4>
+            <p>Tedarikçiler için genel talep listesi</p>
+          </div>
+        </a>
+        <a href="./demand-new.html" class="nav-card">
+          <div class="nav-icon">➕</div>
+          <div class="nav-content">
+            <h4>Yeni Talep Oluştur</h4>
+            <p>Yeni bir talep oluştur ve yayınla</p>
+          </div>
+        </a>
+        <a href="./settings.html" class="nav-card">
+          <div class="nav-icon">⚙️</div>
+          <div class="nav-content">
+            <h4>Ayarlar</h4>
+            <p>Hesap ve firma bilgilerini düzenle</p>
+          </div>
+        </a>
+      </div>
+    </div>
+    
+    <!-- Metrics Cards -->
+    <div class="cards">
+      <div class="card metric-card clickable-card" id="inbox-card" onclick="location.href='./demands.html?filter=inbox'">
+        <div class="card-title">Gelen Talepler</div>
+        <h2 id="metric-inbox">0</h2>
+      </div>
+      <div class="card metric-card clickable-card" id="sent-card" onclick="location.href='./demands.html?filter=sent'">
+        <div class="card-title">Gönderdiğim Talepler</div>
+        <h2 id="metric-sent">0</h2>
+      </div>
+      <div class="card metric-card clickable-card" id="draft-card" onclick="location.href='./demands.html?filter=draft'">
+        <div class="card-title">Taslak Talepler</div>
+        <h2 id="metric-draft">0</h2>
+      </div>
+      <div class="card metric-card clickable-card" id="incoming-bids-card" onclick="location.href='./bids.html?tab=incoming'">
+        <div class="card-title">Gelen Teklifler</div>
+        <h2 id="metric-incoming-bids">0</h2>
+      </div>
+      <div class="card metric-card clickable-card" id="outgoing-bids-card" onclick="location.href='./bids.html?tab=outgoing'">
+        <div class="card-title">Gönderdiğim Teklifler</div>
+        <h2 id="metric-outgoing-bids">0</h2>
+      </div>
+      <div class="card">
+        <div class="card-title">TCMB Kurları</div>
+        <div class="fx-row">
+          <span class="fx-label">USD/TRY:</span>
+          <strong class="fx-value" id="fx-usd">-</strong>
+        </div>
+        <div class="fx-row">
+          <span class="fx-label">EUR/TRY:</span>
+          <strong class="fx-value" id="fx-eur">-</strong>
+        </div>
+        <small id="fx-time" style="opacity:0.7;font-size:11px;color:#6b7280"></small>
+      </div>
+    </div>
+
+    <!-- Recent Demands -->
+    <div class="card" style="margin-top:24px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h3 style="margin:0">Son Taleplerim</h3>
+        <div class="quick-links">
+          <a href="./demand-new.html">+ Yeni Talep</a>
+          <a href="./demands.html">Tüm Talepler</a>
+        </div>
+      </div>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>SATFK</th>
+            <th>Başlık</th>
+            <th>Kategoriler</th>
+            <th>Durum</th>
+            <th>Teklif Sayısı</th>
+            <th>Tarih</th>
+          </tr>
+        </thead>
+        <tbody id="last-demands"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <!-- Theme Script -->
+  <script src="/assets/js/theme.js" defer></script>
+
+  <!-- Main Script -->
+  <script type="module">
+    import { initGlobalHeader } from './assets/js/ui/header.js';
+    import { db, auth, requireAuth } from "./firebase.js";
+    
+    // Initialize global header
+    initGlobalHeader({ mount: '#app-header', activeRoute: 'dashboard' });
+    
+    const headerUser = await requireAuth();
+  </script>
+
+  <!-- Dashboard Data Script -->
+  <script type="module">
+    import { db, requireAuth } from "./firebase.js";
+    import {
+      collection, getDocs, query, where, orderBy, limit
+    } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+    const dashUser = await requireAuth();
+    const uid = dashUser.uid;
+
+    // Durum çevirisi fonksiyonu
+    function translateStatus(status) {
+      const statusMap = {
+        'draft': 'Taslak',
+        'approved': 'Onaylandı',
+        'published': 'Yayınlandı',
+        'sent': 'Gönderildi',
+        'pending': 'Bekleyen',
+        'viewed': 'Görüldü',
+        'responded': 'Yanıtlandı',
+        'rejected': 'Reddedildi',
+        'cancelled': 'İptal Edildi',
+        'completed': 'Tamamlandı',
+        'in_progress': 'Devam Ediyor',
+        'closed': 'Kapatıldı'
+      };
+      return statusMap[status] || status || 'Bilinmeyen';
+    }
+
+    try {
+      // Load demands and bids
+      const qSent = query(
+        collection(db, "demands"),
+        where("createdBy", "==", uid)
+      );
+      
+      // Load incoming demands - all published demands (excluding own)
+      let incomingDemands = [];
+      try {
+        const qIncomingDemands = query(
+          collection(db, "demands"),
+          where("isPublished", "==", true),
+          orderBy("createdAt", "desc"),
+          limit(100)
+        );
+        const incomingSnap = await getDocs(qIncomingDemands);
+        incomingDemands = incomingSnap.docs
+          .filter(d => d.data().createdBy !== uid) // Kendi taleplerini filtrele
+          .map(d => ({ id: d.id, ...d.data() }));
+        console.log(`Dashboard: Found ${incomingDemands.length} published demands (excluding own demands)`);
+      } catch (error) {
+        console.error('Error loading incoming demands:', error);
+      }
+      
+      // Load incoming bids (bids for my demands) - same logic as bids page
+      let incomingBids = [];
+      try {
+        const ds = await getDocs(query(collection(db,'demands'), where('createdBy','==', uid)));
+        const demandIds = ds.docs.map(d=>d.id);
+        
+        for (const d of ds.docs){
+          const q = query(collection(db,'bids'), where('demandId','==', d.id), orderBy('createdAt','desc'), limit(50));
+          const snap = await getDocs(q);
+          for (const b of snap.docs){
+            const data = { id:b.id, ...b.data() };
+            incomingBids.push(data);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading incoming bids:', error);
+      }
+      
+      // Load outgoing bids (bids I sent)
+      const qOutgoingBids = query(
+        collection(db, "bids"),
+        where("supplierId", "==", uid)
+      );
+
+      const [sentSnap, outgoingBidsSnap] = await Promise.all([
+        getDocs(qSent),
+        getDocs(qOutgoingBids)
+      ]);
+
+      const sent = sentSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const outgoingBids = outgoingBidsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      
+      const drafts = sent.filter(x => !x.published);
+
+      // Update metrics
+      document.getElementById("metric-inbox").textContent = String(incomingDemands.length);
+      document.getElementById("metric-sent").textContent = String(sent.length);
+      document.getElementById("metric-draft").textContent = String(drafts.length);
+      document.getElementById("metric-incoming-bids").textContent = String(incomingBids.length);
+      document.getElementById("metric-outgoing-bids").textContent = String(outgoingBids.length);
+
+      // Sort and display last 5 demands
+      sent.sort((a, b) => {
+        const aTime = a.createdAt?.toMillis?.() || 0;
+        const bTime = b.createdAt?.toMillis?.() || 0;
+        return bTime - aTime;
+      });
+
+      const lastBody = document.getElementById("last-demands");
+      lastBody.innerHTML = "";
+      
+      const last5 = sent.slice(0, 5);
+      if (last5.length === 0) {
+        lastBody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#6b7280;padding:20px">Henüz talep yok</td></tr>';
+      } else {
+        // Her talep için bid sayısını hesapla
+        for (const x of last5) {
+          let bidCount = 0;
+          try {
+            const bidQuery = query(collection(db, 'bids'), where('demandId', '==', x.id));
+            const bidSnap = await getDocs(bidQuery);
+            bidCount = bidSnap.docs.length;
+          } catch (error) {
+            console.warn(`Bid count error for demand ${x.id}:`, error);
+          }
+          
+          const cats = [
+            ...(Array.isArray(x.categoryTags) ? x.categoryTags : []),
+            ...(x.customCategory ? [x.customCategory] : [])
+          ];
+          const catDisplay = cats.length > 0
+            ? cats.slice(0, 3).join(", ") + (cats.length > 3 ? ` +${cats.length - 3}` : "")
+            : "-";
+          
+          const statusText = translateStatus(x.status || (x.isPublished ? 'published' : 'draft'));
+          const statusBadge = x.isPublished 
+            ? `<span class="badge success">${statusText}</span>` 
+            : `<span class="badge warn">${statusText}</span>`;
+          
+          const bidDisplay = bidCount > 0 
+            ? `<span class="badge success">${bidCount} teklif</span>`
+            : '<span style="color:#6b7280">Henüz teklif yok</span>';
+          
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${x.satfk || "-"}</td>
+            <td><a href="./demand-detail.html?id=${x.id}" style="color:#3b82f6;text-decoration:none">${x.title || "-"}</a></td>
+            <td>${catDisplay}</td>
+            <td>${statusBadge}</td>
+            <td>${bidDisplay}</td>
+            <td>${x.createdAt?.toDate?.()?.toLocaleDateString?.("tr-TR") || "-"}</td>
+          `;
+          lastBody.appendChild(tr);
+        }
+      }
+    } catch (e) {
+      console.error("Dashboard data load error:", e);
+      if (e.message && e.message.includes("Missing or insufficient permissions")) {
+        console.warn("⚠️ Permission denied for dashboard data - Firestore rules may need updating");
+        // Show a user-friendly message
+        const dashboardContent = document.querySelector(".dashboard-content");
+        if (dashboardContent) {
+          dashboardContent.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: #6b7280;">
+              <h3>Dashboard verileri yüklenemedi</h3>
+              <p>Firestore güvenlik kuralları güncelleniyor. Lütfen birkaç dakika sonra tekrar deneyin.</p>
+              <p style="font-size: 14px; margin-top: 20px;">
+                <a href="./settings.html" style="color: #3b82f6;">Ayarlar</a> | 
+                <a href="./demands.html" style="color: #3b82f6;">Talepler</a> | 
+                <a href="./bids.html" style="color: #3b82f6;">Teklifler</a>
+              </p>
+            </div>
+          `;
+        }
+      }
+    }
+  </script>
+
+  <!-- TCMB FX Widget -->
+  <script type="module">
+    // Using a public FX API since /fx endpoint is not working
+    const FX_URL = "https://api.exchangerate-api.com/v4/latest/TRY";
+
+    async function loadFx() {
+      try {
+        const r = await fetch(FX_URL);
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        
+        const data = await r.json();
+        
+        // Convert to expected format (USD and EUR rates against TRY)
+        const usdRate = (1 / data.rates.USD).toFixed(4);
+        const eurRate = (1 / data.rates.EUR).toFixed(4);
+        const asOf = new Date().toLocaleDateString("tr-TR");
+        
+        document.getElementById("fx-usd").textContent = usdRate;
+        document.getElementById("fx-eur").textContent = eurRate;
+        document.getElementById("fx-time").textContent = `Tarih: ${asOf}`;
+      } catch (e) {
+        console.error("FX load error:", e);
+        document.getElementById("fx-usd").textContent = "-";
+        document.getElementById("fx-eur").textContent = "-";
+        document.getElementById("fx-time").textContent = "Kur bilgisi yüklenemedi";
+      }
+    }
+    
+    loadFx();
+    setInterval(loadFx, 60000); // Refresh every minute
+  </script>
+
+</body>
+</html>

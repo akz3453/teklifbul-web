@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gelen Talepler Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Gelen Talepler Test</h1>
+    
+    <div class="test-section info">
+        <h3>📋 Test Senaryosu</h3>
+        <p>Bu sayfa gelen taleplerin neden gözükmediğini test eder.</p>
+        <ol>
+            <li>Mevcut verileri kontrol et</li>
+            <li>Eşleştirme mantığını test et</li>
+            <li>Manuel olarak demandRecipients kaydı oluştur</li>
+        </ol>
+    </div>
+    
+    <div class="test-section">
+        <h3>🧪 Test Butonları</h3>
+        <button onclick="testCurrentData()">Mevcut Verileri Kontrol Et</button>
+        <button onclick="testMatchingLogic()">Eşleştirme Mantığını Test Et</button>
+        <button onclick="createTestDemandRecipients()">Test demandRecipients Kaydı Oluştur</button>
+    </div>
+    
+    <div id="test-results"></div>
+    
+    <script type="module">
+        import { db, auth, requireAuth } from "./firebase.js";
+        import {
+          collection, getDocs, query, where, orderBy, limit, doc, getDoc, addDoc, serverTimestamp
+        } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+        
+        let currentUser = null;
+        
+        async function init() {
+            try {
+                currentUser = await requireAuth();
+                console.log('User authenticated:', currentUser.email);
+                addResult(`✅ Kullanıcı girişi başarılı: ${currentUser.email}`, 'success');
+            } catch (error) {
+                console.error('Auth error:', error);
+                addResult('❌ Kullanıcı girişi başarısız: ' + error.message, 'error');
+            }
+        }
+        
+        function addResult(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `test-section ${type}`;
+            div.innerHTML = message;
+            document.getElementById('test-results').appendChild(div);
+        }
+        
+        function clearResults() {
+            document.getElementById('test-results').innerHTML = '';
+        }
+        
+        async function testCurrentData() {
+            clearResults();
+            addResult('<h3>🧪 Mevcut Verileri Kontrol Et</h3>', 'info');
+            
+            try {
+                // 1. Yayınlanmış talepleri kontrol et
+                const demandsQ = query(
+                    collection(db, 'demands'),
+                    where('published', '==', true),
+                    orderBy('createdAt', 'desc'),
+                    limit(5)
+                );
+                
+                const demandsSnap = await getDocs(demandsQ);
+                addResult(`📊 Yayınlanmış talep sayısı: ${demandsSnap.docs.length}`, 'info');
+                
+                // 2. Aktif tedarikçileri kontrol et
+                const suppliersQ = query(
+                    collection(db, 'users'),
+                    where('isActive', '==', true),
+                    where('roles.supplier', '==', true)
+                );
+                
+                const suppliersSnap = await getDocs(suppliersQ);
+                addResult(`📊 Aktif tedarikçi sayısı: ${suppliersSnap.docs.length}`, 'info');
+                
+                // 3. demandRecipients kayıtlarını kontrol et
+                const recipientsQ = query(
+                    collection(db, 'demandRecipients'),
+                    orderBy('matchedAt', 'desc'),
+                    limit(10)
+                );
+                
+                const recipientsSnap = await getDocs(recipientsQ);
+                addResult(`📊 demandRecipients kayıt sayısı: ${recipientsSnap.docs.length}`, 'info');
+                
+                // 4. Kullanıcının demandRecipients kayıtlarını kontrol et
+                if (currentUser) {
+                    const userRecipientsQ = query(
+                        collection(db, 'demandRecipients'),
+                        where('supplierId', '==', currentUser.uid)
+                    );
+                    
+                    const userRecipientsSnap = await getDocs(userRecipientsQ);
+                    addResult(`📊 Bu kullanıcıya ait demandRecipients kayıt sayısı: ${userRecipientsSnap.docs.length}`, 'info');
+                    
+                    if (userRecipientsSnap.docs.length === 0) {
+                        addResult('⚠️ Bu kullanıcıya ait hiç demandRecipients kaydı yok!', 'warning');
+                        addResult('Bu durumda gelen talepler gözükmeyecektir.', 'warning');
+                    }
+                }
+                
+                // 5. Sonuçları özetle
+                if (demandsSnap.docs.length === 0) {
+                    addResult('❌ Hiç yayınlanmış talep yok', 'error');
+                } else if (suppliersSnap.docs.length === 0) {
+                    addResult('❌ Hiç aktif tedarikçi yok', 'error');
+                } else if (recipientsSnap.docs.length === 0) {
+                    addResult('❌ Hiç demandRecipients kaydı yok', 'error');
+                    addResult('Bu durumda publishDemandAndMatchSuppliers fonksiyonu çalışmamış olabilir.', 'error');
+                } else {
+                    addResult('✅ Temel veriler mevcut', 'success');
+                }
+                
+            } catch (error) {
+                addResult(`❌ Veri kontrolü başarısız: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testMatchingLogic() {
+            clearResults();
+            addResult('<h3>🧪 Eşleştirme Mantığını Test Et</h3>', 'info');
+            
+            try {
+                // Son yayınlanmış talebi al
+                const demandsQ = query(
+                    collection(db, 'demands'),
+                    where('published', '==', true),
+                    orderBy('createdAt', 'desc'),
+                    limit(1)
+                );
+                
+                const demandsSnap = await getDocs(demandsQ);
+                
+                if (demandsSnap.docs.length === 0) {
+                    addResult('⚠️ Yayınlanmış talep yok, test yapılamaz', 'warning');
+                    return;
+                }
+                
+                const demandDoc = demandsSnap.docs[0];
+                const demandData = demandDoc.data();
+                const categories = demandData.categories || [];
+                
+                addResult(`<h4>Test Edilen Talep: ${demandData.title || 'Başlıksız'}</h4>`, 'info');
+                addResult(`📋 Kategoriler: ${categories.join(', ')}`, 'info');
+                
+                if (categories.length === 0) {
+                    addResult('⚠️ Bu talebin hiç kategorisi yok!', 'warning');
+                    return;
+                }
+                
+                // Bu kategorilerdeki tedarikçileri bul
+                const suppliersQ = query(
+                    collection(db, 'users'),
+                    where('isActive', '==', true),
+                    where('categories', 'array-contains-any', categories),
+                    where('roles.supplier', '==', true)
+                );
+                
+                const suppliersSnap = await getDocs(suppliersQ);
+                addResult(`📊 Bu kategorilerdeki tedarikçi sayısı: ${suppliersSnap.docs.length}`, 'info');
+                
+                if (suppliersSnap.docs.length === 0) {
+                    addResult('⚠️ Bu kategorilerde hiç tedarikçi yok!', 'warning');
+                    addResult('Bu durumda talep kimseye gitmeyecektir.', 'warning');
+                } else {
+                    addResult('✅ Eşleşen tedarikçiler:', 'success');
+                    suppliersSnap.docs.forEach((doc, index) => {
+                        const data = doc.data();
+                        addResult(`${index + 1}. ${data.companyName || 'İsimsiz'} - ${doc.id}`, 'success');
+                    });
+                }
+                
+            } catch (error) {
+                addResult(`❌ Eşleştirme testi başarısız: ${error.message}`, 'error');
+            }
+        }
+        
+        async function createTestDemandRecipients() {
+            clearResults();
+            addResult('<h3>🧪 Test demandRecipients Kaydı Oluştur</h3>', 'info');
+            
+            if (!currentUser) {
+                addResult('❌ Kullanıcı girişi gerekli', 'error');
+                return;
+            }
+            
+            try {
+                // Son yayınlanmış talebi al
+                const demandsQ = query(
+                    collection(db, 'demands'),
+                    where('published', '==', true),
+                    orderBy('createdAt', 'desc'),
+                    limit(1)
+                );
+                
+                const demandsSnap = await getDocs(demandsQ);
+                
+                if (demandsSnap.docs.length === 0) {
+                    addResult('⚠️ Yayınlanmış talep yok, test kaydı oluşturulamaz', 'warning');
+                    return;
+                }
+                
+                const demandDoc = demandsSnap.docs[0];
+                const demandData = demandDoc.data();
+                
+                // Kendi talebini kendine gönderme
+                if (demandData.createdBy === currentUser.uid) {
+                    addResult('⚠️ Bu kullanıcının kendi talebi, test kaydı oluşturulamaz', 'warning');
+                    return;
+                }
+                
+                // Test demandRecipients kaydı oluştur
+                const testRecord = {
+                    demandId: demandDoc.id,
+                    buyerId: demandData.createdBy,
+                    supplierId: currentUser.uid,
+                    matchedAt: serverTimestamp(),
+                    status: "pending",
+                    testRecord: true // Test kaydı olduğunu belirt
+                };
+                
+                await addDoc(collection(db, "demandRecipients"), testRecord);
+                
+                addResult('✅ Test demandRecipients kaydı oluşturuldu!', 'success');
+                addResult(`📋 Talep: ${demandData.title || 'Başlıksız'}`, 'info');
+                addResult(`📋 Alıcı: ${demandData.createdBy}`, 'info');
+                addResult(`📋 Tedarikçi: ${currentUser.uid}`, 'info');
+                
+                // Şimdi gelen talepler sayfasını kontrol et
+                addResult('🔄 Şimdi gelen talepler sayfasını kontrol edin: http://localhost:3000/demands.html', 'info');
+                
+            } catch (error) {
+                addResult(`❌ Test kaydı oluşturulamadı: ${error.message}`, 'error');
+                
+                if (error.message && error.message.includes('Missing or insufficient permissions')) {
+                    addResult('⚠️ Firestore güvenlik kuralları nedeniyle kayıt oluşturulamadı', 'warning');
+                }
+            }
+        }
+        
+        // Initialize
+        init();
+    </script>
+</body>
+</html>

@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kategori Gruplandırma Testi</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .badge { display:inline-block; margin:4px 6px 0 0; padding:4px 8px; border-radius:12px; background:#eef2ff; font-size:12px; cursor:pointer; }
+        .group-btn { padding: 8px 12px; margin: 4px; background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; border-radius: 6px; cursor: pointer; font-size: 12px; transition: all 0.2s; }
+        .group-btn:hover { background: #e5e7eb; }
+        .group-btn.selected { background: #10b981; color: white; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Kategori Gruplandırma Testi</h1>
+    
+    <div class="test-section info">
+        <h3>📋 Test Senaryosu</h3>
+        <p>Bu sayfa kategori gruplandırma özelliğinin düzgün çalışıp çalışmadığını test eder.</p>
+        <ol>
+            <li>Grup butonlarına tıkla ve kategorilerin eklendiğini kontrol et</li>
+            <li>Yeni grup oluştur</li>
+            <li>Grup butonlarına sağ tık yap ve düzenle/sil</li>
+            <li>Tekil kategori ekleme çalışıyor mu kontrol et</li>
+        </ol>
+    </div>
+    
+    <div class="test-section">
+        <h3>🎯 Kategori Gruplandırma Demo</h3>
+        
+        <!-- Kategori Grupları -->
+        <div id="categoryGroups" style="margin-bottom: 16px;">
+            <h4 style="margin: 8px 0; font-size: 14px; color: #374151;">📁 Kategori Grupları</h4>
+            <div id="groupButtons" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
+                <!-- Grup butonları buraya eklenecek -->
+            </div>
+            <button type="button" id="createGroupBtn" style="padding: 6px 12px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                ➕ Yeni Grup Oluştur
+            </button>
+        </div>
+        
+        <!-- Tekil Kategori Seçimi -->
+        <div style="margin-bottom: 12px;">
+            <h4 style="margin: 8px 0; font-size: 14px; color: #374151;">🏷️ Tekil Kategori Seçimi</h4>
+            <input id="catInput" placeholder="Kategori ara/ekle ve Enter'a bas" style="width:100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;" />
+        </div>
+        
+        <!-- Seçilen Kategoriler -->
+        <div>
+            <h4 style="margin: 8px 0; font-size: 14px; color: #374151;">✅ Seçilen Kategoriler</h4>
+            <div id="catChips"></div>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h3>🧪 Test Butonları</h3>
+        <button onclick="testGroupSelection()">Grup Seçimini Test Et</button>
+        <button onclick="testGroupCreation()">Grup Oluşturmayı Test Et</button>
+        <button onclick="testIndividualCategories()">Tekil Kategori Test Et</button>
+        <button onclick="clearAll()">Tümünü Temizle</button>
+    </div>
+    
+    <div id="test-results"></div>
+    
+    <script>
+        // Category Groups system
+        const categoryGroups = new Map(); // groupName -> Set of categories
+        let currentGroupName = null;
+        const chips = new Set();
+
+        function renderChips() {
+            const box = document.getElementById("catChips");
+            box.innerHTML = "";
+            [...chips].forEach(v => {
+                const span = document.createElement("span");
+                span.className = "badge";
+                span.textContent = v + " ✕";
+                span.onclick = () => { chips.delete(v); renderChips(); };
+                box.appendChild(span);
+            });
+        }
+
+        function renderGroupButtons() {
+            const container = document.getElementById("groupButtons");
+            container.innerHTML = "";
+            
+            // Varsayılan gruplar
+            const defaultGroups = [
+                { name: "İnşaat", categories: ["Beton", "Çimento", "Demir", "Tuğla", "Çatı", "İzolasyon"] },
+                { name: "Elektrik", categories: ["Kablo", "Elektrik Panosu", "Aydınlatma", "Elektrik Malzemeleri"] },
+                { name: "Makine", categories: ["Motor", "Pompa", "Kompresör", "Makine Parçaları"] },
+                { name: "Teknoloji", categories: ["Bilgisayar", "Yazılım", "Network", "Güvenlik Sistemleri"] }
+            ];
+
+            // Varsayılan grupları ekle
+            defaultGroups.forEach(group => {
+                if (!categoryGroups.has(group.name)) {
+                    categoryGroups.set(group.name, new Set(group.categories));
+                }
+            });
+
+            // Grup butonlarını render et
+            categoryGroups.forEach((categories, groupName) => {
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = "group-btn";
+                button.textContent = `${groupName} (${categories.size})`;
+                button.title = `Kategoriler: ${[...categories].join(', ')}`;
+                
+                button.addEventListener("click", () => {
+                    if (currentGroupName === groupName) {
+                        // Grup seçimini kaldır
+                        currentGroupName = null;
+                        button.classList.remove('selected');
+                    } else {
+                        // Grup seç
+                        currentGroupName = groupName;
+                        // Önceki seçimi temizle
+                        container.querySelectorAll('.group-btn').forEach(btn => {
+                            btn.classList.remove('selected');
+                        });
+                        button.classList.add('selected');
+                        
+                        // Grup kategorilerini ekle
+                        categories.forEach(cat => chips.add(cat));
+                        renderChips();
+                    }
+                });
+                
+                // Sağ tık menüsü ekle
+                button.addEventListener("contextmenu", (e) => {
+                    e.preventDefault();
+                    const action = confirm(`"${groupName}" grubunu düzenlemek istiyor musunuz?\n\nTamam = Düzenle\nİptal = Sil`);
+                    if (action) {
+                        editGroup(groupName);
+                    } else {
+                        if (confirm(`"${groupName}" grubunu silmek istediğinizden emin misiniz?`)) {
+                            categoryGroups.delete(groupName);
+                            if (currentGroupName === groupName) {
+                                currentGroupName = null;
+                            }
+                            renderGroupButtons();
+                        }
+                    }
+                });
+                
+                container.appendChild(button);
+            });
+        }
+
+        function createNewGroup() {
+            const groupName = prompt("Grup adını girin:");
+            if (!groupName || groupName.trim() === '') return;
+            
+            const trimmedName = groupName.trim();
+            if (categoryGroups.has(trimmedName)) {
+                alert("Bu grup adı zaten mevcut!");
+                return;
+            }
+            
+            // Yeni grup oluştur
+            categoryGroups.set(trimmedName, new Set());
+            
+            // Grup düzenleme modalı aç
+            editGroup(trimmedName);
+        }
+
+        function editGroup(groupName) {
+            const categories = categoryGroups.get(groupName);
+            const currentCategories = [...categories].join(', ');
+            
+            const newCategories = prompt(
+                `"${groupName}" grubu için kategorileri girin (virgülle ayırın):\n\nMevcut: ${currentCategories}`,
+                currentCategories
+            );
+            
+            if (newCategories === null) return; // İptal edildi
+            
+            // Kategorileri güncelle
+            const categoryArray = newCategories.split(',').map(cat => cat.trim()).filter(cat => cat);
+            categories.clear();
+            categoryArray.forEach(cat => categories.add(cat));
+            
+            // UI'yi güncelle
+            renderGroupButtons();
+        }
+
+        function addResult(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `test-section ${type}`;
+            div.innerHTML = message;
+            document.getElementById('test-results').appendChild(div);
+        }
+
+        function clearResults() {
+            document.getElementById('test-results').innerHTML = '';
+        }
+
+        function testGroupSelection() {
+            clearResults();
+            addResult('<h3>🧪 Grup Seçimi Testi</h3>', 'info');
+            
+            if (chips.size > 0) {
+                addResult(`✅ Seçilen kategoriler: ${[...chips].join(', ')}`, 'success');
+            } else {
+                addResult('⚠️ Henüz kategori seçilmedi', 'warning');
+            }
+            
+            if (currentGroupName) {
+                addResult(`✅ Aktif grup: ${currentGroupName}`, 'success');
+            } else {
+                addResult('ℹ️ Aktif grup yok', 'info');
+            }
+        }
+
+        function testGroupCreation() {
+            clearResults();
+            addResult('<h3>🧪 Grup Oluşturma Testi</h3>', 'info');
+            
+            const groupCount = categoryGroups.size;
+            addResult(`📊 Toplam grup sayısı: ${groupCount}`, 'info');
+            
+            categoryGroups.forEach((categories, groupName) => {
+                addResult(`📁 ${groupName}: ${categories.size} kategori (${[...categories].join(', ')})`, 'info');
+            });
+        }
+
+        function testIndividualCategories() {
+            clearResults();
+            addResult('<h3>🧪 Tekil Kategori Testi</h3>', 'info');
+            
+            // Test kategorisi ekle
+            chips.add('Test Kategori');
+            renderChips();
+            addResult('✅ Test kategorisi eklendi', 'success');
+        }
+
+        function clearAll() {
+            chips.clear();
+            currentGroupName = null;
+            renderChips();
+            renderGroupButtons();
+            clearResults();
+            addResult('🧹 Tüm veriler temizlendi', 'info');
+        }
+
+        // Event listeners
+        document.getElementById('catInput').addEventListener('keydown', e => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const v = e.target.value.trim();
+                if (v) { 
+                    chips.add(v); 
+                    renderChips(); 
+                    e.target.value = ""; 
+                }
+            }
+        });
+
+        document.getElementById('createGroupBtn').addEventListener('click', createNewGroup);
+
+        // Sayfa yüklendiğinde grup butonlarını render et
+        renderGroupButtons();
+    </script>
+</body>
+</html>

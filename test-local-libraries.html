@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Local Libraries Test</title>
+  
+  <!-- PDF & Excel Libraries (Local) -->
+  <script type="module">
+    import './assets/vendor/jspdf.umd.min.js';
+    import './assets/vendor/xlsx.full.min.js';
+    
+    // Test after libraries are loaded
+    document.addEventListener('DOMContentLoaded', function() {
+      // Test jspdf
+      try {
+        if (typeof window.jspdf !== 'undefined') {
+          console.log('✅ jsPDF loaded successfully');
+          document.getElementById('jspdf-status').textContent = '✅ jsPDF loaded';
+          document.getElementById('jspdf-status').style.color = 'green';
+        } else {
+          console.log('❌ jsPDF not loaded');
+          document.getElementById('jspdf-status').textContent = '❌ jsPDF not loaded';
+          document.getElementById('jspdf-status').style.color = 'red';
+        }
+      } catch (e) {
+        console.error('Error testing jsPDF:', e);
+        document.getElementById('jspdf-status').textContent = '❌ jsPDF error: ' + e.message;
+        document.getElementById('jspdf-status').style.color = 'red';
+      }
+      
+      // Test xlsx
+      try {
+        if (typeof window.XLSX !== 'undefined') {
+          console.log('✅ XLSX loaded successfully');
+          document.getElementById('xlsx-status').textContent = '✅ XLSX loaded';
+          document.getElementById('xlsx-status').style.color = 'green';
+        } else {
+          console.log('❌ XLSX not loaded');
+          document.getElementById('xlsx-status').textContent = '❌ XLSX not loaded';
+          document.getElementById('xlsx-status').style.color = 'red';
+        }
+      } catch (e) {
+        console.error('Error testing XLSX:', e);
+        document.getElementById('xlsx-status').textContent = '❌ XLSX error: ' + e.message;
+        document.getElementById('xlsx-status').style.color = 'red';
+      }
+    });
+  </script>
+</head>
+<body>
+  <h1>Local Libraries Test</h1>
+  
+  <div>
+    <h2>jsPDF Status: <span id="jspdf-status">⏳ Loading...</span></h2>
+    <h2>XLSX Status: <span id="xlsx-status">⏳ Loading...</span></h2>
+  </div>
+  
+  <div>
+    <h3>Test Instructions:</h3>
+    <ol>
+      <li>Open browser console (F12)</li>
+      <li>Check for any errors</li>
+      <li>Verify that both libraries load successfully</li>
+    </ol>
+  </div>
+</body>
+</html>

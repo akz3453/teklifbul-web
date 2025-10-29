@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1200</width>
+    <height>800</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Fiyat Karşılaştırma Tablosu - Teklifbul</string>
+  </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>.</normaloff>.</iconset>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <widget class="CompareView" name="compareView" native="true">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1200</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuDosya">
+    <property name="title">
+     <string>Dosya</string>
+    </property>
+    <addaction name="actionYenile"/>
+    <addaction name="separator"/>
+    <addaction name="actionExcelExport"/>
+    <addaction name="actionCSVExport"/>
+    <addaction name="separator"/>
+    <addaction name="actionCikis"/>
+   </widget>
+   <widget class="QMenu" name="menuAraclar">
+    <property name="title">
+     <string>Araçlar</string>
+    </property>
+    <addaction name="actionVendorSettings"/>
+    <addaction name="actionConfigSettings"/>
+   </widget>
+   <widget class="QMenu" name="menuYardim">
+    <property name="title">
+     <string>Yardım</string>
+    </property>
+    <addaction name="actionHakkinda"/>
+   </widget>
+   <addaction name="menuDosya"/>
+   <addaction name="menuAraclar"/>
+   <addaction name="menuYardim"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionYenile">
+   <property name="text">
+    <string>Yenile</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+R</string>
+   </property>
+   <property name="toolTip">
+    <string>Verileri yenile (Ctrl+R)</string>
+   </property>
+  </action>
+  <action name="actionExcelExport">
+   <property name="text">
+    <string>Excel İndir</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+E</string>
+   </property>
+   <property name="toolTip">
+    <string>Excel formatında dışa aktar (Ctrl+E)</string>
+   </property>
+  </action>
+  <action name="actionCSVExport">
+   <property name="text">
+    <string>CSV İndir</string>
+   </property>
+   <property name="toolTip">
+    <string>CSV formatında dışa aktar</string>
+   </property>
+  </action>
+  <action name="actionCikis">
+   <property name="text">
+    <string>Çıkış</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Q</string>
+   </property>
+  </action>
+  <action name="actionVendorSettings">
+   <property name="text">
+    <string>Tedarikçi Ayarları</string>
+   </property>
+   <property name="toolTip">
+    <string>Tedarikçi isimlerini düzenle</string>
+   </property>
+  </action>
+  <action name="actionConfigSettings">
+   <property name="text">
+    <string>Konfigürasyon Ayarları</string>
+   </property>
+   <property name="toolTip">
+    <string>Üyelik tipi ve diğer ayarlar</string>
+   </property>
+  </action>
+  <action name="actionHakkinda">
+   <property name="text">
+    <string>Hakkında</string>
+   </property>
+  </action>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>CompareView</class>
+   <extends>QWidget</extends>
+   <header>compare_view</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

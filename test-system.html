@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Test - Teklifbul</title>
+    <link rel="stylesheet" href="/utils.css">
+    <style>
+        body { font-family: system-ui, Arial; margin: 20px; background: #f9fafb; }
+        .test-container { max-width: 800px; margin: 0 auto; }
+        .test-section { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .test-result { padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .success { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+        .error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+        .warning { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+        .info { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+        button { padding: 10px 20px; margin: 5px; border: none; border-radius: 4px; cursor: pointer; }
+        .btn-primary { background: #3b82f6; color: white; }
+        .btn-success { background: #10b981; color: white; }
+        .btn-danger { background: #ef4444; color: white; }
+        pre { background: #f3f4f6; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 Teklifbul Sistem Test</h1>
+        
+        <div class="test-section">
+            <h2>Firebase Bağlantı Testi</h2>
+            <button class="btn-primary" onclick="testFirebaseConnection()">Firebase Bağlantısını Test Et</button>
+            <div id="firebase-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>Modül Yükleme Testi</h2>
+            <button class="btn-primary" onclick="testModuleLoading()">Modülleri Test Et</button>
+            <div id="module-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>Firestore Rules Testi</h2>
+            <button class="btn-primary" onclick="testFirestoreRules()">Security Rules Test Et</button>
+            <div id="rules-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>Servis Fonksiyonları Testi</h2>
+            <button class="btn-primary" onclick="testServices()">Servisleri Test Et</button>
+            <div id="services-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>UI Bileşenleri Testi</h2>
+            <button class="btn-primary" onclick="testUIComponents()">UI Bileşenlerini Test Et</button>
+            <div id="ui-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>Hata Yönetimi Testi</h2>
+            <button class="btn-danger" onclick="testErrorHandling()">Hata Senaryolarını Test Et</button>
+            <div id="error-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>Test Sonuçları</h2>
+            <div id="overall-result"></div>
+            <button class="btn-success" onclick="runAllTests()">Tüm Testleri Çalıştır</button>
+        </div>
+    </div>
+    
+    <script type="module">
+        import { db, auth } from './firebase.js';
+        import { handleError, renderEmptyState, showToastNotification } from './assets/js/ui/errors.js';
+        import { getPublicDemands } from './assets/js/services/demands.js';
+        import { findMatchingSuppliers } from './assets/js/services/suppliers.js';
+        import { initTabs } from './assets/js/ui/tabs.js';
+        import { initCompanySelector } from './assets/js/ui/company-selector.js';
+
+        let testResults = {
+            firebase: false,
+            modules: false,
+            rules: false,
+            services: false,
+            ui: false,
+            errors: false
+        };
+
+        window.testFirebaseConnection = async function() {
+            const resultDiv = document.getElementById('firebase-result');
+            resultDiv.innerHTML = '<div class="info">Firebase bağlantısı test ediliyor...</div>';
+            
+            try {
+                // Test Firebase connection using v9 syntax
+                const { collection, doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js');
+                const testDocRef = doc(collection(db, 'test'), 'connection');
+                const testDoc = await getDoc(testDocRef);
+                
+                resultDiv.innerHTML = `
+                    <div class="success">✅ Firebase bağlantısı başarılı!</div>
+                    <pre>Database: ${db.app.name}
+Auth: ${auth.currentUser ? 'Kullanıcı giriş yapmış' : 'Kullanıcı giriş yapmamış'}</pre>
+                `;
+                testResults.firebase = true;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">❌ Firebase bağlantı hatası:</div>
+                    <pre>${error.message}</pre>
+                `;
+                testResults.firebase = false;
+            }
+        };
+
+        window.testModuleLoading = async function() {
+            const resultDiv = document.getElementById('module-result');
+            resultDiv.innerHTML = '<div class="info">Modüller yükleniyor...</div>';
+            
+            try {
+                const modules = [
+                    { name: 'Error Handler', module: handleError },
+                    { name: 'Demands Service', module: getPublicDemands },
+                    { name: 'Suppliers Service', module: findMatchingSuppliers },
+                    { name: 'Tabs UI', module: initTabs },
+                    { name: 'Company Selector', module: initCompanySelector }
+                ];
+
+                let successCount = 0;
+                let moduleResults = [];
+
+                for (const { name, module } of modules) {
+                    if (typeof module === 'function') {
+                        moduleResults.push(`✅ ${name}: Yüklendi`);
+                        successCount++;
+                    } else {
+                        moduleResults.push(`❌ ${name}: Yüklenemedi`);
+                    }
+                }
+
+                resultDiv.innerHTML = `
+                    <div class="${successCount === modules.length ? 'success' : 'warning'}">
+                        ${successCount}/${modules.length} modül başarıyla yüklendi
+                    </div>
+                    <pre>${moduleResults.join('\n')}</pre>
+                `;
+                testResults.modules = successCount === modules.length;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">❌ Modül yükleme hatası:</div>
+                    <pre>${error.message}</pre>
+                `;
+                testResults.modules = false;
+            }
+        };
+
+        window.testFirestoreRules = async function() {
+            const resultDiv = document.getElementById('rules-result');
+            resultDiv.innerHTML = '<div class="info">Firestore rules test ediliyor...</div>';
+            
+            try {
+                // Test basic read/write operations using v9 syntax
+                const { collection, doc, addDoc, getDoc, deleteDoc } = await import('https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js');
+                
+                const testData = {
+                    title: 'Test Demand',
+                    createdBy: 'test-user',
+                    isPublished: false,
+                    visibility: 'private',
+                    createdAt: new Date()
+                };
+
+                // Try to create a test document
+                const demandsCollection = collection(db, 'demands');
+                const docRef = await addDoc(demandsCollection, testData);
+                
+                // Try to read it back
+                const docSnap = await getDoc(docRef);
+                
+                if (docSnap.exists()) {
+                    resultDiv.innerHTML = `
+                        <div class="success">✅ Firestore rules çalışıyor!</div>
+                        <pre>Test dokümanı oluşturuldu ve okundu: ${docRef.id}</pre>
+                    `;
+                    testResults.rules = true;
+                    
+                    // Clean up test document
+                    await deleteDoc(docRef);
+            } else {
+                    throw new Error('Doküman oluşturulamadı');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">❌ Firestore rules hatası:</div>
+                    <pre>${error.message}</pre>
+                `;
+                testResults.rules = false;
+            }
+        };
+
+        window.testServices = async function() {
+            const resultDiv = document.getElementById('services-result');
+            resultDiv.innerHTML = '<div class="info">Servis fonksiyonları test ediliyor...</div>';
+            
+            try {
+                // Test demands service
+                const demands = await getPublicDemands(5);
+                
+                // Test suppliers service
+                const suppliers = await findMatchingSuppliers(['electronics'], 5);
+                
+                resultDiv.innerHTML = `
+                    <div class="success">✅ Servis fonksiyonları çalışıyor!</div>
+                    <pre>Public Demands: ${demands.length} adet
+Matching Suppliers: ${suppliers.length} adet</pre>
+                `;
+                testResults.services = true;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">❌ Servis fonksiyonu hatası:</div>
+                    <pre>${error.message}</pre>
+                `;
+                testResults.services = false;
+            }
+        };
+
+        window.testUIComponents = async function() {
+            const resultDiv = document.getElementById('ui-result');
+            resultDiv.innerHTML = '<div class="info">UI bileşenleri test ediliyor...</div>';
+            
+            try {
+                // Test error handling
+                const testError = new Error('Test error message');
+                const errorResult = handleError(testError, { context: 'Test' });
+                
+                // Test empty state rendering
+                const testDiv = document.createElement('div');
+                renderEmptyState(testDiv, 'Test empty state');
+                
+                // Test toast notification
+                showToastNotification('Test toast message', 'info', 2000);
+                
+                resultDiv.innerHTML = `
+                    <div class="success">✅ UI bileşenleri çalışıyor!</div>
+                    <pre>Error Handler: ${errorResult ? 'Çalışıyor' : 'Hata'}
+Empty State: ${testDiv.innerHTML.includes('Test empty state') ? 'Çalışıyor' : 'Hata'}
+Toast Notification: Gösterildi</pre>
+                `;
+                testResults.ui = true;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">❌ UI bileşeni hatası:</div>
+                    <pre>${error.message}</pre>
+                `;
+                testResults.ui = false;
+            }
+        };
+
+        window.testErrorHandling = async function() {
+            const resultDiv = document.getElementById('error-result');
+            resultDiv.innerHTML = '<div class="info">Hata yönetimi test ediliyor...</div>';
+            
+            try {
+                // Test various error scenarios
+                const errors = [
+                    { code: 'permission-denied', message: 'Permission denied error' },
+                    { code: 'not-found', message: 'Not found error' },
+                    { code: 'unavailable', message: 'Service unavailable error' },
+                    { message: 'Generic error message' }
+                ];
+
+                let errorResults = [];
+                for (const error of errors) {
+                    const result = handleError(error, { context: 'Error Test' });
+                    errorResults.push(`${error.code || 'generic'}: ${result.message}`);
+                }
+
+                resultDiv.innerHTML = `
+                    <div class="success">✅ Hata yönetimi çalışıyor!</div>
+                    <pre>${errorResults.join('\n')}</pre>
+                `;
+                testResults.errors = true;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">❌ Hata yönetimi test hatası:</div>
+                    <pre>${error.message}</pre>
+                `;
+                testResults.errors = false;
+            }
+        };
+
+        window.runAllTests = async function() {
+            const resultDiv = document.getElementById('overall-result');
+            resultDiv.innerHTML = '<div class="info">Tüm testler çalıştırılıyor...</div>';
+            
+            // Run all tests
+            await testFirebaseConnection();
+            await testModuleLoading();
+            await testFirestoreRules();
+            await testServices();
+            await testUIComponents();
+            await testErrorHandling();
+            
+            // Calculate overall result
+            const passedTests = Object.values(testResults).filter(Boolean).length;
+            const totalTests = Object.keys(testResults).length;
+            const successRate = (passedTests / totalTests) * 100;
+            
+            const overallClass = successRate === 100 ? 'success' : successRate >= 80 ? 'warning' : 'error';
+            
+            resultDiv.innerHTML = `
+                <div class="${overallClass}">
+                    <h3>Test Sonuçları: ${passedTests}/${totalTests} (${successRate.toFixed(1)}%)</h3>
+                    <pre>Firebase Bağlantı: ${testResults.firebase ? '✅' : '❌'}
+Modül Yükleme: ${testResults.modules ? '✅' : '❌'}
+Firestore Rules: ${testResults.rules ? '✅' : '❌'}
+Servis Fonksiyonları: ${testResults.services ? '✅' : '❌'}
+UI Bileşenleri: ${testResults.ui ? '✅' : '❌'}
+Hata Yönetimi: ${testResults.errors ? '✅' : '❌'}</pre>
+                </div>
+            `;
+        };
+
+        // Auto-run tests on page load
+        window.addEventListener('load', () => {
+            setTimeout(runAllTests, 1000);
+        });
+    </script>
+</body>
+</html>

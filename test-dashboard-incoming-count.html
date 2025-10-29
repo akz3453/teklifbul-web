@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Test - Gelen Talepler Sayısı</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
+        .result { margin: 10px 0; padding: 10px; background: #f5f5f5; border-radius: 4px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        button { padding: 10px 15px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Dashboard Test - Gelen Talepler Sayısı</h1>
+    
+    <div class="test-section">
+        <h3>1. Firebase Bağlantısı</h3>
+        <button onclick="testFirebaseConnection()">Firebase Bağlantısını Test Et</button>
+        <div id="firebase-result" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>2. Gelen Talepler Sayısı (Dashboard Mantığı)</h3>
+        <button onclick="testIncomingDemandsCount()">Gelen Talepler Sayısını Test Et</button>
+        <div id="incoming-result" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>3. Tüm Yayınlanmış Talepler</h3>
+        <button onclick="testAllPublishedDemands()">Tüm Yayınlanmış Talepleri Listele</button>
+        <div id="published-result" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>4. Dashboard'a Git</h3>
+        <button onclick="window.open('./dashboard.html', '_blank')">Dashboard'ı Aç</button>
+        <p>Dashboard'da "Gelen Talepler" sayısının doğru gösterilip gösterilmediğini kontrol edin.</p>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+        import { getFirestore, collection, query, where, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBvOkBwJ1b3XhYqJ8K9L2mN3oP4qR5sT6u",
+            authDomain: "teklifbul-387310.firebaseapp.com",
+            projectId: "teklifbul-387310",
+            storageBucket: "teklifbul-387310.firebasestorage.app",
+            messagingSenderId: "123456789012",
+            appId: "1:123456789012:web:abcdef1234567890abcdef"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        window.testFirebaseConnection = function() {
+            const resultDiv = document.getElementById('firebase-result');
+            try {
+                resultDiv.innerHTML = '<div class="success">✅ Firebase bağlantısı başarılı!</div>';
+                resultDiv.innerHTML += `<div>Database: ${db ? 'Bağlı' : 'Bağlı değil'}</div>`;
+                resultDiv.innerHTML += `<div>Auth: ${auth ? 'Bağlı' : 'Bağlı değil'}</div>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Firebase bağlantı hatası: ${error.message}</div>`;
+            }
+        };
+
+        window.testIncomingDemandsCount = async function() {
+            const resultDiv = document.getElementById('incoming-result');
+            resultDiv.innerHTML = '⏳ Yükleniyor...';
+            
+            try {
+                // Dashboard mantığı ile aynı sorgu
+                const qIncomingDemands = query(
+                    collection(db, "demands"),
+                    where("published", "==", true),
+                    where("demandCode", "!=", null),
+                    orderBy("createdAt", "desc"),
+                    limit(100)
+                );
+                
+                const incomingSnap = await getDocs(qIncomingDemands);
+                const incomingDemands = incomingSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                
+                resultDiv.innerHTML = `
+                    <div class="success">✅ Gelen Talepler Sayısı: ${incomingDemands.length}</div>
+                    <div>Toplam yayınlanmış talep: ${incomingSnap.size}</div>
+                    <div>İşlenen talep: ${incomingDemands.length}</div>
+                `;
+                
+                if (incomingDemands.length > 0) {
+                    resultDiv.innerHTML += '<div><strong>İlk 3 talep:</strong></div>';
+                    incomingDemands.slice(0, 3).forEach((demand, index) => {
+                        resultDiv.innerHTML += `
+                            <div style="margin-left: 20px; font-size: 12px;">
+                                ${index + 1}. ${demand.title || 'Başlık yok'} - Kod: ${demand.demandCode || 'Kod yok'}
+                            </div>
+                        `;
+                    });
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Hata: ${error.message}</div>`;
+                if (error.message.includes('index')) {
+                    resultDiv.innerHTML += '<div>💡 Firestore index hatası. Konsoldaki "Create index" linkine tıklayın.</div>';
+                }
+            }
+        };
+
+        window.testAllPublishedDemands = async function() {
+            const resultDiv = document.getElementById('published-result');
+            resultDiv.innerHTML = '⏳ Yükleniyor...';
+            
+            try {
+                // Tüm yayınlanmış talepleri al
+                const qAllPublished = query(
+                    collection(db, "demands"),
+                    where("published", "==", true),
+                    orderBy("createdAt", "desc"),
+                    limit(50)
+                );
+                
+                const allPublishedSnap = await getDocs(qAllPublished);
+                const allPublished = allPublishedSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                
+                const withCodes = allPublished.filter(d => d.demandCode);
+                const withoutCodes = allPublished.filter(d => !d.demandCode);
+                
+                resultDiv.innerHTML = `
+                    <div class="success">✅ Tüm Yayınlanmış Talepler Analizi</div>
+                    <div>Toplam yayınlanmış talep: ${allPublished.length}</div>
+                    <div>Kodlu talepler: ${withCodes.length}</div>
+                    <div>Kodsuz talepler: ${withoutCodes.length}</div>
+                `;
+                
+                if (withCodes.length > 0) {
+                    resultDiv.innerHTML += '<div><strong>Kodlu talepler:</strong></div>';
+                    withCodes.slice(0, 5).forEach((demand, index) => {
+                        resultDiv.innerHTML += `
+                            <div style="margin-left: 20px; font-size: 12px;">
+                                ${index + 1}. ${demand.title || 'Başlık yok'} - Kod: ${demand.demandCode}
+                            </div>
+                        `;
+                    });
+                }
+                
+                if (withoutCodes.length > 0) {
+                    resultDiv.innerHTML += '<div><strong>Kodsuz talepler:</strong></div>';
+                    withoutCodes.slice(0, 3).forEach((demand, index) => {
+                        resultDiv.innerHTML += `
+                            <div style="margin-left: 20px; font-size: 12px;">
+                                ${index + 1}. ${demand.title || 'Başlık yok'} - Kod: Yok
+                            </div>
+                        `;
+                    });
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Hata: ${error.message}</div>`;
+            }
+        };
+
+        // Sayfa yüklendiğinde otomatik test
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                console.log('Kullanıcı giriş yapmış:', user.email);
+                document.getElementById('firebase-result').innerHTML = `
+                    <div class="success">✅ Kullanıcı giriş yapmış: ${user.email}</div>
+                `;
+            } else {
+                console.log('Kullanıcı giriş yapmamış');
+                document.getElementById('firebase-result').innerHTML = `
+                    <div class="error">❌ Kullanıcı giriş yapmamış. Lütfen giriş yapın.</div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>

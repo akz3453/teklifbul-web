@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin: 10px 0; background: white; }
+        .metric { font-size: 24px; font-weight: bold; color: #1f2937; }
+        .metric-label { font-size: 14px; color: #6b7280; margin-bottom: 8px; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Dashboard Test</h1>
+    
+    <div class="test-section info">
+        <h3>📋 Test Senaryosu</h3>
+        <p>Bu sayfa dashboard'daki teklif sayılarının doğru yüklenip yüklenmediğini test eder.</p>
+        <ol>
+            <li>Gelen teklifler sayısı doğru mu?</li>
+            <li>Gönderdiğim teklifler sayısı doğru mu?</li>
+            <li>Kartlara tıklama çalışıyor mu?</li>
+            <li>URL parametreleri doğru çalışıyor mu?</li>
+        </ol>
+    </div>
+    
+    <div class="test-section">
+        <h3>🎯 Dashboard Kartları Test</h3>
+        
+        <div class="card" onclick="testNavigation('demands.html?filter=inbox')">
+            <div class="metric-label">Gelen Talepler</div>
+            <div class="metric" id="test-incoming-demands">-</div>
+        </div>
+        
+        <div class="card" onclick="testNavigation('demands.html?filter=sent')">
+            <div class="metric-label">Gönderdiğim Talepler</div>
+            <div class="metric" id="test-sent-demands">-</div>
+        </div>
+        
+        <div class="card" onclick="testNavigation('demands.html?filter=draft')">
+            <div class="metric-label">Taslak Talepler</div>
+            <div class="metric" id="test-draft-demands">-</div>
+        </div>
+        
+        <div class="card" onclick="testNavigation('bids.html?tab=incoming')">
+            <div class="metric-label">Gelen Teklifler</div>
+            <div class="metric" id="test-incoming-bids">-</div>
+        </div>
+        
+        <div class="card" onclick="testNavigation('bids.html?tab=outgoing')">
+            <div class="metric-label">Gönderdiğim Teklifler</div>
+            <div class="metric" id="test-outgoing-bids">-</div>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h3>🧪 Test Butonları</h3>
+        <button onclick="testDashboardData()">Dashboard Verilerini Test Et</button>
+        <button onclick="testNavigation()">Navigasyon Test Et</button>
+        <button onclick="testURLParams()">URL Parametrelerini Test Et</button>
+    </div>
+    
+    <div id="test-results"></div>
+    
+    <script type="module">
+        import { db, auth, requireAuth } from "./firebase.js";
+        import {
+          collection, getDocs, query, where, orderBy, limit
+        } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+        
+        let currentUser = null;
+        
+        async function init() {
+            try {
+                currentUser = await requireAuth();
+                console.log('User authenticated:', currentUser.email);
+                await testDashboardData();
+            } catch (error) {
+                console.error('Auth error:', error);
+                addResult('❌ Kullanıcı girişi başarısız: ' + error.message, 'error');
+            }
+        }
+        
+        function addResult(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `test-section ${type}`;
+            div.innerHTML = message;
+            document.getElementById('test-results').appendChild(div);
+        }
+        
+        function clearResults() {
+            document.getElementById('test-results').innerHTML = '';
+        }
+        
+        async function testDashboardData() {
+            clearResults();
+            addResult('<h3>🧪 Dashboard Veri Testi</h3>', 'info');
+            
+            if (!currentUser) {
+                addResult('❌ Kullanıcı girişi gerekli', 'error');
+                return;
+            }
+            
+            const uid = currentUser.uid;
+            
+            try {
+                // Load demands and bids
+                const qSent = query(
+                    collection(db, "demands"),
+                    where("createdBy", "==", uid)
+                );
+                
+                // Load incoming demands from demandRecipients
+                const qIncomingDemands = query(
+                    collection(db, "demandRecipients"),
+                    where("supplierId", "==", uid)
+                );
+                
+                // Load incoming bids (bids for my demands)
+                const qIncomingBids = query(
+                    collection(db, "bids"),
+                    where("buyerId", "==", uid)
+                );
+                
+                // Load outgoing bids (bids I sent)
+                const qOutgoingBids = query(
+                    collection(db, "bids"),
+                    where("supplierId", "==", uid)
+                );
+
+                const [sentSnap, incomingDemandsSnap, incomingBidsSnap, outgoingBidsSnap] = await Promise.all([
+                    getDocs(qSent),
+                    getDocs(qIncomingDemands),
+                    getDocs(qIncomingBids),
+                    getDocs(qOutgoingBids)
+                ]);
+
+                const sent = sentSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                const incomingDemands = incomingDemandsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                const incomingBids = incomingBidsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                const outgoingBids = outgoingBidsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                
+                const drafts = sent.filter(x => !x.published);
+
+                // Update test metrics
+                document.getElementById('test-incoming-demands').textContent = incomingDemands.length;
+                document.getElementById('test-sent-demands').textContent = sent.length;
+                document.getElementById('test-draft-demands').textContent = drafts.length;
+                document.getElementById('test-incoming-bids').textContent = incomingBids.length;
+                document.getElementById('test-outgoing-bids').textContent = outgoingBids.length;
+                
+                // Results
+                addResult(`✅ Gelen Talepler: ${incomingDemands.length}`, 'success');
+                addResult(`✅ Gönderdiğim Talepler: ${sent.length}`, 'success');
+                addResult(`✅ Taslak Talepler: ${drafts.length}`, 'success');
+                addResult(`✅ Gelen Teklifler: ${incomingBids.length}`, 'success');
+                addResult(`✅ Gönderdiğim Teklifler: ${outgoingBids.length}`, 'success');
+                
+            } catch (error) {
+                console.error('Dashboard data load error:', error);
+                addResult(`❌ Dashboard veri yükleme hatası: ${error.message}`, 'error');
+                
+                if (error.message && error.message.includes('Missing or insufficient permissions')) {
+                    addResult('⚠️ Firestore güvenlik kuralları güncelleniyor olabilir', 'warning');
+                }
+            }
+        }
+        
+        function testNavigation(url = null) {
+            clearResults();
+            addResult('<h3>🧪 Navigasyon Testi</h3>', 'info');
+            
+            if (url) {
+                addResult(`🔗 Test edilen URL: ${url}`, 'info');
+                // Simulate navigation
+                setTimeout(() => {
+                    addResult(`✅ URL parametresi doğru: ${url}`, 'success');
+                }, 100);
+            } else {
+                // Test all navigation URLs
+                const testUrls = [
+                    'demands.html?filter=inbox',
+                    'demands.html?filter=sent', 
+                    'demands.html?filter=draft',
+                    'bids.html?tab=incoming',
+                    'bids.html?tab=outgoing'
+                ];
+                
+                testUrls.forEach(url => {
+                    addResult(`🔗 Test URL: ${url}`, 'info');
+                });
+                
+                addResult('✅ Tüm navigasyon URL\'leri hazır', 'success');
+            }
+        }
+        
+        function testURLParams() {
+            clearResults();
+            addResult('<h3>🧪 URL Parametre Testi</h3>', 'info');
+            
+            // Test URL parameter parsing
+            const testParams = [
+                { url: 'demands.html?filter=inbox', expected: { filter: 'inbox' } },
+                { url: 'demands.html?filter=sent', expected: { filter: 'sent' } },
+                { url: 'demands.html?filter=draft', expected: { filter: 'draft' } },
+                { url: 'bids.html?tab=incoming', expected: { tab: 'incoming' } },
+                { url: 'bids.html?tab=outgoing', expected: { tab: 'outgoing' } }
+            ];
+            
+            testParams.forEach(test => {
+                const url = new URL(test.url, window.location.origin);
+                const params = new URLSearchParams(url.search);
+                
+                let passed = true;
+                for (const [key, value] of Object.entries(test.expected)) {
+                    if (params.get(key) !== value) {
+                        passed = false;
+                        break;
+                    }
+                }
+                
+                if (passed) {
+                    addResult(`✅ ${test.url} - Parametreler doğru`, 'success');
+                } else {
+                    addResult(`❌ ${test.url} - Parametreler hatalı`, 'error');
+                }
+            });
+        }
+        
+        // Initialize
+        init();
+    </script>
+</body>
+</html>

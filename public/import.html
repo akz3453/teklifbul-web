@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>Excel’den Talep İçe Aktarma</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="/css/ui-standard.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="section-header"><span>📤</span><span>Excel’den Talep İçe Aktarma</span></div>
+
+    <div class="card">
+      <h3>Dosya Yükle</h3>
+      <input id="file" type="file" accept=".xlsx,.docx,.pdf" />
+      <div class="muted small">Desteklenen formatlar: .xlsx, .docx, .pdf</div>
+      <button id="btnPreview" class="btn btn-primary">Önizleme</button>
+    </div>
+
+    <div id="preview" class="card" style="display:none">
+      <h3>Önizleme</h3>
+      <div id="meta" class="muted small"></div>
+      <h4 style="margin-top:8px">Talep</h4>
+      <pre id="demandBox" style="white-space:pre-wrap;background:#f7f9ff;border:1px solid #e5e7eb;border-radius:8px;padding:10px"></pre>
+      <h4 style="margin-top:8px">İlk 5 Kalem</h4>
+      <table class="table" id="itemsTable"></table>
+      <div style="margin-top:10px">
+        <label><input type="checkbox" id="sendNow"> Oluşturunca kategorilere göre tedarikçilere gönder</label>
+      </div>
+      <button id="btnCommit" class="btn btn-primary">Talebi Oluştur</button>
+    </div>
+
+    <div id="result" class="card" style="display:none">
+      <h3>Sonuç</h3>
+      <pre id="resultBox" style="white-space:pre-wrap;background:#f7f9ff;border:1px solid #e5e7eb;border-radius:8px;padding:10px"></pre>
+    </div>
+  </div>
+  <script type="module" src="/js/import.js"></script>
+  <script>
+    // SPA uygulaması yönlendirmesin diye basit bir guard
+    window.__IMPORT_PAGE__ = true;
+  </script>
+</body>
+</html>
+
+

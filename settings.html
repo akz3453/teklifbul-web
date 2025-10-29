@@ -1,0 +1,1190 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>Ayarlar — Teklifbul</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%233b82f6' rx='6'/%3E%3Ctext x='16' y='22' font-family='Arial' font-size='18' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/utils.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <style>
+    body { margin: 0; font-family: system-ui, Arial; background: #f9fafb; }
+    .container { max-width: none; margin: 0; padding: 20px; width: 100%; }
+    .section { background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .section h3 { margin: 0 0 16px 0; font-size: 18px; color: #1f2937; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+    .full { grid-column: 1 / -1; }
+    label { font-weight: 600; font-size: 14px; color: #374151; display: block; margin-bottom: 6px; }
+    label.required::after { content: " *"; color: #dc2626; }
+    input[type="text"], input[type="email"], input[type="url"], textarea, select {
+      width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; 
+      font-size: 14px; box-sizing: border-box; transition: border-color 0.2s;
+    }
+    input:focus, textarea:focus, select:focus { outline: none; border-color: #3b82f6; }
+    textarea { resize: vertical; font-family: inherit; }
+    .radio-group { display: flex; gap: 20px; align-items: center; margin-top: 6px; }
+    .radio-group label { font-weight: 400; display: flex; align-items: center; gap: 6px; margin: 0; }
+    .chip-wrap { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; min-height: 32px; }
+    .chip { display: inline-block; padding: 6px 12px; border-radius: 16px; background: #e0e7ff; 
+            color: #3730a3; font-size: 13px; cursor: pointer; transition: all 0.2s; }
+    .chip:hover { background: #c7d2fe; }
+    .table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    .table th, .table td { padding: 10px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+    .table th { background: #f9fafb; font-weight: 600; font-size: 13px; color: #6b7280; }
+    .table input, .table select { margin: 0; }
+    .table button { padding: 6px 12px; font-size: 13px; }
+    .btn { padding: 12px 24px; border: none; border-radius: 6px; font-weight: 600; 
+           cursor: pointer; font-size: 14px; transition: all 0.2s; }
+    .btn-primary { background: #3b82f6; color: white; }
+    .btn-primary:hover { background: #2563eb; }
+    .btn-secondary { background: #6b7280; color: white; }
+    .btn-secondary:hover { background: #4b5563; }
+    .btn-danger { background: #ef4444; color: white; padding: 6px 12px; font-size: 13px; }
+    .btn-danger:hover { background: #dc2626; }
+    .muted { opacity: 0.7; font-size: 13px; color: #6b7280; }
+    .info-box { background: #f0f9ff; border-left: 4px solid #3b82f6; padding: 12px; 
+                margin: 16px 0; border-radius: 4px; font-size: 14px; color: #1e40af; }
+    .file-upload { display: flex; flex-direction: column; gap: 8px; }
+    .file-info { font-size: 13px; color: #059669; font-weight: 500; }
+  </style>
+  <style>
+    /* Theme-aware overrides using CSS variables */
+    html, body { background: var(--surface) !important; color: var(--text) !important; }
+    .section { background: var(--surface) !important; border-color: var(--border) !important; }
+    .section h3 { color: var(--text) !important; border-bottom-color: var(--border) !important; }
+    input[type="text"], input[type="email"], input[type="url"], textarea, select {
+      background: var(--surface) !important; color: var(--text) !important; border-color: var(--border) !important;
+    }
+    .muted { color: var(--text-muted) !important; }
+    .table th, .table td { border-bottom-color: var(--border) !important; }
+    .table th { background: var(--surface) !important; color: var(--text-muted) !important; }
+  </style>
+</head>
+<body>
+  <!-- Common Header -->
+  <header id="app-header"></header>
+
+  <div class="container--wide" style="padding:20px 0">
+    <h1 style="margin: 20px 0;">Hesap Ayarları</h1>
+    <p class="muted">Profil bilgilerinizi güncelleyin. Bu bilgiler talep ve teklif süreçlerinde kullanılır.</p>
+
+    <!-- Role & Company Info -->
+    <div class="section">
+      <h3>Firma Bilgileri</h3>
+      
+      <div class="row">
+        <div>
+          <label>Roller</label>
+          <div class="radio-group">
+            <label><input type="checkbox" id="roleBuyer" value="buyer"> Alıcı</label>
+            <label><input type="checkbox" id="roleSupplier" value="supplier"> Tedarikçi</label>
+          </div>
+          <p class="muted" style="margin-top:4px; font-size:12px;">Alıcı → kendi taleplerini açar. Tedarikçi → kategorisine uygun talepleri görür.</p>
+        </div>
+        <div>
+          <label for="displayName">Görünen Ad</label>
+          <input type="text" id="displayName" placeholder="Ad Soyad / Yetkili kişi" />
+        </div>
+      </div>
+      
+      <div class="row">
+        <div>
+          <label>Premium Hesap</label>
+          <div class="radio-group">
+            <label><input type="checkbox" id="isPremium"> Premium hesap</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="companyName" class="required">Şirket Adı</label>
+          <input type="text" id="companyName" required />
+        </div>
+        <div>
+          <label for="taxNumber" class="required">Vergi No</label>
+          <input type="text" id="taxNumber" required placeholder="10 haneli vergi numarası" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="mersisNo">MERSİS No</label>
+          <input type="text" id="mersisNo" placeholder="16 haneli MERSİS numarası" />
+        </div>
+        <div>
+          <label for="website">Web Sitesi</label>
+          <input type="url" id="website" placeholder="https://www.sirketim.com" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="full">
+          <label for="invoiceAddress" class="required">Fatura Adresi *</label>
+          <textarea id="invoiceAddress" rows="3" placeholder="Fatura adresi (zorunlu)" required></textarea>
+          <p class="muted" style="margin-top:4px">Bu adres tedarikçi firmaların fatura kesmesi için kullanılacak</p>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="full">
+          <label for="taxOffice">Vergi Dairesi</label>
+          <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+            <select id="taxOfficeSelect" style="flex: 1;">
+              <option value="">Vergi dairesi seçin</option>
+              <option value="custom">Elle yaz</option>
+            </select>
+            <button type="button" id="refreshTaxOfficesBtn" style="padding: 8px 12px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+              🔄 Yenile
+            </button>
+          </div>
+          <input type="text" id="taxOffice" placeholder="Vergi dairesi adı" />
+        </div>
+      </div>
+
+      <!-- İlave Adresler -->
+      <div class="row">
+        <div class="full">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <label>İlave Adresler</label>
+            <button type="button" id="addAddressBtn" onclick="addAddress()" style="padding: 8px 12px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+              ➕ Adres Ekle
+            </button>
+          </div>
+          <div id="additionalAddresses">
+            <!-- Dinamik adres alanları buraya eklenecek -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contact Info -->
+    <div class="section">
+      <h3>İletişim Bilgileri</h3>
+      
+      <div class="row">
+        <div>
+          <label for="emailInput">E-posta Adresleri</label>
+          <input type="email" id="emailInput" placeholder="E-posta ekleyin ve Enter'a basın" />
+          <div id="emailChips" class="chip-wrap"></div>
+          <p class="muted" style="margin-top:4px">Birden fazla e-posta ekleyebilirsiniz</p>
+        </div>
+        <div>
+          <label for="phoneInput">Telefon / WhatsApp</label>
+          <input type="text" id="phoneInput" placeholder="+90 XXX XXX XX XX" />
+          <div id="phoneChips" class="chip-wrap"></div>
+          <p class="muted" style="margin-top:4px">Birden fazla telefon ekleyebilirsiniz</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Supplier Categories -->
+    <div class="section" id="secSupplierCats" style="display:block;">
+      <section class="category-section">
+        <div class="category-header">
+          <h3>Tedarikçi Kategorileri</h3>
+          <input id="catSearch" class="category-search" type="search" placeholder="Ara..." aria-label="Kategori ara">
+        </div>
+        
+        <div class="info-box">
+          <strong>ℹ️ Önemli:</strong> Seçtiğiniz kategoriler, size yönlendirilecek talepleri belirler. 
+          En az bir kategori seçmelisiniz.
+        </div>
+        
+        <div id="catList" class="category-list">
+          <!-- Kategoriler JavaScript ile doldurulacak -->
+        </div>
+        
+        <div class="category-actions">
+          <button type="button" id="btnSelectAll" class="btn btn-secondary">Tümünü Seç</button>
+          <button type="button" id="btnClear" class="btn btn-secondary">Temizle</button>
+        </div>
+        
+        <div id="catChips" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px"></div>
+        <small class="muted">İpucu: Arayıp kutucukları işaretleyin. "Tümünü Seç" ile tüm tedarikçi gruplarını tek tuşla seçebilirsiniz.</small>
+      </section>
+    </div>
+    
+    <!-- Buyer Categories -->
+    <div class="section" id="secBuyerCats" style="display:none;">
+      <section class="category-section">
+        <div class="category-header">
+          <h3>Alıcı Kategorileri</h3>
+          <input id="buyerCatSearch" class="category-search" type="search" placeholder="Ara..." aria-label="Kategori ara">
+        </div>
+        
+        <div class="info-box">
+          <strong>ℹ️ Bilgi:</strong> Kendi taleplerinizi kategorize etmek için kullanılır. Sadece etiketleme amaçlıdır.
+        </div>
+        
+        <div id="buyerCatList" class="category-list">
+          <!-- Kategoriler JavaScript ile doldurulacak -->
+        </div>
+        
+        <div class="category-actions">
+          <button type="button" id="btnSelectAllBuyer" class="btn btn-secondary">Tümünü Seç</button>
+          <button type="button" id="btnClearBuyer" class="btn btn-secondary">Temizle</button>
+        </div>
+        
+        <div id="buyerCatChips" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px"></div>
+        <small class="muted">İpucu: Arayıp kutucukları işaretleyin. "Tümünü Seç" ile tüm alıcı kategorilerini tek tuşla seçebilirsiniz.</small>
+      </section>
+    </div>
+
+    <!-- Tax Certificate -->
+    <div class="section">
+      <h3>Vergi Levhası</h3>
+      
+      <div class="file-upload">
+        <label for="taxFile">Vergi Levhası Dosyası</label>
+        <input type="file" id="taxFile" accept=".pdf,.png,.jpg,.jpeg" />
+        <p class="muted">PDF, PNG veya JPG formatında yükleyebilirsiniz (Maks. 5MB)</p>
+        <div id="taxInfo" class="file-info" style="margin-top:8px;"></div>
+      </div>
+    </div>
+
+    <!-- Bank Accounts -->
+    <div class="section">
+      <h3>Banka Hesapları</h3>
+      <p class="muted">Ödeme alacağınız banka hesaplarınızı ekleyin</p>
+      
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Banka Adı</th>
+            <th>IBAN</th>
+            <th>Hesap Adı</th>
+            <th>Para Birimi</th>
+            <th style="width:80px"></th>
+          </tr>
+        </thead>
+        <tbody id="bankBody"></tbody>
+      </table>
+      
+      <button id="addBank" class="btn btn-secondary" style="margin-top:12px">+ Hesap Ekle</button>
+    </div>
+
+    <!-- KVKK Info -->
+    <div class="section">
+      <h3>KVKK & Onaylar</h3>
+      <p id="kvkkInfo" class="muted"></p>
+    </div>
+
+    <!-- Save Button -->
+    <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:24px">
+      <button type="button" class="btn btn-secondary" id="cancelBtn">İptal</button>
+      <button id="btnSave" type="button" class="btn btn-primary">Değişiklikleri Kaydet</button>
+    </div>
+  </div>
+
+  <!-- Main Settings Script -->
+  <script type="module">
+    import { initGlobalHeader } from './assets/js/ui/header.js';
+    import { db, auth, logout, watchAuth } from "./firebase.js";
+    
+    // Initialize global header
+    initGlobalHeader({ mount: '#app-header', activeRoute: 'settings' });
+    import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+    import { doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove, serverTimestamp, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+    import { CATEGORIES } from "./categories.js";
+
+    // === Auth helper: requireAuth yerine ===
+    async function getCurrentUser() {
+      if (auth.currentUser) return auth.currentUser;
+      return await new Promise((resolve, reject) => {
+        const unsub = onAuthStateChanged(auth, (user) => {
+          unsub();
+          if (user) resolve(user);
+          else reject(new Error("not signed in"));
+        });
+      });
+    }
+
+    // Global değişkenler
+    let emails = new Set();
+    let phones = new Set();
+    let additionalAddresses = [];
+
+    // === Additional Addresses System ===
+    function loadAdditionalAddresses(list = []) {
+      console.log("📋 loadAdditionalAddresses çağrıldı:", list);
+      const container = document.getElementById("additionalAddresses");
+      if (!container) {
+        console.warn("⚠️ additionalAddresses container bulunamadı");
+        return;
+      }
+      
+      // Mevcut içeriği temizle
+      container.innerHTML = "";
+      
+      // Her adres için satır oluştur
+      list.forEach((addr, index) => {
+        addAddressRow({ 
+          title: addr.title || "", 
+          content: addr.content || "", 
+          isSaved: true 
+        });
+      });
+      
+      console.log(`✅ ${list.length} adet ilave adres yüklendi`);
+    }
+
+    function addAddressRow({ title = "", content = "", isSaved = false } = {}) {
+      console.log("🔧 addAddressRow çağrıldı - isSaved:", isSaved, "title:", title);
+      
+      const container = document.getElementById("additionalAddresses");
+      if (!container) {
+        console.warn("⚠️ additionalAddresses container bulunamadı");
+        return;
+      }
+
+      const row = document.createElement("div");
+      row.className = "addr-row";
+      row.style.cssText = 'margin: 16px 0; padding: 16px; background: #f0f9ff; border: 2px solid #0ea5e9; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);';
+
+      if (isSaved) {
+        // Kaydedilmiş adres - okunur mod
+        row.innerHTML = `
+          <div style="display: flex; gap: 16px; align-items: flex-start; margin-bottom: 12px;">
+            <div style="flex: 0 0 250px;">
+              <label style="font-size: 14px; font-weight: 600; color: #0c4a6e; margin-bottom: 6px; display: block;">📝 Adres Başlığı</label>
+              <div class="addr-title-display" style="padding: 10px; background: #e0f2fe; border: 1px solid #0ea5e9; border-radius: 6px; font-size: 14px; color: #0c4a6e; font-weight: 600;">${title}</div>
+            </div>
+            <div style="flex: 1;">
+              <label style="font-size: 14px; font-weight: 600; color: #0c4a6e; margin-bottom: 6px; display: block;">📍 Adres İçeriği</label>
+              <div class="addr-content-display" style="padding: 10px; background: #e0f2fe; border: 1px solid #0ea5e9; border-radius: 6px; font-size: 14px; color: #0c4a6e; white-space: pre-wrap;">${content}</div>
+            </div>
+            <div style="flex: 0 0 auto; align-self:flex-end; display: flex; gap: 8px;">
+              <button type="button" class="addr-edit" style="padding: 8px 16px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">✏️ Düzenle</button>
+              <button type="button" class="addr-remove" style="padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">🗑️ Sil</button>
+            </div>
+          </div>
+          <div style="font-size: 12px; color: #10b981; font-style: italic; display: flex; align-items: center; gap: 4px;">
+            ✅ Kaydedildi - Bu adres başlığını talep oluştururken teslimat adresi olarak seçebilirsiniz.
+          </div>
+        `;
+      } else {
+        // Yeni adres - düzenleme modu
+        row.innerHTML = `
+          <div style="display: flex; gap: 16px; align-items: flex-start; margin-bottom: 12px;">
+            <div style="flex: 0 0 250px;">
+              <label style="font-size: 14px; font-weight: 600; color: #0c4a6e; margin-bottom: 6px; display: block;">📝 Adres Başlığı</label>
+              <input type="text" class="addr-title" placeholder="Örn: Beykoz Depo, Merkez Ofis, Fabrika" value="${title}" 
+                     style="width: 100%; padding: 10px; border: 2px solid #0ea5e9; border-radius: 6px; font-size: 14px; background: white;">
+            </div>
+            <div style="flex: 1;">
+              <label style="font-size: 14px; font-weight: 600; color: #0c4a6e; margin-bottom: 6px; display: block;">📍 Adres İçeriği</label>
+              <textarea rows="4" class="addr-content" placeholder="Tam adres bilgilerini yazın..." 
+                        style="width: 100%; padding: 10px; border: 2px solid #0ea5e9; border-radius: 6px; font-size: 14px; resize: vertical; background: white;">${content}</textarea>
+            </div>
+            <div style="flex: 0 0 auto; align-self:flex-end; display: flex; gap: 8px;">
+              <button type="button" class="addr-save" style="padding: 8px 16px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">💾 Kaydet</button>
+              <button type="button" class="addr-remove" style="padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">🗑️ Sil</button>
+            </div>
+          </div>
+          <div style="font-size: 12px; color: #64748b; font-style: italic;">
+            💡 Adres bilgilerini doldurduktan sonra "Kaydet" butonuna basın.
+          </div>
+        `;
+      }
+      
+      // Event listener'ları ekle
+      const saveBtn = row.querySelector(".addr-save");
+      const editBtn = row.querySelector(".addr-edit");
+      const removeBtn = row.querySelector(".addr-remove");
+      
+      if (saveBtn) {
+        saveBtn.onclick = function() {
+          const titleInput = row.querySelector(".addr-title");
+          const contentInput = row.querySelector(".addr-content");
+          
+          if (!titleInput.value.trim() || !contentInput.value.trim()) {
+            alert('Lütfen adres başlığı ve içeriğini doldurun!');
+            return;
+          }
+          
+          // Okunur moda geç
+          row.innerHTML = `
+            <div style="display: flex; gap: 16px; align-items: flex-start; margin-bottom: 12px;">
+              <div style="flex: 0 0 250px;">
+                <label style="font-size: 14px; font-weight: 600; color: #0c4a6e; margin-bottom: 6px; display: block;">📝 Adres Başlığı</label>
+                <div class="addr-title-display" style="padding: 10px; background: #e0f2fe; border: 1px solid #0ea5e9; border-radius: 6px; font-size: 14px; color: #0c4a6e; font-weight: 600;">${titleInput.value}</div>
+              </div>
+              <div style="flex: 1;">
+                <label style="font-size: 14px; font-weight: 600; color: #0c4a6e; margin-bottom: 6px; display: block;">📍 Adres İçeriği</label>
+                <div class="addr-content-display" style="padding: 10px; background: #e0f2fe; border: 1px solid #0ea5e9; border-radius: 6px; font-size: 14px; color: #0c4a6e; white-space: pre-wrap;">${contentInput.value}</div>
+              </div>
+              <div style="flex: 0 0 auto; align-self:flex-end; display: flex; gap: 8px;">
+                <button type="button" class="addr-edit" style="padding: 8px 16px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">✏️ Düzenle</button>
+                <button type="button" class="addr-remove" style="padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">🗑️ Sil</button>
+              </div>
+            </div>
+            <div style="font-size: 12px; color: #10b981; font-style: italic; display: flex; align-items: center; gap: 4px;">
+              ✅ Kaydedildi - Bu adres başlığını talep oluştururken teslimat adresi olarak seçebilirsiniz.
+            </div>
+          `;
+          
+          // Yeni event listener'ları ekle
+          const newEditBtn = row.querySelector(".addr-edit");
+          const newRemoveBtn = row.querySelector(".addr-remove");
+          
+          if (newEditBtn) {
+            newEditBtn.onclick = function() {
+              // Düzenleme moduna geç
+              addAddressRow({ 
+                title: titleInput.value, 
+                content: contentInput.value, 
+                isSaved: false 
+              });
+              row.remove();
+            };
+          }
+          
+          if (newRemoveBtn) {
+            newRemoveBtn.onclick = function() {
+              if (confirm('Bu adresi silmek istediğinizden emin misiniz?')) {
+                row.remove();
+                console.log("✅ Adres satırı silindi");
+              }
+            };
+          }
+          
+          console.log("✅ Adres kaydedildi");
+        };
+      }
+      
+      if (editBtn) {
+        editBtn.onclick = function() {
+          // Düzenleme moduna geç
+          const titleDisplay = row.querySelector(".addr-title-display");
+          const contentDisplay = row.querySelector(".addr-content-display");
+          
+          addAddressRow({ 
+            title: titleDisplay.textContent, 
+            content: contentDisplay.textContent, 
+            isSaved: false 
+          });
+          row.remove();
+        };
+      }
+      
+      if (removeBtn) {
+        removeBtn.onclick = function() {
+          if (confirm('Bu adresi silmek istediğinizden emin misiniz?')) {
+            row.remove();
+            console.log("✅ Adres satırı silindi");
+          }
+        };
+      }
+      
+      container.appendChild(row);
+      console.log("✅ İlave adres satırı eklendi - Container'a eklendi");
+      
+      // Scroll to the new element
+      row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    
+    function addAddress() {
+      console.log("🔧 addAddress fonksiyonu çağrıldı");
+      addAddressRow();
+    }
+
+    function getAdditionalAddresses() {
+      const rows = [...document.querySelectorAll("#additionalAddresses .addr-row")];
+      console.log("🔍 Bulunan adres satırları:", rows.length);
+      
+      const addresses = rows.map((r, index) => {
+        console.log(`🔍 Adres satırı ${index + 1} işleniyor:`, r);
+        
+        // Düzenleme modundaki adresler
+        const titleInput = r.querySelector(".addr-title");
+        const contentInput = r.querySelector(".addr-content");
+        
+        if (titleInput && contentInput) {
+          const result = {
+            title: titleInput.value?.trim() || "",
+            content: contentInput.value?.trim() || ""
+          };
+          console.log(`✅ Düzenleme modu - Adres ${index + 1}:`, result);
+          return result;
+        }
+        
+        // Okunur moddaki adresler
+        const titleDisplay = r.querySelector(".addr-title-display");
+        const contentDisplay = r.querySelector(".addr-content-display");
+        
+        if (titleDisplay && contentDisplay) {
+          const result = {
+            title: titleDisplay.textContent?.trim() || "",
+            content: contentDisplay.textContent?.trim() || ""
+          };
+          console.log(`✅ Okunur mod - Adres ${index + 1}:`, result);
+          return result;
+        }
+        
+        console.log(`⚠️ Adres satırı ${index + 1} işlenemedi`);
+        return { title: "", content: "" };
+      }).filter(x => x.title || x.content);
+      
+      console.log("🔍 Filtrelenmiş adresler:", addresses);
+      return addresses;
+    }
+
+    // === Chip Management ===
+    function renderChips(containerId, chips) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      
+      container.innerHTML = "";
+      [...chips].forEach(chip => {
+        const chipEl = document.createElement("span");
+        chipEl.className = "chip";
+        chipEl.textContent = chip + " ✕";
+        chipEl.style.cssText = "display: inline-block; background: #007bff; color: white; padding: 4px 8px; margin: 2px; border-radius: 12px; font-size: 12px; cursor: pointer;";
+        chipEl.addEventListener("click", () => {
+          chips.delete(chip);
+          renderChips(containerId, chips);
+        });
+        container.appendChild(chipEl);
+      });
+    }
+
+    // === Bank Account Management ===
+    function addBankRow(data = {}) {
+      const tbody = document.getElementById("bankBody");
+      if (!tbody) return;
+      
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td><input type="text" value="${data.bankName || ''}" placeholder="Banka Adı"></td>
+        <td><input type="text" value="${data.iban || ''}" placeholder="IBAN"></td>
+        <td><input type="text" value="${data.accountName || ''}" placeholder="Hesap Adı"></td>
+        <td>
+          <select>
+            <option value="TRY" ${data.currency === 'TRY' ? 'selected' : ''}>TRY</option>
+            <option value="USD" ${data.currency === 'USD' ? 'selected' : ''}>USD</option>
+            <option value="EUR" ${data.currency === 'EUR' ? 'selected' : ''}>EUR</option>
+          </select>
+        </td>
+        <td><button type="button" onclick="this.closest('tr').remove()" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Sil</button></td>
+      `;
+      tbody.appendChild(row);
+    }
+
+    // === Tax Office Management ===
+    const LOCAL_TAX_OFFICES = [
+      // İstanbul
+      "Beykoz Vergi Dairesi","Ümraniye Vergi Dairesi","Üsküdar Vergi Dairesi",
+      "Kadıköy Vergi Dairesi","Maltepe Vergi Dairesi","Kartal Vergi Dairesi",
+      "Beşiktaş Vergi Dairesi","Şişli Vergi Dairesi","Beyoğlu Vergi Dairesi",
+      "Bakırköy Vergi Dairesi","Pendik Vergi Dairesi","Ataşehir Vergi Dairesi",
+      // Ankara
+      "Çankaya Vergi Dairesi","Keçiören Vergi Dairesi","Yenimahalle Vergi Dairesi",
+      "Mamak Vergi Dairesi","Sincan Vergi Dairesi",
+      // İzmir
+      "Konak Vergi Dairesi","Bornova Vergi Dairesi","Karşıyaka Vergi Dairesi",
+      // Genel
+      "Kurumlar Vergi Dairesi","Büyük Mükellefler Vergi Dairesi"
+    ];
+
+    async function fetchTaxOfficesFromFirestore() {
+      try {
+        console.debug("🔄 Vergi dairesi listesi yükleniyor...");
+        const snap = await getDocs(collection(db, "taxOffices"));
+        const list = [];
+        snap.forEach(d => {
+          const name = d.data()?.name;
+          if (name) list.push(name);
+        });
+        return list.filter(Boolean);
+      } catch (e) {
+        console.error("❌ Tax offices Firestore fetch failed:", e);
+        return null;
+      }
+    }
+
+    function populateTaxOfficeSelect(list) {
+      const sel = document.getElementById("taxOfficeSelect");
+      if (!sel) return;
+
+      sel.innerHTML = "";
+      const opts = [
+        { v: "", t: "Vergi Dairesi Seçin" },
+        ...list.map(n => ({ v: n, t: n })),
+        { v: "__MANUAL__", t: "Elle yaz" }
+      ];
+
+      for (const o of opts) {
+        const op = document.createElement('option');
+        op.value = o.v;
+        op.textContent = o.t;
+        sel.appendChild(op);
+      }
+      
+      console.log(`✅ Select'e ${list.length} adet vergi dairesi eklendi`);
+    }
+
+    async function buildTaxOfficeSelect() {
+      let list = await fetchTaxOfficesFromFirestore();
+      if (!list || list.length === 0) {
+        console.log("⚠️ Firestore'dan veri alınamadı, yerel liste kullanılıyor");
+        list = LOCAL_TAX_OFFICES;
+      }
+      populateTaxOfficeSelect(list);
+    }
+
+    function bindTaxOfficeHandlers() {
+      const sel = document.getElementById('taxOfficeSelect');
+      const inp = document.getElementById('taxOffice');
+      const btn = document.getElementById('refreshTaxOfficesBtn');
+
+      if (!sel || !inp) {
+        console.warn("⚠️ Vergi dairesi elementleri bulunamadı");
+        return;
+      }
+
+      sel.addEventListener('change', () => {
+        if (sel.value === '__MANUAL__' || sel.value === '') {
+          inp.removeAttribute('disabled');
+          inp.placeholder = 'Vergi dairesi adını elle yazın';
+          if (sel.value === '__MANUAL__') inp.value = '';
+          console.log("✏️ Elle yazma modu aktif");
+        } else {
+          inp.value = sel.value;
+          inp.setAttribute('disabled', 'disabled');
+          inp.placeholder = 'Seçilen vergi dairesi';
+          console.log("🔒 Seçilen vergi dairesi:", sel.value);
+        }
+      });
+
+      if (btn) {
+        btn.addEventListener('click', async () => {
+          btn.disabled = true;
+          btn.textContent = '⏳ Yükleniyor...';
+          try {
+            await buildTaxOfficeSelect();
+            console.log("✅ Vergi dairesi listesi yenilendi");
+          } catch (error) {
+            console.error("❌ Liste yenilenemedi:", error);
+          } finally {
+            btn.disabled = false;
+            btn.textContent = '🔄 Yenile';
+          }
+        });
+      }
+    }
+
+    // === Category Management ===
+    const $ = (s, r=document) => r.querySelector(s);
+    const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
+    const chip = (text) => {
+      const span = document.createElement("span");
+      span.className = "chip";
+      span.textContent = text;
+      return span;
+    };
+    function uniq(arr){ return Array.from(new Set(arr)); }
+
+    // ---- fetch categories with fallback
+    async function fetchCategories() {
+      try {
+        const snap = await getDocs(collection(db, "categories"));
+        const list = [];
+        snap.forEach(d => {
+          const name = d.data()?.name || d.id;
+          if (name) list.push(name);
+        });
+        if (list.length) return uniq(list).sort((a,b)=>a.localeCompare(b,"tr"));
+      } catch(e) {
+        console.warn("⚠️ categories collection okunamadı, fallback kullanılacak:", e?.message || e);
+      }
+      // fallback 17'lik liste
+      return [
+        "Sac/Metal","Elektrik","Elektronik","Makine-İmalat","Hırdavat","Ambalaj",
+        "Kimyasal","İnşaat Malzemeleri","Mobilya","Boya","Plastik",
+        "Otomotiv Yan Sanayi","İş Güvenliği","Temizlik","Gıda","Hizmet","Lojistik"
+      ];
+    }
+
+    // ---- render list
+    function renderList({rootList, searchInput, selectAllBtn, clearBtn, chipsRoot, allItems, selected, prefix}) {
+      const state = { filtered: allItems.slice() };
+
+      function paintList() {
+        rootList.innerHTML = "";
+        state.filtered.forEach(name=>{
+          const id = `${prefix}-${name}`.replace(/\s+/g,"_");
+          
+          // Yeni markup: label içinde checkbox ve span
+          const label = document.createElement("label");
+          label.className = "category-item";
+          label.htmlFor = id;
+
+          const cb = document.createElement("input");
+          cb.type = "checkbox";
+          cb.id = id;
+          cb.name = "categories";
+          cb.value = name;
+          cb.checked = selected.has(name);
+          cb.onchange = () => {
+            if (cb.checked) selected.add(name);
+            else selected.delete(name);
+            paintChips();
+          };
+
+          const span = document.createElement("span");
+          span.className = "label";
+          span.textContent = name;
+
+          label.append(cb, span);
+          rootList.appendChild(label);
+        });
+      }
+
+      function paintChips() {
+        chipsRoot.innerHTML = "";
+        [...selected].sort((a,b)=>a.localeCompare(b,"tr")).forEach(n => chipsRoot.appendChild(chip(n)));
+      }
+
+      // events
+      searchInput?.addEventListener("input", ()=>{
+        const q = (searchInput.value || "").toLowerCase();
+        state.filtered = allItems.filter(n => n.toLowerCase().includes(q));
+        paintList();
+      });
+
+      selectAllBtn?.addEventListener("click", ()=>{
+        state.filtered.forEach(n => selected.add(n));
+        paintList(); paintChips();
+      });
+
+      clearBtn?.addEventListener("click", ()=>{
+        selected.clear();
+        paintList(); paintChips();
+      });
+
+      // initial paint
+      paintList();
+      paintChips();
+
+      // public api
+      return {
+        getValues: ()=>[...selected]
+      };
+    }
+
+    // === Role Management ===
+    function currentRoles() {
+      const r = [];
+      if (document.getElementById("roleBuyer")?.checked) r.push("buyer");
+      if (document.getElementById("roleSupplier")?.checked) r.push("supplier");
+      return r.length ? r : ["buyer"];
+    }
+    
+    function toggleRoleSections() {
+      const roles = currentRoles();
+      const hasBuyer = roles.includes("buyer");
+      const hasSupplier = roles.includes("supplier");
+      console.log("🔄 Toggle role sections:", { roles, hasBuyer, hasSupplier });
+      document.getElementById("secSupplierCats").style.display = hasSupplier ? "block" : "none";
+      document.getElementById("secBuyerCats").style.display = hasBuyer ? "block" : "none";
+    }
+
+    // === User Profile Loading ===
+    async function loadUserProfile() {
+      try {
+        console.debug("🔧 loadUserProfile fonksiyonu başladı");
+        const user = await getCurrentUser();
+        const ref = doc(db, "users", user.uid);
+        const snap = await getDoc(ref);
+        if (!snap.exists()) {
+          console.warn("⚠️ Kullanıcı dokümanı bulunamadı, boş açılacak");
+          return;
+        }
+        const x = snap.data();
+        console.log("📊 Firestore'dan gelen veri:", x);
+        
+        // Temel alanlar - güvenli atama
+        const safeSetValue = (id, value) => {
+          // Input elementlerini bulmak için daha spesifik selector kullan
+          const el = document.querySelector(`input[id="${id}"], textarea[id="${id}"]`);
+          if (el) {
+            el.value = value || "";
+            console.log(`✅ ${id} yüklendi:`, value);
+            return true;
+          } else {
+            console.warn(`⚠️ Input element bulunamadı: ${id}`);
+            return false;
+          }
+        };
+        
+        const safeSetChecked = (id, checked) => {
+          const el = document.getElementById(id);
+          if (el) {
+            el.checked = !!checked;
+            console.log(`✅ ${id} checkbox yüklendi:`, checked);
+            return true;
+          } else {
+            console.warn(`⚠️ Checkbox element bulunamadı: ${id}`);
+            return false;
+          }
+        };
+
+        safeSetValue("displayName", x.displayName);
+        safeSetValue("companyName", x.companyName);
+        console.log("🔍 companyName değeri:", x.companyName);
+        console.log("🔍 companyName input elementi:", document.querySelector('input[id="companyName"]'));
+        console.log("🔍 companyName input değeri:", document.querySelector('input[id="companyName"]')?.value);
+        safeSetValue("taxNumber", x.taxNumber);
+        safeSetValue("mersisNo", x.mersisNo);
+        safeSetValue("website", x.website);
+        safeSetValue("invoiceAddress", x.invoiceAddress);
+        safeSetValue("taxOffice", x.taxOffice);
+        
+        // Roller - güvenli checkbox atama
+        let roles = Array.isArray(x.roles) ? x.roles.slice() : (x.role ? [x.role] : ["buyer"]);
+        safeSetChecked("roleBuyer", roles.includes("buyer"));
+        safeSetChecked("roleSupplier", roles.includes("supplier"));
+        console.log("✅ Roller yüklendi:", roles);
+        
+        // Premium durumu - güvenli checkbox atama
+        safeSetChecked("isPremium", x.isPremium);
+        console.log("✅ Premium durumu yüklendi:", !!x.isPremium);
+        
+        // İletişim bilgileri
+        if (x.contactEmails && Array.isArray(x.contactEmails)) {
+          x.contactEmails.forEach(v => emails.add(v));
+          renderChips("emailChips", emails);
+          console.log("✅ Emailler yüklendi:", x.contactEmails);
+        }
+        
+        if (x.contactPhones && Array.isArray(x.contactPhones)) {
+          x.contactPhones.forEach(v => phones.add(v));
+          renderChips("phoneChips", phones);
+          console.log("✅ Telefonlar yüklendi:", x.contactPhones);
+        }
+        
+        // Banka hesapları
+        if (x.bankAccounts && Array.isArray(x.bankAccounts)) {
+          x.bankAccounts.forEach(b => addBankRow(b));
+          console.log("✅ Banka hesapları yüklendi:", x.bankAccounts.length);
+        }
+        if (!(x.bankAccounts || []).length) addBankRow();
+        
+        // İlave adresler
+        console.log("📋 Firestore'dan gelen additionalAddresses:", x.additionalAddresses);
+        loadAdditionalAddresses(x.additionalAddresses || []);
+        
+        // Roller bölümlerini güncelle
+        toggleRoleSections();
+        
+        console.log("✅ Tüm profil verileri güvenli şekilde yüklendi");
+      } catch (e) {
+        console.error("❌ Profil yüklenemedi:", e);
+      }
+    }
+
+    // === Event Listeners ===
+    const user = await getCurrentUser();
+    
+    // Evrensel logout
+    function wireLogoutButtons() {
+      document.querySelectorAll(".btn-logout, .logout-btn, #logoutBtn").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          try {
+            await signOut(auth);
+            window.location.href = "/login.html";
+          } catch (e) {
+            alert("Çıkış yapılamadı: " + (e?.message || e));
+          }
+        });
+      });
+    }
+
+    // Get input elements
+    const emailInput = document.getElementById("emailInput");
+    const phoneInput = document.getElementById("phoneInput");
+
+    emailInput.addEventListener("keydown", e => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        const v = e.target.value.trim();
+        if (v && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) {
+          emails.add(v);
+          renderChips("emailChips", emails);
+          e.target.value = "";
+        } else if (v) {
+          alert("Geçerli bir e-posta adresi giriniz");
+        }
+      }
+    });
+
+    phoneInput.addEventListener("keydown", e => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        const v = e.target.value.trim();
+        if (v) {
+          phones.add(v);
+          renderChips("phoneChips", phones);
+          e.target.value = "";
+        }
+      }
+    });
+
+    // Bank rows management
+    const bankBody = document.getElementById("bankBody");
+    document.getElementById("addBank").onclick = () => addBankRow();
+
+    // Role management
+    ["roleBuyer", "roleSupplier"].forEach(id => {
+      document.getElementById(id).addEventListener("change", toggleRoleSections);
+    });
+
+    // Add address button
+    document.getElementById("addAddressBtn").onclick = addAddress;
+
+    // === Global Save Button ===
+    function initSaveButton() {
+      const btnSave = document.getElementById("btnSave");
+      if (!btnSave) {
+        console.warn("[settings] btnSave bulunamadı, 100ms sonra tekrar denenecek");
+        setTimeout(initSaveButton, 100);
+        return;
+      }
+
+      console.log("✅ Garantili save handler bağlandı - Element:", btnSave);
+
+      // Remove any existing listeners by cloning the button
+      const newBtn = btnSave.cloneNode(true);
+      btnSave.parentNode.replaceChild(newBtn, btnSave);
+      const btn = newBtn;
+
+      btn.addEventListener("click", async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const originalText = btn.textContent;
+        try {
+          console.log("💾 [SAVE] Kaydet butonu tıklandı");
+
+          const user = await getCurrentUser();
+          if (!user) { 
+            alert("❌ Giriş yapmanız gerekiyor."); 
+            return; 
+          }
+
+          console.log("✅ User authenticated:", user.uid);
+
+          // Roller
+          const roleBuyer = document.getElementById("roleBuyer")?.checked;
+          const roleSupplier = document.getElementById("roleSupplier")?.checked;
+          const roles = [];
+          if (roleBuyer) roles.push("buyer");
+          if (roleSupplier) roles.push("supplier");
+          if (roles.length === 0) roles.push("buyer");
+
+          // Diğer alanlar
+          const companyName = (document.getElementById("companyName")?.value || "").trim();
+          const taxNumber = (document.getElementById("taxNumber")?.value || "").trim();
+          const displayName = (document.getElementById("displayName")?.value || "").trim();
+          const mersisNo = (document.getElementById("mersisNo")?.value || "").trim();
+          const website = (document.getElementById("website")?.value || "").trim();
+          const isPremium = document.getElementById("isPremium")?.checked || false;
+
+          // İletişim bilgileri
+          const emailChips = document.querySelectorAll("#emailChips .chip");
+          const contactEmails = [...emailChips].map(chip => chip.textContent.replace(" ✕", "").trim());
+          const phoneChips = document.querySelectorAll("#phoneChips .chip");
+          const contactPhones = [...phoneChips].map(chip => chip.textContent.replace(" ✕", "").trim());
+          
+          // Fatura adresi ve vergi dairesi
+          const invoiceAddressEl = document.getElementById("invoiceAddress");
+          const taxOfficeEl = document.getElementById("taxOffice");
+          const invoiceAddress = (invoiceAddressEl?.value || "").trim();
+          const taxOffice = (taxOfficeEl?.value || "").trim();
+          
+          // İlave adresler
+          const additionalAddresses = getAdditionalAddresses();
+          console.log("🔍 Kaydedilecek ilave adresler:", additionalAddresses);
+
+          // Banka hesapları
+          const bankRows = document.querySelectorAll("#bankBody tr");
+          const bankAccounts = [...bankRows].map(tr => {
+            const inputs = tr.querySelectorAll("input, select");
+            return {
+              bankName: inputs[0]?.value || "",
+              iban: inputs[1]?.value || "",
+              accountName: inputs[2]?.value || "",
+              currency: inputs[3]?.value || "TRY"
+            };
+          }).filter(b => b.bankName || b.iban);
+
+          console.log("🏯 Toplanan veriler:", {
+            roles,
+            companyName,
+            taxNumber,
+            displayName,
+            contactEmailsCount: contactEmails.length,
+            contactPhonesCount: contactPhones.length,
+            bankAccountsCount: bankAccounts.length,
+            additionalAddressesCount: additionalAddresses.length,
+            additionalAddresses: additionalAddresses
+          });
+
+          // Basit validasyon
+          if (!companyName) {
+            alert("❌ Şirket adı zorunludur.");
+            return;
+          }
+
+          // butonu kilitle
+          btn.disabled = true;
+          btn.textContent = "Kaydediliyor...";
+
+          console.log("💾 Firestore'a kaydediliyor...");
+
+          // Update user document
+          const uid = user.uid;
+          const ref = doc(db, "users", uid);
+          
+          // Belge yoksa oluştur
+          await setDoc(ref, { createdAt: serverTimestamp() }, { merge: true });
+          
+          // Update with all the user data
+          const updateData = {
+            roles,
+            companyName,
+            taxNumber,
+            mersisNo,
+            website,
+            displayName,
+            isPremium,
+            contactEmails,
+            contactPhones,
+            bankAccounts,
+            invoiceAddress,
+            taxOffice,
+            additionalAddresses,
+            updatedAt: serverTimestamp()
+          };
+
+          // Kategoriler (eğer API'ler hazırsa)
+          if (supplierAPI && buyerAPI) {
+            updateData.supplierCategories = supplierAPI.getValues();
+            updateData.buyerCategories = buyerAPI.getValues();
+            console.log("📋 Kategoriler kaydediliyor:", updateData.supplierCategories, updateData.buyerCategories);
+          }
+          
+          console.log("💾 Firestore'a gönderilecek veri:", updateData);
+          await updateDoc(ref, updateData);
+
+          console.log("✅ User data saved successfully");
+          alert("✅ Kaydedildi!");
+
+          // Sayfayı yenile ki güncel veriler görünsün
+          setTimeout(() => {
+            location.reload();
+          }, 1000);
+
+        } catch (e) {
+          console.error('[SAVE ERROR]', e);
+          alert("❌ Kaydedilemedi: " + (e.code || e.message || e));
+        } finally {
+          btn.disabled = false;
+          btn.textContent = originalText || "Kaydet";
+        }
+      });
+
+      console.log("✅ Save handler başarıyla bağlandı, test için tıklayın!");
+    }
+
+    // === Category Management Initialization ===
+    let supplierAPI, buyerAPI;
+    
+    async function initializeCategoryManagement() {
+      try {
+        console.log("🔧 Kategori yönetimi başlatılıyor...");
+        
+        const user = await getCurrentUser();
+        const profileRef = doc(db, "users", user.uid);
+        const profileSnap = await getDoc(profileRef);
+        const profile = profileSnap.data() || {};
+
+        const allCats = await fetchCategories();
+        console.log("📋 Yüklenen kategoriler:", allCats.length);
+
+        // supplier
+        supplierAPI = renderList({
+          rootList: $("#catList"),
+          searchInput: $("#catSearch"),
+          selectAllBtn: $("#btnSelectAll"),
+          clearBtn: $("#btnClear"),
+          chipsRoot: $("#catChips"),
+          allItems: allCats,
+          selected: new Set(Array.isArray(profile.supplierCategories) ? profile.supplierCategories : []),
+          prefix: "sup"
+        });
+
+        // buyer
+        buyerAPI = renderList({
+          rootList: $("#buyerCatList"),
+          searchInput: $("#buyerCatSearch"),
+          selectAllBtn: $("#btnSelectAllBuyer"),
+          clearBtn: $("#btnClearBuyer"),
+          chipsRoot: $("#buyerCatChips"),
+          allItems: allCats,
+          selected: new Set(Array.isArray(profile.buyerCategories) ? profile.buyerCategories : []),
+          prefix: "buy"
+        });
+
+        console.log("✅ Kategori bileşenleri hazır. Toplam kategori:", allCats.length);
+      } catch (e) {
+        console.error("❌ Kategori yönetimi başlatma hatası:", e);
+      }
+    }
+
+    // === Initialization ===
+    async function initialize() {
+      try {
+        console.log("🔧 Settings sayfası başlatılıyor...");
+        
+        // Header setup
+        wireLogoutButtons();
+        
+        // Tax office system
+        await buildTaxOfficeSelect();
+        bindTaxOfficeHandlers();
+        
+        // Load user profile
+        await loadUserProfile();
+        
+        // Initialize category management
+        await initializeCategoryManagement();
+        
+        // Initialize save button
+        initSaveButton();
+        
+        // Cancel button
+        document.getElementById("cancelBtn").addEventListener("click", () => {
+          location.href = "./dashboard.html";
+        });
+        
+        console.log("✅ Settings sayfası başarıyla başlatıldı");
+      } catch (e) {
+        console.error("❌ Settings başlatma hatası:", e);
+      }
+    }
+
+    // Initialize when DOM is ready
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", initialize);
+    } else {
+      initialize();
+    }
+  </script>
+
+  <!-- Theme Script -->
+  <script src="/assets/js/theme.js" defer></script>
+
+</body>
+</html>

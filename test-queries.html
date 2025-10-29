@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Query Test</title>
+  <link rel="stylesheet" href="./utils.css" />
+</head>
+<body>
+  <h1>Firestore Query Test</h1>
+  <div id="output" style="white-space:pre-wrap;font-family:monospace;padding:20px;background:#f5f5f5;"></div>
+
+  <script type="module">
+    import { db, requireAuth } from "./firebase.js";
+    import {
+      collection, getDocs, query, where
+    } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+    const output = document.getElementById("output");
+    
+    function log(msg) {
+      output.textContent += msg + "\n";
+      console.log(msg);
+    }
+
+    try {
+      log("=== Starting Query Test ===\n");
+      
+      // 1) Check auth
+      const user = await requireAuth();
+      log(`✅ User authenticated: ${user.uid}\n`);
+
+      // 2) Test query 1: createdBy
+      log("Testing Query 1: where('createdBy', '==', uid)");
+      try {
+        const mineQ = query(
+          collection(db, "demands"),
+          where("createdBy", "==", user.uid)
+        );
+        const mineSnap = await getDocs(mineQ);
+        log(`✅ Query 1 successful: ${mineSnap.size} documents`);
+        mineSnap.forEach(d => {
+          const data = d.data();
+          log(`  - ${d.id}: ${data.stfNo} | ${data.title}`);
+        });
+      } catch (e) {
+        log(`❌ Query 1 failed: ${e.code} - ${e.message}`);
+        log(`   Full error: ${JSON.stringify(e, null, 2)}`);
+      }
+
+      log("\n");
+
+      // 3) Test query 2: viewerIds
+      log("Testing Query 2: where('viewerIds', 'array-contains', uid)");
+      try {
+        const sharedQ = query(
+          collection(db, "demands"),
+          where("viewerIds", "array-contains", user.uid)
+        );
+        const sharedSnap = await getDocs(sharedQ);
+        log(`✅ Query 2 successful: ${sharedSnap.size} documents`);
+        sharedSnap.forEach(d => {
+          const data = d.data();
+          log(`  - ${d.id}: ${data.stfNo} | ${data.title} | viewers: ${data.viewerIds?.length || 0}`);
+        });
+      } catch (e) {
+        log(`❌ Query 2 failed: ${e.code} - ${e.message}`);
+        log(`   Full error: ${JSON.stringify(e, null, 2)}`);
+      }
+
+      log("\n=== Test Complete ===");
+
+    } catch (e) {
+      log(`❌ Fatal error: ${e.message || e}`);
+    }
+  </script>
+</body>
+</html>

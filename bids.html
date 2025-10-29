@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Teklifler</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%233b82f6' rx='6'/%3E%3Ctext x='16' y='22' font-family='Arial' font-size='18' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/utils.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  
+  <!-- PDF & Excel Libraries (Local) -->
+  <script type="module">
+    import './assets/vendor/jspdf.umd.min.js';
+    import './assets/vendor/xlsx.full.min.js';
+  </script>
+  
+  <style>
+    :root { --c1:#2563eb; --muted:#f3f4f6; --border:#e5e7eb; }
+    body { font-family: system-ui, Arial; margin:0; background:#fff; color:#111827; }
+    header { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid var(--border); background:#fff; position:sticky; top:0; z-index:10;}
+    .brand { display:flex; gap:10px; align-items:center; font-weight:600; }
+    .pill { background:#eef2ff; color:#4338ca; padding:2px 8px; border-radius:999px; font-size:12px;}
+    .container { max-width:1200px; margin:0 auto; padding:20px; }
+    .tabs { display:flex; gap:8px; background:var(--muted); padding:6px; border-radius:10px; width:max-content; }
+    .tab { border:0; padding:8px 12px; border-radius:8px; background:transparent; cursor:pointer; font-weight:600; color:#111827; }
+    .tab.active { background:#fff; color:#111827; box-shadow:0 1px 2px rgba(0,0,0,.06); }
+    .grid { display:grid; gap:16px; grid-template-columns:repeat(4,minmax(0,1fr)); }
+    .card { background:#fff; border:1px solid var(--border); border-radius:12px; padding:14px; }
+    .muted { color:#6b7280; }
+    .filters { display:grid; gap:12px; grid-template-columns:repeat(4,minmax(0,1fr)); }
+    .row { display:flex; gap:10px; align-items:center; }
+    select, input { width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; background:#fff; }
+    table { width:100%; border-collapse:collapse; min-width:1000px; }
+    th,td { padding:12px 8px; border-bottom:1px solid var(--border); text-align:left; }
+    th { background:#f9fafb; font-weight:600; }
+    td { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:200px; }
+    th, td { padding:10px 12px; border-bottom:1px solid var(--border); text-align:left; }
+    th { background:#fafafa; font-weight:600; }
+    .badge { display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; font-weight:600; }
+    .b-secret { background:#dbeafe; color:#1e40af; }
+    .b-open { background:#dcfce7; color:#166534; }
+    .b-hybrid { background:#f3e8ff; color:#6b21a8; }
+    .hidden { display:none; }
+    .empty { text-align:center; padding:30px; color:#6b7280; }
+    .btn-link { background:none; border:0; color:#2563eb; cursor:pointer; font-weight:600; }
+    .btn-link:hover { text-decoration:underline; }
+  </style>
+</head>
+<body>
+  <!-- Common Header -->
+  <header id="app-header"></header>
+
+  <div class="container--wide" style="padding:20px 0">
+    <nav class="tb-breadcrumb">
+      <span class="tb-crumb"><span class="ico">🏠</span><a href="./index.html">Ana Sayfa</a></span>
+      <span class="tb-sep">›</span>
+      <span class="tb-crumb"><span class="ico">💼</span><a href="./bids.html">Teklifler</a></span>
+    </nav>
+    <div class="row" style="justify-content:space-between; margin-bottom:12px">
+      <div class="tabs" role="tablist">
+        <button id="tab-incoming" class="tab active" role="tab" aria-controls="view-incoming">Gelen Teklifler</button>
+        <button id="tab-outgoing" class="tab" role="tab" aria-controls="view-outgoing">Gönderdiğim Teklifler</button>
+      </div>
+      <button id="btn-refresh" class="btn-link">Yenile</button>
+    </div>
+
+    <div class="grid" style="margin-bottom:16px">
+      <div class="card"><div class="muted">Toplam Teklif</div><div id="stat-total" style="font-size:20px;font-weight:700">-</div></div>
+      <div class="card"><div class="muted">Aktif Talepler</div><div id="stat-active" style="font-size:20px;font-weight:700">-</div></div>
+      <div class="card"><div class="muted">Ortalama Teklif/Talep</div><div id="stat-avg" style="font-size:20px;font-weight:700">-</div></div>
+      <div class="card"><div class="muted">Durum</div><div id="stat-status" style="font-size:20px;font-weight:700">–</div></div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <div class="filters">
+        <select id="f-demand"><option value="">Tüm Talepler</option></select>
+        <select id="f-mode">
+          <option value="">Talep Tipi (Tümü)</option>
+          <option value="secret">Gizli</option>
+          <option value="open">Açık</option>
+          <option value="hybrid">Hibrit</option>
+        </select>
+        <select id="f-status">
+          <option value="">Durum (Tümü)</option>
+          <option value="sent">Gönderildi</option>
+          <option value="responded">Yanıtlandı</option>
+          <option value="accepted">Kabul</option>
+          <option value="rejected">Red</option>
+          <option value="completed">Tamamlandı</option>
+        </select>
+        <input id="f-supplier" placeholder="Tedarikçi ara..." />
+      </div>
+    </div>
+
+    <section id="view-incoming">
+      <div class="card">
+        <div class="table-responsive">
+          <table>
+          <thead>
+            <tr>
+              <th>Talep</th>
+              <th>Tedarikçi Firma</th>
+              <th>Fiyat</th>
+              <th>Termin</th>
+              <th>Marka</th>
+              <th>Ödeme</th>
+              <th>Tip</th>
+              <th>Tarih</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tbl-incoming"></tbody>
+          </table>
+        </div>
+        <div id="incoming-empty" class="empty hidden">Henüz teklif yok.</div>
+      </div>
+    </section>
+
+    <section id="view-outgoing" class="hidden">
+      <div class="card">
+        <div class="table-responsive">
+          <table>
+          <thead>
+            <tr>
+              <th>Talep</th>
+              <th>Alıcı Firma</th>
+              <th>Fiyat</th>
+              <th>Termin</th>
+              <th>Marka</th>
+              <th>Ödeme</th>
+              <th>Tip</th>
+              <th>Tarih</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tbl-outgoing"></tbody>
+          </table>
+        </div>
+        <div id="outgoing-empty" class="empty hidden">Gönderdiğiniz teklif yok.</div>
+      </div>
+    </section>
+  </div>
+
+  <script type="module">
+    import { initGlobalHeader } from './assets/js/ui/header.js';
+    import { auth, db } from './firebase.js';
+    
+    // Initialize global header
+    initGlobalHeader({ mount: '#app-header', activeRoute: 'bids' });
+    import { handleError, renderEmptyState, showLoadingState, withErrorHandling } from './assets/js/ui/errors.js';
+    import { initTabs } from './assets/js/ui/tabs.js';
+    import { getUserDemands } from './assets/js/services/demands.js';
+    import {
+      doc, getDoc, getDocs, collection, query, where, orderBy, limit
+    } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+    import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js';
+
+    const $ = (s) => document.querySelector(s);
+    const fmt = (n) => (typeof n === 'number' ? new Intl.NumberFormat('tr-TR').format(n) : '—');
+    const fmtDate = (ts) => {
+      try {
+        if (!ts) return '—';
+        const d = ts.toDate ? ts.toDate() : new Date(ts);
+        return d.toLocaleDateString('tr-TR');
+      } catch { return '—'; }
+    };
+    const badge = (mode) => {
+      const m = (mode||'').toLowerCase();
+      if (m === 'open') return '<span class="badge b-open">Açık</span>';
+      if (m === 'hybrid') return '<span class="badge b-hybrid">Hibrit</span>';
+      return '<span class="badge b-secret">Gizli</span>';
+    };
+
+    let CACHE_DEMANDS = new Map(); // demandId -> demand
+    let CURRENT_TAB = 'incoming';
+    let LAST_DATA = [];
+
+    function showTab(tab) {
+      CURRENT_TAB = tab;
+      $('#tab-incoming').classList.toggle('active', tab==='incoming');
+      $('#tab-outgoing').classList.toggle('active', tab==='outgoing');
+      $('#view-incoming').classList.toggle('hidden', tab!=='incoming');
+      $('#view-outgoing').classList.toggle('hidden', tab!=='outgoing');
+      loadData(); // reload for tab
+    }
+
+
+    async function preloadDemands(user) {
+      // Load demands created by this user to populate demand filter and title lookup
+      const q = query(collection(db,'demands'), where('createdBy','==', user.uid));
+      const snap = await getDocs(q);
+      const sel = $('#f-demand');
+      snap.forEach(d => {
+        const data = d.data();
+        CACHE_DEMANDS.set(d.id, {id:d.id, ...data});
+        const opt = document.createElement('option');
+        opt.value = d.id;
+        opt.textContent = data.title || d.id;
+        sel.appendChild(opt);
+      });
+    }
+
+    function matchesFilters(item){
+      const demandFilter = $('#f-demand').value;
+      const modeFilter = $('#f-mode').value;
+      const statusFilter = $('#f-status').value;
+      const supplierSearch = $('#f-supplier').value.trim().toLowerCase();
+      if (demandFilter && item.demandId !== demandFilter) return false;
+      if (modeFilter && (item.biddingMode||'') !== modeFilter) return false;
+      if (statusFilter && (item.status||'') !== statusFilter) return false;
+      if (supplierSearch && !(item.supplierName||'').toLowerCase().includes(supplierSearch)) return false;
+      return true;
+    }
+
+  function renderTable(rows, tblSel, emptySel){
+      const tbody = $(tblSel);
+      tbody.innerHTML = '';
+      const filtered = rows.filter(matchesFilters);
+      if (filtered.length === 0){
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:30px;color:#6b7280;">Henüz teklif yok.</td></tr>';
+        $(emptySel).classList.add('hidden'); // Hide the separate empty div
+        $('#stat-total').textContent = '0';
+        $('#stat-avg').textContent = '—';
+        return;
+      }
+      $(emptySel).classList.add('hidden');
+    const sym = (cur) => {
+      if (!cur) return '';
+      const c = String(cur).toUpperCase();
+      if (c === 'TRY') return '₺';
+      if (c === 'USD') return '$';
+      if (c === 'EUR') return '€';
+      if (c === 'GBP') return '£';
+      return c + ' ';
+    };
+
+    filtered.forEach(r => {
+        const tr = document.createElement('tr');
+      // Compute totals from items if present
+      const items = Array.isArray(r.items) ? r.items : [];
+      const sumExcl = items.reduce((s,it)=>{
+        const base = (typeof it.totalPrice === 'number') ? it.totalPrice : ((Number(it.netPrice)||0) * (Number(it.quantity)||0));
+        return s + base;
+      }, 0);
+      const ship = r.shipping?.cost ?? r.shippingCost ?? 0;
+      const total = sumExcl + (Number(ship)||0);
+      const currency = r.currency || (items[0]?.currency) || 'TRY';
+      const priceDisplay = total ? `${sym(currency)} ${fmt(total)}` : '—';
+      // Derive termin (earliest delivery date among items)
+      const dates = items.map(i=>i.deliveryDate).filter(Boolean).sort();
+      const termin = dates.length ? dates[0] : (r.leadTimeDays ?? '—');
+        tr.innerHTML = `
+          <td>${r.demandTitle || r.demandId}</td>
+          <td>${r.supplierName || r.buyerCompanyName || '—'}</td>
+        <td>${priceDisplay}</td>
+        <td>${termin}</td>
+          <td>${r.brand || '—'}</td>
+          <td>${r.paymentTerms || '—'}</td>
+          <td>${badge(r.biddingMode)}</td>
+          <td>${fmtDate(r.createdAt)}</td>
+          <td><button class="btn-link" data-id="${r.id}" data-demand="${r.demandId}">Görüntüle →</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+      // bind view buttons
+      tbody.querySelectorAll('button[data-id]').forEach(btn => {
+        btn.addEventListener('click', (e)=>{
+          const id = e.currentTarget.dataset.id;
+          const demandId = e.currentTarget.dataset.demand;
+          // navigate to demand detail with anchor to bids if available
+          window.location.href = `demand-detail.html?id=${encodeURIComponent(demandId)}#bids`;
+        });
+      });
+      // stats
+      $('#stat-total').textContent = String(filtered.length);
+      const demandSet = new Set(filtered.map(x => x.demandId));
+      $('#stat-active').textContent = String(demandSet.size);
+      $('#stat-avg').textContent = (filtered.length && demandSet.size) ? (filtered.length / demandSet.size).toFixed(1) : '—';
+      $('#stat-status').textContent = 'Hazır';
+    }
+
+    async function joinSupplierName(uid){
+      try{
+        const u = await getDoc(doc(db,'users', uid));
+        return u.exists() ? (u.data().companyName || 'Bilinmeyen Firma') : 'Bilinmeyen Firma';
+      } catch { return 'Bilinmeyen Firma'; }
+    }
+    async function joinDemand(demandId){
+      if (CACHE_DEMANDS.has(demandId)) return CACHE_DEMANDS.get(demandId);
+      try{
+        const d = await getDoc(doc(db,'demands', demandId));
+        if (d.exists()){
+          const data = {id:d.id, ...d.data()};
+          CACHE_DEMANDS.set(d.id, data);
+          return data;
+        }
+      } catch {}
+      return {id:demandId, title:demandId};
+    }
+
+    async function loadIncoming(user){
+      try {
+        // Supplier perspective: bids where this user is supplier? 
+        // Spec asked incoming = to me; for buyer dashboard incoming means bids to my demands.
+        // We'll implement "incoming" as bids to user's demands (buyer view).
+        // 1) get user's demands
+        const ds = await getDocs(query(collection(db,'demands'), where('createdBy','==', user.uid)));
+        const demandIds = ds.docs.map(d=>d.id);
+        if (demandIds.length === 0) return [];
+        // fetch bids for each demandId (could be optimized with where in batches of 10 if field supported)
+        const all = [];
+        for (const d of ds.docs){
+          const q = query(collection(db,'bids'), where('demandId','==', d.id), orderBy('createdAt','desc'), limit(50));
+          const snap = await getDocs(q);
+          for (const b of snap.docs){
+            const data = { id:b.id, ...b.data() };
+            const dem = await joinDemand(data.demandId);
+            data.demandTitle = dem.title;
+            data.biddingMode = dem.biddingMode || 'secret';
+            data.supplierName = await joinSupplierName(data.supplierId);
+            all.push(data);
+          }
+        }
+        return all.sort((a,b)=> (b.createdAt?.toMillis?.()||0) - (a.createdAt?.toMillis?.()||0));
+      } catch (err) {
+        console.error('❌ loadIncoming error:', err);
+        handleError(err, { context: 'Gelen teklifler yüklenemedi', showToast: true });
+        return [];
+      }
+    }
+
+    async function loadOutgoing(user){
+      try {
+        // Bids I sent (as supplier)
+        const q = query(
+          collection(db,'bids'),
+          where('supplierId','==', user.uid),
+          orderBy('createdAt','desc'),
+          limit(100)
+        );
+        const snap = await getDocs(q);
+        const rows = [];
+        for (const b of snap.docs){
+          const data = { id:b.id, ...b.data() };
+          const dem = await joinDemand(data.demandId);
+          data.demandTitle = dem.title;
+          data.biddingMode = dem.biddingMode || 'secret';
+          // load buyer company name
+          try {
+            const owner = await getDoc(doc(db,'users', dem.createdBy));
+            data.buyerCompanyName = owner.exists() ? (owner.data().companyName || '—') : '—';
+          } catch { data.buyerCompanyName = '—'; }
+          rows.push(data);
+        }
+        return rows;
+      } catch (err) {
+        console.error('❌ loadOutgoing error:', err);
+        handleError(err, { context: 'Gönderilen teklifler yüklenemedi', showToast: true });
+        return [];
+      }
+    }
+
+    async function loadData(){
+      const user = auth.currentUser;
+      if (!user) return;
+      $('#stat-status').textContent = 'Yükleniyor...';
+      
+      try {
+        if (CURRENT_TAB === 'incoming'){
+          LAST_DATA = await loadIncoming(user);
+          renderTable(LAST_DATA, '#tbl-incoming', '#incoming-empty');
+        } else {
+          LAST_DATA = await loadOutgoing(user);
+          renderTable(LAST_DATA, '#tbl-outgoing', '#outgoing-empty');
+        }
+      } catch (err) {
+        console.error('❌ loadData error:', err);
+        handleError(err, { context: 'Teklifler yüklenemedi', showToast: true });
+      }
+    }
+
+    // Use imported handleError function for consistent error handling
+
+    function bindFilters(){
+      ['#f-demand','#f-mode','#f-status','#f-supplier'].forEach(sel=>{
+        $(sel).addEventListener('input', ()=> {
+          if (CURRENT_TAB==='incoming') renderTable(LAST_DATA, '#tbl-incoming', '#incoming-empty');
+          else renderTable(LAST_DATA, '#tbl-outgoing', '#outgoing-empty');
+        });
+      });
+      $('#btn-refresh').addEventListener('click', loadData);
+    }
+
+    // Initialize tabs
+    const tabManager = initTabs('.tabs');
+    
+    // Tab change handler
+    tabManager.container.addEventListener('tabChanged', (e) => {
+      const { tabName } = e.detail;
+      if (tabName === 'Gelen Teklifler') {
+        CURRENT_TAB = 'incoming';
+        renderTable(LAST_DATA, '#tbl-incoming', '#incoming-empty');
+      } else if (tabName === 'Gönderdiğim Teklifler') {
+        CURRENT_TAB = 'outgoing';
+        renderTable(LAST_DATA, '#tbl-outgoing', '#outgoing-empty');
+      }
+    });
+
+    // init
+    onAuthStateChanged(auth, async (user)=>{
+      if (!user){ window.location.href = 'index.html'; return; }
+      // loadCompanyName removed - header.js handles this
+      await preloadDemands(user);
+      bindFilters();
+      // restore tab from URL
+      const p = new URLSearchParams(location.search);
+      showTab(p.get('tab') || 'incoming');
+      // tab clicks
+      document.getElementById('tab-incoming').addEventListener('click', ()=>{ history.pushState({},'', '?tab=incoming'); showTab('incoming'); });
+      document.getElementById('tab-outgoing').addEventListener('click', ()=>{ history.pushState({},'', '?tab=outgoing'); showTab('outgoing'); });
+      window.addEventListener('popstate', ()=>{
+        const p2 = new URLSearchParams(location.search);
+        showTab(p2.get('tab') || 'incoming');
+      });
+    });
+
+    // Listen for company changes
+    window.addEventListener('company:changed', async (e) => {
+      const { companyId } = e.detail;
+      console.log('🏢 Company changed, reloading bids for:', companyId);
+      
+      // Re-run data loading
+      await loadData();
+    });
+  </script>
+
+  <!-- Theme Script -->
+  <script src="/assets/js/theme.js" defer></script>
+
+</body>
+</html>

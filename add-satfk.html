@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SATFK Ekleme Script'i</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+        .container { background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb; }
+        button { padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; margin: 10px 0; }
+        button:hover { background: #2563eb; }
+        .log { background: #1f2937; color: #f9fafb; padding: 15px; border-radius: 6px; font-family: monospace; font-size: 12px; max-height: 400px; overflow-y: auto; margin-top: 20px; }
+        .success { color: #10b981; }
+        .error { color: #ef4444; }
+        .warning { color: #f59e0b; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 SATFK Ekleme Script'i</h1>
+        <p>Bu script mevcut taleplere SATFK kodları ekler.</p>
+        
+        <button id="startBtn">SATFK Ekleme İşlemini Başlat</button>
+        <button id="checkBtn">Mevcut Durumu Kontrol Et</button>
+        
+        <div id="log" class="log"></div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+        import { getFirestore, collection, getDocs, doc, updateDoc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAbX3UWRPpw-yo4I4HbSdTg82LxvM-fqTE",
+            authDomain: "teklifbul.firebaseapp.com",
+            projectId: "teklifbul",
+            storageBucket: "teklifbul.firebasestorage.app",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef123456"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        const log = document.getElementById('log');
+        const startBtn = document.getElementById('startBtn');
+        const checkBtn = document.getElementById('checkBtn');
+
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : '';
+            log.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            log.scrollTop = log.scrollHeight;
+        }
+
+        /**
+         * Generate SATFK for a demand
+         */
+        function generateSATFK(demandData, demandId) {
+            // Get creation date
+            let creationDate;
+            if (demandData.createdAt && demandData.createdAt.toDate) {
+                creationDate = demandData.createdAt.toDate();
+            } else if (demandData.createdAt && demandData.createdAt._seconds) {
+                creationDate = new Date(demandData.createdAt._seconds * 1000);
+            } else {
+                creationDate = new Date();
+            }
+
+            // Format date as YYYYMMDD
+            const dateStr = creationDate.toISOString().slice(0, 10).replace(/-/g, '');
+            
+            // Generate a simple counter based on demand ID hash
+            const hash = demandId.split('').reduce((a, b) => {
+                a = ((a << 5) - a) + b.charCodeAt(0);
+                return a & a;
+            }, 0);
+            
+            const counter = Math.abs(hash) % 1000; // 0-999
+            const base36 = counter.toString(36).toUpperCase();
+            const padded = base36.padStart(3, '0');
+            
+            return `SATFK-${dateStr}-${padded}`;
+        }
+
+        /**
+         * Check current status
+         */
+        async function checkStatus() {
+            addLog('🔍 Mevcut durum kontrol ediliyor...', 'info');
+            
+            try {
+                const demandsRef = collection(db, 'demands');
+                const snapshot = await getDocs(demandsRef);
+                
+                let withSATFK = 0;
+                let withoutSATFK = 0;
+                
+                snapshot.docs.forEach(docSnap => {
+                    const data = docSnap.data();
+                    if (data.satfk) {
+                        withSATFK++;
+                    } else {
+                        withoutSATFK++;
+                    }
+                });
+                
+                addLog(`📊 Toplam talep: ${snapshot.docs.length}`, 'info');
+                addLog(`✅ SATFK olan: ${withSATFK}`, 'success');
+                addLog(`❌ SATFK olmayan: ${withoutSATFK}`, 'warning');
+                
+            } catch (error) {
+                addLog(`❌ Kontrol hatası: ${error.message}`, 'error');
+            }
+        }
+
+        /**
+         * Add SATFK to demands
+         */
+        async function addSATFKToDemands() {
+            addLog('🚀 SATFK ekleme işlemi başlatılıyor...', 'info');
+            
+            try {
+                // Check authentication first
+                const user = auth.currentUser;
+                if (!user) {
+                    addLog('❌ Kullanıcı giriş yapmamış. Lütfen önce giriş yapın.', 'error');
+                    return;
+                }
+                
+                addLog(`👤 Kullanıcı: ${user.email}`, 'info');
+                
+                // Get all demands
+                const demandsRef = collection(db, 'demands');
+                const snapshot = await getDocs(demandsRef);
+                
+                addLog(`📊 ${snapshot.docs.length} talep bulundu`, 'info');
+                
+                let updatedCount = 0;
+                let skippedCount = 0;
+                
+                for (const docSnap of snapshot.docs) {
+                    const demandData = docSnap.data();
+                    const demandId = docSnap.id;
+                    
+                    // Skip if SATFK already exists
+                    if (demandData.satfk) {
+                        addLog(`⏭️ ${demandId} - zaten SATFK var: ${demandData.satfk}`, 'warning');
+                        skippedCount++;
+                        continue;
+                    }
+                    
+                    try {
+                        // Generate SATFK
+                        const satfk = generateSATFK(demandData, demandId);
+                        
+                        // Update the demand
+                        await updateDoc(doc(db, 'demands', demandId), {
+                            satfk: satfk
+                        });
+                        
+                        addLog(`✅ ${demandId} - SATFK eklendi: ${satfk}`, 'success');
+                        updatedCount++;
+                        
+                    } catch (error) {
+                        addLog(`❌ ${demandId} - güncelleme hatası: ${error.message}`, 'error');
+                    }
+                }
+                
+                addLog(`\n📈 Özet:`, 'info');
+                addLog(`   - Güncellenen: ${updatedCount} talep`, 'success');
+                addLog(`   - Atlanan: ${skippedCount} talep`, 'warning');
+                addLog(`   - Toplam: ${snapshot.docs.length} talep`, 'info');
+                
+            } catch (error) {
+                addLog(`💥 İşlem hatası: ${error.message}`, 'error');
+            }
+        }
+
+        // Event listeners
+        startBtn.addEventListener('click', addSATFKToDemands);
+        checkBtn.addEventListener('click', checkStatus);
+
+        // Auto-check on load
+        checkStatus();
+    </script>
+</body>
+</html>

@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teklifbul Debug - Gelen Talepler</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .debug-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Teklifbul Debug - Gelen Talepler Sorunu</h1>
+    
+    <div id="debug-results"></div>
+    
+    <button onclick="runFullDebug()">Full Debug Çalıştır</button>
+    <button onclick="clearResults()">Sonuçları Temizle</button>
+    <button onclick="testPublishDemand()">Test Talep Yayınla</button>
+    
+    <script type="module">
+        import { db, auth } from './firebase.js';
+        import { 
+            collection, 
+            query, 
+            where, 
+            getDocs, 
+            getDoc,
+            doc,
+            orderBy, 
+            limit,
+            addDoc,
+            serverTimestamp
+        } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+        
+        function addResult(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `debug-section ${type}`;
+            div.innerHTML = message;
+            document.getElementById('debug-results').appendChild(div);
+        }
+        
+        function clearResults() {
+            document.getElementById('debug-results').innerHTML = '';
+        }
+        
+        async function runFullDebug() {
+            clearResults();
+            addResult('<h2>🔍 Full Debug Başlatılıyor...</h2>', 'info');
+            
+            // 1. Kullanıcı bilgilerini kontrol et
+            await debugUserInfo();
+            
+            // 2. demandRecipients koleksiyonunu kontrol et
+            await debugDemandRecipients();
+            
+            // 3. demands koleksiyonunu kontrol et
+            await debugDemands();
+            
+            // 4. loadIncoming fonksiyonunu simüle et
+            await debugLoadIncoming();
+            
+            // 5. Index durumunu kontrol et
+            await debugIndexes();
+        }
+        
+        async function debugUserInfo() {
+            addResult('<h3>1. 👤 Kullanıcı Bilgileri</h3>', 'info');
+            
+            if (!auth.currentUser) {
+                addResult('❌ Kullanıcı giriş yapmamış!', 'error');
+                return;
+            }
+            
+            const user = auth.currentUser;
+            addResult(`✅ Kullanıcı: ${user.email} (${user.uid})`, 'success');
+            
+            // Users koleksiyonundan kullanıcı detaylarını al
+            try {
+                const userDoc = await getDoc(doc(db, 'users', user.uid));
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    addResult(`<pre>Kullanıcı Verisi: ${JSON.stringify(userData, null, 2)}</pre>`, 'info');
+                    
+                    // Rolleri kontrol et
+                    if (userData.roles) {
+                        addResult(`✅ Roller: ${JSON.stringify(userData.roles)}`, 'success');
+                    } else {
+                        addResult('⚠️ Roller tanımlanmamış!', 'warning');
+                    }
+                    
+                    // Kategorileri kontrol et
+                    if (userData.categories && userData.categories.length > 0) {
+                        addResult(`✅ Kategoriler: ${userData.categories.join(', ')}`, 'success');
+                    } else {
+                        addResult('⚠️ Kategoriler tanımlanmamış!', 'warning');
+                    }
+                    
+                    // Grup ID'lerini kontrol et
+                    if (userData.groupIds && userData.groupIds.length > 0) {
+                        addResult(`✅ Grup ID'leri: ${userData.groupIds.join(', ')}`, 'success');
+                    } else {
+                        addResult('⚠️ Grup ID\'leri tanımlanmamış!', 'warning');
+                    }
+                } else {
+                    addResult('❌ Kullanıcı users koleksiyonunda bulunamadı!', 'error');
+                }
+            } catch (e) {
+                addResult(`❌ Kullanıcı bilgileri alınamadı: ${e.message}`, 'error');
+            }
+        }
+        
+        async function debugDemandRecipients() {
+            addResult('<h3>2. 📨 demandRecipients Koleksiyonu</h3>', 'info');
+            
+            try {
+                // Tüm demandRecipients kayıtlarını al
+                const allRecipients = await getDocs(collection(db, 'demandRecipients'));
+                addResult(`📊 Toplam demandRecipients kaydı: ${allRecipients.size}`, 'info');
+                
+                if (allRecipients.size === 0) {
+                    addResult('⚠️ Hiç demandRecipients kaydı yok! Bu yüzden gelen talepler görünmüyor.', 'warning');
+                    return;
+                }
+                
+                // Kullanıcıya ait kayıtları filtrele
+                const userRecipients = allRecipients.docs.filter(doc => 
+                    doc.data().supplierId === auth.currentUser.uid
+                );
+                
+                addResult(`📊 Kullanıcıya ait demandRecipients kaydı: ${userRecipients.length}`, 'info');
+                
+                if (userRecipients.length === 0) {
+                    addResult('⚠️ Kullanıcıya ait demandRecipients kaydı yok!', 'warning');
+                } else {
+                    addResult('<h4>Kullanıcıya ait demandRecipients kayıtları:</h4>', 'info');
+                    const table = document.createElement('table');
+                    table.innerHTML = `
+                        <tr>
+                            <th>ID</th>
+                            <th>demandId</th>
+                            <th>buyerId</th>
+                            <th>supplierId</th>
+                            <th>matchedAt</th>
+                            <th>status</th>
+                        </tr>
+                    `;
+                    
+                    userRecipients.forEach(doc => {
+                        const data = doc.data();
+                        const row = table.insertRow();
+                        row.innerHTML = `
+                            <td>${doc.id}</td>
+                            <td>${data.demandId}</td>
+                            <td>${data.buyerId}</td>
+                            <td>${data.supplierId}</td>
+                            <td>${data.matchedAt?.toDate?.()?.toLocaleString() || 'N/A'}</td>
+                            <td>${data.status}</td>
+                        `;
+                    });
+                    
+                    addResult(table.outerHTML, 'info');
+                }
+                
+            } catch (e) {
+                addResult(`❌ demandRecipients sorgusu başarısız: ${e.message}`, 'error');
+            }
+        }
+        
+        async function debugDemands() {
+            addResult('<h3>3. 📋 demands Koleksiyonu</h3>', 'info');
+            
+            try {
+                // Yayınlanmış talepleri al
+                const publishedDemands = await getDocs(
+                    query(collection(db, 'demands'), where('isPublished', '==', true))
+                );
+                
+                addResult(`📊 Toplam yayınlanmış talep: ${publishedDemands.size}`, 'info');
+                
+                if (publishedDemands.size === 0) {
+                    addResult('⚠️ Hiç yayınlanmış talep yok!', 'warning');
+                    return;
+                }
+                
+                // Kullanıcının kategorilerine uygun talepleri bul
+                const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    const userCategories = userData.categories || [];
+                    
+                    if (userCategories.length === 0) {
+                        addResult('⚠️ Kullanıcının kategorileri yok!', 'warning');
+                        return;
+                    }
+                    
+                    const matchingDemands = publishedDemands.docs.filter(doc => {
+                        const demand = doc.data();
+                        const demandCategories = demand.categories || [];
+                        return demandCategories.some(cat => userCategories.includes(cat));
+                    });
+                    
+                    addResult(`📊 Kullanıcının kategorilerine uygun talep: ${matchingDemands.length}`, 'info');
+                    
+                    if (matchingDemands.length > 0) {
+                        addResult('<h4>Kullanıcının kategorilerine uygun talepler:</h4>', 'info');
+                        const table = document.createElement('table');
+                        table.innerHTML = `
+                            <tr>
+                                <th>ID</th>
+                                <th>Başlık</th>
+                                <th>Kategoriler</th>
+                                <th>Oluşturan</th>
+                                <th>Yayın Tarihi</th>
+                            </tr>
+                        `;
+                        
+                        matchingDemands.forEach(doc => {
+                            const data = doc.data();
+                            const row = table.insertRow();
+                            row.innerHTML = `
+                                <td>${doc.id}</td>
+                                <td>${data.title || 'N/A'}</td>
+                                <td>${(data.categories || []).join(', ')}</td>
+                                <td>${data.createdBy}</td>
+                                <td>${data.createdAt?.toDate?.()?.toLocaleString() || 'N/A'}</td>
+                            `;
+                        });
+                        
+                        addResult(table.outerHTML, 'info');
+                    }
+                }
+                
+            } catch (e) {
+                addResult(`❌ demands sorgusu başarısız: ${e.message}`, 'error');
+            }
+        }
+        
+        async function debugLoadIncoming() {
+            addResult('<h3>4. 🔄 loadIncoming Fonksiyonu Simülasyonu</h3>', 'info');
+            
+            try {
+                const user = auth.currentUser;
+                
+                // 1. demandRecipients sorgusu
+                const q = query(
+                    collection(db, 'demandRecipients'), 
+                    where('supplierId', '==', user.uid), 
+                    orderBy('matchedAt', 'desc'), 
+                    limit(100)
+                );
+                
+                addResult('🔍 demandRecipients sorgusu çalıştırılıyor...', 'info');
+                const rs = await getDocs(q);
+                addResult(`📊 Sorgu sonucu: ${rs.size} kayıt`, 'info');
+                
+                if (rs.size === 0) {
+                    addResult('⚠️ demandRecipients sorgusu sonuç vermedi!', 'warning');
+                    return;
+                }
+                
+                // 2. demandId'leri al
+                const ids = rs.docs.map(d => d.data().demandId);
+                addResult(`📊 Bulunan demandId'ler: ${ids.join(', ')}`, 'info');
+                
+                // 3. Her demandId için demands koleksiyonundan veri al
+                const rows = [];
+                for (const id of ids) {
+                    addResult(`🔍 demandId ${id} için demands koleksiyonu sorgulanıyor...`, 'info');
+                    const ds = await getDoc(doc(db, 'demands', id));
+                    if (ds.exists()) {
+                        rows.push({ id: ds.id, ...ds.data() });
+                        addResult(`✅ demandId ${id} bulundu`, 'success');
+                    } else {
+                        addResult(`❌ demandId ${id} bulunamadı!`, 'error');
+                    }
+                }
+                
+                addResult(`📊 Toplam yüklenen talep: ${rows.length}`, 'info');
+                
+                if (rows.length > 0) {
+                    addResult('<h4>Yüklenen talepler:</h4>', 'info');
+                    const table = document.createElement('table');
+                    table.innerHTML = `
+                        <tr>
+                            <th>ID</th>
+                            <th>Başlık</th>
+                            <th>Kategoriler</th>
+                            <th>Durum</th>
+                        </tr>
+                    `;
+                    
+                    rows.forEach(row => {
+                        const tr = table.insertRow();
+                        tr.innerHTML = `
+                            <td>${row.id}</td>
+                            <td>${row.title || 'N/A'}</td>
+                            <td>${(row.categories || []).join(', ')}</td>
+                            <td>${row.status || (row.isPublished ? 'Yayında' : 'Taslak')}</td>
+                        `;
+                    });
+                    
+                    addResult(table.outerHTML, 'info');
+                } else {
+                    addResult('⚠️ Hiç talep yüklenemedi!', 'warning');
+                }
+                
+            } catch (e) {
+                addResult(`❌ loadIncoming simülasyonu başarısız: ${e.message}`, 'error');
+                
+                // Index hatası kontrolü
+                if (e.message.includes('index')) {
+                    addResult('🔍 Index hatası tespit edildi! Konsoldaki "Create index" linkine tıklayın.', 'warning');
+                }
+            }
+        }
+        
+        async function debugIndexes() {
+            addResult('<h3>5. 📊 Firestore Index Durumu</h3>', 'info');
+            
+            const requiredIndexes = [
+                'demandRecipients → supplierId (ASC), matchedAt (DESC)',
+                'demands → createdBy (ASC), createdAt (DESC)',
+                'demands → isPublished (ASC), visibility (ASC), createdAt (DESC)',
+                'users → isActive (ASC), roles.supplier (ASC), categories (CONTAINS)',
+                'users → isActive (ASC), roles.supplier (ASC), groupIds (CONTAINS)'
+            ];
+            
+            addResult('<h4>Gerekli Index\'ler:</h4>', 'info');
+            requiredIndexes.forEach(index => {
+                addResult(`📋 ${index}`, 'info');
+            });
+            
+            addResult('💡 Index hatası alıyorsanız Firebase Console → Firestore → Indexes bölümünden oluşturun.', 'warning');
+        }
+        
+        async function testPublishDemand() {
+            addResult('<h3>🧪 Test Talep Yayınlama</h3>', 'info');
+            
+            try {
+                // Test talep oluştur
+                const testDemand = {
+                    title: 'Test Talep - Debug',
+                    description: 'Bu bir test talebidir',
+                    categories: ['test', 'debug'],
+                    groupIds: ['TEST-GROUP'],
+                    createdBy: auth.currentUser.uid,
+                    companyId: 'test-company',
+                    isPublished: true,
+                    visibility: 'public',
+                    createdAt: serverTimestamp(),
+                    updatedAt: serverTimestamp()
+                };
+                
+                addResult('🔍 Test talep oluşturuluyor...', 'info');
+                const demandRef = await addDoc(collection(db, 'demands'), testDemand);
+                addResult(`✅ Test talep oluşturuldu: ${demandRef.id}`, 'success');
+                
+                // publishDemandAndMatchSuppliers fonksiyonunu simüle et
+                addResult('🔍 publishDemandAndMatchSuppliers simülasyonu...', 'info');
+                
+                const cats = testDemand.categories || [];
+                const grps = testDemand.groupIds || [];
+                
+                // Kategori bazlı tedarikçi sorguları
+                const supplierQueries = [];
+                
+                if (cats.length > 0) {
+                    supplierQueries.push(
+                        query(collection(db, 'users'),
+                              where('isActive', '==', true),
+                              where('categories', 'array-contains-any', cats),
+                              where('roles.supplier', '==', true))
+                    );
+                    
+                    supplierQueries.push(
+                        query(collection(db, 'users'),
+                              where('isActive', '==', true),
+                              where('categories', 'array-contains-any', cats),
+                              where('roles.buyer', '==', true))
+                    );
+                }
+                
+                if (grps.length > 0) {
+                    supplierQueries.push(
+                        query(collection(db, 'users'),
+                              where('groupIds', 'array-contains-any', grps),
+                              where('isActive', '==', true))
+                    );
+                }
+                
+                const resultSet = new Map();
+                
+                for (const q of supplierQueries) {
+                    try {
+                        const res = await getDocs(q);
+                        res.forEach(u => {
+                            const data = u.data();
+                            if (data.roles?.supplier || data.roles?.buyer) {
+                                resultSet.set(u.id, data);
+                            }
+                        });
+                    } catch (e) {
+                        addResult(`⚠️ Sorgu başarısız: ${e.message}`, 'warning');
+                    }
+                }
+                
+                addResult(`📊 Bulunan eşleşen firma: ${resultSet.size}`, 'info');
+                
+                // demandRecipients kayıtları oluştur
+                const tasks = [];
+                for (const [uid, udata] of resultSet.entries()) {
+                    if (uid === testDemand.createdBy) continue;
+                    
+                    tasks.push(
+                        addDoc(collection(db, "demandRecipients"), {
+                            demandId: demandRef.id,
+                            buyerId: testDemand.createdBy,
+                            supplierId: uid,
+                            supplierCompanyId: udata.companyId || null,
+                            matchedAt: serverTimestamp(),
+                            status: "pending",
+                        })
+                    );
+                }
+                
+                if (tasks.length > 0) {
+                    await Promise.all(tasks);
+                    addResult(`✅ ${tasks.length} demandRecipients kaydı oluşturuldu`, 'success');
+                } else {
+                    addResult('⚠️ Hiç eşleşen firma bulunamadı!', 'warning');
+                }
+                
+            } catch (e) {
+                addResult(`❌ Test talep yayınlama başarısız: ${e.message}`, 'error');
+            }
+        }
+        
+        // Make functions global
+        window.runFullDebug = runFullDebug;
+        window.clearResults = clearResults;
+        window.testPublishDemand = testPublishDemand;
+    </script>
+</body>
+</html>

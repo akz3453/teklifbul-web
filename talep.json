@@ -1,0 +1,49 @@
+{
+  "company_name": "Test Firma A.Ş.",
+  "talep_konusu": "İnşaat Malzemeleri Alımı",
+  "stf_no": "STF-2025-0001",
+  "talep_kodu": "FBXR1L8A5P",
+  "santiye": "Ankara Şantiyesi",
+  "usd_try": 34.85,
+  "termin_tarihi": "2025-10-25",
+  "alim_yeri": "Merkez Depo",
+  "aciklama": "Teknik şartnameye uygun ürünler tercih edilecek.",
+  "items": [
+    {
+      "no": 1,
+      "sku": "CMT-001",
+      "name": "Çimento",
+      "brand": "Akçansa",
+      "qty": 100,
+      "unit": "Torba",
+      "req_date": "2025-10-23"
+    },
+    {
+      "no": 2,
+      "sku": "DM-002",
+      "name": "Demir",
+      "brand": "Kardemir",
+      "qty": 50,
+      "unit": "Ton",
+      "req_date": "2025-10-23"
+    },
+    {
+      "no": 3,
+      "sku": "BRK-003",
+      "name": "Tuğla",
+      "brand": "Bims",
+      "qty": 1000,
+      "unit": "Adet",
+      "req_date": "2025-10-24"
+    },
+    {
+      "no": 4,
+      "sku": "KUM-004",
+      "name": "Kum",
+      "brand": "Doğal",
+      "qty": 20,
+      "unit": "Ton",
+      "req_date": "2025-10-24"
+    }
+  ]
+}

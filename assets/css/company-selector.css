@@ -1,0 +1,272 @@
+/**
+ * Company Selector Styles
+ * Responsive and accessible company selection component
+ */
+
+.company-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+
+.company-selector-empty {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.company-label {
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.company-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.company-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  transition: all 0.2s ease;
+  min-width: 150px;
+  justify-content: space-between;
+}
+
+.company-button:hover {
+  border-color: #9ca3af;
+  background: #f9fafb;
+}
+
+.company-button:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.company-button[aria-expanded="true"] {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.company-name {
+  flex: 1;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.company-arrow {
+  font-size: 12px;
+  color: #6b7280;
+  transition: transform 0.2s ease;
+}
+
+.company-button[aria-expanded="true"] .company-arrow {
+  transform: rotate(180deg);
+}
+
+.company-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  z-index: 1000;
+  max-height: 200px;
+  overflow-y: auto;
+  display: none;
+  margin-top: 4px;
+}
+
+.company-menu.show {
+  display: block;
+}
+
+.company-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.company-option:last-child {
+  border-bottom: none;
+}
+
+.company-option:hover {
+  background: #f9fafb;
+}
+
+.company-option.active {
+  background: #eff6ff;
+  color: #1e40af;
+}
+
+.company-option.active .company-option-name {
+  font-weight: 600;
+}
+
+.company-option-name {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.company-option-role {
+  font-size: 12px;
+  color: #6b7280;
+  background: #f3f4f6;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 8px;
+  white-space: nowrap;
+}
+
+.company-option.active .company-option-role {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.user-name {
+  font-weight: 500;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .company-selector {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .company-button {
+    min-width: 120px;
+    font-size: 13px;
+    padding: 6px 10px;
+  }
+
+  .company-menu {
+    left: 0;
+    right: auto;
+    min-width: 200px;
+  }
+
+  .company-option {
+    padding: 8px 10px;
+  }
+
+  .company-option-name {
+    font-size: 13px;
+  }
+
+  .company-option-role {
+    font-size: 11px;
+    padding: 1px 4px;
+  }
+}
+
+@media (max-width: 480px) {
+  .company-selector {
+    width: 100%;
+  }
+
+  .company-button {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .company-menu {
+    width: 100%;
+    left: 0;
+    right: 0;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .company-button {
+    background: #1f2937;
+    border-color: #374151;
+    color: #f9fafb;
+  }
+
+  .company-button:hover {
+    background: #374151;
+    border-color: #6b7280;
+  }
+
+  .company-button:focus {
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+  }
+
+  .company-menu {
+    background: #1f2937;
+    border-color: #374151;
+  }
+
+  .company-option {
+    border-bottom-color: #374151;
+    color: #f9fafb;
+  }
+
+  .company-option:hover {
+    background: #374151;
+  }
+
+  .company-option.active {
+    background: #1e3a8a;
+    color: #dbeafe;
+  }
+
+  .company-option-name {
+    color: #f9fafb;
+  }
+
+  .company-option-role {
+    background: #374151;
+    color: #9ca3af;
+  }
+
+  .company-option.active .company-option-role {
+    background: #1e40af;
+    color: #dbeafe;
+  }
+
+  .user-info {
+    color: #9ca3af;
+  }
+}

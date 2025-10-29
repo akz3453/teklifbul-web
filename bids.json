@@ -1,0 +1,39 @@
+{
+  "firms": [
+    {
+      "firma_adi": "Akz Petrol Ltd.",
+      "tel": "05001234567",
+      "odeme": "%50 Peşin",
+      "termin": "2025-10-25",
+      "fiyatlar": [250, 400]
+    },
+    {
+      "firma_adi": "Beta İnşaat",
+      "tel": "05007654321",
+      "odeme": "%40 Peşin",
+      "termin": "2025-10-28",
+      "fiyatlar": [270, 420]
+    },
+    {
+      "firma_adi": "Cemal Yapı",
+      "tel": "05009876543",
+      "odeme": "%60 Peşin",
+      "termin": "2025-10-29",
+      "fiyatlar": [260, 415]
+    },
+    {
+      "firma_adi": "Delta İnşaat",
+      "tel": "05005554433",
+      "odeme": "%30 Peşin",
+      "termin": "2025-10-30",
+      "fiyatlar": [280, 430]
+    },
+    {
+      "firma_adi": "Epsilon Malzeme",
+      "tel": "05003332211",
+      "odeme": "%70 Peşin",
+      "termin": "2025-10-31",
+      "fiyatlar": [240, 390]
+    }
+  ]
+}

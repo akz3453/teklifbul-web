@@ -1,0 +1,18 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() { return request.auth != null; }
+    
+    // supplier documents (tax certificates, etc.)
+    match /suppliers/{uid}/{fileName} {
+      allow read: if signedIn(); // anyone authenticated can download
+      allow write, delete: if signedIn() && request.auth.uid == uid; // only owner can upload/delete
+    }
+
+    // demand files
+    match /demands/{demandId}/{userId}/{fileName} {
+      allow read: if signedIn();
+      allow write, delete: if signedIn() && request.auth.uid == userId;
+    }
+  }
+}

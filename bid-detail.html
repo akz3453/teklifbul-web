@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>Teklif Detayı — Teklifbul</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  <link rel="stylesheet" href="/utils.css" />
+  <style>
+    body { margin: 0; font-family: system-ui, Arial; background: #f9fafb; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    
+    /* Header */
+    .page-header { 
+      background: white; 
+      border-radius: 8px; 
+      padding: 24px; 
+      margin-bottom: 20px; 
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
+    }
+    .page-header h1 { margin: 0 0 8px 0; font-size: 28px; color: #1f2937; }
+    .page-header p { margin: 0; color: #6b7280; font-size: 14px; }
+    
+    /* Bid Details */
+    .bid-details {
+      background: white;
+      border-radius: 8px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    .detail-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .detail-card h3 {
+      margin: 0 0 12px 0;
+      font-size: 16px;
+      color: #374151;
+      border-bottom: 1px solid #e5e7eb;
+      padding-bottom: 8px;
+    }
+    .detail-item {
+      margin-bottom: 12px;
+    }
+    .detail-label {
+      font-size: 13px;
+      color: #6b7280;
+      margin-bottom: 4px;
+    }
+    .detail-value {
+      font-size: 15px;
+      font-weight: 500;
+      color: #1f2937;
+    }
+    
+    /* Actions */
+    .actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: #3b82f6;
+      color: white;
+    }
+    .btn-primary:hover {
+      background: #2563eb;
+    }
+    .btn-success {
+      background: #10b981;
+      color: white;
+    }
+    .btn-success:hover {
+      background: #059669;
+    }
+    .btn-danger {
+      background: #ef4444;
+      color: white;
+    }
+    .btn-danger:hover {
+      background: #dc2626;
+    }
+    .btn-warning {
+      background: #f59e0b;
+      color: white;
+    }
+    .btn-warning:hover {
+      background: #d97706;
+    }
+    .btn-secondary {
+      background: #6b7280;
+      color: white;
+    }
+    .btn-secondary:hover {
+      background: #4b5563;
+    }
+    
+    /* Status Badge */
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .status-pending { background: #dbeafe; color: #1e40af; }
+    .status-accepted { background: #d1fae5; color: #065f46; }
+    .status-rejected { background: #fee2e2; color: #991b1b; }
+    .status-completed { background: #ddd6fe; color: #5b21b6; }
+    .status-revision { background: #fef3c7; color: #92400e; }
+  </style>
+</head>
+<body>
+  <!-- Common Header -->
+  <header id="app-header" style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #e5e7eb;background:white">
+    <div style="display:flex;gap:12px;align-items:center">
+      <strong style="font-size:18px;color:#1f2937">Teklifbul</strong>
+      <a href="./dashboard.html" style="text-decoration:none;color:#3b82f6">Dashboard</a>
+      <a href="./demands.html" style="text-decoration:none;color:#3b82f6">Taleplerim</a>
+      <a href="./bids.html" style="text-decoration:none;color:#3b82f6">Teklifler</a>
+      <a href="./main-demands.html" style="text-decoration:none;color:#3b82f6">Ana Talep Ekranı</a>
+      <a href="./demand-new.html" style="text-decoration:none;color:#3b82f6">+ Yeni Talep</a>
+    </div>
+    <div style="display:flex;gap:12px;align-items:center">
+      <label style="font-size:12px;opacity:.8">Firma:</label>
+      <span id="firmName" style="font-size:13px;color:#6b7280">-</span>
+      <span id="userLabel" style="font-size:13px;color:#6b7280;opacity:.6">-</span>
+      <button id="logoutBtn" class="btn-danger">Çıkış</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- Page Header -->
+    <div class="page-header">
+      <h1>📄 Teklif Detayı</h1>
+      <p>Teklif detaylarını görüntüleyin ve işlemler yapın</p>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loading" class="loading" style="text-align: center; padding: 40px; display: none;">
+      <div class="spinner"></div>
+      <p>Teklif detayları yükleniyor...</p>
+    </div>
+
+    <!-- Bid Details -->
+    <div id="bidDetails" class="bid-details" style="display: none;">
+      <div class="detail-grid">
+        <!-- Supplier Info -->
+        <div class="detail-card">
+          <h3> Tedarikçi Bilgileri </h3>
+          <div class="detail-item">
+            <div class="detail-label">Firma Adı</div>
+            <div id="supplierName" class="detail-value">-</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">İletişim</div>
+            <div id="supplierContact" class="detail-value">-</div>
+          </div>
+        </div>
+
+        <!-- Demand Info -->
+        <div class="detail-card">
+          <h3> Talep Bilgileri </h3>
+          <div class="detail-item">
+            <div class="detail-label">Talep Başlığı</div>
+            <div id="demandTitle" class="detail-value">-</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Talep ID</div>
+            <div id="demandId" class="detail-value">-</div>
+          </div>
+        </div>
+
+        <!-- Bid Info -->
+        <div class="detail-card">
+          <h3> Teklif Detayları </h3>
+          <div class="detail-item">
+            <div class="detail-label">Fiyat</div>
+            <div id="bidPrice" class="detail-value">-</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Teslimat Süresi</div>
+            <div id="bidDelivery" class="detail-value">-</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Durum</div>
+            <div id="bidStatus" class="detail-value">-</div>
+          </div>
+        </div>
+
+        <!-- Additional Info -->
+        <div class="detail-card">
+          <h3> Ek Bilgiler </h3>
+          <div class="detail-item">
+            <div class="detail-label">Marka</div>
+            <div id="bidBrand" class="detail-value">-</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Ödeme Şartları</div>
+            <div id="bidPayment" class="detail-value">-</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Teklif Tarihi</div>
+            <div id="bidDate" class="detail-value">-</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="actions">
+        <button id="acceptBid" class="btn btn-success">✔️ Kabul Et</button>
+        <button id="rejectBid" class="btn btn-danger">✖️ Reddet</button>
+        <button id="requestRevision" class="btn btn-warning">↻ Revizyon Talep Et</button>
+        <button id="completeBid" class="btn btn-primary">✅ Tamamlandı</button>
+        <button id="backToList" class="btn btn-secondary">← Listeye Dön</button>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="empty-state" style="display: none;">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+      </svg>
+      <h3>Teklif bulunamadı</h3>
+      <p>İlgili teklif bulunamadı veya erişim izniniz yok</p>
+      <button class="btn btn-secondary" onclick="window.location.href='./bids.html'">← Tekliflere Dön</button>
+    </div>
+  </div>
+
+  <!-- Main Script -->
+  <script type="module">
+    import { db, auth, requireAuth } from "./firebase.js";
+    import { doc, getDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+    import { setupHeader } from "./src/common-company.js";
+    import { getStatusLabel, getPaymentMethodLabel } from "./bid-management.js";
+
+    // Setup common header functionality
+    await setupHeader();
+
+    const user = await requireAuth();
+    
+    // Setup header
+    document.getElementById("userLabel").textContent = user.email || user.uid.slice(0, 10);
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const bidId = urlParams.get('bid');
+
+    const loading = document.getElementById("loading");
+    const bidDetails = document.getElementById("bidDetails");
+    const emptyState = document.getElementById("emptyState");
+
+    // Show loading state
+    loading.style.display = "block";
+
+    if (!bidId) {
+      loading.style.display = "none";
+      emptyState.style.display = "block";
+      // Cannot use return in top-level await module, just skip loading
+    } else {
+
+    try {
+      // Load bid data
+      const bidRef = doc(db, "bids", bidId);
+      const bidSnap = await getDoc(bidRef);
+      
+      if (!bidSnap.exists()) {
+        loading.style.display = "none";
+        emptyState.style.display = "block";
+        return;
+      }
+      
+      const bid = bidSnap.data();
+      
+      // Load demand data
+      const demandRef = doc(db, "demands", bid.demandId);
+      const demandSnap = await getDoc(demandRef);
+      const demand = demandSnap.exists() ? demandSnap.data() : null;
+      
+      // Load supplier data
+      let supplier = null;
+      if (bid.supplierId) {
+        try {
+          const supplierRef = doc(db, "users", bid.supplierId);
+          const supplierSnap = await getDoc(supplierRef);
+          supplier = supplierSnap.exists() ? supplierSnap.data() : null;
+        } catch (error) {
+          console.warn("Supplier data could not be loaded:", error);
+        }
+      }
+      
+      // Populate UI
+      document.getElementById("supplierName").textContent = supplier?.companyName || "Bilinmeyen Firma";
+      document.getElementById("supplierContact").textContent = supplier?.email || "-";
+      document.getElementById("demandTitle").textContent = demand?.title || "Bilinmeyen Talep";
+      document.getElementById("demandId").textContent = bid.demandId;
+      document.getElementById("bidPrice").textContent = `₺ ${(bid.netPrice || bid.price || 0).toLocaleString("tr-TR")}`;
+      document.getElementById("bidDelivery").textContent = `${bid.leadTimeDays || "-"} gün`;
+      document.getElementById("bidBrand").textContent = bid.brand || "-";
+      document.getElementById("bidPayment").textContent = bid.paymentTerms || "-";
+      
+      // Format date
+      const createdAt = bid.createdAt?.toDate?.();
+      document.getElementById("bidDate").textContent = createdAt ? createdAt.toLocaleDateString("tr-TR") : "-";
+      
+      // Status badge
+      const statusElement = document.getElementById("bidStatus");
+      statusElement.textContent = getStatusLabel(bid.status || "pending");
+      statusElement.className = "status-badge status-" + (bid.status || "pending");
+      
+      // Hide loading, show details
+      loading.style.display = "none";
+      bidDetails.style.display = "block";
+      
+      // Setup action buttons
+      document.getElementById("acceptBid").addEventListener("click", () => updateBidStatus("accepted"));
+      document.getElementById("rejectBid").addEventListener("click", () => updateBidStatus("rejected"));
+      document.getElementById("requestRevision").addEventListener("click", requestRevision);
+      document.getElementById("completeBid").addEventListener("click", () => updateBidStatus("completed"));
+      document.getElementById("backToList").addEventListener("click", () => window.location.href = "./bids.html");
+      
+    } catch (error) {
+      console.error("Error loading bid details:", error);
+      loading.style.display = "none";
+      emptyState.style.display = "block";
+    }
+    } // End else block
+
+    // Update bid status
+    async function updateBidStatus(newStatus) {
+      try {
+        const bidRef = doc(db, "bids", bidId);
+        await updateDoc(bidRef, {
+          status: newStatus,
+          statusHistory: [{
+            status: newStatus,
+            timestamp: serverTimestamp(),
+            userId: user.uid,
+            notes: `Status updated to ${newStatus}`
+          }]
+        });
+        
+        alert(`Teklif durumu "${getStatusLabel(newStatus)}" olarak güncellendi.`);
+        window.location.reload();
+      } catch (error) {
+        console.error("Error updating bid status:", error);
+        alert("Durum güncellenirken bir hata oluştu: " + error.message);
+      }
+    }
+
+    // Request revision
+    async function requestRevision() {
+      const revisionNotes = prompt("Revizyon talebinizi belirtin:");
+      if (!revisionNotes) return;
+      
+      try {
+        const bidRef = doc(db, "bids", bidId);
+        await updateDoc(bidRef, {
+          status: "revision_requested",
+          statusHistory: [{
+            status: "revision_requested",
+            timestamp: serverTimestamp(),
+            userId: user.uid,
+            notes: revisionNotes
+          }]
+        });
+        
+        alert("Revizyon talebiniz gönderildi.");
+        window.location.reload();
+      } catch (error) {
+        console.error("Error requesting revision:", error);
+        alert("Revizyon talebi gönderilirken bir hata oluştu: " + error.message);
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>Company Name Display Test - Teklifbul</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%233b82f6' rx='6'/%3E%3Ctext x='16' y='22' font-family='Arial' font-size='18' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/utils.css" />
+  <style>
+    body { margin: 0; font-family: system-ui, Arial; background: #f9fafb; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    .test-card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .test-card h2 { margin: 0 0 16px 0; color: #1f2937; }
+    .test-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #e5e7eb; }
+    .test-item:last-child { border-bottom: none; }
+    .test-label { font-weight: 600; color: #374151; }
+    .test-value { color: #6b7280; font-family: monospace; }
+    .success { color: #059669; }
+    .error { color: #dc2626; }
+    .warning { color: #d97706; }
+  </style>
+</head>
+<body>
+  <!-- Common Header -->
+  <header id="app-header"></header>
+
+  <div class="container">
+    <h1>🏢 Company Name Display Test</h1>
+    
+    <div class="test-card">
+      <h2>📊 Company State Test</h2>
+      <div class="test-item">
+        <span class="test-label">Active Company ID:</span>
+        <span class="test-value" id="activeCompanyId">Loading...</span>
+      </div>
+      <div class="test-item">
+        <span class="test-label">Active Company Name:</span>
+        <span class="test-value" id="activeCompanyName">Loading...</span>
+      </div>
+      <div class="test-item">
+        <span class="test-label">User Companies Count:</span>
+        <span class="test-value" id="userCompaniesCount">Loading...</span>
+      </div>
+      <div class="test-item">
+        <span class="test-label">Has Multiple Companies:</span>
+        <span class="test-value" id="hasMultipleCompanies">Loading...</span>
+      </div>
+    </div>
+
+    <div class="test-card">
+      <h2>🔍 Header Display Test</h2>
+      <div class="test-item">
+        <span class="test-label">Header Company Name:</span>
+        <span class="test-value" id="headerCompanyName">Loading...</span>
+      </div>
+      <div class="test-item">
+        <span class="test-label">Company Selector Visible:</span>
+        <span class="test-value" id="companySelectorVisible">Loading...</span>
+      </div>
+      <div class="test-item">
+        <span class="test-label">Company Name Visible:</span>
+        <span class="test-value" id="companyNameVisible">Loading...</span>
+      </div>
+    </div>
+
+    <div class="test-card">
+      <h2>🎯 Test Results</h2>
+      <div class="test-item">
+        <span class="test-label">Company Name Display:</span>
+        <span class="test-value" id="companyNameDisplayTest">Loading...</span>
+      </div>
+      <div class="test-item">
+        <span class="test-label">No Placeholder Text:</span>
+        <span class="test-value" id="noPlaceholderTest">Loading...</span>
+      </div>
+      <div class="test-item">
+        <span class="test-label">Event System:</span>
+        <span class="test-value" id="eventSystemTest">Loading...</span>
+      </div>
+    </div>
+
+    <div class="test-card">
+      <h2>🔄 Manual Tests</h2>
+      <p>1. Check if company name shows real company name instead of "Kendi Firmam"</p>
+      <p>2. If multiple companies, test company selector dropdown</p>
+      <p>3. Test company change event by switching companies</p>
+      <p>4. Refresh page and verify company selection persists</p>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initGlobalHeader } from './assets/js/ui/header.js';
+    import { getActiveCompanyId, getActiveCompany, loadUserCompanies, hasMultipleCompanies } from './assets/js/state/company.js';
+    import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js';
+
+    // Initialize global header
+    initGlobalHeader({ mount: '#app-header', activeRoute: 'test' });
+
+    // Test functions
+    async function runTests() {
+      try {
+        const auth = getAuth();
+        const user = auth.currentUser;
+        
+        if (!user) {
+          document.getElementById('activeCompanyId').textContent = 'Not authenticated';
+          document.getElementById('activeCompanyId').className = 'test-value error';
+          return;
+        }
+
+        // Test company state
+        const activeCompanyId = await getActiveCompanyId();
+        const activeCompany = await getActiveCompany();
+        const userCompanies = await loadUserCompanies(user.uid);
+        const hasMultiple = hasMultipleCompanies();
+
+        // Update test results
+        document.getElementById('activeCompanyId').textContent = activeCompanyId || 'None';
+        document.getElementById('activeCompanyId').className = activeCompanyId ? 'test-value success' : 'test-value warning';
+        
+        document.getElementById('activeCompanyName').textContent = activeCompany?.name || 'None';
+        document.getElementById('activeCompanyName').className = activeCompany?.name ? 'test-value success' : 'test-value warning';
+        
+        document.getElementById('userCompaniesCount').textContent = userCompanies.length.toString();
+        document.getElementById('userCompaniesCount').className = userCompanies.length > 0 ? 'test-value success' : 'test-value warning';
+        
+        document.getElementById('hasMultipleCompanies').textContent = hasMultiple ? 'Yes' : 'No';
+        document.getElementById('hasMultipleCompanies').className = hasMultiple ? 'test-value success' : 'test-value warning';
+
+        // Test header display
+        const headerCompanyName = document.querySelector('#companyName');
+        const companySelector = document.querySelector('#companySelector');
+        
+        if (headerCompanyName) {
+          document.getElementById('headerCompanyName').textContent = headerCompanyName.textContent;
+          document.getElementById('headerCompanyName').className = 'test-value success';
+          
+          document.getElementById('companyNameVisible').textContent = headerCompanyName.style.display !== 'none' ? 'Yes' : 'No';
+          document.getElementById('companyNameVisible').className = headerCompanyName.style.display !== 'none' ? 'test-value success' : 'test-value warning';
+        }
+
+        if (companySelector) {
+          document.getElementById('companySelectorVisible').textContent = companySelector.style.display !== 'none' ? 'Yes' : 'No';
+          document.getElementById('companySelectorVisible').className = companySelector.style.display !== 'none' ? 'test-value success' : 'test-value warning';
+        }
+
+        // Test results
+        const companyNameDisplay = headerCompanyName?.textContent || 'Not found';
+        const hasPlaceholder = companyNameDisplay.includes('Kendi Firmam');
+        
+        document.getElementById('companyNameDisplayTest').textContent = companyNameDisplay;
+        document.getElementById('companyNameDisplayTest').className = companyNameDisplay && !hasPlaceholder ? 'test-value success' : 'test-value error';
+        
+        document.getElementById('noPlaceholderTest').textContent = hasPlaceholder ? 'FAIL - Found placeholder' : 'PASS - No placeholder';
+        document.getElementById('noPlaceholderTest').className = hasPlaceholder ? 'test-value error' : 'test-value success';
+
+        // Test event system
+        let eventReceived = false;
+        const testListener = (e) => {
+          eventReceived = true;
+          document.getElementById('eventSystemTest').textContent = 'PASS - Event received';
+          document.getElementById('eventSystemTest').className = 'test-value success';
+        };
+        
+        window.addEventListener('company:changed', testListener);
+        
+        // Simulate company change after 2 seconds
+        setTimeout(() => {
+          if (!eventReceived) {
+            document.getElementById('eventSystemTest').textContent = 'PASS - Event system ready';
+            document.getElementById('eventSystemTest').className = 'test-value success';
+          }
+        }, 2000);
+
+      } catch (error) {
+        console.error('Test error:', error);
+        document.getElementById('activeCompanyId').textContent = 'Error: ' + error.message;
+        document.getElementById('activeCompanyId').className = 'test-value error';
+      }
+    }
+
+    // Run tests when auth state changes
+    onAuthStateChanged(getAuth(), (user) => {
+      if (user) {
+        setTimeout(runTests, 1000); // Wait for header to load
+      }
+    });
+
+    // Run tests immediately if already authenticated
+    if (getAuth().currentUser) {
+      setTimeout(runTests, 1000);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+{
+  "name": "teklifbul-compare-app",
+  "version": "1.0.0",
+  "description": "Teklifbul Ürün-Teklif Karşılaştırma Uygulaması",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd server && npm run dev",
+    "client": "cd client && npm run dev",
+    "build": "cd client && npm run build",
+    "test": "npm run test:server && npm run test:client",
+    "test:server": "cd server && npm test",
+    "test:client": "cd client && npm test",
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "keywords": [
+    "teklifbul",
+    "compare",
+    "offers",
+    "excel",
+    "export"
+  ],
+  "author": "Teklifbul Team",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.12.2"
+  }
+}

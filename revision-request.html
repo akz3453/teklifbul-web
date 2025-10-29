@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Revizyon Talepleri — Teklifbul</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  <link rel="stylesheet" href="/utils.css" />
+  <style>
+    body { margin: 0; font-family: system-ui, Arial; background: #f9fafb; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    
+    /* Header */
+    .page-header { 
+      background: white; 
+      border-radius: 8px; 
+      padding: 24px; 
+      margin-bottom: 20px; 
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
+    }
+    .page-header h1 { margin: 0 0 8px 0; font-size: 28px; color: #1f2937; }
+    .page-header p { margin: 0; color: #6b7280; font-size: 14px; }
+    
+    /* Filters */
+    .filters {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .filters label { font-weight: 600; font-size: 14px; color: #374151; }
+    .filters select, .filters input {
+      padding: 8px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px;
+      min-width: 200px;
+    }
+    .filters select:focus, .filters input:focus {
+      outline: none;
+      border-color: #3b82f6;
+    }
+    
+    /* Table */
+    .table-container {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    th {
+      background: #f9fafb;
+      font-weight: 600;
+      font-size: 13px;
+      color: #6b7280;
+      position: sticky;
+      top: 0;
+    }
+    td {
+      font-size: 14px;
+      color: #374151;
+    }
+    tr:hover {
+      background: #f9fafb;
+    }
+    
+    /* Badges */
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .badge.pending { background: #fef3c7; color: #92400e; }
+    .badge.approved { background: #d1fae5; color: #065f46; }
+    .badge.rejected { background: #fee2e2; color: #991b1b; }
+    
+    /* Links */
+    .link-button {
+      color: #3b82f6;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 14px;
+    }
+    .link-button:hover {
+      text-decoration: underline;
+    }
+    
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #6b7280;
+    }
+    .empty-state svg {
+      width: 64px;
+      height: 64px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+    .empty-state h3 {
+      margin: 0 0 8px 0;
+      font-size: 18px;
+      color: #374151;
+    }
+    .empty-state p {
+      margin: 0;
+      font-size: 14px;
+    }
+    
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #6b7280;
+    }
+    .spinner {
+      display: inline-block;
+      width: 40px;
+      height: 40px;
+      border: 4px solid #e5e7eb;
+      border-top-color: #3b82f6;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    /* Action Buttons */
+    .action-buttons {
+      display: flex;
+      gap: 8px;
+    }
+    .btn {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    .btn-approve {
+      background: #10b981;
+      color: white;
+    }
+    .btn-approve:hover {
+      background: #059669;
+    }
+    .btn-reject {
+      background: #ef4444;
+      color: white;
+    }
+    .btn-reject:hover {
+      background: #dc2626;
+    }
+  </style>
+</head>
+<body>
+  <!-- Common Header -->
+  <header id="app-header" style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #e5e7eb;background:white">
+    <div style="display:flex;gap:12px;align-items:center">
+      <strong style="font-size:18px;color:#1f2937">Teklifbul</strong>
+      <a href="./dashboard.html" style="text-decoration:none;color:#3b82f6">Dashboard</a>
+      <a href="./demands.html" style="text-decoration:none;color:#3b82f6">Taleplerim</a>
+      <a href="./bids.html" style="text-decoration:none;color:#3b82f6">Teklifler</a>
+      <a href="./revision-request.html" style="text-decoration:none;color:#3b82f6;font-weight:600">Revizyon Talepleri</a>
+    </div>
+    <div style="display:flex;gap:12px;align-items:center">
+      <label style="font-size:12px;opacity:.8">Firma:</label>
+      <span id="firmName" style="font-size:13px;color:#6b7280">-</span>
+      <span id="userLabel" style="font-size:13px;color:#6b7280;opacity:.6">-</span>
+      <button id="logoutBtn" class="btn-danger">Çıkış</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- Page Header -->
+    <div class="page-header">
+      <h1>🔄 Revizyon Talepleri</h1>
+      <p>Alıcıların talep ettiği revizyonları görüntüleyin ve yanıtlayın</p>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters">
+      <div>
+        <label for="filterStatus">Durum:</label>
+        <select id="filterStatus">
+          <option value="">Tümü</option>
+          <option value="pending">Beklemede</option>
+          <option value="approved">Onaylandı</option>
+          <option value="rejected">Reddedildi</option>
+        </select>
+      </div>
+      <div>
+        <label for="searchDemand">Talep Ara:</label>
+        <input type="text" id="searchDemand" placeholder="Talep başlığı..." />
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-container">
+      <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <p>Revizyon talepleri yükleniyor...</p>
+      </div>
+      
+      <table id="revisionsTable" style="display:none;">
+        <thead>
+          <tr>
+            <th>Talep</th>
+            <th>Talep Eden</th>
+            <th>Notlar</th>
+            <th>Durum</th>
+            <th>Tarih</th>
+            <th>İşlemler</th>
+          </tr>
+        </thead>
+        <tbody id="revisionsBody"></tbody>
+      </table>
+
+      <div id="emptyState" class="empty-state" style="display:none;">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+        </svg>
+        <h3>Henüz revizyon talebi yok</h3>
+        <p>Alıcılar talepleriniz için revizyon talebinde bulundukça burada görünecek</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Script -->
+  <script type="module">
+    import { db, auth, requireAuth } from "./firebase.js";
+    import { setupHeader } from "./src/common-company.js";
+    import {
+      collection, query, where, getDocs, doc, getDoc, orderBy, updateDoc, serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+    // Setup common header functionality (logout and company name)
+    await setupHeader();
+
+    const user = await requireAuth();
+    
+    // Setup header
+    document.getElementById("userLabel").textContent = user.email || user.uid.slice(0, 10);
+    
+    const loading = document.getElementById("loading");
+    const revisionsTable = document.getElementById("revisionsTable");
+    const revisionsBody = document.getElementById("revisionsBody");
+    const emptyState = document.getElementById("emptyState");
+    
+    const filterStatus = document.getElementById("filterStatus");
+    const searchDemand = document.getElementById("searchDemand");
+
+    let allRevisions = [];
+    let demandsMap = new Map();
+
+    // ====================
+    // Load Data
+    // ====================
+    async function loadData() {
+      try {
+        console.log("🔄 Loading revision requests for user:", user.uid);
+
+        // Get all revision requests where user is the supplier
+        const q = query(
+          collection(db, "bidRevisions"),
+          where("supplierId", "==", user.uid),
+          orderBy("createdAt", "desc")
+        );
+        
+        const snap = await getDocs(q);
+        
+        allRevisions = [];
+        snap.forEach(docSnap => {
+          allRevisions.push({ id: docSnap.id, ...docSnap.data() });
+        });
+        
+        console.log("📋 Found revision requests:", allRevisions.length);
+
+        if (allRevisions.length === 0) {
+          showEmptyState();
+          return;
+        }
+
+        // Get demand details for each revision
+        const demandIds = [...new Set(allRevisions.map(r => r.demandId))];
+        const demandsPromises = demandIds.map(async (demandId) => {
+          try {
+            const demandSnap = await getDoc(doc(db, "demands", demandId));
+            if (demandSnap.exists()) {
+              return { id: demandId, data: demandSnap.data() };
+            }
+          } catch (e) {
+            console.warn("Could not load demand:", demandId);
+          }
+          return null;
+        });
+        
+        const demandsResults = await Promise.all(demandsPromises);
+        demandsResults.forEach(result => {
+          if (result) {
+            demandsMap.set(result.id, result.data);
+          }
+        });
+
+        // Render revisions
+        await renderRevisions();
+
+      } catch (e) {
+        console.error("❌ Error loading revision requests:", e);
+        const code = e?.code || "";
+        if (code === "permission-denied") alert("Yetki reddedildi. İlgili şirketin sahibi/üyesi misiniz?");
+        else if (code === "not-found") alert("Kayıt bulunamadı.");
+        else alert("❌ Revizyon talepleri yüklenirken hata: " + (e.message || e));
+        showEmptyState();
+      }
+    }
+
+    function showEmptyState() {
+      loading.style.display = "none";
+      revisionsTable.style.display = "none";
+      emptyState.style.display = "block";
+    }
+
+    // ====================
+    // Render Revisions
+    // ====================
+    async function renderRevisions() {
+      const statusFilter = filterStatus.value;
+      const searchText = searchDemand.value.toLowerCase();
+
+      let filtered = allRevisions;
+
+      // Filter by status
+      if (statusFilter) {
+        filtered = filtered.filter(r => r.status === statusFilter);
+      }
+
+      // Filter by demand title
+      if (searchText) {
+        filtered = filtered.filter(r => {
+          const demand = demandsMap.get(r.demandId);
+          const demandTitle = demand?.title || `Talep ${r.demandId.slice(0, 8)}`;
+          return demandTitle.toLowerCase().includes(searchText);
+        });
+      }
+
+      revisionsBody.innerHTML = "";
+
+      if (filtered.length === 0) {
+        revisionsBody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#6b7280;padding:40px;">Filtrelerinize uygun revizyon talebi bulunamadı</td></tr>';
+        loading.style.display = "none";
+        revisionsTable.style.display = "table";
+        return;
+      }
+
+      // Render revisions
+      for (const revision of filtered) {
+        const demand = demandsMap.get(revision.demandId);
+        const demandTitle = demand?.title || `Talep ${revision.demandId.slice(0, 8)}`;
+        const createdAt = revision.createdAt?.toDate?.()?.toLocaleDateString("tr-TR") || "-";
+        
+        // Get requester name
+        let requesterName = "Bilinmeyen";
+        try {
+          const requesterSnap = await getDoc(doc(db, "users", revision.requesterId));
+          if (requesterSnap.exists()) {
+            const requesterData = requesterSnap.data();
+            requesterName = requesterData?.displayName || requesterData?.companyName || requesterData?.email || "Bilinmeyen";
+          }
+        } catch (e) {
+          console.warn("Could not load requester name:", e);
+        }
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><strong>${demandTitle}</strong></td>
+          <td>${requesterName}</td>
+          <td>${revision.notes || "-"}</td>
+          <td><span class="badge ${revision.status}">${getStatusLabel(revision.status)}</span></td>
+          <td>${createdAt}</td>
+          <td class="action-buttons">
+            ${revision.status === "pending" ? `
+              <button class="btn btn-approve" onclick="approveRevision('${revision.id}')">Onayla</button>
+              <button class="btn btn-reject" onclick="rejectRevision('${revision.id}')">Reddet</button>
+              <a href="./demand-detail.html?id=${revision.demandId}" class="link-button">Yeniden Teklif Ver</a>
+            ` : `
+              <a href="./demand-detail.html?id=${revision.demandId}" class="link-button">Talep Detayı</a>
+            `}
+          </td>
+        `;
+        revisionsBody.appendChild(tr);
+      }
+
+      loading.style.display = "none";
+      revisionsTable.style.display = "table";
+      emptyState.style.display = "none";
+    }
+
+    // Helper function to get status label
+    function getStatusLabel(status) {
+      const labels = {
+        pending: "Beklemede",
+        approved: "Onaylandı",
+        rejected: "Reddedildi"
+      };
+      return labels[status] || status;
+    }
+
+    // ====================
+    // Action Functions
+    // ====================
+    window.approveRevision = async function(revisionId) {
+      if (confirm("Bu revizyon talebini onaylamak istediğinizden emin misiniz?")) {
+        try {
+          const revisionRef = doc(db, "bidRevisions", revisionId);
+          await updateDoc(revisionRef, {
+            status: "approved",
+            updatedAt: serverTimestamp()
+          });
+          
+          alert("Revizyon talebi onaylandı.");
+          await loadData();
+        } catch (e) {
+          console.error("Error approving revision:", e);
+          alert("Revizyon talebi onaylanırken hata oluştu: " + e.message);
+        }
+      }
+    };
+
+    window.rejectRevision = async function(revisionId) {
+      if (confirm("Bu revizyon talebini reddetmek istediğinizden emin misiniz?")) {
+        try {
+          const revisionRef = doc(db, "bidRevisions", revisionId);
+          await updateDoc(revisionRef, {
+            status: "rejected",
+            updatedAt: serverTimestamp()
+          });
+          
+          alert("Revizyon talebi reddedildi.");
+          await loadData();
+        } catch (e) {
+          console.error("Error rejecting revision:", e);
+          alert("Revizyon talebi reddedilirken hata oluştu: " + e.message);
+        }
+      }
+    };
+
+    // ====================
+    // Event Listeners
+    // ====================
+    filterStatus.addEventListener("change", renderRevisions);
+    searchDemand.addEventListener("input", renderRevisions);
+
+    // ====================
+    // Initialize
+    // ====================
+    loadData();
+  </script>
+</body>
+</html>

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kategori Modal Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .btn {
+            padding: 10px 20px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        .btn:hover {
+            background: #2563eb;
+        }
+        .btn-success {
+            background: #10b981;
+        }
+        .btn-success:hover {
+            background: #059669;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏷️ Kategori Modal Test Sayfası</h1>
+        <p>Bu sayfa kategori grupları modal'ının çalışıp çalışmadığını test etmek için oluşturulmuştur.</p>
+        
+        <div style="margin: 20px 0;">
+            <button id="testCreateModal" class="btn btn-success">➕ Yeni Grup Oluştur</button>
+            <button id="testEditModal" class="btn">✏️ Grup Düzenle (Test)</button>
+            <button id="testDirectCategories" class="btn">🔍 Kategorileri Doğrudan Test Et</button>
+        </div>
+        
+        <div id="testResults" style="margin-top: 20px; padding: 15px; background: #f8fafc; border-radius: 6px; display: none;">
+            <h3>Test Sonuçları:</h3>
+            <div id="testOutput"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Test için mock fonksiyonlar
+        const mockOnCreate = async (groupData) => {
+            console.log('✅ Mock onCreate called:', groupData);
+            document.getElementById('testOutput').innerHTML += `
+                <p><strong>✅ Grup Oluşturuldu:</strong> ${groupData.name}</p>
+                <p><strong>Kategoriler:</strong> ${groupData.categories.join(', ')}</p>
+            `;
+            document.getElementById('testResults').style.display = 'block';
+        };
+
+        const mockOnUpdate = async (groupId, updates) => {
+            console.log('✅ Mock onUpdate called:', groupId, updates);
+            document.getElementById('testOutput').innerHTML += `
+                <p><strong>✅ Grup Güncellendi:</strong> ${groupId}</p>
+                <p><strong>Güncellemeler:</strong> ${JSON.stringify(updates)}</p>
+            `;
+            document.getElementById('testResults').style.display = 'block';
+        };
+
+        const mockOnDelete = async (groupId) => {
+            console.log('✅ Mock onDelete called:', groupId);
+            document.getElementById('testOutput').innerHTML += `
+                <p><strong>✅ Grup Silindi:</strong> ${groupId}</p>
+            `;
+            document.getElementById('testResults').style.display = 'block';
+        };
+
+        // Kategori modal'ını import et ve başlat
+        try {
+            const { initCategoryGroupsModal } = await import('./assets/js/ui/category-groups-modal.js');
+            
+            const categoryGroupsModal = initCategoryGroupsModal({
+                onCreate: mockOnCreate,
+                onUpdate: mockOnUpdate,
+                onDelete: mockOnDelete
+            });
+
+            // Test butonları
+            document.getElementById('testCreateModal').addEventListener('click', () => {
+                console.log('🔄 Test: Yeni grup modal açılıyor...');
+                categoryGroupsModal.showCreateModal();
+            });
+
+            document.getElementById('testEditModal').addEventListener('click', () => {
+                console.log('🔄 Test: Düzenleme modal açılıyor...');
+                // Test için mock grup verisi
+                const mockGroup = {
+                    id: 'test-group-123',
+                    name: 'Test Grubu',
+                    categories: ['Elektrik', 'Elektronik', 'Makine-İmalat']
+                };
+                categoryGroupsModal.showEditModal(mockGroup);
+            });
+
+            document.getElementById('testDirectCategories').addEventListener('click', async () => {
+                console.log('🔄 Test: Kategorileri doğrudan test ediliyor...');
+                try {
+                    // Categories.js'i doğrudan import et
+                    const { CATEGORIES } = await import('./categories.js');
+                    console.log('✅ Categories doğrudan yüklendi:', CATEGORIES);
+                    document.getElementById('testOutput').innerHTML += `
+                        <p><strong>✅ Kategoriler doğrudan yüklendi:</strong></p>
+                        <ul>
+                            ${CATEGORIES.map(cat => `<li>${cat}</li>`).join('')}
+                        </ul>
+                    `;
+                    document.getElementById('testResults').style.display = 'block';
+                } catch (error) {
+                    console.error('❌ Categories doğrudan yüklenirken hata:', error);
+                    document.getElementById('testOutput').innerHTML += `
+                        <p><strong>❌ Categories doğrudan yükleme hatası:</strong> ${error.message}</p>
+                    `;
+                    document.getElementById('testResults').style.display = 'block';
+                }
+            });
+
+            console.log('✅ Kategori modal başarıyla yüklendi!');
+            document.getElementById('testOutput').innerHTML = '<p><strong>✅ Modal başarıyla yüklendi!</strong></p>';
+            document.getElementById('testResults').style.display = 'block';
+
+        } catch (error) {
+            console.error('❌ Modal yüklenirken hata:', error);
+            document.getElementById('testOutput').innerHTML = `
+                <p><strong>❌ Hata:</strong> ${error.message}</p>
+                <p><strong>Detay:</strong> ${error.stack}</p>
+            `;
+            document.getElementById('testResults').style.display = 'block';
+        }
+    </script>
+</body>
+</html>

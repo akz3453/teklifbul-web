@@ -1,0 +1,3717 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Talep Detayı</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%233b82f6' rx='6'/%3E%3Ctext x='16' y='22' font-family='Arial' font-size='18' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="assets/css/rfq-bid-form.css">
+  <link rel="stylesheet" href="./utils.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <link rel="stylesheet" href="/css/ui-standard.css" />
+  
+  <!-- PDF & Excel Libraries (Local) -->
+  <script type="module">
+    import './assets/vendor/jspdf.umd.min.js';
+    import './assets/vendor/xlsx.full.min.js';
+  </script>
+  
+  <style>
+    .summary-card {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 16px 0;
+    }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .summary-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      background:#ffffff;
+      border:1px solid #E5E7EB;
+      border-radius:10px;
+      padding:12px;
+      box-shadow:0 1px 2px rgba(0,0,0,0.02);
+    }
+    .summary-label {
+      font-size: 12px;
+      color: #6b7280;
+      font-weight: 500;
+      text-transform: uppercase;
+    }
+    .summary-value {
+      font-size: 14px;
+      color: #111827;
+      font-weight: 600;
+    }
+    .items-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 13px;
+    }
+    .items-table th,
+    .items-table td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    .items-table th {
+      background: #f3f4f6;
+      font-weight: 600;
+    }
+    .action-buttons {
+      display: flex;
+      gap: 12px;
+      margin: 20px 0;
+      flex-wrap: wrap;
+    }
+    .btn {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: #3b82f6;
+      color: white;
+    }
+    .btn-primary:hover {
+      background: #2563eb;
+    }
+    .btn-success {
+      background: #10b981;
+      color: white;
+    }
+    .btn-success:hover {
+      background: #059669;
+    }
+    .btn-danger {
+      background: #ef4444;
+      color: white;
+    }
+    .btn-danger:hover {
+      background: #dc2626;
+    }
+    .btn-secondary {
+      background: #6b7280;
+      color: white;
+    }
+    .btn-secondary:hover {
+      background: #4b5563;
+    }
+    .file-upload-section {
+      background: #f9fafb;
+      border: 2px dashed #d1d5db;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 16px 0;
+    }
+    .file-list {
+      margin-top: 16px;
+    }
+    .file-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      margin-bottom: 8px;
+    }
+    .file-info {
+      flex: 1;
+    }
+    .file-actions {
+      display: flex;
+      gap: 8px;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .status-draft {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    .status-published {
+      background: #dcfce7;
+      color: #166534;
+    }
+    .visibility-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .visibility-public {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+    .visibility-company {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    .visibility-private {
+      background: #fecaca;
+      color: #991b1b;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+    }
+    .modal-content {
+      background: white;
+      margin: 15% auto;
+      padding: 20px;
+      border-radius: 8px;
+      max-width: 400px;
+      text-align: center;
+    }
+    .modal-buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+  </style>
+  <style>
+    body { font-family: "Inter", "Segoe UI", Roboto, Arial, sans-serif; line-height: 1.55; background-color: #F9FAFB; }
+    h2, h3, h4 { margin: 0 0 8px; }
+    h2 { font-size: 1.4rem; font-weight: 600; color: #1F2937; border-bottom: 2px solid #2563EB; display: inline-block; padding-bottom: 4px; }
+    h3 { font-size: 1.125rem; font-weight: 600; color: #1E3A8A; }
+    p, span, div { font-size: 0.95rem; color: #444; }
+    .label { font-size: 0.8rem; color: #6B7280; }
+    .section-card { background: #fff; border: 1px solid #E5E7EB; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.03); }
+    .empty-state { text-align: center; color: #6B7280; padding: 40px 20px; background: #F9FAFB; border: 1px dashed #D1D5DB; border-radius: 12px; }
+    .empty-state .emoji { font-size: 2rem; display: block; margin-bottom: 8px; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 18px; font-size: 0.95rem; border-radius: 8px; border: none; cursor: pointer; transition: all 0.2s ease; }
+    .btn-primary { background-color: #2563EB; color: #fff; }
+    .btn-primary:hover { background-color: #1E40AF; transform: translateY(-1px); }
+    .btn-outline { background-color: #fff; color: #2563EB; border: 1px solid #2563EB; }
+    .btn-outline:hover { background-color: #EFF6FF; }
+    .payment-option-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 12px; }
+    .payment-card { border: 1px solid #E5E7EB; border-radius: 10px; padding: 14px 16px; background: #fff; cursor: pointer; transition: all 0.25s ease; }
+    .payment-card:hover { border-color: #2563EB; background: #EFF6FF; box-shadow: 0 0 0 2px #DBEAFE; }
+    .payment-card.selected { background: #DBEAFE; border-color: #2563EB; }
+    .payment-card p { font-size: 0.9rem; color: #374151; margin: 0; line-height: 1.4; }
+    /* Hide radios inside pesin-group when cards are present */
+    #payment-section #pesin-group input[type="radio"]{ position:absolute; opacity:0; pointer-events:none; }
+    /* Section header layout */
+    .section-header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    .section-header h2{margin:0;flex:1}
+    .section-header .actions{display:flex;gap:8px}
+    .btn-sm{padding:6px 10px;font-size:.875rem}
+    /* Spacing below section titles */
+    .section-card .section-header + .row { margin-top: 8px !important; }
+    /* Subcards & compact controls */
+    .subcard{background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;padding:12px}
+    .subcard-alt{background:#F0F9FF;border-left:4px solid #3b82f6;border:1px solid #DBEAFE;border-radius:8px;padding:12px}
+    #product-bid-forms .control-sm{padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.95rem}
+    #product-bid-forms .select-sm{padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.95rem;background:#fff}
+    #product-bid-forms .field-label{font-size:13px;color:#1d4ed8;font-weight:700}
+  </style>
+</head>
+<body>
+  <!-- Common Header -->
+  <header id="app-header"></header>
+
+  <div class="container--wide" style="padding:20px 0">
+    <nav id="breadcrumb" class="tb-breadcrumb"></nav>
+  
+  <!-- Summary Card -->
+  <div class="summary-card">
+    <h1 id="d-title" style="margin:0 0 6px 0;">Talep Detayı</h1>
+    <h3 style="margin:0 0 12px 0; color:#1f2937; font-size:16px;">Talep Bilgileri</h3>
+    <div class="summary-grid">
+      <div class="summary-item">
+        <span class="summary-label">SATFK</span>
+        <span class="summary-value" id="d-satfk">-</span>
+        <button id="copySatfkBtn" class="btn-sm" style="margin-left: 8px; padding: 4px 8px; font-size: 11px;">📋 Kopyala</button>
+        <a id="searchBySatfkBtn" href="#" style="margin-left: 8px; padding: 4px 8px; font-size: 11px; background: #10b981; color: white; text-decoration: none; border-radius: 4px;">🔍 Bu kodla ara</a>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Talep Tarihi</span>
+        <span class="summary-value" id="d-demanddate">-</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Termin</span>
+        <span class="summary-value" id="d-duedate">-</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Öncelik</span>
+        <span class="summary-value" id="d-priority">-</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Kalem Sayısı</span>
+        <span class="summary-value" id="d-itemcount">-</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Durum</span>
+        <span id="d-status">-</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Görünürlük</span>
+        <span id="d-visibility">-</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Talep Tipi</span>
+        <span class="summary-value" id="d-demand-type">-</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Süreli</span>
+        <span class="summary-value" id="d-is-urgent">-</span>
+      </div>
+      <div class="summary-item" id="urgency-container" style="display: none;">
+        <span class="summary-label">Acil Süre</span>
+        <span class="summary-value" id="d-urgency-days">-</span>
+      </div>
+        <div class="summary-item">
+          <span class="summary-label">Teklif Yükle</span>
+          <a href="bid-upload.html?id=${demandData.id}" class="btn btn-primary" style="padding: 8px 16px; font-size: 12px;">
+            📤 Teklif Yükle
+          </a>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Oluşturma Tarihi</span>
+        <span class="summary-value" id="d-createdat">-</span>
+      </div>
+      <div class="summary-item" id="sentAtContainer" style="display:none;">
+        <span class="summary-label">Gönderim Tarihi</span>
+        <span class="summary-value" id="sentAt">-</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Teslimat Adresi</span>
+        <span class="summary-value" id="d-delivery-address">-</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Teslim Şekli</span>
+        <span class="summary-value" id="d-delivery-method">-</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Teslim Yeri</span>
+        <span class="summary-value" id="d-delivery-location">-</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Şehir</span>
+        <span class="summary-value" id="d-delivery-city">-</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Satınalma Lokasyonu</span>
+        <span class="summary-value" id="d-purchase-location">-</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Talep Eden</span>
+        <span class="summary-value" id="d-requester">-</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Onaylayan</span>
+        <span class="summary-value" id="d-approver">-</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Satınalma Sorumlusu</span>
+        <span class="summary-value" id="d-purchase-manager">-</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Genel Müdür</span>
+        <span class="summary-value" id="d-general-manager">-</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Ödeme Şartları</span>
+        <span class="summary-value" id="d-payment-terms">-</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Para Birimi</span>
+        <span class="summary-value" id="d-currency">-</span>
+      </div>
+    </div>
+    <div style="margin-top:16px;">
+      <span class="summary-label">Kategoriler</span>
+      <div id="d-cats" style="margin-top:8px;"></div>
+    </div>
+    
+    <!-- Bidding Mode Info -->
+    <div style="margin-top:16px; padding-top:16px; border-top:1px solid #e5e7eb;">
+      <div class="summary-grid">
+        <div class="summary-item">
+          <span class="summary-label">Talep Tipi</span>
+          <span id="d-biddingmode">-</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Aktif Evre</span>
+          <span id="d-phase">-</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Tur</span>
+          <span class="summary-value" id="d-round">-</span>
+        </div>
+        <div class="summary-item" id="countdownContainer" style="display:none;">
+          <span class="summary-label">Kalan Süre</span>
+          <span class="summary-value" id="d-countdown" style="color:#dc2626; font-weight:700;">-</span>
+        </div>
+      </div>
+      
+      <!-- Round 2 Transition Button (Hybrid Only, Owner Only) -->
+      <div id="round2BtnContainer" style="margin-top:12px; display:none;">
+        <button id="btnRound2" class="btn btn-success">2. Tura Geç</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Owner Actions -->
+  <div id="ownerActions" style="display:none;">
+    <div class="action-buttons">
+      <button id="btnEdit" class="btn btn-primary" style="display:none;">Düzenle</button>
+      <button id="btnPublish" class="btn btn-success">Tedarikçilere Gönder</button>
+      <button id="btnUnpublish" class="btn btn-danger" style="display:none;">Geri Çek</button>
+      <button id="btnDeleteDraft" class="btn btn-danger" style="display:none;">Taslağı Sil</button>
+      <button id="btnExportPDF" class="btn btn-secondary">PDF İndir</button>
+      <button id="btnExportExcel" class="btn btn-secondary">Excel İndir</button>
+    </div>
+  </div>
+
+  
+
+  <!-- Description -->
+  <div class="section-card">
+    <h2>🗒️ Açıklama</h2>
+    <p class="label" style="margin:4px 0 8px 0;">Talep sahibi tarafından girilen açıklama metni aşağıdadır.</p>
+    <pre id="spec" style="white-space:pre-wrap; background:#fafafa; padding:12px; border:1px solid #eee; border-radius:6px;"></pre>
+  </div>
+
+  <!-- Items Table -->
+  <div class="section-header"><span class="icon">📝</span><span>Talep Edilen Ürün Kalemleri</span></div>
+  <p class="label" style="margin:4px 0 8px 0;">Talep sahibi tarafından oluşturulan ürün listesidir.</p>
+  <table class="items-table" id="itemsTable">
+    <thead>
+      <tr>
+        <th>Sıra No</th>
+        <th>Malzeme Kodu</th>
+        <th>Tanım</th>
+        <th>Marka/Model</th>
+        <th>Miktar</th>
+        <th>Birim</th>
+        <th>İstenilen Teslim Tarihi</th>
+      </tr>
+    </thead>
+    <tbody id="itemsBody"></tbody>
+  </table>
+
+  <!-- File Attachments (Owner Only) -->
+  <div id="filesSection" style="display:none;">
+    <h2>Ek Dosyalar</h2>
+    
+    <div id="fileUploadArea" class="file-upload-section">
+      <h4 style="margin-top:0;">Dosya Yükle</h4>
+      <input type="file" id="fileInput" multiple 
+             accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg" 
+             style="margin-bottom:12px;" />
+      <button id="btnUpload" class="btn btn-primary">Yükle</button>
+      <p style="font-size:12px; color:#6b7280; margin-top:8px;">Maks. 10 MB, desteklenen formatlar: PDF, DOC, DOCX, XLS, XLSX, PNG, JPG</p>
+    </div>
+
+    <div class="file-list" id="fileList"></div>
+  </div>
+
+  <!-- Fiyat Geçmişi Modal -->
+  <div id="priceHistoryModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 8px; max-width: 600px; width: 90%; max-height: 80%; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3 style="margin: 0;">Fiyat Geçmişi</h3>
+        <button onclick="closePriceHistoryModal()" style="background: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;">✕ Kapat</button>
+      </div>
+      <div id="priceHistoryContent"></div>
+    </div>
+  </div>
+
+  <!-- Teklifler Tablosu -->
+  <div id="bids-section" style="margin-top: 30px;">
+    <h3 style="margin: 0 0 16px 0; color: #1e293b;">📋 Gelen Teklifler</h3>
+    <table style="width: 100%; border-collapse: collapse; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+      <thead style="background: #f8fafc;">
+        <tr>
+          <th style="padding: 12px; border: 1px solid #e5e7eb; text-align: left; font-weight: 600; color: #374151;">Toplam (KDV Hariç)</th>
+          <th style="padding: 12px; border: 1px solid #e5e7eb; text-align: left; font-weight: 600; color: #374151;">KDV (%)</th>
+          <th style="padding: 12px; border: 1px solid #e5e7eb; text-align: left; font-weight: 600; color: #374151;">Toplam (KDV Dahil)</th>
+          <th style="padding: 12px; border: 1px solid #e5e7eb; text-align: left; font-weight: 600; color: #374151;">Marka</th>
+          <th style="padding: 12px; border: 1px solid #e5e7eb; text-align: left; font-weight: 600; color: #374151;">Ödeme</th>
+          <th style="padding: 12px; border: 1px solid #e5e7eb; text-align: left; font-weight: 600; color: #374151;">Not</th>
+          <th style="padding: 12px; border: 1px solid #e5e7eb; text-align: left; font-weight: 600; color: #374151;">Tedarikçi</th>
+          <th style="padding: 12px; border: 1px solid #e5e7eb; text-align: left; font-weight: 600; color: #374151;">Fiyat Geçmişi</th>
+          <th style="padding: 12px; border: 1px solid #e5e7eb; text-align: left; font-weight: 600; color: #374151;">Durum</th>
+        </tr>
+      </thead>
+      <tbody id="bidRows">
+        <!-- Teklifler buraya yüklenecek -->
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Kendi Teklifin (Tedarikçi görünümü) -->
+  <div id="own-bid-section" class="section-card" style="display:none;">
+    <div class="section-header"><span class="icon">📦</span><span>Kendi Teklifin</span></div>
+    <div id="own-bid-content" class="empty-state">
+      <span class="emoji">💡</span>
+      <p>Henüz teklif vermediniz.</p>
+      <button class="btn btn-primary" onclick="document.getElementById('bid-form-section').scrollIntoView({behavior:'smooth'})">Teklif Ver</button>
+    </div>
+  </div>
+
+  <div id="bid-form-section">
+    <div id="rfq-bid-form-container">
+      <!-- RFQ Bid Form will be loaded here -->
+    </div>
+  </div>
+
+  <!-- Fiyat Karşılaştırma Bölümü -->
+  <div id="price-comparison-section" style="margin-top: 30px; padding: 20px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+    <h3 style="margin: 0 0 16px 0; color: #1e293b;">📊 Fiyat Karşılaştırma</h3>
+    <p style="margin: 0 0 16px 0; color: #64748b; font-size: 14px;">
+      Gelen teklifleri Excel formatında karşılaştırmak için aşağıdaki butona tıklayın.
+    </p>
+    <button id="btnPriceComparison" class="btn btn-success" style="background: #059669; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: 600;">
+      📈 Excel Fiyat Karşılaştırması İndir
+    </button>
+  </div>
+  </div><!-- End container -->
+
+  <!-- Modals -->
+  <div id="publishModal" class="modal">
+    <div class="modal-content">
+      <h3>Talebi Yayınla</h3>
+      <p>Bu talep tedarikçilerinize açılacak. Devam edilsin mi?</p>
+      <div class="modal-buttons">
+        <button id="confirmPublish" class="btn btn-success">Evet, Gönder</button>
+        <button id="cancelPublish" class="btn btn-secondary">İptal</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="unpublishModal" class="modal">
+    <div class="modal-content">
+      <h3>Talebi Geri Çek</h3>
+      <p>Tedarikçiler artık bu talebi göremeyecek. Devam edilsin mi?</p>
+      <div class="modal-buttons">
+        <button id="confirmUnpublish" class="btn btn-danger">Evet, Geri Çek</button>
+        <button id="cancelUnpublish" class="btn btn-secondary">İptal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Header Script -->
+  <script type="module">
+    import { initGlobalHeader } from './assets/js/ui/header.js';
+    import { db, auth, requireAuth, logout } from "./firebase.js";
+    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+    
+    // Initialize global header
+    initGlobalHeader({ mount: '#app-header', activeRoute: 'demand-detail' });
+    
+    const headerUser = await requireAuth();
+    // Defensive: header elements may not exist on all layouts
+    const hdrUserEl = document.getElementById("userLabel");
+    if (hdrUserEl) hdrUserEl.textContent = headerUser.email || headerUser.uid.slice(0, 10);
+    const clockEl = document.getElementById("clock");
+    if (clockEl) {
+      function tick(){ clockEl.textContent = new Date().toLocaleString("tr-TR"); }
+      tick();
+      setInterval(tick, 1000);
+    }
+
+    // Company Selector
+    const userRef = doc(db, "users", headerUser.uid);
+    const userSnap = await getDoc(userRef);
+    let userData = userSnap.exists() ? userSnap.data() : {};
+    const companySelect = document.getElementById("companySelect");
+    
+    // Store userData in window for later use
+    window.userData = userData;
+
+    // Load companies
+    let companies = [];
+    try {
+      console.log("🔍 Loading companies for user:", headerUser.uid);
+      console.log("🔍 User data companies:", userData.companies);
+      
+      if (Array.isArray(userData.companies) && userData.companies.length) {
+        console.log("🔍 Attempting to load", userData.companies.length, "company documents");
+        const companyRefs = userData.companies.map(id => {
+          console.log("🔍 Creating ref for company ID:", id);
+          return doc(db, "companies", id);
+        });
+        
+        const snaps = await Promise.all(
+          companyRefs.map(ref => {
+            console.log("🔍 Loading company:", ref);
+            return getDoc(ref);
+          })
+        );
+        
+        console.log("🔍 Company snapshots:", snaps.map(s => ({
+          id: s.id, 
+          exists: s.exists(), 
+          data: s.data()
+        })));
+        
+        companies = snaps
+          .filter(s => s.exists())
+          .map(s => ({ id: s.id, ...s.data() }));
+        console.log("✅ Loaded companies:", companies);
+      } else {
+        console.log("🔍 No companies in user data, will create default");
+      }
+    } catch (e) {
+      console.warn("⚠️ Company data load error (using defaults):", e.message);
+      console.warn("⚠️ Error details:", { code: e.code, name: e.name, stack: e.stack });
+      companies = [];
+    }
+    
+    // Default company if none exist
+    if (!companies.length) {
+      const defaultCompanyId = "solo-" + headerUser.uid;
+      const defaultCompany = { 
+        name: "Şirket Yok",
+        ownerId: headerUser.uid,
+        createdAt: new Date()
+      };
+      
+      console.log("🔍 Attempting to create default company:", defaultCompanyId, defaultCompany);
+      
+      // Create the default company document
+      try {
+        const companyRef = doc(db, "companies", defaultCompanyId);
+        console.log("🔍 Company ref created:", companyRef);
+        await setDoc(companyRef, defaultCompany);
+        console.log("✅ Default company created successfully");
+        
+        // Add the company to the user's companies list
+        companies = [{ id: defaultCompanyId, ...defaultCompany }];
+        await setDoc(userRef, {
+          companies: [defaultCompanyId],
+          activeCompanyId: defaultCompanyId
+        }, { merge: true });
+        console.log("✅ User document updated with company info");
+      } catch (e) {
+        console.warn("⚠️ Could not create default company:", e.message);
+        console.warn("⚠️ Error details:", { code: e.code, name: e.name, stack: e.stack });
+        console.warn("⚠️ Company data:", defaultCompany);
+        
+        // Even if we can't create the company, we should still have a fallback
+        companies = [{ id: defaultCompanyId, ...defaultCompany }];
+      }
+    }
+
+    // Populate dropdown
+    if (companySelect) {
+      companySelect.innerHTML = companies
+        .map(c => `<option value="${c.id}">${c.name}</option>`)
+        .join("");
+
+      const activeId = userData.activeCompanyId && companies.length > 0 && companies.find(c => c.id === userData.activeCompanyId)
+        ? userData.activeCompanyId
+        : companies.length > 0 ? companies[0].id : "";
+      
+      if (activeId && companySelect) {
+        companySelect.value = activeId;
+        localStorage.setItem("activeCompanyId", activeId);
+      }
+    }
+
+    // Handle company change
+    if (companySelect) {
+      companySelect.onchange = async (e) => {
+        await setDoc(userRef, { activeCompanyId: e.target.value }, { merge: true });
+        localStorage.setItem("activeCompanyId", e.target.value);
+        location.reload(); // Reload to apply company filter
+      };
+    }
+  </script>
+
+  <!-- Main Demand Detail Script -->
+  <script type="module">
+    import { requireAuth, db, app } from "./firebase.js";
+    import { doc, getDoc, setDoc, updateDoc, addDoc, collection, query, where, orderBy, getDocs, serverTimestamp, arrayUnion, deleteDoc, increment, limit } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+    import {
+      getStorage, ref, uploadBytes, getDownloadURL, deleteObject
+    } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-storage.js";
+    import { RFQBidForm } from './assets/js/ui/rfq-bid-form.js';
+
+    const user = await requireAuth();
+    const storage = getStorage(app);
+
+    // Get demand ID
+    let demandId = new URLSearchParams(location.search).get("id");
+    const sourceTab = new URLSearchParams(location.search).get("source");
+    if (!demandId && location.hash.startsWith("#")) {
+      const hashParams = new URLSearchParams(location.hash.slice(1));
+      demandId = hashParams.get("id");
+    }
+
+    // Breadcrumbs by source
+    (function renderBreadcrumb(){
+      const bc = document.getElementById('breadcrumb');
+      if (!bc) return;
+      const parts = [];
+      parts.push(`<span class='tb-crumb'><span class='ico'>🏠</span><a href='./index.html'>Ana Sayfa</a></span>`);
+      parts.push(`<span class='tb-sep'>›</span>`);
+      parts.push(`<span class='tb-crumb'><span class='ico'>📄</span><a href='./demands.html'>Talepler</a></span>`);
+      if (sourceTab === 'incoming') { parts.push(`<span class='tb-sep'>›</span><span class='tb-crumb'><span class='ico'>📥</span><a href='./demands.html?filter=inbox'>Gelen Talepler</a></span>`); }
+      else if (sourceTab === 'outgoing') { parts.push(`<span class='tb-sep'>›</span><span class='tb-crumb'><span class='ico'>📤</span><a href='./demands.html?filter=sent'>Giden Talepler</a></span>`); }
+      else if (sourceTab === 'draft') { parts.push(`<span class='tb-sep'>›</span><span class='tb-crumb'><span class='ico'>📝</span><a href='./demands.html?filter=draft'>Taslak Talepler</a></span>`); }
+      bc.innerHTML = parts.join(' ');
+    })();
+    if (!demandId) {
+      demandId = localStorage.getItem("lastDemandId");
+    }
+    if (!demandId) {
+      alert("Talep ID bulunamadı.");
+      location.href = "./demands.html";
+    }
+
+    // State
+    let demandData = null;
+    let isOwner = false;
+    let isPublished = false;
+    let itemsData = [];
+    let countdownInterval = null;
+
+    // Elements
+    const bidsSection = document.getElementById("bids-section");
+    const bidFormSection = document.getElementById("bid-form-section");
+    const ownBidSection = document.getElementById("own-bid-section");
+    const ownBidContent = document.getElementById("own-bid-content");
+    const ownerActions = document.getElementById("ownerActions");
+    const filesSection = document.getElementById("filesSection");
+    const fileList = document.getElementById("fileList");
+    const fileInput = document.getElementById("fileInput");
+    const btnUpload = document.getElementById("btnUpload");
+    const btnEdit = document.getElementById("btnEdit");
+    const btnPublish = document.getElementById("btnPublish");
+    const btnUnpublish = document.getElementById("btnUnpublish");
+    const btnExportPDF = document.getElementById("btnExportPDF");
+    const btnExportExcel = document.getElementById("btnExportExcel");
+    const btnDeleteDraft = document.getElementById("btnDeleteDraft");
+    const publishModal = document.getElementById("publishModal");
+    const unpublishModal = document.getElementById("unpublishModal");
+    const itemsBody = document.getElementById("itemsBody");
+    const bidRows = document.getElementById("bidRows");
+
+    // ====================
+    // Load Demand
+    // ====================
+    async function loadDemand() {
+      const dref = doc(db, "demands", demandId);
+      try {
+        const d = await getDoc(dref);
+        if (!d.exists()) {
+          console.error("Demand not found:", demandId);
+          alert("Talep bulunamadı.");
+          location.href = "./demands.html";
+          return;
+        }
+        demandData = d.data();
+        
+        // 🔍 DEBUG: Log ownership info and data structure
+        console.log("[debug] createdBy:", demandData.createdBy, " currentUser:", user.uid);
+        console.log("[debug] demandData structure:", {
+          title: demandData.title,
+          talep_konusu: demandData.talep_konusu,
+          stfNo: demandData.stfNo,
+          stf_no: demandData.stf_no,
+          demandCode: demandData.demandCode,
+          talep_kodu: demandData.talep_kodu,
+          items: demandData.items ? demandData.items.length : 0,
+          hasItemsArray: Array.isArray(demandData.items),
+          categories: demandData.categories,
+          categoryTags: demandData.categoryTags
+        });
+        
+        isOwner = demandData.createdBy === user.uid;
+        isPublished = demandData.isPublished || demandData.published || false;
+
+        // Authorization check with new logic
+        const canRead = (demand, user) => {
+          const isOwner = demand.createdBy === user.uid;
+          const isAdmin = false; // Simplified - would check user role in real implementation
+          const isPublic = (demand.isPublished || demand.published) === true && demand.visibility === 'public';
+          return isPublic || isOwner || isAdmin;
+        };
+        
+        console.log("Authorization check:", { 
+          isOwner, 
+          isPublished, 
+          visibility: demandData.visibility,
+          demandId,
+          userId: user.uid,
+          demandData: { ...demandData, items: undefined, files: undefined } // Exclude large data
+        });
+        
+        // Check if user can read this demand
+        if (!canRead(demandData, user)) {
+          console.warn("User attempted to access demand they're not authorized to view:", {
+            demandId,
+            userId: user.uid,
+            demandCreatedBy: demandData.createdBy,
+            published: demandData.published,
+            visibility: demandData.visibility
+          });
+          alert("Bu talebi görme yetkiniz yok.");
+          location.href = "./demands.html";
+          return;
+        }
+
+        console.log("🎯 renderDemand() çağrılıyor...");
+        renderDemand();
+        
+        // Show owner-only sections
+        if (isOwner) {
+          console.log("👤 Owner sections gösteriliyor...");
+          ownerActions.style.display = "block";
+          filesSection.style.display = "block";
+          updatePublishButtons();
+          updateEditButton();
+        } else {
+          console.log("🔒 Non-owner, publish button gizleniyor...");
+          // 🔒 Hide publish button if not owner
+          if (btnPublish) btnPublish.style.display = "none";
+        }
+        
+        // Visibility logic for bids and bid form
+        console.log("👁️ Visibility rules uygulanıyor...");
+        applyVisibilityRules();
+
+      } catch (e) {
+        console.error("Demand load error:", e);
+        console.error("Error details:", {
+          name: e.name,
+          message: e.message,
+          code: e.code,
+          stack: e.stack
+        });
+        
+        // More detailed error handling
+        if (e.code === "permission-denied") {
+          console.warn("Permission denied when loading demand:", demandId);
+          alert("Bu talebi görme yetkiniz yok. Lütfen sistem yöneticinizle iletişime geçin.");
+        } else if (e.code === "not-found") {
+          console.warn("Demand not found:", demandId);
+          alert("Talep bulunamadı.");
+        } else {
+          console.error("Unexpected error when loading demand:", e);
+          alert("Talep yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.");
+        }
+        
+        location.href = "./demands.html";
+      }
+    }
+
+    function renderDemand() {
+      console.log("🎨 renderDemand() başlatılıyor...");
+      console.log("📊 demandData:", demandData);
+      console.log("📊 demandData keys:", Object.keys(demandData || {}));
+      console.log("📊 demandData.title:", demandData?.title);
+      console.log("📊 demandData.satfk:", demandData?.satfk);
+      
+      setText("#d-title", demandData.title || demandData.talep_konusu || "-");
+      setText("#d-satfk", demandData.satfk || "-");
+      setText("#d-demanddate", demandData.demandDate || demandData.createdAt?.toDate?.()?.toLocaleDateString?.("tr-TR") || "-");
+      setText("#d-duedate", demandData.dueDate || demandData.termin_tarihi || "-");
+      
+      // Öncelik Türkçe çevirisi
+      const priorityMap = {
+        'price': 'Fiyat',
+        'speed': 'Hız', 
+        'quality': 'Kalite'
+      };
+      setText("#d-priority", priorityMap[demandData.priority] || demandData.priority || "-");
+      
+      setText("#d-createdat", demandData.createdAt?.toDate?.()?.toLocaleDateString?.("tr-TR") || "-");
+      
+      // Talep Tipi ve Süreli alanları
+      const demandTypeMap = {
+        'public': 'Genel Talep',
+        'private': 'Özel Talep'
+      };
+      setText("#d-demand-type", demandTypeMap[demandData.demandType] || demandData.demandType || "-");
+      
+      // Süreli kontrolü - isTimeBound veya hybridSettings varsa süreli
+      const isTimeBound = demandData.isTimeBound || (demandData.hybridSettings && demandData.hybridSettings.isTimeBound);
+      setText("#d-is-urgent", isTimeBound ? "Evet" : "Hayır");
+      
+      // Acil süre günleri
+      if (isTimeBound && demandData.hybridSettings?.urgencyDays) {
+        setText("#d-urgency-days", `${demandData.hybridSettings.urgencyDays} gün`);
+        document.getElementById("urgency-container").style.display = "block";
+      } else {
+        document.getElementById("urgency-container").style.display = "none";
+      }
+      
+      console.log("✅ Temel bilgiler render edildi");
+      
+      // SATFK kopyalama butonu
+      const copyBtn = document.getElementById('copySatfkBtn');
+      if (copyBtn && demandData.satfk) {
+        copyBtn.onclick = () => {
+          navigator.clipboard.writeText(demandData.satfk).then(() => {
+            copyBtn.textContent = '✅ Kopyalandı';
+            setTimeout(() => {
+              copyBtn.textContent = '📋 Kopyala';
+            }, 2000);
+          }).catch(err => {
+            console.error('Kopyalama hatası:', err);
+            copyBtn.textContent = '❌ Hata';
+            setTimeout(() => {
+              copyBtn.textContent = '📋 Kopyala';
+            }, 2000);
+          });
+        };
+      }
+      
+      // SATFK ile arama butonu
+      const searchBtn = document.getElementById('searchBySatfkBtn');
+      if (searchBtn && demandData.satfk) {
+        searchBtn.href = `./demands.html?q=${demandData.satfk}`;
+        searchBtn.onclick = (e) => {
+          e.preventDefault();
+          window.location.href = `./demands.html?q=${demandData.satfk}`;
+        };
+      }
+      
+      // Status badge
+      const statusEl = document.querySelector("#d-status");
+      if (statusEl) {
+        // Draft sadece yayınlanmamışsa draft kabul edilir
+        const isDraft = (!isPublished) && (demandData.status === 'draft' || !demandData.status);
+        statusEl.textContent = isDraft ? "Taslak" : "Gönderildi";
+        statusEl.className = isDraft ? "status-badge status-draft" : "status-badge status-published";
+        console.log("✅ Status badge render edildi:", statusEl.textContent, "isDraft:", isDraft);
+      } else {
+        console.warn("⚠️ Status element bulunamadı");
+      }
+      
+      // Visibility display
+      const visibilityEl = document.querySelector("#d-visibility");
+      if (visibilityEl) {
+        const visibility = demandData.visibility || "private";
+        const visibilityText = {
+          "public": "🌐 Herkese Açık",
+          "company": "🏢 Şirket İçinde", 
+          "private": "🔒 Özel"
+        }[visibility] || "🔒 Özel";
+        visibilityEl.textContent = visibilityText;
+        visibilityEl.className = `visibility-badge visibility-${visibility}`;
+        console.log("✅ Visibility badge render edildi:", visibilityText);
+      }
+      
+      // Header-level extra fields for suppliers
+      setText("#d-delivery-address", demandData.deliveryAddress || demandData.deliveryLocation || "-");
+      setText("#d-delivery-method", demandData.deliveryMethod || "-");
+      setText("#d-delivery-location", demandData.deliveryLocation || "-");
+      setText("#d-delivery-city", demandData.deliveryCity || "-");
+      setText("#d-purchase-location", demandData.purchaseLocation || "-");
+      setText("#d-requester", demandData.requester || "-");
+      setText("#d-approver", demandData.approver || "-");
+      setText("#d-purchase-manager", demandData.purchaseManager || "-");
+      setText("#d-general-manager", demandData.generalManager || "-");
+      setText("#d-payment-terms", demandData.paymentTerms || "-");
+      setText("#d-currency", demandData.currency || "-");
+
+      // Sent date (only if published)
+      const sentAtContainer = document.getElementById("sentAtContainer");
+      const sentAtEl = document.getElementById("sentAt");
+      if (isPublished && demandData.sentAt) {
+        sentAtContainer.style.display = "block";
+        const sentDate = demandData.sentAt.toDate();
+        sentAtEl.textContent = sentDate.toLocaleDateString("tr-TR") + " " + sentDate.toLocaleTimeString("tr-TR");
+      } else {
+        sentAtContainer.style.display = "none";
+      }
+
+      // Categories: categoryTags + customCategory, fallback to categories/category
+      const catSet = new Set();
+      (Array.isArray(demandData.categoryTags) ? demandData.categoryTags : []).forEach(c => c && catSet.add(c));
+      if (demandData.customCategory) catSet.add(demandData.customCategory);
+      (Array.isArray(demandData.categories) ? demandData.categories : []).forEach(c => c && catSet.add(c));
+      if (typeof demandData.category === "string" && demandData.category.trim()) catSet.add(demandData.category.trim());
+
+      const catBox = document.querySelector("#d-cats");
+      const cats = [...catSet];
+      catBox.innerHTML = cats.length
+        ? cats.map(c => `<span class="badge">${c}</span>`).join(" ")
+        : "-";
+
+      const specEl = document.getElementById("spec");
+      if (specEl) specEl.textContent = demandData.spec || demandData.aciklama || "-";
+      
+      // Render bidding mode info
+      renderBiddingModeInfo();
+      
+      console.log("✅ Talep detayları render edildi:", {
+        title: demandData.title || demandData.talep_konusu,
+        stfNo: demandData.stfNo || demandData.stf_no,
+        demandCode: demandData.demandCode || demandData.talep_kodu,
+        itemsCount: demandData.items ? demandData.items.length : 0
+      });
+    }
+
+    // Create product bid forms
+    function createProductBidForms() {
+      const container = document.getElementById('product-bid-forms');
+      if (!container) return;
+      
+      container.innerHTML = '';
+      
+      // Items verisi itemsData'dan geliyor (loadItems'da yüklenen)
+      if (!itemsData || itemsData.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: #64748b; padding: 20px;">Bu talep için ürün bilgisi bulunamadı.</p>';
+        return;
+      }
+      
+      console.log(`📦 ${itemsData.length} adet ürün için teklif formu oluşturuluyor...`);
+      
+      itemsData.forEach((item, index) => {
+        const formDiv = document.createElement('div');
+        formDiv.className = 'product-bid-form';
+        formDiv.style.cssText = 'margin: 20px 0; padding: 20px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);';
+        
+        const featuresHtml = Array.isArray(item.featuresPairs) && item.featuresPairs.length
+          ? `<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;">${item.featuresPairs.map(t=>`<span style=\"background:#f3f4f6;color:#374151;border:1px solid #e5e7eb;padding:2px 8px;border-radius:12px;font-size:12px;\">${t}</span>`).join('')}</div>`
+          : '';
+        const altGlobal = (document.getElementById('acceptAlternatives')?.value || '') === 'E';
+
+        formDiv.innerHTML = `
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0;">
+                <h4 style="margin: 0; color: #1e293b;">
+                  📝 Talep Kalemi ${index + 1}: ${item.name || 'Ürün Açıklaması'}
+                </h4>
+                <div style="font-size: 12px; color: #64748b;">
+                  Sıra No: ${item.lineNo || index + 1} | Malzeme Kodu: ${item.sku || '-'}
+                </div>
+              </div>
+          
+          <!-- Talep Bilgisi (sabit, değiştirilemez) -->
+          <div style="font-weight:600;color:#1e40af;margin:8px 0 6px 0;display:flex;align-items:center;gap:8px;">
+            <span>📋 Talep Bilgisi</span>
+            <span style="font-size:12px;color:#6b7280;">(sabit)</span>
+          </div>
+          <div style="border: 1px solid #d1d5db; border-radius: 8px; overflow: hidden;">
+            <div style="background: #f3f4f6; padding: 12px; border-bottom: 1px solid #d1d5db;">
+              <div style="display: grid; grid-template-columns: 60px 1fr 100px 100px 120px 120px; gap: 12px; font-weight: 600; font-size: 13px;">
+                <div>NO</div>
+                <div>ÜRÜN İSMİ</div>
+                <div>MİKTAR</div>
+                <div>BİRİM</div>
+                <div>BİRİM FİYAT</div>
+                <div>TOPLAM (TL)</div>
+              </div>
+            </div>
+            
+            <!-- Ürün Bilgileri (talep) -->
+            <div style="padding: 16px; background: white;">
+              <div style="display: grid; grid-template-columns: 60px 1fr 100px 100px 120px 120px; gap: 12px; align-items: center;">
+                <!-- Sıra No -->
+                <div style="font-weight: 600; color: #374151; text-align: center;">
+                  ${index + 1}
+                </div>
+                
+                <!-- Ürün İsmi (talep) -->
+                    <div style="padding: 8px; background: #f9fafb; border-radius: 4px; font-size: 14px;">
+                      <strong>${item.name || 'Ürün Açıklaması'}</strong>
+                      ${item.brandModel ? `<br><span style="color: #64748b; font-size: 12px;">Marka: ${item.brandModel}</span>` : ''}
+                      ${item.itemDueDate ? `<br><span style=\"color: #64748b; font-size: 12px;\">Teslim: ${item.itemDueDate}</span>` : ''}
+                      ${featuresHtml}
+                      ${Array.isArray(item.kaliteSertifika) && item.kaliteSertifika.length ? `<div style=\"margin-top:6px\"><span style=\"font-size:12px;color:#1f2937;font-weight:600\">İstenen Sertifikalar:</span> <span style=\"font-size:12px;color:#334155\">${item.kaliteSertifika.join(', ')}</span></div>` : ''}
+                    </div>
+                
+                <!-- Miktar (talep) -->
+                <div style="text-align:center; font-weight:600; color:#111827;">${item.qty ?? '-'}
+                  <div style="font-size:12px;color:#6b7280;margin-top:4px;">Talep edilen</div>
+                </div>
+                
+                <!-- Birim (talep) -->
+                <div style="text-transform:capitalize; font-weight:600; color:#111827; text-align:center;">${item.unit || '-'}</div>
+                
+                <!-- Birim Fiyat (header, teklife göre canlı) -->
+                <div style="text-align:center; color:#0f172a;">
+                  <span data-product-index="${index}" data-field="hdrUnitPrice">—</span>
+                  <div style="font-size:11px;color:#6b7280">KDV Hariç</div>
+                  ${item.targetUnitPrice || item.targetPrice ? `<div style=\"font-size:11px;color:#6b7280\">Hedef: ${(item.targetUnitPrice||item.targetPrice)}</div>` : ''}
+                </div>
+                
+                <!-- Toplam (header, teklife göre canlı) -->
+                <div style="text-align: center; font-weight: 700; color: #059669; font-size: 16px;">
+                  <span data-product-index="${index}" data-field="hdrTotal">—</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tek satırda teklif alanları -->
+          <div style="padding:12px 16px; background:#fafafa; border:1px solid #e5e7eb; border-radius:8px; margin-top:8px; display:grid; grid-template-columns: minmax(320px,1.6fr) 120px 140px 140px 140px 180px 140px; gap:12px; align-items:center;">
+            <div>
+              <label style="font-size:13px;color:#1d4ed8;font-weight:700;">Teklif Edilen Malzeme Tanımı</label>
+              <input data-product-index="${index}" data-field="offerDescription" value="${(item.name || '').replace(/"/g,'&quot;')}" 
+                     style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px;" />
+              <div style="font-size:12px;color:#6b7280;margin-top:4px;">Talep edilen: <em>${item.name || '-'}</em></div>
+            </div>
+            <div>
+              <label style="font-size:12px;color:#1d4ed8;font-weight:700;">Miktar</label>
+              <input type="number" step="0.01" min="0" placeholder="Miktar" required 
+                     data-product-index="${index}" data-field="quantity" 
+                     value="${item.qty || ''}" 
+                     style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;" />
+            </div>
+            <div>
+              <label style="font-size:12px;color:#1d4ed8;font-weight:700;">Birim</label>
+              <select required data-product-index="${index}" data-field="unit"
+                      style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;">
+                <option value="">Seçiniz</option>
+                <option value="adet" ${item.unit === 'adet' ? 'selected' : ''}>Adet</option>
+                <option value="kg" ${item.unit === 'kg' ? 'selected' : ''}>Kg</option>
+                <option value="ton" ${item.unit === 'ton' ? 'selected' : ''}>Ton</option>
+                <option value="metre" ${item.unit === 'metre' ? 'selected' : ''}>Metre</option>
+                <option value="metrekare" ${item.unit === 'metrekare' ? 'selected' : ''}>m²</option>
+                <option value="metrekup" ${item.unit === 'metrekup' ? 'selected' : ''}>m³</option>
+                <option value="litre" ${item.unit === 'litre' ? 'selected' : ''}>Litre</option>
+                <option value="paket" ${item.unit === 'paket' ? 'selected' : ''}>Paket</option>
+                <option value="kutu" ${item.unit === 'kutu' ? 'selected' : ''}>Kutu</option>
+                <option value="palet" ${item.unit === 'palet' ? 'selected' : ''}>Palet</option>
+                <option value="set" ${item.unit === 'set' ? 'selected' : ''}>Set</option>
+                <option value="takım" ${item.unit === 'takım' ? 'selected' : ''}>Takım</option>
+                <option value="kangal" ${item.unit === 'kangal' ? 'selected' : ''}>Kangal</option>
+                <option value="kova" ${item.unit === 'kova' ? 'selected' : ''}>Kova</option>
+                <option value="tabaka" ${item.unit === 'tabaka' ? 'selected' : ''}>Tabaka</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:12px;color:#1d4ed8;font-weight:700;">Birim Fiyat (KDV Hariç)</label>
+              <input type="text" inputmode="decimal" placeholder="KDV Hariç 0,00" required 
+                     data-product-index="${index}" data-field="unitPrice" 
+                     style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;" />
+            </div>
+            <div style="text-align: right; font-weight: 600; color: #059669; font-size: 14px;">
+              <div style="font-size:12px;color:#1d4ed8;font-weight:700;">Toplam (TL)</div>
+              <span data-product-index="${index}" data-field="totalPrice">-</span>
+            </div>
+            <div>
+              <label style="font-size:12px;color:#1d4ed8;font-weight:700;">Teslim Tarihi</label>
+              <input type="date" data-product-index="${index}" data-field="deliveryDate" style="padding:6px;border:1px solid #d1d5db;border-radius:6px;" />
+            </div>
+            <div>
+              <label style="font-size:12px;color:#1d4ed8;font-weight:700;">Para Birimi</label>
+              <select data-product-index="${index}" data-field="currency" style="padding:6px;border:1px solid #d1d5db;border-radius:6px;">
+                <option value="TRY">TRY</option>
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+                <option value="GBP">GBP</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- İskontolar ve Net Fiyat -->
+          <div class="subcard-alt" style="margin:16px 0;">
+            <div style="font-size:14px;font-weight:600;color:#1e40af;margin-bottom:8px;">İskontolar (opsiyonel)</div>
+            <div style="display:grid; grid-template-columns: repeat(5, 80px) 1fr auto; gap: 8px; align-items:center;">
+              <input type="number" step="0.01" min="0" max="100" placeholder="%1" data-product-index="${index}" data-field="discount1" style="width:80px; padding:6px; border:1px solid #d1d5db; border-radius:4px;" />
+              <input type="number" step="0.01" min="0" max="100" placeholder="%2" data-product-index="${index}" data-field="discount2" style="width:80px; padding:6px; border:1px solid #d1d5db; border-radius:4px;" />
+              <input type="number" step="0.01" min="0" max="100" placeholder="%3" data-product-index="${index}" data-field="discount3" style="width:80px; padding:6px; border:1px solid #d1d5db; border-radius:4px;" />
+              <input type="number" step="0.01" min="0" max="100" placeholder="%4" data-product-index="${index}" data-field="discount4" style="width:80px; padding:6px; border:1px solid #d1d5db; border-radius:4px;" />
+              <input type="number" step="0.01" min="0" max="100" placeholder="%5" data-product-index="${index}" data-field="discount5" style="width:80px; padding:6px; border:1px solid #d1d5db; border-radius:4px;" />
+              <div style="display:flex; align-items:center; gap:8px;">
+              <label class="field-label">KDV (%)</label>
+                <select required data-product-index="${index}" data-field="vatRate" class="select-sm">
+                  <option value="" selected>Seçiniz</option>
+                  ${[0,1,8,10,18,20].map(v=>`<option value="${v}">${v}</option>`).join('')}
+                </select>
+              </div>
+              <div style="text-align:right; white-space:nowrap;">
+                <div><span style="font-size:14px;font-weight:700;margin-right:8px;color:#065f46;">Birim Fiyat (KDV Dahil):</span><strong data-product-index="${index}" data-field="netPrice" style="font-size:18px;color:#059669">-</strong></div>
+                <div style="margin-top:6px;"><span style="font-size:13px;color:#1f2937;margin-right:8px;font-weight:700;">KDV Dahil Toplam:</span><strong data-product-index="${index}" data-field="totalWithVat" style="font-size:18px;color:#1d4ed8">-</strong></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Kalite / Sertifika (kalem bazlı) ve Görsel/Not -->
+          <div style="margin-top:12px; display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+            <div>
+              <label class="field-label" style="display:inline-flex;align-items:center;gap:8px;font-weight:600;">
+                <input type="checkbox" class="toggle-check" data-product-index="${index}" data-toggle="cert" style="width:14px;height:14px;"> Kalite / Sertifika
+              </label>
+              <div data-product-index="${index}" data-section="cert" class="subcard-alt" style="display:none; margin-top:6px;">
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                  <input data-product-index="${index}" data-field="certInput" placeholder="Örn. ISO 9001" class="control-sm">
+                  <button type="button" class="btn btn-outline btn-sm btn-add-cert" data-index="${index}">Ekle</button>
+                  <div data-product-index="${index}" data-field="certChips" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+                </div>
+              </div>
+            </div>
+            <div>
+              <label class="field-label" style="display:inline-flex;align-items:center;gap:8px;font-weight:600;">
+                <input type="checkbox" class="toggle-check" data-product-index="${index}" data-toggle="note" style="width:14px;height:14px;"> Ürün Görseli (URL) & Ek Açıklama
+              </label>
+              <div data-product-index="${index}" data-section="note" class="subcard-alt" style="display:none; margin-top:6px;">
+                <div style="display:flex; gap:6px; align-items:center;">
+                  <input data-product-index="${index}" data-field="imageUrl" placeholder="https://..." class="control-sm" style="flex:1;margin-top:0;">
+                  <button type="button" class="btn btn-outline btn-sm btn-upload-image" data-index="${index}">Yükle</button>
+                  <input type="file" accept="image/*" data-product-index="${index}" data-field="imageFile" style="display:none;">
+                </div>
+                <textarea data-product-index="${index}" data-field="itemNote" rows="4" placeholder="Ek açıklama..." class="control-sm" style="margin-top:8px;resize:vertical;font-size:14px;min-height:96px;"></textarea>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        container.appendChild(formDiv);
+      });
+      
+      // Add event listeners for price calculations
+      addProductFormEventListeners();
+    }
+    
+    // Add event listeners for product forms
+    function addProductFormEventListeners() {
+      const container = document.getElementById('product-bid-forms');
+      if (!container) return;
+      function updateFxPanelVisibility(){
+        const fxPanel = document.getElementById('fxPanel');
+        if (!fxPanel) return;
+        const hasNonTry = Array.from(container.querySelectorAll('[data-field="currency"]'))
+          .some(sel => (sel.value || 'TRY') !== 'TRY');
+        fxPanel.style.display = hasNonTry ? '' : 'none';
+      }
+      
+      // Normalize decimal inputs and listen for changes in price-related fields
+      container.addEventListener('input', function(e) {
+        if (e.target.hasAttribute('data-product-index')) {
+          // Normalize Birim Fiyat: accept both comma and dot decimals, strip thousands
+          if (e.target.getAttribute('data-field') === 'unitPrice') {
+            e.target.value = normalizeDecimalString(e.target.value);
+          }
+          const productIndex = e.target.getAttribute('data-product-index');
+          calculateProductNetPrice(productIndex);
+        }
+      });
+      // Also listen for select changes (e.g. KDV)
+      container.addEventListener('change', function(e) {
+        if (e.target.classList && e.target.classList.contains('toggle-check')){
+          const idx = e.target.getAttribute('data-product-index');
+          const which = e.target.getAttribute('data-toggle');
+          const section = container.querySelector(`[data-section="${which}"][data-product-index="${idx}"]`);
+          if (section) section.style.display = e.target.checked ? 'block' : 'none';
+          return;
+        }
+        if (e.target.hasAttribute('data-product-index')) {
+          if (e.target.getAttribute('data-field') === 'currency') {
+            updateFxPanelVisibility();
+          }
+          const productIndex = e.target.getAttribute('data-product-index');
+          calculateProductNetPrice(productIndex);
+        }
+      });
+
+      // initial
+      updateFxPanelVisibility();
+
+      // Image upload buttons
+      container.addEventListener('click', async function(e){
+        const btn = e.target.closest('.btn-upload-image');
+        if (!btn) return;
+        const idx = btn.getAttribute('data-index');
+        const fileInput = container.querySelector(`[data-field="imageFile"][data-product-index="${idx}"]`);
+        if (fileInput) fileInput.click();
+      });
+      container.addEventListener('change', async function(e){
+        const fileEl = e.target.closest('input[type="file"][data-field="imageFile"]');
+        if (!fileEl) return;
+        const idx = fileEl.getAttribute('data-product-index');
+        const file = fileEl.files?.[0];
+        if (!file) return;
+        try{
+          const path = `bids-temp/${user.uid}/${demandId}/item-${idx}-${Date.now()}-${file.name}`;
+          const r = ref(storage, path);
+          await uploadBytes(r, file, { contentType: file.type || 'image/*' });
+          const url = await getDownloadURL(r);
+          const urlInput = container.querySelector(`[data-field="imageUrl"][data-product-index="${idx}"]`);
+          if (urlInput) urlInput.value = url;
+          alert('✅ Görsel yüklendi. URL alana eklendi.');
+        }catch(err){
+          console.error('image upload error', err);
+          alert('❌ Görsel yüklenemedi: ' + (err?.message || err));
+        }finally{
+          fileEl.value = '';
+        }
+      });
+
+      // Sertifika ekleme/silme (delegation)
+      container.addEventListener('click', function(e){
+        const addBtn = e.target.closest('.btn-add-cert');
+        if (addBtn){
+          const idx = addBtn.getAttribute('data-index');
+          const formDiv = container.children[idx];
+          if (!formDiv) return;
+          const input = formDiv.querySelector('[data-field="certInput"]');
+          const chips = formDiv.querySelector('[data-field="certChips"]');
+          const val = (input?.value || '').trim();
+          if (!val) return;
+          const chip = document.createElement('span');
+          chip.className = 'cert-chip';
+          chip.style.cssText = 'display:inline-flex;align-items:center;gap:6px;background:#2563EB;color:#fff;border:1px solid #1E40AF;border-radius:14px;padding:2px 8px;font-size:12px;';
+          chip.innerHTML = `${val} <button type=\"button\" class=\"btn-del-cert\" aria-label=\"Sil\" style=\"display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.6);color:#dc2626;cursor:pointer;font-size:14px;line-height:1;font-weight:800;\">×</button>`;
+          chips?.appendChild(chip);
+          input.value = '';
+        }
+        const delBtn = e.target.closest('.btn-del-cert');
+        if (delBtn){ delBtn.parentElement?.remove(); }
+      });
+    }
+
+    // Accept comma or dot as decimal separator; remove thousands separators
+    function normalizeDecimalString(val){
+      if (val == null) return '';
+      let s = String(val).replace(/\s+/g,'').replace(/[^0-9.,-]/g,'');
+      const hasComma = s.includes(',');
+      const hasDot = s.includes('.');
+      if (hasComma && hasDot) {
+        const lastSepIndex = Math.max(s.lastIndexOf(','), s.lastIndexOf('.'));
+        const intPart = s.slice(0, lastSepIndex).replace(/[.,]/g, '');
+        const fracPart = s.slice(lastSepIndex + 1).replace(/[.,]/g, '');
+        return (intPart || '0') + (fracPart ? '.' + fracPart : '');
+      } else if (hasComma) {
+        return s.replace(/\./g,'').replace(',', '.');
+      } else {
+        return s.replace(/,/g,'');
+      }
+    }
+    
+    // Calculate net price for a specific product
+    function calculateProductNetPrice(productIndex) {
+      const container = document.getElementById('product-bid-forms');
+      if (!container) return;
+      
+      const formDiv = container.children[productIndex];
+      if (!formDiv) return;
+      
+      const unitPrice = parseFloat(formDiv.querySelector(`[data-field="unitPrice"]`).value) || 0;
+      const quantity = parseFloat(formDiv.querySelector(`[data-field="quantity"]`).value) || 0;
+      const discount1 = parseFloat(formDiv.querySelector(`[data-field="discount1"]`).value) || 0;
+      const discount2 = parseFloat(formDiv.querySelector(`[data-field="discount2"]`).value) || 0;
+      const discount3 = parseFloat(formDiv.querySelector(`[data-field="discount3"]`).value) || 0;
+      const discount4 = parseFloat(formDiv.querySelector(`[data-field="discount4"]`).value) || 0;
+      const discount5 = parseFloat(formDiv.querySelector(`[data-field="discount5"]`).value) || 0;
+      
+      // Calculate net price with discounts
+      let netPrice = unitPrice;
+      if (discount1 > 0) netPrice = netPrice * (1 - discount1 / 100);
+      if (discount2 > 0) netPrice = netPrice * (1 - discount2 / 100);
+      if (discount3 > 0) netPrice = netPrice * (1 - discount3 / 100);
+      if (discount4 > 0) netPrice = netPrice * (1 - discount4 / 100);
+      if (discount5 > 0) netPrice = netPrice * (1 - discount5 / 100);
+      
+      // Calculate total price
+      const totalPrice = netPrice * quantity;
+      const vatRate = parseFloat(formDiv.querySelector(`[data-field="vatRate"]`)?.value) || 0;
+      const totalWithVat = totalPrice * (1 + (vatRate / 100));
+      
+      // Update gross per-unit (KDV dahil) display
+      const netPriceElement = formDiv.querySelector(`[data-field="netPrice"]`);
+      if (netPriceElement) {
+        const grossPerUnit = netPrice * (1 + (vatRate/100));
+        netPriceElement.textContent = grossPerUnit.toFixed(2);
+      }
+      
+      // Update total price display
+      const totalPriceElement = formDiv.querySelector(`[data-field="totalPrice"]`);
+      if (totalPriceElement) {
+        totalPriceElement.textContent = totalPrice.toFixed(2);
+      }
+      const totalWithVatEl = formDiv.querySelector(`[data-field="totalWithVat"]`);
+      if (totalWithVatEl) {
+        totalWithVatEl.textContent = totalWithVat.toFixed(2);
+      }
+
+      // Mirror to header cells (BİRİM FİYAT / TOPLAM)
+      try {
+        const hdrUnit = document.querySelector(`[data-product-index="${productIndex}"][data-field="hdrUnitPrice"]`);
+        const hdrTotal = document.querySelector(`[data-product-index="${productIndex}"][data-field="hdrTotal"]`);
+        if (hdrUnit) hdrUnit.textContent = unitPrice ? unitPrice.toFixed(2) : '—';
+        if (hdrTotal) hdrTotal.textContent = totalPrice ? totalPrice.toFixed(2) : '—';
+      } catch(_){}
+    }
+
+    // 1) RFQ bid formunu üst kısımda üret (genel alanlar)
+    function renderGeneralBidForm() {
+      const host = document.getElementById('rfq-bid-form-container');
+      if (!host) return;
+
+      host.innerHTML = `
+        <div class="section-card">
+          <div class="section-header">
+            <h2>🧾 Genel Teklif Bilgileri</h2>
+            <div class="actions"></div>
+          </div>
+
+          <div class="row" style="display:grid; grid-template-columns: repeat(2, minmax(220px,1fr)); gap:12px;">
+            <div>
+              <label>Nakliye Türü</label>
+              <input id="shippingType" list="shippingTypeList" placeholder="Örn. Karayolu" />
+              <datalist id="shippingTypeList">
+                <option value="Karayolu"></option>
+                <option value="Denizyolu"></option>
+                <option value="Havayolu"></option>
+                <option value="Demiryolu"></option>
+              </datalist>
+            </div>
+            <div>
+              <label>Nakliye Modu</label>
+              <select id="shippingMode">
+                <option value="excluded">Nakliye Hariç</option>
+                <option value="included">Nakliye Dahil</option>
+                <option value="custom">Özel/Anlaşmaya Göre</option>
+              </select>
+            </div>
+            <div id="pickupDetails" style="display:none;">
+              <label>Alım Yeri / Adres</label>
+              <input id="pickupLocation" placeholder="Örn. Fabrika/Depo adresi" />
+            </div>
+            <div>
+              <label>Teslim Şekli/Yeri</label>
+              <input id="deliveryMethod" placeholder="Örn. Şantiye/Depo teslim" />
+            </div>
+          </div>
+          
+
+          
+
+          <!-- Nakliye Detayları: sadece 'Nakliye Dahil' ise görünür -->
+          <div id="shippingDetails" class="subcard-alt" style="display:none; margin-top:12px;">
+            <div id="shipIncludedInfo" style="margin-bottom:8px; font-size:13px; color:#1f2937; display:none;"></div>
+            <div style="display:grid; grid-template-columns: 180px 180px 180px 1fr; gap:12px; align-items:center;">
+              <div>
+                <label>Sefer Sayısı</label>
+                <input id="vehicleTrips" type="number" min="1" step="1" placeholder="Örn. 2" />
+              </div>
+              <div>
+                <label>Teslim Saat Başlangıç</label>
+                <input id="deliveryTimeStart" type="time" />
+              </div>
+              <div>
+                <label>Teslim Saat Bitiş</label>
+                <input id="deliveryTimeEnd" type="time" />
+              </div>
+              <div>
+                <label>Nakliye Notu</label>
+                <input id="shippingNotes" placeholder="Araç tipi, yön, ara aktarma vb." />
+              </div>
+            </div>
+            <div id="shippingLine" style="margin-top:12px; padding-top:12px; border-top:1px dashed #e5e7eb; display:none;">
+              <div style="font-weight:600; color:#1e40af; margin-bottom:8px;">Nakliye Kalemi</div>
+              <div style="display:grid; grid-template-columns: 1.6fr 120px 140px 140px 160px; gap:12px; align-items:center;">
+                <div>
+                  <label style="font-size:12px;color:#1d4ed8;font-weight:700;">Malzeme Tanımı</label>
+                  <input id="shipLineDesc" value="Nakliye" disabled style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px;background:#f3f4f6;" />
+                </div>
+                <div>
+                  <label style="font-size:12px;color:#1d4ed8;font-weight:700;">Miktar</label>
+                  <input id="shipLineQty" type="number" min="0" step="0.01" placeholder="Miktar" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px;" />
+                </div>
+                <div>
+                  <label style="font-size:12px;color:#1d4ed8;font-weight:700;">Birim</label>
+                  <select id="shipLineUnit" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px;">
+                    <option value="">Seçiniz</option>
+                    <option value="sefer">Sefer</option>
+                    <option value="km">Km</option>
+                    <option value="adet">Adet</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="font-size:12px;color:#1d4ed8;font-weight:700;">Birim Fiyat (KDV Hariç)</label>
+                  <input id="shipLineUnitPrice" type="text" inputmode="decimal" placeholder="0,00" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px;" />
+                </div>
+                <div>
+                  <label style="font-size:12px;color:#1d4ed8;font-weight:700;">KDV (%)</label>
+                  <select id="shipLineVat" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px;">
+                    <option value="">Seçiniz</option>
+                    <option value="0">0</option>
+                    <option value="1">1</option>
+                    <option value="8">8</option>
+                    <option value="10">10</option>
+                    <option value="18">18</option>
+                    <option value="20">20</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Para Birimi ve FX Seçiciler + Toplamlar -->
+          <div id="fxPanel" class="subcard-alt" style="margin-top:12px;">
+            <div class="row" style="display:grid; grid-template-columns: 160px 1fr 160px 1fr 140px 1fr; gap:12px; align-items:center;">
+              <label>Para Birimi</label>
+              <select id="fxCur" class="select-sm"><option value="TRY">TRY</option><option value="USD">USD</option><option value="EUR">EUR</option></select>
+              <label>Kur Baz Tarihi</label>
+              <select id="fxBase" class="select-sm"><option value="quote">Teklif Tarihi</option><option value="invoice">Fatura Tarihi</option></select>
+              <label>Kaynak</label>
+              <select id="fxSource" class="select-sm"><option value="TCMB">TCMB</option><option value="ECB">ECB</option><option value="manual">manual</option></select>
+            </div>
+            <div class="row" style="display:grid; grid-template-columns: 160px 1fr 160px 1fr; gap:12px; align-items:center; margin-top:8px;">
+              <label>Kur Tarihi</label>
+              <input id="fxDate" type="date" class="control-sm">
+              <label>Manuel Kur</label>
+              <input id="fxManual" type="number" step="0.0001" placeholder="Örn. 35.1200" class="control-sm hidden">
+            </div>
+            <div class="totals" style="margin-top:10px;">
+              <div><b id="totalPrimaryLabel">Toplam (TL)</b> <span id="totalPrimaryValue">—</span></div>
+              <div id="totalSecondaryRow" class="label" style="margin-top:4px; display:none;">≈ TL …</div>
+            </div>
+          </div>
+
+          <div style="display:flex;justify-content:flex-end;margin-top:8px;">
+            <button id="btnOpenPayment" class="btn btn-primary">💳 Ödeme Seçenekleri</button>
+          </div>
+
+          <div style="margin-top:12px;">
+            <label>Notlar</label>
+            <textarea id="notes" rows="3" placeholder="Ek bilgi..."></textarea>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <div class="section-header">
+            <h2>💼 Teklif Verenin Fiyat Teklifi (Talep Kalemlerine)</h2>
+          </div>
+          <p class="label" style="margin:4px 0 0 0;">Talep sahibinin ürün kalemleri için, aşağıdaki alanlarda kendi miktar/birim/birim fiyat ve KDV bilgilerinizi girerek teklifinizi oluşturun.</p>
+          <div id="product-bid-forms"></div>
+        </div>
+      `;
+
+      // Ürün kalemleri için satır formlarını üret
+      createProductBidForms();
+
+      // En alta gönder butonu
+      const sendBar = document.createElement('div');
+      sendBar.style.cssText = 'display:flex;justify-content:flex-end;gap:8px;margin-top:16px;';
+      sendBar.innerHTML = `
+        <button id="btnSubmitBid" class="btn btn-primary">✅ Teklifi Gönder</button>
+      `;
+      host.appendChild(sendBar);
+
+      // Gönder butonu -> submitBid()
+      document.getElementById('btnSubmitBid')?.addEventListener('click', submitBid);
+
+      // Para birimi artık satır bazlı seçiliyor
+
+      // Nakliye modu UI
+      const shippingModeEl = document.getElementById('shippingMode');
+      const shippingDetails = document.getElementById('shippingDetails');
+      function updateShippingUI(){
+        const inc = shippingModeEl?.value === 'included';
+        if (shippingDetails) shippingDetails.style.display = inc ? 'block' : 'none';
+        const pickup = document.getElementById('pickupDetails');
+        if (pickup) pickup.style.display = (!inc && shippingModeEl?.value==='excluded') ? 'block' : 'none';
+        const info = document.getElementById('shipIncludedInfo');
+        if (info) {
+          info.style.display = inc ? 'block' : 'none';
+          if (inc) {
+            const addr = (demandData.deliveryAddress || demandData.deliveryLocation || '-');
+            info.innerHTML = `<strong>Teslimat Adresi (Alıcı):</strong> ${addr}`;
+          }
+        }
+        const shipLine = document.getElementById('shippingLine');
+        if (shipLine) shipLine.style.display = inc ? 'block' : 'none';
+      }
+      shippingModeEl?.addEventListener('change', updateShippingUI);
+      updateShippingUI();
+
+      // =========== FX / Currency ===========
+      const fxState = { currency: 'TRY', base: 'quote', source: 'TCMB', at: new Date().toISOString().slice(0,10), pairs: {} };
+      const fxCur = document.getElementById('fxCur');
+      const fxBase = document.getElementById('fxBase');
+      const fxSource = document.getElementById('fxSource');
+      const fxDate = document.getElementById('fxDate');
+      const fxManual = document.getElementById('fxManual');
+      if (fxDate) fxDate.value = fxState.at;
+
+      function fmt(val, cur){
+        try { return new Intl.NumberFormat('tr-TR', { style:'currency', currency: cur }).format(val); } catch(_){ return `${(val||0).toFixed(2)} ${cur}`; }
+      }
+      function sumTotalIncl(){
+        let sum = 0;
+        document.querySelectorAll('[data-field="totalWithVat"]').forEach(el=>{
+          const raw = (el.textContent||'').toString().trim();
+          const v = parseFloat(raw.replace(/[^0-9.,-]/g,'').replace(',','.')) || 0;
+          sum += v;
+        });
+        return sum;
+      }
+      function toTRY(amountIncl, cur){
+        if (cur === 'TRY') return amountIncl;
+        const k = fxState.pairs[`${cur}TRY`];
+        return k ? amountIncl * k : null;
+      }
+      function renderFX(){
+        const cur = fxState.currency;
+        const incl = sumTotalIncl();
+        const primaryLabel = document.getElementById('totalPrimaryLabel');
+        const primaryVal = document.getElementById('totalPrimaryValue');
+        const secondaryRow = document.getElementById('totalSecondaryRow');
+        if (primaryLabel) primaryLabel.textContent = `Toplam (${cur})`;
+        if (primaryVal) primaryVal.textContent = fmt(incl, cur);
+        if (secondaryRow){
+          if (cur !== 'TRY'){
+            const tl = toTRY(incl, cur);
+            secondaryRow.style.display = tl ? '' : 'none';
+            if (tl){
+              const pair = `${cur}TRY`;
+              secondaryRow.textContent = `≈ ${fmt(tl,'TRY')} (Kur: ${fxState.pairs[pair]} — ${new Date(fxState.at).toLocaleDateString('tr-TR')}, ${fxState.source})`;
+            }
+          } else {
+            secondaryRow.style.display = 'none';
+          }
+        }
+      }
+      fxCur?.addEventListener('change', e=>{ fxState.currency = e.target.value; renderFX(); });
+      fxBase?.addEventListener('change', e=>{ fxState.base = e.target.value; renderFX(); });
+      fxSource?.addEventListener('change', e=>{ fxState.source = e.target.value; if (fxManual) fxManual.classList.toggle('hidden', fxState.source !== 'manual'); renderFX(); });
+      fxDate?.addEventListener('change', e=>{ fxState.at = e.target.value; renderFX(); });
+      fxManual?.addEventListener('input', e=>{ const pair = `${fxState.currency}TRY`; const v = Number(e.target.value) || undefined; fxState.pairs[pair] = v; renderFX(); });
+      renderFX();
+    }
+
+    // Payment modal
+    let selectedPaymentPref = null;
+    (function setupPaymentModal(){
+      const modal = document.createElement('div');
+      modal.id = 'paymentModal';
+      modal.style.cssText = 'display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:1100;';
+      modal.innerHTML = `
+        <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:min(900px,96vw); max-height:90vh; overflow:auto; background:#fff; border-radius:8px; padding:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:center; margin-bottom:8px;">
+            <h3 style="margin:0;">Ödeme Seçenekleri</h3>
+            <button id="closePayment" class="btn btn-outline btn-sm" style="padding:4px 8px;">✕</button>
+          </div>
+          <section id="payment-section" class="payment">
+            <style>
+              .hidden{display:none!important}
+              #payment-section .row{display:grid;grid-template-columns:180px 1fr;gap:12px;align-items:center;margin:8px 0}
+              #payment-section fieldset{border:1px solid #e5e7eb;border-radius:8px;padding:8px;margin:10px 0}
+              #payment-section fieldset legend{font-weight:600}
+              #payment-section #payment-type{display:grid;grid-template-columns:repeat(4,minmax(140px,1fr));gap:8px 12px;align-items:center}
+              #payment-section label{font-size:14px;color:#111827}
+              #payment-section #payment-type label{display:inline-flex;align-items:center;gap:8px;margin:0;font-size:16px;font-weight:600}
+              #payment-section input[type="radio"]{width:16px;height:16px;accent-color:#2563eb}
+              #payment-section h4{margin:8px 0 6px 0}
+              #payment-section .group{padding:10px;border:1px solid #f3f4f6;border-radius:8px;background:#fafafa;margin-top:8px}
+              #payment-section #pesin-group label{display:inline-flex;align-items:center;gap:8px;margin:4px 12px 4px 0;font-weight:600;font-size:15px}
+              #payment-section .desc{font-size:12.5px;color:#4b5563;margin-top:6px;line-height:1.4}
+              #payment-section .hint{font-size:12px;color:#6b7280}
+              @media (max-width:640px){#payment-section #payment-type{grid-template-columns:repeat(2,minmax(140px,1fr))}}
+            </style>
+            <h3>Ödeme Seçenekleri</h3>
+            <fieldset id="payment-type"><legend>Ödeme Tipi</legend><label><input type="radio" name="paymentType" value="pesin" /> Peşin</label><label><input type="radio" name="paymentType" value="krediKarti" /> Kredi Kartı</label><label><input type="radio" name="paymentType" value="acikHesap" /> Açık Hesap</label><label><input type="radio" name="paymentType" value="evrak" /> Evrak (çek/senet)</label></fieldset>
+            <div class="row"><label>KDV Dahil Toplam</label><span id="ccBaseIncl">—</span></div>
+            <div id="pesin-group" class="group hidden"><h4>Peşin Alt Model</h4><label><input type="radio" name="pesinModel" value="escrow"> (a) Escrow</label><label><input type="radio" name="pesinModel" value="onayli"> (b) Teslim & Onay</label><label><input type="radio" name="pesinModel" value="onodeme"> (c) Ön Ödeme</label><div class="payment-option-grid"><div class="payment-card" data-model="escrow"><h3>Escrow (Blokeli Ödeme)</h3><p>Ödeme Teklifbul hesabında blokelenir, alıcı onaylayınca satıcıya aktarılır.</p></div><div class="payment-card" data-model="onayli"><h3>Teslim & Onay</h3><p>Satıcı ürünü gönderir, alıcı teslim onayı verir, ardından ödeme yapılır.</p></div><div class="payment-card" data-model="onodeme"><h3>Ön Ödeme</h3><p>Satıcı üretim öncesi kısmi/tam ön ödeme talep eder, ardından sevkiyat başlar.</p></div></div><div id="prepayment-config" class="row hidden"><label>Ön Ödeme Oranı (%)</label><input type="number" id="prepaymentRate" min="0" max="100" step="1" value="30"></div></div>
+            <div id="kk-group" class="group hidden"><h4>Kredi Kartı</h4><div class="row"><label>Taksit Sayısı</label><input id="installments" type="number" min="1" value="1" style="width:100px"><label>Vade Farkı (%)</label><input type="number" id="financeRate" value="0" min="0" step="0.01"><label>Kampanya / Açıklama</label><input id="ccCampaign" placeholder="…"></div><div class="row calc"><div>Vade Tutarı: <span id="ccFinanceAmt">—</span></div><div>Toplam (KDV Dahil): <span id="ccTotalIncl">—</span></div><div>Aylık Taksit: <span id="ccMonthly">—</span></div></div></div>
+            <div id="ah-group" class="group hidden"><h4>Açık Hesap</h4><div class="row"><label>Fatura Tarihi</label><input type="date" id="invoiceDate"><label>Vade (Gün)</label><select id="netDays"><option value="7">+7 gün</option><option value="15">+15 gün</option><option value="30">+30 gün</option><option value="45">+45 gün</option><option value="60">+60 gün</option></select><input id="netDaysCustom" type="number" min="1" placeholder="Özel vade günü (örn. 53)" style="width:160px"><span class="hint" style="font-size:13px;">Özel vade günü yazınca tarih otomatik hesaplanır (hafta sonu Pazartesi).</span></div><div class="row calc"><div>Vade Tarihi: <span id="dueDateHuman">—</span></div></div></div>
+            <div id="evrak-group" class="group hidden"><h4>Evrak (çek/senet)</h4><div style="margin-bottom:8px;"><button id="btnAddCheck" class="btn btn-secondary" style="padding:6px 10px;">+ Çek Ekle</button></div><div id="checksBody"></div></div>
+            <hr><div id="summary" class="summary"></div><button id="savePayment" class="btn btn-primary" style="margin-top:8px;">Kaydet</button>
+          </section>
+        </div>`;
+      document.body.appendChild(modal);
+      const closeBtn = modal.querySelector('#closePayment');
+      // Robust open handler (works even if button is re-rendered)
+      document.addEventListener('click', async (e)=>{
+        const openBtn = e.target.closest && e.target.closest('#btnOpenPayment');
+        if (!openBtn) return;
+        modal.style.display = 'block';
+        // Ensure module is loaded
+        if (!window.paymentModule) {
+          try { await import('/scripts/payment-module.js'); } catch(_) {}
+        }
+        // Set role + totals (KDV Dahil)
+        if (window.paymentModule) {
+          window.paymentModule.setRole('seller');
+          try {
+            // Toplam (KDV Dahil) yaklaşık hesap
+            const forms = document.querySelectorAll('#product-bid-forms [data-field="unitPrice"]');
+            let totalIncl = 0;
+            forms.forEach((inp, idx)=>{
+              const row = inp.closest('[data-product-index]');
+              const qty = parseFloat(row?.querySelector('[data-field="quantity"]')?.value||'0')||0;
+              const unit = parseFloat((row?.querySelector('[data-field="unitPrice"]')?.value||'0').toString().replace(',','.'))||0;
+              const vat = parseFloat(row?.querySelector('[data-field="vatRate"]')?.value||'20')||20;
+              const excl = qty * unit;
+              totalIncl += excl * (1 + (vat/100));
+            });
+            window.paymentModule.setTotals({ totalIncl });
+          } catch(_){}
+        }
+      });
+      closeBtn?.addEventListener('click', ()=>{ modal.style.display = 'none'; });
+  document.addEventListener('payment:save', (e)=>{ selectedPaymentPref = e.detail; modal.style.display = 'none'; });
+    })();
+
+    function bindPaymentUI(){
+      // payment program kaldırıldı
+
+      function addRow({method='', amount='', days='', note=''}={}){
+        const row = document.createElement('div');
+        row.className = '';
+        row.style.display = 'contents';
+        row.innerHTML = `
+          <select class="pay-method" style="padding:6px;border:1px solid #d1d5db;border-radius:6px;">
+            <option value="">Seçiniz</option>
+            <option value="Kredi Kartı">Kredi Kartı</option>
+            <option value="Peşin">Peşin</option>
+            <option value="Açık Hesap +15">Açık Hesap +15</option>
+            <option value="Açık Hesap +30">Açık Hesap +30</option>
+            <option value="Evrak">Evrak (çek/senet)</option>
+          </select>
+          <input class="pay-amount" placeholder="0,00" inputmode="decimal" style="padding:6px;border:1px solid #d1d5db;border-radius:6px;" value="${amount}">
+          <input class="pay-days" type="number" min="0" placeholder="Vade (gün)" style="padding:6px;border:1px solid #d1d5db;border-radius:6px;" value="${days}">
+          <input class="pay-note" placeholder="Not" style="padding:6px;border:1px solid #d1d5db;border-radius:6px;" value="${note}">
+          <button type="button" class="btn btn-secondary pay-del" aria-label="Sil" style="padding:6px 8px;">✕</button>
+        `;
+        // set selection after insertion
+        const sel = row.querySelector('.pay-method');
+        if (sel && method) sel.value = method;
+        rowsHost.appendChild(row);
+      }
+
+      addBtn?.addEventListener('click', () => addRow());
+      quickBtn?.addEventListener('click', () => {
+        addRow({method:'Evrak', days:'30'});
+        addRow({method:'Evrak', days:'60'});
+        addRow({method:'Evrak', days:'90'});
+      });
+      rowsHost?.addEventListener('click', (e)=>{
+        const btn = e.target.closest('.pay-del');
+        if (!btn) return;
+        const row = btn.parentElement;
+        row?.remove();
+      });
+
+      templateSel?.addEventListener('change', ()=>{
+        const v = templateSel.value;
+        if (v === 'Evrak 30/60/90') {
+          // clear existing rows
+          // removed
+          quickBtn.click();
+        }
+      });
+    }
+
+    function renderBiddingModeInfo() {
+      // Bidding mode (with backward compatibility)
+      const mode = demandData.biddingMode || "secret";
+      const modeEl = document.getElementById("d-biddingmode");
+      const modeLabels = {
+        secret: "Gizli Teklif",
+        open: "Açık Artırma",
+        hybrid: "Hibrit"
+      };
+      modeEl.innerHTML = `<span class="badge">${modeLabels[mode] || "Gizli"}</span>`;
+
+      // Current phase
+      const phase = demandData.phase || "secret";
+      const phaseEl = document.getElementById("d-phase");
+      const phaseBadge = phase === "open" 
+        ? '<span class="badge" style="background:#10b981;">Açık</span>'
+        : '<span class="badge" style="background:#3b82f6;">Gizli</span>';
+      phaseEl.innerHTML = phaseBadge;
+
+      // Current round
+      const round = demandData.currentRound || 1;
+      setText("#d-round", String(round));
+
+      // Countdown timer
+      if (demandData.isTimeBound && demandData.phaseEndAt) {
+        startCountdown(demandData.phaseEndAt);
+      } else {
+        stopCountdown();
+      }
+
+      // Round 2 transition button (hybrid mode only)
+      const round2BtnContainer = document.getElementById("round2BtnContainer");
+      if (isOwner && mode === "hybrid" && phase === "secret" && isPublished) {
+        const now = new Date();
+        const phaseEnd = demandData.phaseEndAt?.toDate?.() || new Date(demandData.phaseEndAt);
+        if (now > phaseEnd) {
+          round2BtnContainer.style.display = "";
+        } else {
+          round2BtnContainer.style.display = "none";
+        }
+      } else {
+        round2BtnContainer.style.display = "none";
+      }
+    }
+
+    function startCountdown(endTimestamp) {
+      stopCountdown(); // Clear any existing interval
+      
+      const countdownContainer = document.getElementById("countdownContainer");
+      const countdownEl = document.getElementById("d-countdown");
+      countdownContainer.style.display = "block";
+
+      function updateCountdown() {
+        const now = new Date();
+        const end = endTimestamp.toDate ? endTimestamp.toDate() : new Date(endTimestamp);
+        const diff = end - now;
+
+        if (diff <= 0) {
+          countdownEl.textContent = "Süre Doldu";
+          stopCountdown();
+          // Reload to update UI
+          setTimeout(() => location.reload(), 2000);
+          return;
+        }
+
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+        let timeStr = "";
+        if (days > 0) timeStr += `${days}g `;
+        timeStr += `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        countdownEl.textContent = timeStr;
+      }
+
+      updateCountdown();
+      countdownInterval = setInterval(updateCountdown, 1000);
+    }
+
+    function stopCountdown() {
+      if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+      }
+      const countdownContainer = document.getElementById("countdownContainer");
+      countdownContainer.style.display = "none";
+    }
+
+    // Round 2 transition
+    async function transitionToRound2() {
+      if (!isOwner) return;
+      if (!confirm("2. tura geçmek istediğinizden emin misiniz? 1. tur kapanacak ve açık artırma başlayacak.")) return;
+
+      try {
+        const round2Start = demandData.round2Start?.toDate?.() || new Date(demandData.round2Start);
+        const round2End = demandData.round2End?.toDate?.() || new Date(demandData.round2End);
+
+        await updateDoc(doc(db, "demands", demandId), {
+          phase: "open",
+          currentRound: 2,
+          phaseStartAt: round2Start,
+          phaseEndAt: round2End
+        });
+
+        alert("✅ 2. tur başlatıldı. Açık artırma aşaması aktif.");
+        location.reload();
+      } catch (e) {
+        console.error(e);
+        alert("❌ Hata: " + (e.message || e));
+      }
+    }
+
+    function updatePublishButtons() {
+      if (!btnPublish || !btnUnpublish) return;
+      
+      // 🔒 Hide publish buttons if not owner
+      if (!isOwner) {
+        btnPublish.style.display = "none";
+        btnUnpublish.style.display = "none";
+        return;
+      }
+      
+      // Show/hide based on published state
+      btnPublish.style.display = isPublished ? "none" : "inline-block";
+      btnUnpublish.style.display = isPublished ? "inline-block" : "none";
+    }
+
+    function updateEditButton() {
+      // Edit/Delete sadece taslak + sahip ise
+      const showDraftActions = isOwner && !isPublished;
+      btnEdit.style.display = showDraftActions ? "inline-block" : "none";
+      if (btnDeleteDraft) btnDeleteDraft.style.display = showDraftActions ? "inline-block" : "none";
+    }
+
+    // Taslak silme (sahip + yayınlanmamış)
+    if (btnDeleteDraft) {
+      btnDeleteDraft.addEventListener('click', async () => {
+        if (!isOwner || isPublished) return;
+        if (!confirm('Bu taslak talebi kalıcı olarak silmek istiyor musunuz? Bu işlem geri alınamaz.')) return;
+        try {
+          // items
+          try {
+            const itemsSnap = await getDocs(collection(db, 'demands', demandId, 'items'));
+            await Promise.all(itemsSnap.docs.map(d => deleteDoc(doc(db, 'demands', demandId, 'items', d.id))));
+          } catch(e){ console.warn('items cleanup warn', e); }
+          // bids
+          try {
+            const bidsSnap = await getDocs(query(collection(db, 'bids'), where('demandId','==', demandId)));
+            await Promise.all(bidsSnap.docs.map(d => deleteDoc(doc(db, 'bids', d.id))));
+          } catch(e){ console.warn('bids cleanup warn', e); }
+          // recipients
+          try {
+            const recSnap = await getDocs(query(collection(db, 'demandRecipients'), where('demandId','==', demandId)));
+            await Promise.all(recSnap.docs.map(d => deleteDoc(doc(db, 'demandRecipients', d.id))));
+          } catch(e){ console.warn('recipients cleanup warn', e); }
+          // main doc
+          await deleteDoc(doc(db, 'demands', demandId));
+          alert('🗑️ Taslak silindi.');
+          location.href = './demands.html?filter=draft';
+        } catch(err){
+          console.error('deleteDraft detail error', err);
+          alert('❌ Taslak silinemedi: ' + (err.message || err));
+        }
+      });
+    }
+
+    function applyVisibilityRules() {
+      if (!isPublished) {
+        // DRAFT: hide both bids section and bid form
+        hide(bidsSection);
+        hide(bidFormSection);
+        hide(ownBidSection);
+      } else {
+        if (isOwner) {
+          // PUBLISHED & OWNER: show bids list, hide bid form
+          show(bidsSection);
+          hide(bidFormSection);
+          hide(ownBidSection);
+        } else {
+          // PUBLISHED & SUPPLIER: hide bids list, show bid form
+          hide(bidsSection);
+          show(bidFormSection);
+          // Show own bid summary (if any)
+          loadOwnBid();
+          
+          // Initialize RFQ Bid Form
+          console.log("🏗️ RFQ Bid Form initializing...");
+          initializeRFQBidForm();
+        }
+      }
+    }
+
+    // ====================
+    // Initialize RFQ Bid Form
+    // ====================
+    let rfqBidForm = null;
+    
+    function initializeRFQBidForm() {
+      try {
+        const container = document.getElementById('rfq-bid-form-container');
+        if (!container) {
+          console.error('RFQ bid form container not found');
+          return;
+        }
+        
+        // Clear existing form and render the generic RFQ form with product rows
+        container.innerHTML = '';
+        renderGeneralBidForm();
+        console.log('✅ RFQ Bid Form (generic) initialized');
+      } catch (error) {
+        console.error('❌ Error initializing RFQ Bid Form:', error);
+        // Show error message
+        const container = document.getElementById('rfq-bid-form-container');
+        if (container) {
+          container.innerHTML = `
+            <div style="padding: 20px; text-align: center; color: #dc2626;">
+              <h3>❌ Teklif Formu Yüklenemedi</h3>
+              <p>Teklif formu yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.</p>
+              <button onclick="location.reload()" class="btn btn-primary">Sayfayı Yenile</button>
+            </div>
+          `;
+        }
+      }
+    }
+
+    // ====================
+    // Load current user's own bid for this demand
+    // ====================
+    async function loadOwnBid() {
+      try {
+        if (!ownBidSection || !ownBidContent) return;
+        // Default hidden; will show if we find a bid or even when none to inform the user
+        show(ownBidSection);
+        ownBidContent.textContent = "Yükleniyor...";
+
+        let snap;
+        try {
+          const q1 = query(
+            collection(db, 'bids'),
+            where('demandId', '==', demandId),
+            where('supplierId', '==', user.uid),
+            orderBy('createdAt', 'desc'),
+            limit(1)
+          );
+          snap = await getDocs(q1);
+        } catch (e) {
+          // Fallback without composite index: query by demand and filter in-memory
+          console.warn('Own-bid composite index missing or query failed, falling back:', e?.message || e);
+          const q2 = query(
+            collection(db, 'bids'),
+            where('demandId', '==', demandId),
+            orderBy('createdAt', 'desc')
+          );
+          const s2 = await getDocs(q2);
+          const docs = s2.docs.filter(d => (d.data()?.supplierId) === user.uid);
+          snap = { docs };
+        }
+
+        if (!snap.docs.length) {
+          ownBidContent.style.color = '#64748b';
+          ownBidContent.innerHTML = '<div class="empty-state"><span class="emoji">💡</span><p>Henüz teklif vermediniz.</p><button class="btn btn-primary" onclick="document.getElementById(\'bid-form-section\').scrollIntoView({behavior:\'smooth\'})">Teklif Ver</button></div>';
+          return;
+        }
+
+        const b = snap.docs[0].data();
+        const currency = b.currency || 'TRY';
+        const vat = Number(b.vatRate ?? b.vat ?? 0);
+        const net = Number(b.netPrice ?? b.price ?? 0);
+        const gross = net * (1 + vat/100);
+        const fmt = (n)=> new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 2 }).format(n);
+        const createdAt = b.createdAt?.toDate?.() || (b.createdAt ? new Date(b.createdAt) : null);
+
+        ownBidContent.style.color = '#0f172a';
+        ownBidContent.innerHTML = `
+          <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:center;">
+            <div><strong>Net:</strong> ${fmt(net)} ${currency}</div>
+            <div><strong>KDV:</strong> %${fmt(vat)}</div>
+            <div><strong>Brüt:</strong> ${fmt(gross)} ${currency}</div>
+            <div><strong>Marka:</strong> ${b.brand || '—'}</div>
+            <div><strong>Ödeme:</strong> ${b.paymentTerms || b.paymentMethod || '—'}</div>
+            <div><strong>Termin:</strong> ${b.leadTimeDays ?? '—'} gün</div>
+            <div><strong>Tarih:</strong> ${createdAt ? createdAt.toLocaleDateString('tr-TR') : '—'}</div>
+            <div><strong>Durum:</strong> ${(b.status || 'sent')}</div>
+          </div>
+        `;
+      } catch (err) {
+        console.error('loadOwnBid error', err);
+        if (ownBidSection && ownBidContent) {
+          show(ownBidSection);
+          ownBidContent.style.color = '#b91c1c';
+          ownBidContent.textContent = 'Kendi teklif bilgisi yüklenemedi.';
+        }
+      }
+    }
+
+    // ====================
+    // Load Items
+    // ====================
+    async function loadItems() {
+      try {
+        // Önce subcollection'dan items'ları çekmeyi dene (yeni yapı)
+      try {
+        const q = query(collection(db, "demands", demandId, "items"), orderBy("lineNo", "asc"));
+        const snap = await getDocs(q);
+          if (snap.docs.length > 0) {
+        itemsData = snap.docs.map(d => {
+          const data = { id: d.id, ...d.data() };
+          // Map legacy object features → pairs
+          try {
+            const f = data.features || (data.featuresJson ? JSON.parse(data.featuresJson) : null);
+            if (f && typeof f === 'object') {
+              data.featuresPairs = Object.entries(f).filter(([k,v])=>k && v).map(([k,v])=>`${k}: ${v}`);
+            }
+          } catch {}
+          // Map new ozellikler (array of {key,value}) → pairs
+          try {
+            if (Array.isArray(data.ozellikler)) {
+              const clean = data.ozellikler.filter(p => (p?.key||'').trim() || (p?.value||'').trim());
+              const pairs = clean.map(p => `${p.key}: ${p.value}`);
+              data.featuresPairs = (data.featuresPairs || []).concat(pairs);
+            }
+          } catch {}
+          // Certificates (kaliteSertifika)
+          try {
+            if (Array.isArray(data.kaliteSertifika)) {
+              data.requiredCerts = data.kaliteSertifika.filter(Boolean);
+            }
+          } catch {}
+          return data;
+        });
+            console.log(`✅ Subcollection'dan ${itemsData.length} adet ürün kalemi yüklendi`);
+          } else {
+            throw new Error("Subcollection empty");
+          }
+        } catch (subcollectionError) {
+          console.log("Subcollection'dan yüklenemedi, main document'teki items array'ini kontrol ediliyor...");
+          
+          // Fallback: main document'teki items array'ini kontrol et
+          if (demandData && demandData.items && Array.isArray(demandData.items)) {
+            itemsData = demandData.items.map((item, index) => {
+              const out = {
+                id: `item_${index}`,
+                lineNo: item.no || item.lineNo || index + 1,
+                sku: item.sku || item.materialCode || "-",
+                name: item.name || item.description || "-",
+                brandModel: item.brand || item.brandModel || "-",
+                qty: item.qty || item.quantity || 0,
+                unit: item.unit || "-",
+                itemDueDate: item.req_date || item.deliveryDate || item.itemDueDate || "-",
+                altAcceptVal: item.altAcceptVal
+              };
+              try {
+                const f = item.features || (item.featuresJson ? JSON.parse(item.featuresJson) : null);
+                if (f && typeof f === 'object') {
+                  out.featuresPairs = Object.entries(f).filter(([k,v])=>k && v).map(([k,v])=>`${k}: ${v}`);
+                }
+              } catch {}
+              // Map new ozellikler
+              try {
+                if (Array.isArray(item.ozellikler)) {
+                  const clean = item.ozellikler.filter(p => (p?.key||'').trim() || (p?.value||'').trim());
+                  const pairs = clean.map(p => `${p.key}: ${p.value}`);
+                  out.featuresPairs = (out.featuresPairs || []).concat(pairs);
+                }
+                if (Array.isArray(item.kaliteSertifika)) {
+                  out.requiredCerts = item.kaliteSertifika.filter(Boolean);
+                }
+              } catch {}
+              return out;
+            });
+            console.log(`✅ Main document'ten ${itemsData.length} adet ürün kalemi yüklendi`);
+          } else {
+            console.log("Main document'te de items bulunamadı");
+            itemsData = [];
+          }
+        }
+        
+        setText("#d-itemcount", String(itemsData.length));
+        
+        itemsBody.innerHTML = "";
+        itemsData.forEach(item => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${item.lineNo || "-"}</td>
+            <td>${item.sku || "-"}</td>
+            <td>${item.name || "-"}</td>
+            <td>${item.brandModel || "-"}</td>
+            <td>${item.qty ?? "-"}</td>
+            <td>${item.unit || "-"}</td>
+            <td>${item.itemDueDate || "-"}</td>
+          `;
+          itemsBody.appendChild(tr);
+        });
+        
+        console.log(`✅ Toplam ${itemsData.length} adet ürün kalemi render edildi`);
+      } catch (e) {
+        console.error("Kalemler yüklenemedi:", e);
+        itemsData = [];
+        setText("#d-itemcount", "0");
+        itemsBody.innerHTML = "<tr><td colspan='7' style='text-align: center; color: #64748b;'>Ürün kalemleri yüklenemedi</td></tr>";
+      }
+      
+      // Supplier form görünüyorsa, items yüklendikten sonra yeniden render et
+      try {
+        if (!isOwner && isPublished) {
+          const host = document.getElementById('rfq-bid-form-container');
+          if (host) {
+            renderGeneralBidForm();
+          }
+        }
+      } catch (e) {
+        console.warn('Bid form re-render skipped:', e);
+      }
+    }
+
+    // ====================
+    // Load Bids
+    // ====================
+    async function loadBids() {
+      try {
+      const q = query(collection(db, "bids"), where("demandId","==", demandId));
+      let snap = await getDocs(q);
+      
+      // bidRows elementinin varlığını kontrol et
+      if (!bidRows) {
+        console.error("bidRows element bulunamadı");
+        return;
+      }
+      
+      bidRows.innerHTML = "";
+        console.log("🔧 Bids loaded successfully");
+      
+      const mode = demandData.biddingMode || "secret";
+      const phase = demandData.phase || "secret";
+      
+      // Add status tracking for bids
+      // Update bid status to "viewed" when owner views the bids
+      if (isOwner) {
+        for (const docSnap of snap.docs) {
+          const b = docSnap.data();
+          const bidId = docSnap.id;
+          
+          // If bid status is "sent", update it to "viewed"
+          if (b.status === "sent") {
+            try {
+              await updateDoc(doc(db, "bids", bidId), {
+                status: "viewed",
+                statusHistory: [...(b.statusHistory || []), {
+                  status: "viewed",
+                  timestamp: Date.now(),
+                  userId: user.uid
+                }]
+              });
+              console.log("Bid status updated to viewed:", bidId);
+            } catch (e) {
+              console.warn("Could not update bid status:", e);
+            }
+          }
+        }
+        // Reload bids after status updates
+        snap = await getDocs(q);
+      }
+      
+      for (const docSnap of snap.docs) {
+        const b = docSnap.data();
+        const bidId = docSnap.id;
+        const isOwnBid = b.supplierId === user.uid;
+        
+        // Determine visibility based on mode and role
+        let showBid = false;
+        if (isOwner) {
+          showBid = true; // Owner always sees all bids
+        } else if (mode === "secret" || (mode === "hybrid" && phase === "secret")) {
+          showBid = isOwnBid; // Secret: only own bid
+        } else if (mode === "open" || (mode === "hybrid" && phase === "open")) {
+          showBid = true; // Open: all bids visible
+        }
+        
+        if (!showBid) continue;
+        
+        const tr = document.createElement("tr");
+        // Aggregate totals (excl/incl VAT) and vat label
+        const itemsArr = Array.isArray(b.items) ? b.items : [];
+        const totalExcl = itemsArr.reduce((s,it)=> s + (Number(it.totalPrice) || (Number(it.netPrice)||0) * (Number(it.quantity)||0)), 0);
+        const totalIncl = itemsArr.reduce((s,it)=> {
+          const base = (Number(it.totalPrice) || (Number(it.netPrice)||0) * (Number(it.quantity)||0));
+          const rate = Number(it.vatRate)||0;
+          return s + (base * (1 + rate/100));
+        }, 0);
+        const vatSet = new Set(itemsArr.map(it => (it.vatRate!=null ? Number(it.vatRate) : null)).filter(v => v!=null));
+        const vatDisplay = vatSet.size === 0 ? '-' : (vatSet.size === 1 ? `${[...vatSet][0]}%` : 'Karma');
+        
+        // Get supplier name with fallback strategy
+        let supplierDisplay;
+        if (isOwner || isOwnBid) {
+          // For owner or own bid, show actual supplier name
+          try {
+            const collections = ["publicProfiles", "profiles", "users"];
+            let supplierName = null;
+            
+            for (const collection of collections) {
+              try {
+                const p = await getDoc(doc(db, collection, b.supplierId));
+                if (p.exists()) {
+                  const d = p.data();
+                  supplierName = d?.displayName || d?.companyName || d?.company?.name;
+                  if (supplierName) break;
+                }
+              } catch (_) {
+                continue;
+              }
+            }
+            
+            supplierDisplay = supplierName || (b.supplierId?.slice(0, 10) + "...");
+          } catch (e) {
+            console.warn("Could not load supplier name:", e);
+            supplierDisplay = b.supplierId?.slice(0, 10) + "...";
+          }
+        } else {
+          supplierDisplay = "Gizli Tedarikçi";
+        }
+        
+        // Add status display for owner with action buttons
+        let statusDisplay = "";
+        if (isOwner) {
+          const statusLabel = getStatusLabel(b.status || 'pending');
+          let actionButtons = "";
+          
+          // Show different action buttons based on bid status
+          if (b.status === "sent" || b.status === "viewed") {
+            actionButtons = `
+              <button onclick="acceptBid('${bidId}')" style="background: #10b981; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; margin-right: 4px;">Kabul Et</button>
+              <button onclick="rejectBid('${bidId}')" style="background: #ef4444; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; margin-right: 4px;">Reddet</button>
+              <button onclick="requestBidRevision('${bidId}')" style="background: #f59e0b; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;">Revizyon Talep Et</button>
+            `;
+          } else if (b.status === "accepted") {
+            actionButtons = `<button onclick="requestBidRevision('${bidId}')" style="background: #f59e0b; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;">Revizyon Talep Et</button>`;
+          } else if (b.status === "revision_requested") {
+            actionButtons = `
+              <button onclick="acceptBid('${bidId}')" style="background: #10b981; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; margin-right: 4px;">Kabul Et</button>
+              <button onclick="rejectBid('${bidId}')" style="background: #ef4444; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;">Reddet</button>
+            `;
+          }
+          
+          statusDisplay = `
+            <td>
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <span class="badge ${b.status || 'pending'}">${statusLabel}</span>
+                <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                  ${actionButtons}
+                </div>
+              </div>
+            </td>
+          `;
+        }
+        
+        // Highlight cash and credit card purchases
+        let rowClass = "";
+        if (b.paymentMethod === "cash") {
+          rowClass = "style='background-color: #fef3c7;'";
+        } else if (b.paymentMethod === "credit") {
+          rowClass = "style='background-color: #dbeafe;'";
+        }
+        
+        // Fiyat geçmişi oluştur
+        let priceHistoryDisplay = "-";
+        if (b.priceHistory && b.priceHistory.length > 0) {
+          const historyCount = b.priceHistory.length;
+          priceHistoryDisplay = `
+            <button onclick="showPriceHistory('${bidId}')" 
+                    style="padding: 4px 8px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+              ${historyCount} Fiyat Değişimi
+            </button>
+          `;
+        }
+        
+        const noteDisplay = (b.changesSummary && b.changesSummary.length)
+          ? `<span class="badge" style="background:#fff7ed;color:#9a3412;">${b.changesSummary}</span>`
+          : '-';
+
+        // Payment label from preference
+        function paymentPrefLabel(pref){
+          if (!pref) return '-';
+          const t = pref.paymentType;
+          if (t === 'pesin'){ return pref.pesin?.model === 'onodeme' ? `Peşin (Ön Ödeme %${pref.pesin?.prepaymentRate||0})` : (pref.pesin?.model==='escrow' ? 'Peşin (Escrow)' : 'Peşin (Teslim & Onay)'); }
+          if (t === 'krediKarti'){ return `Kredi Kartı (${pref.krediKarti?.installments||1} taksit${pref.krediKarti?.financeRate?`, %${pref.krediKarti.financeRate}`:''})`; }
+          if (t === 'acikHesap'){ return `Açık Hesap +${pref.acikHesap?.netDays||0} gün`; }
+          if (t === 'evrak'){ const n=(pref.evrak?.checks||[]).length; return `Evrak (çek ${n} adet)`; }
+          return '-';
+        }
+
+        tr.innerHTML = `
+          <td>${totalExcl ? totalExcl.toLocaleString("tr-TR") : '-'}</td>
+          <td>${vatDisplay}</td>
+          <td>${totalIncl ? totalIncl.toLocaleString("tr-TR") : '-'}</td>
+          <td>${b.brand || "-"}</td>
+          <td>${paymentPrefLabel(b.paymentPreference)}</td>
+          <td>${noteDisplay}</td>
+          <td>${supplierDisplay}</td>
+          <td>${priceHistoryDisplay}</td>
+          ${statusDisplay}
+        `;
+        tr.setAttribute("data-bid-id", bidId);
+        if (rowClass) {
+          tr.setAttribute("style", rowClass);
+        }
+        bidRows.appendChild(tr);
+      }
+      
+      if (bidRows && bidRows.children.length === 0) {
+        bidRows.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#6b7280;">Henüz teklif yok</td></tr>';
+      }
+      } catch (e) {
+        console.error("Bids load error:", e);
+        if (e.message && e.message.includes("Missing or insufficient permissions")) {
+          console.warn("⚠️ Permission denied for bids - trying temp fix");
+          if (bidRows) {
+          bidRows.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#6b7280;">Teklifler yüklenemedi (Permission error)</td></tr>';
+          }
+          
+          // Don't redirect immediately - let the user see the demand details
+          // setTimeout(() => {
+          //   alert("Bu talebi görme yetkiniz yok. Lütfen kendi taleplerinizi kontrol edin.");
+          //   location.href = "./demands.html";
+          // }, 2000);
+        } else {
+          if (bidRows) {
+          bidRows.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#6b7280;">Teklifler yüklenemedi</td></tr>';
+          }
+        }
+      }
+    }
+    
+    // Helper function to get status label
+    function getStatusLabel(status) {
+      const labels = {
+        sent: "Gönderildi",
+        viewed: "Görüldü",
+        responded: "Yanıtlandı",
+        completed: "Tamamlandı",
+        rejected: "Reddedildi",
+        pending: "Beklemede",
+        accepted: "Kabul Edildi",
+        revision_requested: "Revizyon Talep Edildi"
+      };
+      return labels[status] || status;
+    }
+    
+    
+    
+    // ====================
+    // File Upload/Download/Delete
+    // ====================
+    async function loadFiles() {
+      if (!isOwner) return;
+      try {
+        console.log("📁 Loading files for demand:", demandId);
+        
+        // Simple query without orderBy to avoid index requirement
+        const q = query(collection(db, "demands", demandId, "files"));
+        const snap = await getDocs(q);
+        
+        console.log("✅ Files query successful, found:", snap.size, "files");
+        
+        fileList.innerHTML = "";
+        if (snap.empty) {
+          fileList.innerHTML = "<p style='color:#6b7280;'>Henüz dosya yüklenmemiş.</p>";
+          return;
+        }
+
+        // Convert to array and sort by createdAt (client-side)
+        const files = snap.docs
+          .map(docSnap => ({ id: docSnap.id, ...docSnap.data() }))
+          .sort((a, b) => {
+            const aTime = a.createdAt?.toMillis?.() || 0;
+            const bTime = b.createdAt?.toMillis?.() || 0;
+            return bTime - aTime; // Newest first
+          });
+
+        files.forEach(file => {
+          const fileDiv = document.createElement("div");
+          fileDiv.className = "file-item";
+          
+          const sizeKB = (file.size / 1024).toFixed(1);
+          const uploadDate = file.createdAt?.toDate().toLocaleDateString("tr-TR") || "-";
+          
+          fileDiv.innerHTML = `
+            <div class="file-info">
+              <strong>${file.name}</strong><br/>
+              <small style="color:#6b7280;">${sizeKB} KB • ${file.contentType} • ${uploadDate}</small>
+            </div>
+            <div class="file-actions">
+              <button class="btn btn-primary btn-download" data-id="${file.id}" data-path="${file.storagePath}">İndir</button>
+              <button class="btn btn-danger btn-delete" data-id="${file.id}" data-path="${file.storagePath}">Sil</button>
+            </div>
+          `;
+          fileList.appendChild(fileDiv);
+        });
+
+        // Attach event listeners
+        document.querySelectorAll(".btn-download").forEach(btn => {
+          btn.onclick = async () => {
+            const path = btn.dataset.path;
+            try {
+              const url = await getDownloadURL(ref(storage, path));
+              window.open(url, "_blank");
+            } catch (e) {
+              alert("❌ Dosya indirilemedi: " + (e.message || e));
+            }
+          };
+        });
+
+        document.querySelectorAll(".btn-delete").forEach(btn => {
+          btn.onclick = async () => {
+            if (!confirm("Bu dosyayı silmek istediğinizden emin misiniz?")) return;
+            const fileId = btn.dataset.id;
+            const path = btn.dataset.path;
+            try {
+              await deleteObject(ref(storage, path));
+              await deleteDoc(doc(db, "demands", demandId, "files", fileId));
+              await updateDoc(doc(db, "demands", demandId), { filesCount: increment(-1) });
+              loadFiles();
+            } catch (e) {
+              alert("❌ Dosya silinemedi: " + (e.message || e));
+            }
+          };
+        });
+
+      } catch (e) {
+        console.error("❌ Dosyalar yüklenemedi:", e);
+        console.error("❌ Error code:", e.code);
+        console.error("❌ Error message:", e.message);
+        
+        // Show user-friendly error
+        fileList.innerHTML = `<p style='color:#dc2626;'>❌ Dosyalar yüklenemedi: ${e.message || 'Bilinmeyen hata'}</p>`;
+      }
+    }
+
+    async function uploadFiles(files) {
+      if (!isOwner || !files || files.length === 0) return;
+      
+      const MAX_SIZE = 10 * 1024 * 1024; // 10 MB
+      for (const f of files) {
+        if (f.size > MAX_SIZE) {
+          alert(`❌ ${f.name} çok büyük (max 10 MB)`);
+          return;
+        }
+      }
+
+      try {
+        btnUpload.disabled = true;
+        btnUpload.textContent = "Yüklüyor...";
+
+        for (const f of files) {
+          const path = `demands/${demandId}/${user.uid}/${Date.now()}-${f.name}`;
+          const sref = ref(storage, path);
+          await uploadBytes(sref, f);
+          await addDoc(collection(db, "demands", demandId, "files"), {
+            name: f.name,
+            size: f.size,
+            contentType: f.type,
+            storagePath: path,
+            uploadedBy: user.uid,
+            createdAt: serverTimestamp()
+          });
+        }
+
+        await updateDoc(doc(db, "demands", demandId), { 
+          filesCount: increment(files.length) 
+        });
+
+        fileInput.value = "";
+        await loadFiles();
+        alert("✅ Dosyalar yüklendi.");
+      } catch (e) {
+        console.error(e);
+        alert("❌ Yükleme hatası: " + (e.message || e));
+      } finally {
+        btnUpload.disabled = false;
+        btnUpload.textContent = "Yükle";
+      }
+    }
+
+    // ====================
+    // Publish/Unpublish with Multi-Role Company Support
+    // ====================
+    
+    // ---------- helper: batch supplier search ----------
+    async function findSuppliersByCategoryBatches(categories = []) {
+      if (!Array.isArray(categories) || categories.length === 0) return [];
+
+      const uniqueSuppliers = new Map();
+
+      // Process in batches of 10 (Firestore limit for array-contains-any)
+      for (let i = 0; i < categories.length; i += 10) {
+        const batch = categories.slice(i, i + 10);
+        try {
+          console.log(`Querying suppliers for category batch [${i}..${i+batch.length-1}]:`, batch);
+          
+          // Query for users who have at least one of these categories in their supplierCategories
+          const q = query(
+            collection(db, 'users'),
+            where('supplierCategories', 'array-contains-any', batch)
+          );
+          
+          const snap = await getDocs(q);
+          console.log(`  Batch ${i/10} returned ${snap.size} docs`);
+          
+          snap.forEach(d => {
+            const data = d.data();
+            console.log(`  User ${d.id}:`, {
+              roles: data.roles,
+              supplierCategories: data.supplierCategories,
+              isActive: data.isActive
+            });
+            
+            // Only include active suppliers or buyer+supplier users
+            const isActive = data.isActive !== false; // Default to true if not set
+            const isSupplier = data.roles?.supplier === true;
+            const isBuyerSupplier = data.roles?.buyer === true && data.roles?.supplier === true;
+            
+            if (isActive && (isSupplier || isBuyerSupplier)) {
+              uniqueSuppliers.set(d.id, { id: d.id, ...data });
+            }
+          });
+        } catch (e) {
+          console.error('findSuppliersByCategoryBatches - batch query error for', batch, e);
+          // If permission denied, re-throw
+          if (String(e).includes('permission-denied')) throw e;
+        }
+      }
+
+      console.log(`Total unique suppliers found across all batches: ${uniqueSuppliers.size}`);
+      return Array.from(uniqueSuppliers.values()); // [{id, ...data}, ...]
+    }
+
+    // ---------- main: publish + match ----------
+    async function publishDemandAndMatchSuppliers(demandId) {
+      console.log('publishDemandAndMatchSuppliers - starting for demandId:', demandId);
+      try {
+        const demandRef = doc(db, 'demands', demandId);
+        const dSnap = await getDoc(demandRef);
+        if (!dSnap.exists()) {
+          console.warn('publishDemandAndMatchSuppliers - demand not found:', demandId);
+          return;
+        }
+        const demand = dSnap.data();
+        const categories = Array.isArray(demand.categoryTags) ? demand.categoryTags : [];
+        const groups = Array.isArray(demand.groupIds) ? demand.groupIds : [];
+
+        console.log('Searching with categories:', categories, 'groups:', groups);
+
+        // 1) Kategori bazlı batch sorgusu
+        let suppliers = await findSuppliersByCategoryBatches(categories);
+        console.log('Initial suppliers found:', suppliers.length);
+        
+        // Debug: If no suppliers found, check if there are any active users at all
+        if (suppliers.length === 0) {
+          console.log('No suppliers found in category search, checking for all users...');
+          try {
+            // Try without isActive filter first
+            const allUsersQuery = query(collection(db, 'users'));
+            const allUsersSnap = await getDocs(allUsersQuery);
+            console.log(`Total users in database: ${allUsersSnap.size}`);
+            
+            if (allUsersSnap.size > 0) {
+              console.log('Sample user data:', allUsersSnap.docs[0].data());
+              console.log('Sample user roles:', allUsersSnap.docs[0].data().roles);
+              console.log('Sample user supplierCategories:', allUsersSnap.docs[0].data().supplierCategories);
+            }
+          } catch (e) {
+            console.warn('Could not query all users:', e);
+          }
+        }
+
+        // 2) Eğer bulunamadıysa -- relaxed search (ilk 3 kategoriyle) dene
+        if (suppliers.length === 0 && categories.length > 0) {
+          const relaxed = categories.slice(0, Math.min(3, categories.length));
+          console.log('No suppliers in full search, trying relaxed search with:', relaxed);
+          const relaxedSuppliers = await findSuppliersByCategoryBatches(relaxed);
+          // Merge ve dedupe
+          const merged = new Map();
+          relaxedSuppliers.forEach(s => merged.set(s.id, s));
+          suppliers = Array.from(merged.values());
+          console.log('After relaxed search, suppliers found:', suppliers.length);
+        }
+
+        // 3) Eğer hala yoksa -- optional: company-level arama (eğer companies dokümanlarında kategoriler varsa)
+        if (suppliers.length === 0 && categories.length > 0) {
+          try {
+            console.log('Attempting company-level search for categories (if companies have category tags)');
+            const companySet = new Map();
+            for (let i = 0; i < categories.length; i += 10) {
+              const batch = categories.slice(i, i + 10);
+              try {
+                const q = query(collection(db, 'companies'),
+                                where('categories', 'array-contains-any', batch));
+                const snap = await getDocs(q);
+                console.log(`  companies batch ${i/10} returned ${snap.size}`);
+                snap.forEach(c => {
+                  companySet.set(c.id, { id: c.id, ...c.data() });
+                });
+              } catch (e) {
+                console.warn('Company batch query error for', batch, e);
+                // izin hatası vs. -> swallow ve devam et
+              }
+            }
+            // Eğer companies bulunduysa, denormalize supplier bilgilerine (ör. companies -> kullanıcılar) ihtiyaç var.
+            if (companySet.size > 0) {
+              console.log('Found companies matching categories:', companySet.size);
+              // Eğer company -> supplier ilişkisi varsa burada ilave sorgular yapılabilir (örn. users where supplierCompanyId in [...])
+              // Bu uygulamaya göre uyarlayın. Burada yalnızca log bırakıyoruz.
+            }
+          } catch (e) {
+            console.warn('Company-level search error:', e);
+          }
+        }
+
+        // 4) Eğer halen eşleşme yoksa, demand'a not düş ve çık
+        if (!suppliers || suppliers.length === 0) {
+          console.warn('No matching companies found for this demand:', demandId);
+
+          // Kayıt bırak (opsiyonel alanlar, var ise)
+          try {
+            await updateDoc(demandRef, {
+              lastMatchingAttemptAt: serverTimestamp(),
+              lastMatchingNote: 'No matching suppliers found for given categories/groups'
+            });
+          } catch (e) {
+            console.warn('Could not write lastMatchingNote to demand:', e);
+          }
+
+          // Eğer iş akışınızda "hiç eşleşme yoksa da yayınlansın" gerekiyorsa burada yayın mantığını sürdürün.
+          // Şimdilik sadece log atıyoruz ve fonksiyonu sonlandırıyoruz.
+          return;
+        }
+
+        // 5) Match sonucu hazırlama: supplier id'lerini unique hale getir
+        const supplierIds = Array.from(new Set(suppliers.map(s => s.id)));
+        console.log('Final matched unique supplier count:', supplierIds.length);
+
+        // 6) Demand doc'u güncelleme: viewerIds veya matched supplier alanı
+        try {
+          await updateDoc(demandRef, {
+            viewerIds: supplierIds,
+            matchedSupplierCount: supplierIds.length,
+            lastMatchingAt: serverTimestamp()
+          });
+          console.log('Demand updated with matched suppliers (viewerIds / matchedSupplierCount).');
+        } catch (e) {
+          console.error('Error updating demand with matched suppliers:', e);
+          // Eğer permission-denied ise, üst katmana iletmek isteyebilirsiniz
+          if (String(e).includes('permission-denied')) throw e;
+        }
+
+        // 7) (Opsiyonel) Tedarikçilere bildirim/sending işlemi burada yapılır — mevcut akışınıza göre ekleyin.
+        console.log('publishDemandAndMatchSuppliers - finished for', demandId);
+
+      } catch (err) {
+        console.error('publishDemandAndMatchSuppliers - fatal error:', err);
+        // İstenirse hatayı yeniden fırlat:
+        // throw err;
+      }
+    }
+
+    async function publishDemand() {
+      // Double-check ownership before attempting publish
+      if (!isOwner) {
+        alert("❌ Yalnız talep sahibi yayınlayabilir.");
+        publishModal.style.display = "none";
+        return;
+      }
+      
+      // Verify current user matches demand creator
+      if (user.uid !== demandData.createdBy) {
+        console.error("Ownership mismatch:", {
+          currentUser: user.uid,
+          demandCreator: demandData.createdBy
+        });
+        alert("❌ Yetki hatası: Bu talebi yalnız sahibi yayınlayabilir.");
+        publishModal.style.display = "none";
+        return;
+      }
+      
+      try {
+        console.log("📤 Publish başlatılıyor...", {
+          demandId,
+          owner: demandData.createdBy,
+          currentUser: user.uid
+        });
+
+        // Get demand categories and groups
+        const catSet = new Set();
+        (Array.isArray(demandData.categoryTags) ? demandData.categoryTags : []).forEach(c => c && catSet.add(c));
+        if (demandData.customCategory) catSet.add(demandData.customCategory);
+        (Array.isArray(demandData.categories) ? demandData.categories : []).forEach(c => c && catSet.add(c));
+        if (typeof demandData.category === "string" && demandData.category.trim()) catSet.add(demandData.category.trim());
+        
+        const cats = [...catSet];
+        const grps = demandData.groupIds || [];
+        
+        if (cats.length === 0 && grps.length === 0) {
+          alert("❌ Talep kategori veya grup bilgisi içermiyor. Lütfen talebi düzenleyip en az bir kategori veya grup ekleyin.");
+          publishModal.style.display = "none";
+          return;
+        }
+        
+        console.log("🔍 Tedarikçiler aranıyor...", { categories: cats, groups: grps });
+        
+        // Use new matching function - now accepts demandId directly
+        await publishDemandAndMatchSuppliers(demandId);
+        
+        console.log("💾 Talep güncelleniyor...", { demandId });
+        
+        // Ensure SATFK exists
+        function generateSATFK(){
+          const d = new Date();
+          const y = d.getFullYear(); const m = String(d.getMonth()+1).padStart(2,'0'); const da = String(d.getDate()).padStart(2,'0');
+          const rand = Math.random().toString(36).substring(2,6).toUpperCase();
+          return `SATFK-${y}${m}${da}-${rand}`;
+        }
+        const satfkValue = demandData.satfk || generateSATFK();
+
+        await updateDoc(doc(db, "demands", demandId), {
+          isPublished: true,
+          published: true, // Keep for backward compatibility
+          status: 'published',
+          publishedAt: serverTimestamp(),
+          visibility: "public",
+          updatedBy: user.uid,
+          satfk: satfkValue
+        });
+        
+        console.log("✅ Güncelleme başarılı");
+        
+        demandData.isPublished = true;
+        demandData.published = true;
+        demandData.status = 'published';
+        demandData.satfk = satfkValue;
+        isPublished = true;
+        demandData.sentAt = { toDate: () => new Date() };
+        
+        renderDemand();
+        updatePublishButtons();
+        updateEditButton();
+        applyVisibilityRules();
+        publishModal.style.display = "none";
+        
+        alert(`✅ Talep tedarikçilere gönderildi ve eşleştirme tamamlandı.`);
+      } catch (e) {
+        // 🔍 Enhanced error logging
+        console.error("[publish] error:", e);
+        console.error("❌ Publish hatası:", {
+          error: e,
+          code: e.code,
+          message: e.message,
+          demandId,
+          owner: demandData.createdBy,
+          currentUser: user.uid
+        });
+        
+        alert("❌ Yayınlama hatası: " + (e.code || e.message || e));
+        publishModal.style.display = "none";
+      }
+    }
+
+    async function unpublishDemand() {
+      // Verify ownership
+      if (!isOwner || user.uid !== demandData.createdBy) {
+        alert("❌ Yalnız talep sahibi geri çekebilir.");
+        unpublishModal.style.display = "none";
+        return;
+      }
+      
+      try {
+        console.log("🔙 Unpublish başlatılıyor...", { demandId });
+        console.log("🔍 Mevcut durum:", { 
+          published: demandData.published, 
+          status: demandData.status 
+        });
+        
+        const updateData = {
+          isPublished: false,
+          published: false, // Keep for backward compatibility
+          status: 'draft',
+          updatedBy: user.uid
+        };
+        
+        console.log("📝 Güncellenecek veri:", updateData);
+        
+        await updateDoc(doc(db, "demands", demandId), updateData);
+        
+        console.log("✅ Talep geri çekildi - Firestore güncellendi");
+        
+        demandData.isPublished = false;
+        demandData.published = false;
+        demandData.status = 'draft';
+        isPublished = false;
+        renderDemand();
+        updatePublishButtons();
+        updateEditButton();
+        applyVisibilityRules();
+        unpublishModal.style.display = "none";
+        alert("✅ Talep geri çekildi.");
+      } catch (e) {
+        console.error("❌ Unpublish hatası:", {
+          error: e,
+          code: e.code,
+          message: e.message
+        });
+        
+        let errorMsg = "Geri çekme hatası: ";
+        if (e.code === "permission-denied") {
+          errorMsg += "Yetki reddedildi.";
+        } else {
+          errorMsg += e.code || e.message || e;
+        }
+        
+        alert("❌ " + errorMsg);
+        unpublishModal.style.display = "none";
+      }
+    }
+
+    // ====================
+    // Export PDF
+    // ====================
+    function exportPDF() {
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF();
+      
+      pdf.setFontSize(16);
+      pdf.text(`Talep: ${demandData.title || "-"}`, 14, 20);
+      
+      pdf.setFontSize(10);
+      let y = 30;
+      pdf.text(`SATFK: ${demandData.satfk || "-"}`, 14, y); y += 6;
+      pdf.text(`Talep Tarihi: ${demandData.demandDate || "-"}`, 14, y); y += 6;
+      pdf.text(`Termin: ${demandData.dueDate || "-"}`, 14, y); y += 6;
+      pdf.text(`Öncelik: ${demandData.priority || "-"}`, 14, y); y += 6;
+      pdf.text(`Kategoriler: ${(demandData.categoryTags || []).join(", ")}`, 14, y); y += 10;
+      
+      pdf.setFontSize(12);
+      pdf.text("Kalemler:", 14, y); y += 8;
+      
+      pdf.setFontSize(9);
+      itemsData.slice(0, 30).forEach(item => {
+        pdf.text(`${item.lineNo}. ${item.name || "-"} - ${item.qty} ${item.unit}`, 14, y);
+        y += 6;
+        if (y > 280) return; // Page limit
+      });
+      
+      pdf.save(`${demandData.satfk || "talep"}.pdf`);
+    }
+
+    // ====================
+    // Export Excel
+    // ====================
+    function exportExcel() {
+      const wb = XLSX.utils.book_new();
+      
+      // Summary sheet
+      const summary = [
+        ["Başlık", demandData.title || "-"],
+        ["SATFK", demandData.satfk || "-"],
+        ["Talep Tarihi", demandData.demandDate || "-"],
+        ["Termin", demandData.dueDate || "-"],
+        ["Öncelik", demandData.priority || "-"],
+        ["Kategoriler", (demandData.categoryTags || []).join(", ")],
+        ["Açıklama", demandData.spec || "-"]
+      ];
+      const ws1 = XLSX.utils.aoa_to_sheet(summary);
+      
+      // Items sheet
+      const rows = itemsData.map(i => ({
+        "Sıra": i.lineNo,
+        "Kod": i.sku || "-",
+        "Tanım": i.name || "-",
+        "Marka/Model": i.brandModel || "-",
+        "Miktar": i.qty,
+        "Birim": i.unit,
+        "Teslim Tarihi": i.itemDueDate || "-"
+      }));
+      const ws2 = XLSX.utils.json_to_sheet(rows);
+      
+      XLSX.utils.book_append_sheet(wb, ws1, "Özet");
+      XLSX.utils.book_append_sheet(wb, ws2, "Kalemler");
+      XLSX.writeFile(wb, `${demandData.satfk || "talep"}.xlsx`);
+    }
+
+    // ====================
+    // Submit Bid
+    // ====================
+    async function submitBid() {
+      // Get general information
+      const currencyVal = '';
+      const deliveryDateVal = '';
+      // paymentTerms kaldırıldı
+      const shippingTypeVal = document.getElementById("shippingType")?.value || '';
+      const shippingModeVal = document.getElementById("shippingMode")?.value || 'excluded';
+      const vehicleTripsVal = Number(document.getElementById("vehicleTrips")?.value || 0) || 0;
+      const timeStartVal = (document.getElementById("deliveryTimeStart")?.value || '').trim();
+      const timeEndVal = (document.getElementById("deliveryTimeEnd")?.value || '').trim();
+      const shippingNotesVal = (document.getElementById("shippingNotes")?.value || '').trim();
+      // shippingCost kaldırıldı
+      const deliveryMethodVal = document.getElementById("deliveryMethod")?.value || '';
+      const minOrderQtyVal = '';
+      const vatRateVal = document.getElementById("vatRate")?.value || 0;
+      const notesVal = document.getElementById("notes")?.value || '';
+      
+      // Genel alanlar boş olabilir; satır bazında doldurulmak zorunda
+      
+          // Collect product bid data
+          const productBids = [];
+          const container = document.getElementById('product-bid-forms');
+          
+          if (!container || !itemsData || itemsData.length === 0) {
+            alert("❌ Ürün bilgileri bulunamadı.");
+        return;
+      }
+      
+        // Validate each product form
+          for (let i = 0; i < itemsData.length; i++) {
+        const formDiv = container.children[i];
+        if (!formDiv) continue;
+        
+        const quantity = formDiv.querySelector(`[data-field="quantity"]`).value;
+        const unit = formDiv.querySelector(`[data-field="unit"]`).value;
+        let unitPrice = formDiv.querySelector(`[data-field="unitPrice"]`).value;
+        unitPrice = normalizeDecimalString(unitPrice);
+        const lineCurrency = (formDiv.querySelector(`[data-field="currency"]`)?.value || currencyVal || '').trim();
+        const lineDelivery  = (formDiv.querySelector(`[data-field="deliveryDate"]`)?.value || '').trim();
+          const offerDesc = (formDiv.querySelector(`[data-field="offerDescription"]`)?.value || '').trim();
+        
+        if (!quantity || !unit || !unitPrice) {
+          alert(`❌ Ürün ${i + 1} için miktar, birim ve birim fiyat alanları zorunludur.`);
+          return;
+        }
+        const vatSelectEl = formDiv.querySelector(`[data-field="vatRate"]`);
+        if (!vatSelectEl || vatSelectEl.value === '') {
+          alert(`❌ Ürün ${i + 1} için KDV oranı seçilmelidir.`);
+          return;
+        }
+        if (!lineCurrency) { alert(`❌ Ürün ${i + 1} için para birimi seçiniz (veya üstte genel seçin).`); return; }
+        if (!lineDelivery) { alert(`❌ Ürün ${i + 1} için teslim tarihi seçiniz (veya üstte genel seçin).`); return; }
+        
+        // Get discount values for this product
+        const d1 = Number(formDiv.querySelector(`[data-field="discount1"]`).value || 0);
+        const d2 = Number(formDiv.querySelector(`[data-field="discount2"]`).value || 0);
+        const d3 = Number(formDiv.querySelector(`[data-field="discount3"]`).value || 0);
+        const d4 = Number(formDiv.querySelector(`[data-field="discount4"]`).value || 0);
+        const d5 = Number(formDiv.querySelector(`[data-field="discount5"]`).value || 0);
+        const vatRate = Number(formDiv.querySelector(`[data-field="vatRate"]`)?.value || 0);
+        
+        // Calculate net price
+        let netPrice = Number(unitPrice);
+        if (d1 > 0) netPrice = netPrice * (1 - d1 / 100);
+        if (d2 > 0) netPrice = netPrice * (1 - d2 / 100);
+        if (d3 > 0) netPrice = netPrice * (1 - d3 / 100);
+        if (d4 > 0) netPrice = netPrice * (1 - d4 / 100);
+        if (d5 > 0) netPrice = netPrice * (1 - d5 / 100);
+          const requestedQty = Number(itemsData[i].qty || 0);
+          const requestedDesc = itemsData[i].name || '';
+          const offeredQty = Number(quantity);
+          const offeredDesc = offerDesc || requestedDesc;
+          const quantityChanged = offeredQty !== requestedQty;
+          const descChanged = offeredDesc.trim() !== requestedDesc.trim();
+          const unitChanged = (unit || '').toLowerCase() !== String(itemsData[i].unit || '').toLowerCase();
+          const changeNoteParts = [];
+          if (quantityChanged) changeNoteParts.push(`Miktar ${requestedQty} → ${offeredQty}`);
+          if (unitChanged) changeNoteParts.push(`Birim ${(itemsData[i].unit||'').toString()} → ${unit}`);
+          if (descChanged) changeNoteParts.push('Tanım değişti');
+          const changeNote = changeNoteParts.join(' | ');
+
+          // Sertifikalar
+          const certs = Array.from(formDiv.querySelectorAll('[data-field="certChips"] .cert-chip'))
+            .map(c => c.childNodes?.[0]?.textContent?.trim() || c.textContent.trim())
+            .filter(Boolean);
+
+          productBids.push({
+            lineNo: itemsData[i].lineNo || (i+1),
+            productIndex: i,
+            description: offeredDesc,
+            quantity: offeredQty,
+            unit: unit,
+            unitPrice: Number(unitPrice),
+            netPrice: netPrice,
+            discounts: [d1, d2, d3, d4, d5].filter(d => d > 0),
+            vatRate,
+            totalPrice: netPrice * offeredQty,
+            totalWithVat: (netPrice * offeredQty) * (1 + (vatRate/100)),
+            currency: lineCurrency,
+            deliveryDate: lineDelivery,
+            qualityCerts: certs,
+            requested: { description: requestedDesc, quantity: requestedQty, unit: itemsData[i].unit, features: itemsData[i].featuresPairs || [] },
+            offered:   { description: offeredDesc,   quantity: offeredQty,   unit },
+            changes:   { quantityChanged, unitChanged, descChanged },
+            changeNote,
+            imageUrl: (formDiv.querySelector('[data-field="imageUrl"]')?.value || '').trim(),
+            note: (formDiv.querySelector('[data-field="itemNote"]')?.value || '').trim()
+          });
+      }
+      
+      if (productBids.length === 0) {
+        alert("❌ Teklif verilecek ürün bulunamadı.");
+        return;
+      }
+      
+      // Nakliye dahil ise detayları zorunlu tut ve nakliye kalemini ekle
+      if (shippingModeVal === 'included') {
+        if (!(vehicleTripsVal > 0)) { alert('❌ Nakliye dahil ise sefer sayısı girilmelidir.'); return; }
+        if (!timeStartVal || !timeEndVal) { alert('❌ Nakliye dahil ise teslim saat aralığı girilmelidir.'); return; }
+        // Shipping line validation
+        const sQty = Number(document.getElementById('shipLineQty')?.value || 0);
+        const sUnit = (document.getElementById('shipLineUnit')?.value || '').trim();
+        const sUnitPrice = normalizeDecimalString(document.getElementById('shipLineUnitPrice')?.value || '');
+        const sVat = document.getElementById('shipLineVat')?.value || '';
+        if (!sQty || !sUnit || !sUnitPrice || sVat==='') { alert('❌ Nakliye kalemi için miktar, birim, birim fiyat ve KDV zorunludur.'); return; }
+        // Push shipping line as product item
+        const sUnitPriceNum = Number(sUnitPrice);
+        const sVatNum = Number(sVat);
+        const sNet = sUnitPriceNum;
+        productBids.push({
+          lineNo: (itemsData.length + 1),
+          productIndex: itemsData.length,
+          description: 'Nakliye',
+          quantity: sQty,
+          unit: sUnit,
+          unitPrice: sUnitPriceNum,
+          netPrice: sNet,
+          discounts: [],
+          vatRate: sVatNum,
+          totalPrice: sNet * sQty,
+          totalWithVat: (sNet * sQty) * (1 + (sVatNum/100)),
+          currency: (container.querySelector('[data-field="currency"]')?.value || 'TRY'),
+          deliveryDate: (document.getElementById('deliveryTimeStart')?.value || ''),
+          qualityCerts: [],
+          requested: { description: 'Nakliye', quantity: null, unit: null, features: [] },
+          offered:   { description: 'Nakliye', quantity: sQty, unit: sUnit },
+          changes:   { quantityChanged: false, unitChanged: false, descChanged: false },
+          changeNote: '',
+          imageUrl: '',
+          note: (document.getElementById('shippingNotes')?.value || '').trim()
+        });
+      }
+
+      // Collect payment schedule
+      // payment program kaldırıldı
+
+      // Calculate total bid amount
+      const totalAmount = productBids.reduce((sum, bid) => sum + bid.totalPrice, 0);
+      const changesSummary = productBids.filter(b => b.changeNote).map(b => `#${b.lineNo}: ${b.changeNote}`).join('; ');
+      
+      // Show confirmation
+      const confirmMessage = `Teklif Özeti:\n\n` +
+        productBids.map((bid, index) => 
+          `${index + 1}. ${bid.description}\n   Miktar: ${bid.quantity} ${bid.unit}\n   Birim Fiyat: ${bid.unitPrice.toFixed(2)} ${currencyVal}\n   Net Fiyat: ${bid.netPrice.toFixed(2)} ${currencyVal}\n   Toplam: ${bid.totalPrice.toFixed(2)} ${currencyVal}`
+        ).join('\n\n') +
+        `\n\nGenel Toplam: ${totalAmount.toFixed(2)} ${currencyVal}\n\nBu teklifi göndermek istediğinizden emin misiniz?`;
+      
+      if (!confirm(confirmMessage)) {
+        return;
+      }
+      
+      try {
+        // Get current user info (required at top via requireAuth())
+        const currentUser = user;
+        if (!currentUser) {
+          alert("❌ Giriş yapmanız gerekiyor.");
+          return;
+        }
+        
+        // Get company info
+        const companyDoc = await getDoc(doc(db, "companies", `solo-${currentUser.uid}`));
+        const companyData = companyDoc.exists() ? companyDoc.data() : {};
+        
+        // Genel varyant/alternatif/sertifika kaldırıldı (satır bazlı)
+
+        // Create bid data
+        const bidData = {
+          demandId: demandId,
+          supplierId: currentUser.uid,
+          supplierName: companyData.name || currentUser.displayName || "Bilinmeyen Firma",
+          supplierPhone: companyData.phone || "",
+          buyerId: demandData.createdBy,
+          items: productBids,
+          currency: currencyVal,
+          // genel teslim tarihi ve marka kaldırıldı
+          // paymentTerms kaldırıldı
+          paymentPreference: selectedPaymentPref || null,
+          shippingType: shippingTypeVal,
+          deliveryMethod: deliveryMethodVal,
+          // min sipariş genel kaldırıldı
+          vatRate: Number(vatRateVal),
+          notes: notesVal,
+          shipping: {
+            mode: shippingModeVal,
+            type: shippingTypeVal || null,
+            // cost removed; represented as line item when included
+            vehicleTrips: shippingModeVal==='included' ? vehicleTripsVal : null,
+            timeWindow: shippingModeVal==='included' ? { start: timeStartVal || null, end: timeEndVal || null } : null,
+            notes: shippingNotesVal || null
+          },
+          totalAmount: totalAmount,
+          changesSummary: changesSummary || '',
+            status: "sent",
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        };
+        
+        // Add to bids collection
+        await addDoc(collection(db, "bids"), bidData);
+        
+        alert("✅ Teklif başarıyla gönderildi!");
+        
+        // Reload bids to show the new bid
+        await loadBids();
+        
+        // Clear form
+        clearBidForm();
+        
+      } catch (error) {
+        console.error("Error submitting bid:", error);
+        alert("❌ Teklif gönderilirken hata oluştu: " + error.message);
+      }
+    }
+    
+    // Clear bid form
+    function clearBidForm() {
+      const container = document.getElementById('product-bid-forms');
+      if (container) {
+        // Clear all product forms
+        container.querySelectorAll('input[type="number"]').forEach(input => {
+          if (input.getAttribute('data-field') !== 'quantity') {
+            input.value = '';
+          }
+        });
+        
+        // Reset net prices
+        container.querySelectorAll('[data-field="netPrice"]').forEach(element => {
+          element.textContent = '-';
+        });
+      }
+      
+      // Clear general fields (defensive - some inputs may not exist)
+      [
+        'paymentTerms', 'shippingType', 'shippingCost', 'deliveryMethod',
+        'notes', 'shippingMode', 'vehicleTrips', 'deliveryTimeStart', 'deliveryTimeEnd', 'shippingNotes'
+      ].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    }
+    
+    // Add revision request function
+    async function requestRevision() {
+      const revisionNotes = document.getElementById("revisionNotes").value;
+      if (!revisionNotes.trim()) {
+        alert("Lütfen revizyon talebinizi belirtin.");
+        return;
+      }
+      
+      try {
+        // Create a revision request document
+        const revisionRequest = {
+          demandId: demandId,
+          requesterId: user.uid,
+          notes: revisionNotes,
+          status: "pending", // pending, approved, rejected
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        };
+        
+        const revisionRef = await addDoc(collection(db, "bidRevisions"), revisionRequest);
+        
+        // Update bid status to "revision_requested"
+        // In a real implementation, you would find the specific bid and update it
+        // For now, we'll just show a success message
+        
+        alert("Revizyon talebiniz gönderildi. Tedarikçi teklifi yeniden değerlendirecektir.");
+        document.getElementById("revisionNotes").value = "";
+      } catch (e) {
+        console.error(e);
+        alert("❌ Hata: " + (e.message || e));
+      }
+    }
+    
+    // Add function to submit revised bid
+    async function submitRevisedBid() {
+      // This function would be called when a supplier submits a revised bid
+      // in response to a revision request
+      
+      // Get the revision request details
+      // Create a new bid document with revised terms
+      // Update the revision request status to "completed"
+      
+      console.log("Revised bid submission functionality would be implemented here");
+    }
+    
+    // Add helper function to determine payment method
+    function getPaymentMethod(paymentTerms) {
+      if (!paymentTerms) return "unknown";
+      
+      const terms = paymentTerms.toLowerCase();
+      if (terms.includes("nakit") || terms.includes("cash")) return "cash";
+      if (terms.includes("kredi") || terms.includes("credit")) return "credit";
+      if (terms.includes("havale") || terms.includes("eft")) return "bank_transfer";
+      if (terms.includes("çek")) return "check";
+      
+      return "other";
+    }
+    
+    // ====================
+    // Net Price Calculator
+    // ====================
+    function calcNetPrice() {
+      const list = Number(document.getElementById("priceList").value || 0);
+      const d = [1, 2, 3, 4, 5].map(i => Number(document.getElementById("discount" + i).value || 0));
+      let net = list;
+      d.forEach(p => { if (p > 0) net = net * (1 - (p / 100)); });
+      document.getElementById("netPrice").textContent = net > 0 ? net.toFixed(2) + " ₺" : "-";
+    }
+    
+    // Attach listeners for auto-calculation
+    ["priceList", "discount1", "discount2", "discount3", "discount4", "discount5"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener("input", calcNetPrice);
+    });
+
+    // ====================
+    // Event Listeners
+    // ====================
+    if (btnUpload) {
+      btnUpload.onclick = () => uploadFiles(fileInput.files);
+    }
+
+    if (btnEdit) {
+      btnEdit.onclick = () => { location.href = `./demand-new.html?id=${demandId}`; };
+    }
+
+    if (btnPublish) {
+      btnPublish.onclick = () => { publishModal.style.display = "block"; };
+    }
+
+    if (btnUnpublish) {
+      btnUnpublish.onclick = () => { unpublishModal.style.display = "block"; };
+    }
+
+    document.getElementById("confirmPublish").onclick = publishDemand;
+    document.getElementById("cancelPublish").onclick = () => { publishModal.style.display = "none"; };
+    document.getElementById("confirmUnpublish").onclick = unpublishDemand;
+    document.getElementById("cancelUnpublish").onclick = () => { unpublishModal.style.display = "none"; };
+
+    if (btnExportPDF) {
+      btnExportPDF.onclick = exportPDF;
+    }
+
+    if (btnExportExcel) {
+      btnExportExcel.onclick = exportExcel;
+    }
+
+    // bidBtn artık yok, RFQ bid form kullanıyoruz
+    // document.getElementById("bidBtn").onclick = submitBid;
+    
+    // Add revision request functionality
+    const requestRevisionBtn = document.getElementById("requestRevisionBtn");
+    if (requestRevisionBtn) {
+      requestRevisionBtn.onclick = requestRevision;
+    }
+
+    // Round 2 transition button
+    const btnRound2 = document.getElementById("btnRound2");
+    if (btnRound2) {
+      btnRound2.onclick = transitionToRound2;
+    }
+
+    // ====================
+    // Helper Functions
+    // ====================
+    function setText(sel, val) { 
+      const el = document.querySelector(sel); 
+      if (el) {
+        el.textContent = val;
+        console.log(`📝 ${sel} = "${val}"`);
+      } else {
+        console.warn(`⚠️ Element bulunamadı: ${sel}`);
+      }
+    }
+    function hide(el) { if (el) el.style.display = "none"; }
+    function show(el) { if (el) el.style.display = ""; }
+
+    // Fiyat geçmişi modal fonksiyonları
+    window.showPriceHistory = async function(bidId) {
+      try {
+        const bidDoc = await getDoc(doc(db, "bids", bidId));
+        if (!bidDoc.exists()) {
+          alert("Teklif bulunamadı.");
+          return;
+        }
+        
+        const bidData = bidDoc.data();
+        const priceHistory = bidData.priceHistory || [];
+        
+        if (priceHistory.length === 0) {
+          alert("Bu teklif için fiyat geçmişi bulunmuyor.");
+          return;
+        }
+        
+        // Modal içeriğini oluştur
+        const content = document.getElementById("priceHistoryContent");
+        content.innerHTML = `
+          <div style="margin-bottom: 16px;">
+            <strong>Tedarikçi:</strong> ${bidData.supplierName || "Bilinmiyor"}<br>
+            <strong>Güncel Fiyat:</strong> ${bidData.netPrice?.toLocaleString("tr-TR")} ${bidData.currency || "TRY"}
+          </div>
+          <table style="width: 100%; border-collapse: collapse; margin-top: 16px;">
+            <thead>
+              <tr style="background: #f9fafb;">
+                <th style="padding: 8px; border: 1px solid #e5e7eb; text-align: left;">Sıra</th>
+                <th style="padding: 8px; border: 1px solid #e5e7eb; text-align: left;">Liste Fiyatı</th>
+                <th style="padding: 8px; border: 1px solid #e5e7eb; text-align: left;">İndirimler</th>
+                <th style="padding: 8px; border: 1px solid #e5e7eb; text-align: left;">Net Fiyat</th>
+                <th style="padding: 8px; border: 1px solid #e5e7eb; text-align: left;">Tarih</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${priceHistory.map((price, index) => `
+                <tr style="background: ${index === priceHistory.length - 1 ? '#f0f9ff' : 'white'};">
+                  <td style="padding: 8px; border: 1px solid #e5e7eb;">${index + 1}</td>
+                  <td style="padding: 8px; border: 1px solid #e5e7eb;">${price.priceList?.toLocaleString("tr-TR") || "-"}</td>
+                  <td style="padding: 8px; border: 1px solid #e5e7eb;">
+                    ${[price.discount1, price.discount2, price.discount3, price.discount4, price.discount5]
+                      .filter(d => d > 0)
+                      .map(d => `${d}%`)
+                      .join(" + ") || "-"}
+                  </td>
+                  <td style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold;">${price.netPrice?.toLocaleString("tr-TR") || "-"}</td>
+                  <td style="padding: 8px; border: 1px solid #e5e7eb;">${new Date(price.timestamp).toLocaleString("tr-TR")}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        `;
+        
+        // Modalı göster
+        document.getElementById("priceHistoryModal").style.display = "block";
+        
+      } catch (error) {
+        console.error("Fiyat geçmişi yüklenirken hata:", error);
+        alert("Fiyat geçmişi yüklenemedi.");
+      }
+    };
+    
+    window.closePriceHistoryModal = function() {
+      document.getElementById("priceHistoryModal").style.display = "none";
+    };
+
+    // ====================
+    // Fiyat Karşılaştırma Sistemi
+    // ====================
+    
+    // Fiyat karşılaştırma butonu event listener
+    document.getElementById("btnPriceComparison").addEventListener("click", async function() {
+      try {
+        await generatePriceComparisonExcel();
+      } catch (error) {
+        console.error("Fiyat karşılaştırması oluşturulurken hata:", error);
+        alert("❌ Fiyat karşılaştırması oluşturulamadı: " + error.message);
+      }
+    });
+
+    async function generatePriceComparisonExcel() {
+      try {
+        // Talep verilerini al
+        const demandRef = doc(db, "demands", demandId);
+        const demandSnap = await getDoc(demandRef);
+        
+        if (!demandSnap.exists()) {
+          throw new Error("Talep bulunamadı");
+        }
+        
+        const demandData = demandSnap.data();
+        
+        // Teklifleri al - daha basit sorgu kullan
+        const bidsQuery = query(
+          collection(db, "bids"),
+          where("demandId", "==", demandId)
+        );
+        
+        const bidsSnap = await getDocs(bidsQuery);
+        const bidsData = [];
+        
+        // Her teklif için tedarikçi bilgilerini al
+        for (const bidDoc of bidsSnap.docs) {
+          const bidData = bidDoc.data();
+          
+          // Tüm teklifleri al (sent, viewed, responded)
+          // if (bidData.status !== "sent") {
+          //   continue;
+          // }
+          
+          // Tedarikçi bilgilerini al
+          const supplierRef = doc(db, "users", bidData.supplierId);
+          const supplierSnap = await getDoc(supplierRef);
+          
+          if (supplierSnap.exists()) {
+            const supplierData = supplierSnap.data();
+            bidData.supplierName = supplierData.companyName || supplierData.displayName || "Bilinmiyor";
+            bidData.supplierPhone = supplierData.phone || "";
+          } else {
+            bidData.supplierName = "Bilinmiyor";
+            bidData.supplierPhone = "";
+          }
+          
+          bidsData.push(bidData);
+        }
+        
+        if (bidsData.length === 0) {
+          alert("❌ Bu talep için henüz teklif bulunmuyor.");
+          return;
+        }
+        
+        // Excel oluştur
+        await createPriceComparisonExcel(demandData, bidsData);
+        
+      } catch (error) {
+        console.error("Excel oluşturma hatası:", error);
+        throw error;
+      }
+    }
+
+    async function createPriceComparisonExcel(demandData, bidsData) {
+      try {
+        // XLSX kütüphanesini CDN'den yükle
+        if (typeof XLSX === 'undefined') {
+          const script = document.createElement('script');
+          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+          document.head.appendChild(script);
+          
+          // Kütüphanenin yüklenmesini bekle
+          await new Promise((resolve, reject) => {
+            script.onload = resolve;
+            script.onerror = reject;
+          });
+        }
+        
+        // Excel şablonunu yükle
+        const templateResponse = await fetch('./assets/teklif mukayese formu.xlsx');
+        const templateArrayBuffer = await templateResponse.arrayBuffer();
+        const templateWorkbook = XLSX.read(templateArrayBuffer, { type: 'array' });
+        
+        // İlk sheet'i al
+        const sheetName = templateWorkbook.SheetNames[0];
+        const worksheet = templateWorkbook.Sheets[sheetName];
+        
+        // Şablonu kopyala
+        const newWorkbook = XLSX.utils.book_new();
+        const newWorksheet = JSON.parse(JSON.stringify(worksheet));
+        
+        // Verileri şablona yerleştir
+        await fillTemplateWithData(newWorksheet, demandData, bidsData);
+        
+        // Workbook'a ekle
+        XLSX.utils.book_append_sheet(newWorkbook, newWorksheet, "Fiyat Karşılaştırma");
+        
+        // Dosyayı indir
+        const filename = `${demandData.satfk || "talep"}_mukayese_tablo.xlsx`;
+        XLSX.writeFile(newWorkbook, filename);
+        
+        alert("✅ Fiyat karşılaştırması başarıyla oluşturuldu ve indirildi!");
+        
+      } catch (error) {
+        console.error("Excel oluşturma hatası:", error);
+        throw error;
+      }
+    }
+
+    async function fillTemplateWithData(worksheet, demandData, bidsData) {
+      try {
+        // === 1. ÜST BİLGİLERİ YERLEŞTİR ===
+        setCellValue(worksheet, 'T1', demandData.satfk || ''); // SATFK
+        setCellValue(worksheet, 'T3', demandData.site || ''); // Şantiye
+        setCellValue(worksheet, 'T4', demandData.usdTryRate || '34.85'); // USD/TRY Kuru
+        setCellValue(worksheet, 'B5', demandData.title || ''); // Talep Konusu
+        
+        // === 2. ÜRÜNLERİ EKLE ===
+        const startRow = 8;
+        if (demandData.items && Array.isArray(demandData.items)) {
+          demandData.items.forEach((item, idx) => {
+            const row = startRow + idx;
+            setCellValue(worksheet, `B${row}`, idx + 1); // No
+            setCellValue(worksheet, `C${row}`, item.description || ''); // Ürün Adı
+            setCellValue(worksheet, `D${row}`, item.quantity || ''); // Miktar
+            setCellValue(worksheet, `E${row}`, item.unit || ''); // Birim
+          });
+        }
+        
+        // === 3. TEKLİF VEREN FİRMALARI SIRALA (EN UCUZDAN) ===
+        const sortedBids = bidsData.sort((a, b) => {
+          const totalA = calculateBidTotal(a, demandData.items);
+          const totalB = calculateBidTotal(b, demandData.items);
+          return totalA - totalB;
+        });
+        
+        // Premium kullanıcı kontrolü (şimdilik 5 firma limiti)
+        const maxFirms = 5;
+        const topBids = sortedBids.slice(0, maxFirms);
+        
+        // Sütun haritaları
+        const columns = ['F', 'I', 'L', 'O', 'R'];
+        
+        for (let idx = 0; idx < topBids.length; idx++) {
+          const bid = topBids[idx];
+          const col = columns[idx];
+          
+          // Firma bilgileri
+          setCellValue(worksheet, `${col}6`, `${bid.supplierName} (${bid.supplierPhone})`);
+          
+          // Ürün fiyatları ve toplamlar
+          let totalAmount = 0;
+          if (demandData.items && Array.isArray(demandData.items)) {
+            demandData.items.forEach((item, itemIdx) => {
+              const row = startRow + itemIdx;
+              const unitPrice = getBidItemPrice(bid, itemIdx) || 0;
+              const quantity = item.quantity || 0;
+              const itemTotal = unitPrice * quantity;
+              
+              // Birim fiyat
+              setCellValue(worksheet, `${col}${row}`, unitPrice);
+              
+              // Toplam fiyat (G, J, M, P, S sütunları)
+              const totalCol = String.fromCharCode(col.charCodeAt(0) + 1);
+              setCellValue(worksheet, `${totalCol}${row}`, itemTotal);
+              
+              totalAmount += itemTotal;
+            });
+          }
+          
+          // Alt satırlara toplam ve diğer bilgiler
+          setCellValue(worksheet, `${col}21`, totalAmount); // KDV HARİÇ TOPLAM TUTAR
+          setCellValue(worksheet, `${col}22`, bid.paymentTerms || ''); // ÖDEME ŞEKLİ
+          setCellValue(worksheet, `${col}23`, bid.deliveryDate || ''); // TESLİM SÜRESİ
+          setCellValue(worksheet, `${col}24`, bid.deliveryMethod || demandData.site || ''); // TESLİM ŞEKLİ
+          setCellValue(worksheet, `${col}25`, bid.notes || demandData.description || ''); // AÇIKLAMA
+        }
+        
+      } catch (error) {
+        console.error("Şablon doldurma hatası:", error);
+        throw error;
+      }
+    }
+
+    function calculateBidTotal(bid, items) {
+      if (!items || !Array.isArray(items)) return 0;
+      
+      return items.reduce((total, item, index) => {
+        const unitPrice = getBidItemPrice(bid, index) || 0;
+        const quantity = item.quantity || 0;
+        return total + (unitPrice * quantity);
+      }, 0);
+    }
+
+    function getBidItemPrice(bid, itemIndex) {
+      // Bid'de items array'i varsa kullan
+      if (bid.items && Array.isArray(bid.items) && bid.items[itemIndex]) {
+        return bid.items[itemIndex].unitPrice || bid.items[itemIndex].price || 0;
+      }
+      
+      // Tek ürün için netPrice kullan
+      if (itemIndex === 0) {
+        return bid.netPrice || bid.price || 0;
+      }
+      
+      return 0;
+    }
+
+    function setCellValue(worksheet, cellAddress, value) {
+      if (!worksheet[cellAddress]) {
+        worksheet[cellAddress] = {};
+      }
+      worksheet[cellAddress].v = value;
+      worksheet[cellAddress].t = typeof value === 'number' ? 'n' : 's';
+    }
+
+    // ====================
+    // Bid Management Functions
+    // ====================
+    
+    async function acceptBid(bidId) {
+      if (confirm("Bu teklifi kabul etmek istediğinizden emin misiniz?")) {
+        try {
+          const bidRef = doc(db, "bids", bidId);
+          await updateDoc(bidRef, {
+            status: "accepted",
+            statusHistory: arrayUnion({
+              status: "accepted",
+              timestamp: Date.now(),
+              userId: user.uid,
+              notes: "Bid accepted by buyer"
+            }),
+            updatedAt: serverTimestamp()
+          });
+          
+          alert("✅ Teklif kabul edildi!");
+          await loadBids();
+        } catch (e) {
+          console.error("Error accepting bid:", e);
+          alert("❌ Teklif kabul edilirken hata oluştu: " + e.message);
+        }
+      }
+    }
+
+    async function rejectBid(bidId) {
+      if (confirm("Bu teklifi reddetmek istediğinizden emin misiniz?")) {
+        try {
+          const bidRef = doc(db, "bids", bidId);
+          await updateDoc(bidRef, {
+            status: "rejected",
+            statusHistory: arrayUnion({
+              status: "rejected",
+              timestamp: Date.now(),
+              userId: user.uid,
+              notes: "Bid rejected by buyer"
+            }),
+            updatedAt: serverTimestamp()
+          });
+          
+          alert("✅ Teklif reddedildi!");
+          await loadBids();
+        } catch (e) {
+          console.error("Error rejecting bid:", e);
+          alert("❌ Teklif reddedilirken hata oluştu: " + e.message);
+        }
+      }
+    }
+
+    async function requestBidRevision(bidId) {
+      const revisionNotes = document.getElementById("revisionNotes").value;
+      if (!revisionNotes.trim()) {
+        alert("❌ Revizyon talebinizi belirtin.");
+        return;
+      }
+      
+      if (confirm("Revizyon talebi göndermek istediğinizden emin misiniz?")) {
+        try {
+          const bidRef = doc(db, "bids", bidId);
+          await updateDoc(bidRef, {
+            status: "revision_requested",
+            statusHistory: arrayUnion({
+              status: "revision_requested",
+              timestamp: Date.now(),
+              userId: user.uid,
+              notes: revisionNotes
+            }),
+            updatedAt: serverTimestamp()
+          });
+          
+          alert("✅ Revizyon talebi gönderildi!");
+          document.getElementById("revisionNotes").value = "";
+          await loadBids();
+        } catch (e) {
+          console.error("Error requesting revision:", e);
+          alert("❌ Revizyon talebi gönderilirken hata oluştu: " + e.message);
+        }
+      }
+    }
+
+
+    // ====================
+    // Initialize
+    // ====================
+    console.log("🚀 Demand detail sayfası başlatılıyor...");
+    console.log("🆔 Demand ID:", demandId);
+    
+    await loadDemand();
+    console.log("✅ loadDemand() tamamlandı");
+    
+    await loadItems();
+    console.log("✅ loadItems() tamamlandı");
+    
+    await loadBids();
+    console.log("✅ loadBids() tamamlandı");
+    
+    if (isOwner) {
+      console.log("👤 Owner, files yükleniyor...");
+      await loadFiles();
+      // Show revision request section for owners
+      const revisionSection = document.getElementById("revisionRequestSection");
+      if (revisionSection) {
+        revisionSection.style.display = "block";
+      }
+    }
+    
+    console.log("🎉 Sayfa başlatma tamamlandı!");
+  </script>
+  <script type="module" src="/js/ui-standard.js"></script>
+</body>
+</html>

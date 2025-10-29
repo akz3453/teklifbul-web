@@ -1,0 +1,61 @@
+{
+  "match_key": "urun_kodu",
+  "vendor_columns": [
+    "ÜRÜN KODU",
+    "STOK KODU", 
+    "SKU",
+    "ITEM CODE",
+    "ÜRÜN NO",
+    "MALZEME KODU"
+  ],
+  "offer_price_keys": [
+    "TEKLİF FİYATI",
+    "BİRİM FİYAT",
+    "FİYAT",
+    "BİRİM TUTAR",
+    "UNIT PRICE"
+  ],
+  "offer_currency_keys": [
+    "PARA BİRİMİ",
+    "CURRENCY",
+    "DÖVİZ",
+    "BİRİM"
+  ],
+  "offer_date_keys": [
+    "TEKLİF TARİHİ",
+    "DATE",
+    "TARİH",
+    "TEKLİF TARİH"
+  ],
+  "offer_lead_time_keys": [
+    "TESLİMAT SÜRESİ",
+    "LEAD TIME",
+    "TESLİM SÜRESİ",
+    "DELIVERY TIME"
+  ],
+  "offer_min_order_keys": [
+    "MİN SİPARİŞ",
+    "MIN ORDER",
+    "MİNİMUM SİPARİŞ",
+    "MINIMUM ORDER"
+  ],
+  "offer_payment_keys": [
+    "ÖDEME ŞEKLİ",
+    "PAYMENT TERMS",
+    "PAYMENT",
+    "VADE"
+  ],
+  "offer_delivery_keys": [
+    "TESLİM ŞEKLİ",
+    "DELIVERY METHOD",
+    "TESLİM",
+    "SHIPPING"
+  ],
+  "offer_notes_keys": [
+    "NOT",
+    "NOTLAR",
+    "AÇIKLAMA",
+    "COMMENTS",
+    "REMARKS"
+  ]
+}

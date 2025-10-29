@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard vs Bids Debug</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .debug-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Dashboard vs Bids Debug</h1>
+    
+    <div class="debug-section info">
+        <h3>📋 Debug Senaryosu</h3>
+        <p>Bu sayfa dashboard ve bids sayfası arasındaki farkı araştırır.</p>
+        <ol>
+            <li>Dashboard sorgusu: where("buyerId", "==", uid)</li>
+            <li>Bids sayfası sorgusu: where('demandId','==', d.id)</li>
+            <li>Tekliflerde buyerId alanı var mı?</li>
+            <li>Hangi sorgu doğru sonuç veriyor?</li>
+        </ol>
+    </div>
+    
+    <div class="debug-section">
+        <h3>🧪 Debug Butonları</h3>
+        <button onclick="debugDashboardQuery()">Dashboard Sorgusu</button>
+        <button onclick="debugBidsQuery()">Bids Sayfası Sorgusu</button>
+        <button onclick="debugBidStructure()">Teklif Yapısı</button>
+        <button onclick="compareResults()">Sonuçları Karşılaştır</button>
+    </div>
+    
+    <div id="debug-results"></div>
+    
+    <script type="module">
+        import { db, auth, requireAuth } from "./firebase.js";
+        import {
+          collection, getDocs, query, where, orderBy, limit, doc, getDoc
+        } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+        
+        let currentUser = null;
+        
+        async function init() {
+            try {
+                currentUser = await requireAuth();
+                console.log('User authenticated:', currentUser.email);
+                addResult(`✅ Kullanıcı girişi başarılı: ${currentUser.email}`, 'success');
+            } catch (error) {
+                console.error('Auth error:', error);
+                addResult('❌ Kullanıcı girişi başarısız: ' + error.message, 'error');
+            }
+        }
+        
+        function addResult(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `debug-section ${type}`;
+            div.innerHTML = message;
+            document.getElementById('debug-results').appendChild(div);
+        }
+        
+        function clearResults() {
+            document.getElementById('debug-results').innerHTML = '';
+        }
+        
+        async function debugDashboardQuery() {
+            clearResults();
+            addResult('<h3>🔍 Dashboard Sorgusu</h3>', 'info');
+            
+            if (!currentUser) {
+                addResult('❌ Kullanıcı girişi gerekli', 'error');
+                return;
+            }
+            
+            try {
+                // Dashboard'daki sorgu: where("buyerId", "==", uid)
+                const q = query(collection(db, "bids"), where("buyerId", "==", currentUser.uid));
+                const snap = await getDocs(q);
+                
+                addResult(`📊 Dashboard sorgusu sonucu: ${snap.docs.length} teklif`, 'info');
+                
+                if (snap.docs.length === 0) {
+                    addResult('⚠️ Dashboard sorgusu hiç teklif bulamadı!', 'warning');
+                } else {
+                    snap.docs.forEach((doc, index) => {
+                        const data = doc.data();
+                        addResult(`
+                            <h4>Dashboard Teklif ${index + 1}</h4>
+                            <pre>${JSON.stringify({
+                                id: doc.id,
+                                demandId: data.demandId,
+                                supplierId: data.supplierId,
+                                buyerId: data.buyerId,
+                                createdAt: data.createdAt?.toDate?.()?.toLocaleString?.('tr-TR') || 'N/A'
+                            }, null, 2)}</pre>
+                        `, 'success');
+                    });
+                }
+                
+            } catch (error) {
+                addResult(`❌ Dashboard sorgusu başarısız: ${error.message}`, 'error');
+            }
+        }
+        
+        async function debugBidsQuery() {
+            clearResults();
+            addResult('<h3>🔍 Bids Sayfası Sorgusu</h3>', 'info');
+            
+            if (!currentUser) {
+                addResult('❌ Kullanıcı girişi gerekli', 'error');
+                return;
+            }
+            
+            try {
+                // Bids sayfasındaki sorgu: kullanıcının taleplerindeki teklifler
+                const ds = await getDocs(query(collection(db,'demands'), where('createdBy','==', currentUser.uid)));
+                const demandIds = ds.docs.map(d=>d.id);
+                
+                addResult(`📊 Kullanıcının talep sayısı: ${demandIds.length}`, 'info');
+                
+                if (demandIds.length === 0) {
+                    addResult('⚠️ Kullanıcının hiç talebi yok', 'warning');
+                    return;
+                }
+                
+                const all = [];
+                for (const d of ds.docs){
+                    const q = query(collection(db,'bids'), where('demandId','==', d.id), orderBy('createdAt','desc'), limit(50));
+                    const snap = await getDocs(q);
+                    for (const b of snap.docs){
+                        const data = { id:b.id, ...b.data() };
+                        all.push(data);
+                    }
+                }
+                
+                addResult(`📊 Bids sayfası sorgusu sonucu: ${all.length} teklif`, 'info');
+                
+                if (all.length === 0) {
+                    addResult('⚠️ Bids sayfası sorgusu hiç teklif bulamadı!', 'warning');
+                } else {
+                    all.forEach((bid, index) => {
+                        addResult(`
+                            <h4>Bids Sayfası Teklif ${index + 1}</h4>
+                            <pre>${JSON.stringify({
+                                id: bid.id,
+                                demandId: bid.demandId,
+                                supplierId: bid.supplierId,
+                                buyerId: bid.buyerId,
+                                createdAt: bid.createdAt?.toDate?.()?.toLocaleString?.('tr-TR') || 'N/A'
+                            }, null, 2)}</pre>
+                        `, 'success');
+                    });
+                }
+                
+            } catch (error) {
+                addResult(`❌ Bids sayfası sorgusu başarısız: ${error.message}`, 'error');
+            }
+        }
+        
+        async function debugBidStructure() {
+            clearResults();
+            addResult('<h3>🔍 Teklif Yapısı</h3>', 'info');
+            
+            try {
+                // Tüm teklifleri al ve yapılarını kontrol et
+                const q = query(collection(db, "bids"), limit(10));
+                const snap = await getDocs(q);
+                
+                addResult(`📊 Toplam teklif sayısı: ${snap.docs.length}`, 'info');
+                
+                if (snap.docs.length === 0) {
+                    addResult('⚠️ Hiç teklif yok', 'warning');
+                    return;
+                }
+                
+                let hasBuyerId = 0;
+                let hasSupplierId = 0;
+                
+                snap.docs.forEach((doc, index) => {
+                    const data = doc.data();
+                    
+                    if ('buyerId' in data) hasBuyerId++;
+                    if ('supplierId' in data) hasSupplierId++;
+                    
+                    addResult(`
+                        <h4>Teklif ${index + 1}</h4>
+                        <pre>${JSON.stringify({
+                            id: doc.id,
+                            demandId: data.demandId,
+                            supplierId: data.supplierId,
+                            buyerId: data.buyerId,
+                            hasBuyerId: 'buyerId' in data,
+                            hasSupplierId: 'supplierId' in data,
+                            createdAt: data.createdAt?.toDate?.()?.toLocaleString?.('tr-TR') || 'N/A'
+                        }, null, 2)}</pre>
+                    `, 'info');
+                });
+                
+                addResult(`📊 buyerId alanı olan teklif sayısı: ${hasBuyerId}/${snap.docs.length}`, hasBuyerId === snap.docs.length ? 'success' : 'warning');
+                addResult(`📊 supplierId alanı olan teklif sayısı: ${hasSupplierId}/${snap.docs.length}`, hasSupplierId === snap.docs.length ? 'success' : 'warning');
+                
+            } catch (error) {
+                addResult(`❌ Teklif yapısı analizi başarısız: ${error.message}`, 'error');
+            }
+        }
+        
+        async function compareResults() {
+            clearResults();
+            addResult('<h3>🔍 Sonuçları Karşılaştır</h3>', 'info');
+            
+            if (!currentUser) {
+                addResult('❌ Kullanıcı girişi gerekli', 'error');
+                return;
+            }
+            
+            try {
+                // Dashboard sorgusu
+                const dashboardQ = query(collection(db, "bids"), where("buyerId", "==", currentUser.uid));
+                const dashboardSnap = await getDocs(dashboardQ);
+                
+                // Bids sayfası sorgusu
+                const ds = await getDocs(query(collection(db,'demands'), where('createdBy','==', currentUser.uid)));
+                const demandIds = ds.docs.map(d=>d.id);
+                
+                const bidsResults = [];
+                for (const d of ds.docs){
+                    const q = query(collection(db,'bids'), where('demandId','==', d.id), orderBy('createdAt','desc'), limit(50));
+                    const snap = await getDocs(q);
+                    for (const b of snap.docs){
+                        const data = { id:b.id, ...b.data() };
+                        bidsResults.push(data);
+                    }
+                }
+                
+                addResult(`📊 Dashboard sorgusu: ${dashboardSnap.docs.length} teklif`, 'info');
+                addResult(`📊 Bids sayfası sorgusu: ${bidsResults.length} teklif`, 'info');
+                
+                if (dashboardSnap.docs.length === bidsResults.length) {
+                    addResult('✅ Her iki sorgu da aynı sonucu veriyor', 'success');
+                } else {
+                    addResult('❌ Sorgular farklı sonuçlar veriyor!', 'error');
+                    
+                    // Farkları analiz et
+                    const dashboardIds = dashboardSnap.docs.map(d => d.id);
+                    const bidsIds = bidsResults.map(b => b.id);
+                    
+                    const onlyInDashboard = dashboardIds.filter(id => !bidsIds.includes(id));
+                    const onlyInBids = bidsIds.filter(id => !dashboardIds.includes(id));
+                    
+                    if (onlyInDashboard.length > 0) {
+                        addResult(`⚠️ Sadece dashboard'da olan teklifler: ${onlyInDashboard.join(', ')}`, 'warning');
+                    }
+                    
+                    if (onlyInBids.length > 0) {
+                        addResult(`⚠️ Sadece bids sayfasında olan teklifler: ${onlyInBids.join(', ')}`, 'warning');
+                    }
+                }
+                
+            } catch (error) {
+                addResult(`❌ Karşılaştırma başarısız: ${error.message}`, 'error');
+            }
+        }
+        
+        // Initialize
+        init();
+    </script>
+</body>
+</html>

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Konsol Test - Teklifbul</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%233b82f6' rx='6'/%3E%3Ctext x='16' y='22' font-family='Arial' font-size='18' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E">
+    <style>
+        body { font-family: system-ui, Arial; margin: 20px; background: #f9fafb; }
+        .test-container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
+        .test-result { padding: 10px; margin: 10px 0; border-radius: 4px; background: #f3f4f6; }
+        .success { background: #d1fae5; color: #065f46; }
+        .error { background: #fee2e2; color: #991b1b; }
+        button { padding: 10px 20px; margin: 5px; border: none; border-radius: 4px; cursor: pointer; background: #3b82f6; color: white; }
+        pre { background: #f9fafb; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔧 Konsol Test</h1>
+        <p>Bu sayfa modüllerin yüklenip yüklenmediğini test eder.</p>
+        
+        <button onclick="testModules()">Modülleri Test Et</button>
+        <button onclick="testFirebase()">Firebase Test Et</button>
+        <button onclick="clearResults()">Sonuçları Temizle</button>
+        
+        <div id="results"></div>
+    </div>
+
+    <script type="module">
+        // Test modüllerini import et
+        let modules = {};
+        let errors = [];
+
+        try {
+            console.log('🔧 Modüller yükleniyor...');
+            
+            // Firebase
+            const firebase = await import('./firebase.js');
+            modules.firebase = firebase;
+            console.log('✅ Firebase yüklendi');
+
+            // Error handling
+            const errorsModule = await import('./assets/js/ui/errors.js');
+            modules.errors = errorsModule;
+            console.log('✅ Error handling yüklendi');
+
+            // Demands service
+            const demandsModule = await import('./assets/js/services/demands-new.js');
+            modules.demands = demandsModule;
+            console.log('✅ Demands service yüklendi');
+
+            // Suppliers service
+            const suppliersModule = await import('./assets/js/services/suppliers.js');
+            modules.suppliers = suppliersModule;
+            console.log('✅ Suppliers service yüklendi');
+
+            // Tabs UI
+            const tabsModule = await import('./assets/js/ui/tabs.js');
+            modules.tabs = tabsModule;
+            console.log('✅ Tabs UI yüklendi');
+
+            // Company selector
+            const companyModule = await import('./assets/js/ui/company-selector.js');
+            modules.company = companyModule;
+            console.log('✅ Company selector yüklendi');
+
+        } catch (error) {
+            console.error('❌ Modül yükleme hatası:', error);
+            errors.push(`Modül yükleme hatası: ${error.message}`);
+        }
+
+        window.testModules = function() {
+            const resultsDiv = document.getElementById('results');
+            let html = '<h3>Modül Test Sonuçları:</h3>';
+            
+            const moduleNames = ['firebase', 'errors', 'demands', 'suppliers', 'tabs', 'company'];
+            let successCount = 0;
+            
+            moduleNames.forEach(name => {
+                if (modules[name]) {
+                    html += `<div class="test-result success">✅ ${name}: Yüklendi</div>`;
+                    successCount++;
+                } else {
+                    html += `<div class="test-result error">❌ ${name}: Yüklenemedi</div>`;
+                }
+            });
+            
+            html += `<div class="test-result ${successCount === moduleNames.length ? 'success' : 'error'}">
+                <strong>Toplam: ${successCount}/${moduleNames.length} modül yüklendi</strong>
+            </div>`;
+            
+            if (errors.length > 0) {
+                html += '<h4>Hatalar:</h4>';
+                errors.forEach(error => {
+                    html += `<div class="test-result error">${error}</div>`;
+                });
+            }
+            
+            resultsDiv.innerHTML = html;
+        };
+
+        window.testFirebase = async function() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<div class="test-result">Firebase test ediliyor...</div>';
+            
+            try {
+                const { db, auth } = modules.firebase;
+                
+                // Test Firestore connection
+                const { collection, doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js');
+                const testRef = doc(collection(db, 'test'), 'connection');
+                const testDoc = await getDoc(testRef);
+                
+                resultsDiv.innerHTML = `
+                    <div class="test-result success">✅ Firebase bağlantısı başarılı!</div>
+                    <pre>Database: ${db.app.name}
+Auth: ${auth.currentUser ? 'Kullanıcı giriş yapmış' : 'Kullanıcı giriş yapmamış'}
+Test dokümanı: ${testDoc.exists() ? 'Mevcut' : 'Mevcut değil'}</pre>
+                `;
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="test-result error">❌ Firebase test hatası:</div>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        };
+
+        window.clearResults = function() {
+            document.getElementById('results').innerHTML = '';
+        };
+
+        // Sayfa yüklendiğinde otomatik test
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                testModules();
+                testFirebase();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

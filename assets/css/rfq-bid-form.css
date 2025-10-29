@@ -1,0 +1,350 @@
+/* RFQ Bid Form Styles */
+.rfq-bid-form {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.commercial-terms-panel {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.commercial-terms-panel h4 {
+  margin: 0 0 16px 0;
+  color: #1e293b;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.terms-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-group label {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: #374151;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+#bid-payment-custom {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+#bid-payment-custom:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.item-matrix-section {
+  margin-bottom: 24px;
+}
+
+.item-matrix-section h4 {
+  margin: 0 0 16px 0;
+  color: #1e293b;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.item-matrix-table {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  background: white;
+}
+
+.matrix-header {
+  display: grid;
+  grid-template-columns: 2fr 80px 80px 120px 100px 150px 100px 100px 80px 100px 1fr;
+  gap: 8px;
+  padding: 12px;
+  background: #f3f4f6;
+  font-weight: 600;
+  font-size: 12px;
+  color: #374151;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.matrix-row {
+  display: grid;
+  grid-template-columns: 2fr 80px 80px 120px 100px 150px 100px 100px 80px 100px 1fr;
+  gap: 8px;
+  padding: 12px;
+  border-bottom: 1px solid #f3f4f6;
+  align-items: start;
+}
+
+.matrix-row:last-child {
+  border-bottom: none;
+}
+
+.matrix-row:hover {
+  background: #f9fafb;
+}
+
+.col-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.item-name {
+  font-weight: 500;
+  color: #1f2937;
+  font-size: 13px;
+}
+
+.item-sku {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.col-qty input,
+.col-price input,
+.col-brand input,
+.col-leadtime input,
+.col-minqty input,
+.col-origin input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.col-unit {
+  display: flex;
+  align-items: center;
+}
+
+.col-unit select {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 12px;
+  background: white;
+}
+
+.col-compliance select {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.col-partial select {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.col-comments textarea {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 12px;
+  resize: vertical;
+  min-height: 60px;
+  font-family: inherit;
+}
+
+.bid-attachments {
+  margin-top: 24px;
+  padding: 20px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.bid-attachments h4 {
+  margin: 0 0 16px 0;
+  color: #1e293b;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.file-list {
+  margin-bottom: 16px;
+}
+
+.file-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.file-name {
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.file-size {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.remove-file {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.remove-file:hover {
+  background: #fee2e2;
+}
+
+#bid-file-input {
+  margin-bottom: 12px;
+  width: 100%;
+}
+
+.submit-section {
+  margin-top: 24px;
+  text-align: center;
+}
+
+.btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: #3b82f6;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #2563eb;
+}
+
+.btn-success {
+  background: #059669;
+  color: white;
+  padding: 12px 32px;
+  font-size: 16px;
+}
+
+.btn-success:hover {
+  background: #047857;
+}
+
+.no-items {
+  text-align: center;
+  color: #64748b;
+  padding: 40px 20px;
+  font-style: italic;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .matrix-header,
+  .matrix-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .matrix-header > div,
+  .matrix-row > div {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .matrix-header > div::before {
+    content: attr(data-label);
+    font-weight: 600;
+    font-size: 11px;
+    color: #6b7280;
+    text-transform: uppercase;
+  }
+  
+  .col-item::before { content: "Ürün"; }
+  .col-qty::before { content: "Miktar"; }
+  .col-unit::before { content: "Birim"; }
+  .col-compliance::before { content: "Uygunluk"; }
+  .col-price::before { content: "Net Fiyat"; }
+  .col-brand::before { content: "Marka/Model"; }
+  .col-leadtime::before { content: "Teslim Süresi"; }
+  .col-minqty::before { content: "Min. Sipariş"; }
+  .col-partial::before { content: "Kısmi İzin"; }
+  .col-origin::before { content: "Menşei"; }
+  .col-comments::before { content: "Açıklama"; }
+}
+
+@media (max-width: 768px) {
+  .rfq-bid-form {
+    padding: 16px;
+  }
+  
+  .terms-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .commercial-terms-panel,
+  .bid-attachments {
+    padding: 16px;
+  }
+}

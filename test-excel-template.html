@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel Şablon Analizi</title>
+    <script src="./assets/vendor/xlsx.full.min.js"></script>
+</head>
+<body>
+    <h1>Excel Şablon Analizi</h1>
+    <input type="file" id="excelFile" accept=".xlsx,.xls" />
+    <div id="output"></div>
+
+    <script>
+        document.getElementById('excelFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, {type: 'array'});
+                        
+                        // İlk sheet'i al
+                        const sheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[sheetName];
+                        
+                        // Tüm hücreleri al
+                        const range = XLSX.utils.decode_range(worksheet['!ref']);
+                        const cells = {};
+                        
+                        for (let row = range.s.r; row <= range.s.e.r; row++) {
+                            for (let col = range.s.c; col <= range.s.e.c; col++) {
+                                const cellAddress = XLSX.utils.encode_cell({r: row, c: col});
+                                const cell = worksheet[cellAddress];
+                                if (cell && cell.v !== undefined) {
+                                    cells[cellAddress] = {
+                                        value: cell.v,
+                                        type: cell.t,
+                                        style: cell.s
+                                    };
+                                }
+                            }
+                        }
+                        
+                        // Sonuçları göster
+                        document.getElementById('output').innerHTML = 
+                            '<h2>Excel Hücreleri:</h2><pre>' + 
+                            JSON.stringify(cells, null, 2) + 
+                            '</pre>';
+                            
+                    } catch (error) {
+                        console.error('Excel okuma hatası:', error);
+                        document.getElementById('output').innerHTML = 'Hata: ' + error.message;
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            }
+        });
+    </script>
+</body>
+</html>

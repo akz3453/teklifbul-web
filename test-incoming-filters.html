@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gelen Talepler Filtre Testi</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .hidden { display: none; }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: #f2f2f2; }
+        select { padding: 6px; border-radius: 4px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Gelen Talepler Filtre Testi</h1>
+    
+    <div class="test-section info">
+        <h3>📋 Test Senaryosu</h3>
+        <p>Bu sayfa gelen talepler filtresinin düzgün çalışıp çalışmadığını test eder.</p>
+        <ol>
+            <li>Gelen Talepler sekmesine tıkla</li>
+            <li>Filtre bölümünde "Durum" seçeneklerini kontrol et</li>
+            <li>Farklı durumları seç ve sonuçları gözlemle</li>
+        </ol>
+    </div>
+    
+    <div class="test-section">
+        <h3>🧪 Test Adımları</h3>
+        <button onclick="testFilters()">Filtreleri Test Et</button>
+        <button onclick="checkTabSwitching()">Sekme Geçişini Test Et</button>
+        <button onclick="checkFilterVisibility()">Filtre Görünürlüğünü Test Et</button>
+    </div>
+    
+    <div id="test-results"></div>
+    
+    <div class="test-section">
+        <h3>📊 Beklenen Sonuçlar</h3>
+        <ul>
+            <li>✅ Gelen Talepler sekmesinde: "Bekleyen", "Görüldü", "Yanıtlandı" seçenekleri</li>
+            <li>✅ Giden Talepler sekmesinde: "Taslak", "Gönderildi" seçenekleri</li>
+            <li>✅ Sekme değiştiğinde filtreler değişmeli</li>
+            <li>✅ Filtreler çalışmalı</li>
+        </ul>
+    </div>
+    
+    <script>
+        function addResult(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `test-section ${type}`;
+            div.innerHTML = message;
+            document.getElementById('test-results').appendChild(div);
+        }
+        
+        function clearResults() {
+            document.getElementById('test-results').innerHTML = '';
+        }
+        
+        function testFilters() {
+            clearResults();
+            addResult('<h3>🧪 Filtre Testi Başlatılıyor...</h3>', 'info');
+            
+            // Gelen talepler filtresini kontrol et
+            const incomingStatus = document.getElementById('f-incoming-status');
+            if (incomingStatus) {
+                const options = Array.from(incomingStatus.options).map(opt => opt.textContent);
+                addResult(`✅ Gelen Talepler Filtre Seçenekleri: ${options.join(', ')}`, 'success');
+                
+                // Beklenen seçenekleri kontrol et
+                const expectedOptions = ['— Tümü —', 'Bekleyen', 'Görüldü', 'Yanıtlandı'];
+                const hasAllOptions = expectedOptions.every(opt => options.includes(opt));
+                
+                if (hasAllOptions) {
+                    addResult('✅ Tüm beklenen seçenekler mevcut!', 'success');
+                } else {
+                    addResult('❌ Bazı seçenekler eksik!', 'error');
+                }
+            } else {
+                addResult('❌ Gelen talepler filtresi bulunamadı!', 'error');
+            }
+            
+            // Giden talepler filtresini kontrol et
+            const outgoingStatus = document.getElementById('f-status');
+            if (outgoingStatus) {
+                const options = Array.from(outgoingStatus.options).map(opt => opt.textContent);
+                addResult(`✅ Giden Talepler Filtre Seçenekleri: ${options.join(', ')}`, 'success');
+                
+                // Beklenen seçenekleri kontrol et
+                const expectedOptions = ['— Tümü —', 'Taslak', 'Gönderildi'];
+                const hasAllOptions = expectedOptions.every(opt => options.includes(opt));
+                
+                if (hasAllOptions) {
+                    addResult('✅ Tüm beklenen seçenekler mevcut!', 'success');
+                } else {
+                    addResult('❌ Bazı seçenekler eksik!', 'error');
+                }
+            } else {
+                addResult('❌ Giden talepler filtresi bulunamadı!', 'error');
+            }
+        }
+        
+        function checkTabSwitching() {
+            clearResults();
+            addResult('<h3>🔄 Sekme Geçiş Testi</h3>', 'info');
+            
+            // Gelen talepler sekmesine tıkla
+            const incomingTab = document.getElementById('tabIncoming');
+            if (incomingTab) {
+                incomingTab.click();
+                addResult('✅ Gelen Talepler sekmesine tıklandı', 'success');
+                
+                // Filtrelerin görünürlüğünü kontrol et
+                setTimeout(() => {
+                    const incomingFilters = document.getElementById('incoming-filters');
+                    const outgoingFilters = document.getElementById('outgoing-filters');
+                    
+                    if (incomingFilters && !incomingFilters.classList.contains('hidden')) {
+                        addResult('✅ Gelen talepler filtreleri görünür', 'success');
+                    } else {
+                        addResult('❌ Gelen talepler filtreleri görünmüyor!', 'error');
+                    }
+                    
+                    if (outgoingFilters && outgoingFilters.classList.contains('hidden')) {
+                        addResult('✅ Giden talepler filtreleri gizli', 'success');
+                    } else {
+                        addResult('❌ Giden talepler filtreleri gizlenmemiş!', 'error');
+                    }
+                }, 100);
+            } else {
+                addResult('❌ Gelen Talepler sekmesi bulunamadı!', 'error');
+            }
+            
+            // Giden talepler sekmesine tıkla
+            setTimeout(() => {
+                const outgoingTab = document.getElementById('tabOutgoing');
+                if (outgoingTab) {
+                    outgoingTab.click();
+                    addResult('✅ Giden Talepler sekmesine tıklandı', 'success');
+                    
+                    // Filtrelerin görünürlüğünü kontrol et
+                    setTimeout(() => {
+                        const incomingFilters = document.getElementById('incoming-filters');
+                        const outgoingFilters = document.getElementById('outgoing-filters');
+                        
+                        if (incomingFilters && incomingFilters.classList.contains('hidden')) {
+                            addResult('✅ Gelen talepler filtreleri gizli', 'success');
+                        } else {
+                            addResult('❌ Gelen talepler filtreleri gizlenmemiş!', 'error');
+                        }
+                        
+                        if (outgoingFilters && !outgoingFilters.classList.contains('hidden')) {
+                            addResult('✅ Giden talepler filtreleri görünür', 'success');
+                        } else {
+                            addResult('❌ Giden talepler filtreleri görünmüyor!', 'error');
+                        }
+                    }, 100);
+                } else {
+                    addResult('❌ Giden Talepler sekmesi bulunamadı!', 'error');
+                }
+            }, 200);
+        }
+        
+        function checkFilterVisibility() {
+            clearResults();
+            addResult('<h3>👁️ Filtre Görünürlük Testi</h3>', 'info');
+            
+            // Gelen talepler filtrelerini kontrol et
+            const incomingFilters = document.getElementById('incoming-filters');
+            if (incomingFilters) {
+                const isHidden = incomingFilters.classList.contains('hidden');
+                addResult(`📊 Gelen talepler filtreleri: ${isHidden ? 'Gizli' : 'Görünür'}`, 'info');
+            } else {
+                addResult('❌ Gelen talepler filtreleri bulunamadı!', 'error');
+            }
+            
+            // Giden talepler filtrelerini kontrol et
+            const outgoingFilters = document.getElementById('outgoing-filters');
+            if (outgoingFilters) {
+                const isHidden = outgoingFilters.classList.contains('hidden');
+                addResult(`📊 Giden talepler filtreleri: ${isHidden ? 'Gizli' : 'Görünür'}`, 'info');
+            } else {
+                addResult('❌ Giden talepler filtreleri bulunamadı!', 'error');
+            }
+            
+            // Aktif sekmeyi kontrol et
+            const incomingTab = document.getElementById('tabIncoming');
+            const outgoingTab = document.getElementById('tabOutgoing');
+            
+            if (incomingTab && incomingTab.classList.contains('active')) {
+                addResult('📊 Aktif sekme: Gelen Talepler', 'info');
+            } else if (outgoingTab && outgoingTab.classList.contains('active')) {
+                addResult('📊 Aktif sekme: Giden Talepler', 'info');
+            } else {
+                addResult('⚠️ Aktif sekme belirlenemedi', 'warning');
+            }
+        }
+        
+        // Sayfa yüklendiğinde otomatik test
+        window.addEventListener('load', () => {
+            addResult('<h3>🚀 Sayfa Yüklendi - Otomatik Test</h3>', 'info');
+            setTimeout(() => {
+                testFilters();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bids Error Handling Test</title>
+  <style>
+    body { font-family: system-ui, Arial; margin: 20px; background: #f9fafb; }
+    .container { max-width: 800px; margin: 0 auto; }
+    .card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .error { color: #b91c1c; padding: 10px; margin: 10px 0; background: #fee2e2; border-radius: 6px; border: 1px solid #fecaca; }
+    .success { color: #166534; padding: 10px; margin: 10px 0; background: #dcfce7; border-radius: 6px; border: 1px solid #bbf7d0; }
+    button { padding: 10px 16px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; }
+    button:hover { background: #2563eb; }
+    .test-buttons { display: flex; gap: 10px; margin: 20px 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Bids Error Handling Test</h1>
+    
+    <div class="card">
+      <h2>Test Instructions</h2>
+      <p>This page tests the error handling functionality for the bids.html page:</p>
+      <ol>
+        <li>Click "Simulate Index Error" to test Firestore index error handling</li>
+        <li>Check that error message appears without breaking the UI</li>
+        <li>Verify that buttons and filters remain visible</li>
+        <li>Click "Clear Error" to reset</li>
+      </ol>
+    </div>
+    
+    <div class="test-buttons">
+      <button onclick="simulateIndexError()">Simulate Index Error</button>
+      <button onclick="simulateGenericError()">Simulate Generic Error</button>
+      <button onclick="clearError()">Clear Error</button>
+    </div>
+    
+    <div class="card">
+      <h3>Filters (should remain visible)</h3>
+      <div style="display: grid; gap: 12px; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 16px;">
+        <select>
+          <option value="">Tüm Talepler</option>
+          <option value="1">Talep 1</option>
+          <option value="2">Talep 2</option>
+        </select>
+        <select>
+          <option value="">Tüm Durumlar</option>
+          <option value="sent">Gönderildi</option>
+          <option value="accepted">Kabul Edildi</option>
+        </select>
+        <button>Yenile</button>
+      </div>
+      
+      <h3>Test Table</h3>
+      <table style="width: 100%; border-collapse: collapse; background: white; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+        <thead>
+          <tr style="background: #f9fafb;">
+            <th style="padding: 12px; text-align: left; border-bottom: 1px solid #e5e7eb;">Talep</th>
+            <th style="padding: 12px; text-align: left; border-bottom: 1px solid #e5e7eb;">Firma</th>
+            <th style="padding: 12px; text-align: left; border-bottom: 1px solid #e5e7eb;">Fiyat</th>
+            <th style="padding: 12px; text-align: left; border-bottom: 1px solid #e5e7eb;">Tarih</th>
+          </tr>
+        </thead>
+        <tbody id="test-table-body">
+          <tr>
+            <td colspan="4" style="padding: 30px; text-align: center; color: #6b7280;">Henüz teklif yok.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    // Function to simulate the error handling from bids.html
+    function handleError(err, defaultMessage) {
+      // Remove any existing error message
+      const existingMsg = document.getElementById('statusMessage');
+      if (existingMsg) existingMsg.remove();
+      
+      // Create error message container
+      const msgArea = document.createElement('div');
+      msgArea.id = 'statusMessage';
+      msgArea.className = err.message && err.message.includes('requires an index') ? 'error' : 'error';
+      msgArea.innerHTML = `
+        <b>Hata:</b> ${defaultMessage}<br/>
+        ${
+          err.message && err.message.includes('requires an index')
+            ? 'Firestore dizin (index) eksik. Konsolda çıkan <b>"Create index"</b> linkine tıklayıp oluşturun, "Ready" olduktan sonra sayfayı yenileyin.'
+            : (err.message || 'Bilinmeyen hata')
+        }
+      `;
+      
+      // Insert error message at the top of the container
+      const container = document.querySelector('.container');
+      container.insertBefore(msgArea, container.firstChild.nextSibling);
+    }
+    
+    function simulateIndexError() {
+      const error = new Error('The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/...');
+      error.code = 'failed-precondition';
+      handleError(error, 'Teklifler yüklenemedi');
+    }
+    
+    function simulateGenericError() {
+      const error = new Error('Network error: Failed to fetch data');
+      error.code = 'unavailable';
+      handleError(error, 'Teklifler yüklenemedi');
+    }
+    
+    function clearError() {
+      const existingMsg = document.getElementById('statusMessage');
+      if (existingMsg) existingMsg.remove();
+    }
+  </script>
+</body>
+</html>

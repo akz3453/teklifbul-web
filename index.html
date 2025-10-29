@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Giriş Yap</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%233b82f6' rx='6'/%3E%3Ctext x='16' y='22' font-family='Arial' font-size='18' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E" />
+  <style>
+    body { font-family: system-ui, Arial; max-width: 420px; margin: 60px auto; padding: 0 12px; }
+    input, button { width: 100%; padding: 12px; margin: 8px 0; box-sizing: border-box; }
+    button { cursor: pointer; }
+    a { color: #1a56db; text-decoration: none; }
+    #status { margin-top: 12px; font-size: 14px; color: #333; }
+  </style>
+  <link rel="stylesheet" href="/css/ui-standard.css" />
+</head>
+<body>
+  <h1>Giriş Yap</h1>
+
+  <label for="email">E-posta</label>
+  <input id="email" type="email" placeholder="E-posta" autocomplete="username" />
+  <label for="password">Şifre</label>
+  <input id="password" type="password" placeholder="Şifre" autocomplete="current-password" />
+  <button id="loginBtn">Giriş Yap</button>
+
+  <button id="googleBtn">Google ile Giriş</button>
+
+  <p>Hesabın yok mu? <a href="./signup.html">Kayıt ol</a></p>
+
+  <div id="status">Oturum kapalı.</div>
+  <button id="logoutBtn" style="display:none">Çıkış Yap</button>
+
+  <script type="module">
+    import { login, loginWithGoogle, logout, authReady, watchAuth } from "./firebase.js";
+
+    const emailEl   = document.getElementById("email");
+    const passEl    = document.getElementById("password");
+    const loginBtn  = document.getElementById("loginBtn");
+    const googleBtn = document.getElementById("googleBtn");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const statusEl  = document.getElementById("status");
+
+    // Oturum zaten varsa otomatik geç
+    authReady().then(u => { if (u) location.href = "./dashboard.html"; });
+
+    loginBtn.onclick = async () => {
+      try {
+        if (!emailEl.value || !passEl.value) throw new Error("E-posta ve şifre gerekli.");
+        await login(emailEl.value, passEl.value);
+        location.href = "./dashboard.html";
+      } catch (e) { alert("Giriş hatası: " + (e.message || e)); }
+    };
+
+    googleBtn.onclick = async () => {
+      try { await loginWithGoogle(); location.href = "./dashboard.html"; }
+      catch (e) { alert("Google ile giriş hatası: " + (e.message || e)); }
+    };
+
+    logoutBtn.onclick = () => logout();
+
+    watchAuth(u => {
+      statusEl.textContent = u ? ("Oturum açık: " + (u.email || u.uid)) : "Oturum kapalı.";
+      logoutBtn.style.display = u ? "block" : "none";
+    });
+  </script>
+</body>
+<script type="module" src="/js/ui-standard.js"></script>
+</html>

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gelen Teklifler</title>
+  <link rel="icon" href="favicon.ico" />
+  
+  <!-- PDF & Excel Libraries (Local) -->
+  <script type="module">
+    import './assets/vendor/jspdf.umd.min.js';
+    import './assets/vendor/xlsx.full.min.js';
+  </script>
+  
+  <style>
+    :root { --border:#e5e7eb; --muted:#f8fafc; --c1:#2563eb; }
+    body{font-family:system-ui,Arial;margin:0;color:#0f172a;background:#fff;}
+    /* Common header comes from header.js usage guide */
+    .container{max-width:1200px;margin:0 auto;padding:20px}
+    .filters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:12px}
+    select,input{padding:10px;border:1px solid var(--border);border-radius:8px}
+    table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden}
+    th,td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:left}
+    th{background:#f9fafb}
+    .badge{padding:2px 8px;border-radius:999px;font-size:12px;font-weight:600}
+    .b-secret{background:#dbeafe;color:#1e40af}
+    .b-open{background:#dcfce7;color:#166534}
+    .b-hybrid{background:#f3e8ff;color:#6b21a8}
+    .muted{color:#64748b}
+    .btn-link{background:none;border:0;color:var(--c1);cursor:pointer;font-weight:600}
+    .empty{padding:24px;text-align:center;color:#64748b}
+    .toolbar{display:flex;justify-content:space-between;align-items:center;margin:0 20px}
+  </style>
+</head>
+<body>
+  <!-- Common Header (HEADER_USAGE_GUIDE compliant) -->
+  <header style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #e5e7eb;background:white;margin-bottom:10px">
+    <div style="display:flex;gap:12px;align-items:center">
+      <strong style="font-size:18px;color:#1f2937">Teklifbul</strong>
+      <span style="font-size:13px;color:#6b7280">/ Gelen Teklifler</span>
+    </div>
+    <div style="display:flex;gap:12px;align-items:center">
+      <label style="font-size:12px;opacity:.8">Firma:</label>
+      <span id="firmName" style="font-size:13px;color:#6b7280">-</span>
+      <span id="userLabel" style="font-size:13px;color:#6b7280;opacity:.8">-</span>
+      <button id="logoutBtn" style="padding:8px 14px;background:#dc2626;color:white;border:none;border-radius:6px;cursor:pointer;font-weight:500">Çıkış</button>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div></div>
+    <a href="bids-outgoing.header.html" class="btn-link">Gönderdiğim Teklifler →</a>
+  </div>
+
+  <div class="container">
+    <div class="filters">
+      <select id="f-demand"><option value="">Tüm Talepler</option></select>
+      <select id="f-mode">
+        <option value="">Talep Tipi (Tümü)</option>
+        <option value="secret">Gizli</option>
+        <option value="open">Açık</option>
+        <option value="hybrid">Hibrit</option>
+      </select>
+      <select id="f-status">
+        <option value="">Durum (Tümü)</option>
+        <option value="sent">Gönderildi</option>
+        <option value="responded">Yanıtlandı</option>
+        <option value="accepted">Kabul</option>
+        <option value="rejected">Red</option>
+        <option value="completed">Tamamlandı</option>
+      </select>
+      <input id="f-supplier" placeholder="Tedarikçi ara..." />
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Talep</th>
+          <th>Tedarikçi Firma</th>
+          <th>Fiyat</th>
+          <th>Termin</th>
+          <th>Marka</th>
+          <th>Ödeme</th>
+          <th>Durum</th>
+          <th>Tip</th>
+          <th>Tarih</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div id="empty" class="empty hidden">Henüz teklif yok.</div>
+  </div>
+
+  <script type="module">
+    import { auth, db } from './firebase.js';
+    import {
+      collection, query, where, getDocs, getDoc, doc, orderBy, limit
+    } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+    import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js';
+    import { getStatusLabel, getPaymentMethodLabel } from './bid-management.js';
+
+    const $ = (s)=>document.querySelector(s);
+    const fmt = (n)=> typeof n==='number' ? new Intl.NumberFormat('tr-TR').format(n) : '—';
+    const fmtDate = (ts)=>{ try{ const d = ts?.toDate ? ts.toDate() : (ts? new Date(ts): null); return d? d.toLocaleDateString('tr-TR'): '—'; }catch{return '—'} };
+    const badge=(mode)=>{
+      const m=(mode||'').toLowerCase();
+      if(m==='open') return '<span class="badge b-open">Açık</span>';
+      if(m==='hybrid') return '<span class="badge b-hybrid">Hibrit</span>';
+      return '<span class="badge b-secret">Gizli</span>';
+    };
+
+    const CACHE_DEMANDS=new Map();
+    async function preloadDemands(user){
+      const snap=await getDocs(query(collection(db,'demands'), where('createdBy','==', user.uid)));
+      const sel=$('#f-demand');
+      snap.forEach(d=>{
+        const data=d.data(); CACHE_DEMANDS.set(d.id,{id:d.id,...data});
+        const opt=document.createElement('option'); opt.value=d.id; opt.textContent=data.title||d.id; sel.appendChild(opt);
+      });
+    }
+    async function joinSupplierName(uid){
+      try{ const u=await getDoc(doc(db,'users', uid)); return u.exists()? (u.data().companyName || 'Bilinmeyen Firma') : 'Bilinmeyen Firma'; }catch{return 'Bilinmeyen Firma'}
+    }
+    function matchesFilters(r){
+      const demandFilter=$('#f-demand').value;
+      const modeFilter=$('#f-mode').value;
+      const statusFilter=$('#f-status').value;
+      const supplierSearch=$('#f-supplier').value.trim().toLowerCase();
+      if(demandFilter && r.demandId!==demandFilter) return false;
+      if(modeFilter && (r.biddingMode||'')!==modeFilter) return false;
+      if(statusFilter && (r.status||'')!==statusFilter) return false;
+      if(supplierSearch && !(r.supplierName||'').toLowerCase().includes(supplierSearch)) return false;
+      return true;
+    }
+    function render(rows){
+      const body=$('#rows'); body.innerHTML='';
+      const filtered=rows.filter(matchesFilters);
+      if(filtered.length===0){ $('#empty').classList.remove('hidden'); return } else { $('#empty').classList.add('hidden'); }
+      filtered.forEach(r=>{
+        const tr=document.createElement('tr');
+        tr.innerHTML=`
+          <td>${r.demandTitle||r.demandId}</td>
+          <td>${r.supplierName||'—'}</td>
+          <td>₺ ${fmt(r.netPrice ?? r.price)}</td>
+          <td>${r.leadTimeDays ?? '—'}</td>
+          <td>${r.brand||'—'}</td>
+          <td>${getPaymentMethodLabel(r.paymentMethod||'unknown')}</td>
+          <td>${getStatusLabel(r.status||'pending')}</td>
+          <td>${badge(r.biddingMode)}</td>
+          <td>${fmtDate(r.createdAt)}</td>
+          <td><button class="btn-link" data-demand="${r.demandId}">Görüntüle →</button></td>`;
+        body.appendChild(tr);
+      });
+      body.querySelectorAll('button[data-demand]').forEach(b=>{
+        b.addEventListener('click', (e)=>{
+          const id=e.currentTarget.dataset.demand;
+          window.location.href=`demand-detail.html?id=${encodeURIComponent(id)}#bids`;
+        });
+      });
+    }
+
+    async function loadIncoming(user){
+      const ds=await getDocs(query(collection(db,'demands'), where('createdBy','==', user.uid)));
+      const rows=[];
+      for(const d of ds.docs){
+        const dem={id:d.id, ...d.data()}; CACHE_DEMANDS.set(d.id,dem);
+        const qB=query(collection(db,'bids'), where('demandId','==', d.id), orderBy('createdAt','desc'), limit(50));
+        const snap=await getDocs(qB);
+        for(const b of snap.docs){
+          const data={id:b.id,...b.data()};
+          data.demandTitle=dem.title; data.biddingMode=dem.biddingMode || 'secret';
+          data.supplierName=await joinSupplierName(data.supplierId);
+          rows.push(data);
+        }
+      }
+      return rows;
+    }
+
+    async function init(){
+      const user=auth.currentUser;
+      await preloadDemands(user);
+      const data=await loadIncoming(user);
+      render(data);
+      ['#f-demand','#f-mode','#f-status','#f-supplier'].forEach(sel=> $(sel).addEventListener('input', ()=> render(data)));
+    }
+
+    onAuthStateChanged(auth, (u)=>{ if(!u){ window.location.href='index.html'; } else { init(); } });
+  </script>
+
+  <!-- Shared Header Script -->
+  <script type="module" src="./header.js"></script>
+</body>
+</html>

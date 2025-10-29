@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firestore Rules Test</title>
+</head>
+<body>
+    <h1>Firestore Rules Test</h1>
+    <button id="testBtn">Test Company Creation</button>
+    <div id="result"></div>
+    
+    <script type="module">
+        import { db, auth, requireAuth } from "./firebase.js";
+        import { doc, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+        // Wait for auth
+        const user = await requireAuth();
+        document.getElementById("result").innerHTML += `<p>Authenticated user: ${user.uid}</p>`;
+        
+        document.getElementById("testBtn").onclick = async () => {
+            try {
+                const companyId = `solo-${user.uid}`;
+                document.getElementById("result").innerHTML += `<p>Attempting to create company: ${companyId}</p>`;
+                document.getElementById("result").innerHTML += `<p>Setting ownerId to: ${user.uid}</p>`;
+                
+                // Try to create the company
+                await setDoc(doc(db, "companies", companyId), {
+                    ownerId: user.uid,
+                    name: "Test Company",
+                    createdAt: serverTimestamp()
+                });
+                
+                document.getElementById("result").innerHTML += `<p style="color: green;">✅ Company created successfully!</p>`;
+                
+                // Try to read it back
+                const companySnap = await getDoc(doc(db, "companies", companyId));
+                if (companySnap.exists()) {
+                    document.getElementById("result").innerHTML += `<p style="color: green;">✅ Company read successfully!</p>`;
+                    document.getElementById("result").innerHTML += `<p>Company data: ${JSON.stringify(companySnap.data())}</p>`;
+                } else {
+                    document.getElementById("result").innerHTML += `<p style="color: red;">❌ Company document doesn't exist after creation</p>`;
+                }
+            } catch (error) {
+                document.getElementById("result").innerHTML += `<p style="color: red;">❌ Error: ${error.message}</p>`;
+                document.getElementById("result").innerHTML += `<p>Error code: ${error.code}</p>`;
+                document.getElementById("result").innerHTML += `<p>Error details: ${JSON.stringify(error)}</p>`;
+                console.error("Full error:", error);
+            }
+        };
+    </script>
+</body>
+</html>

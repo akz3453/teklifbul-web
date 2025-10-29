@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Şirkete Katıl</title>
+  <style>
+    body {
+      font-family: system-ui, Segoe UI, Roboto, Arial, sans-serif;
+      margin: 16px
+    }
+    .row {
+      display: flex;
+      gap: 8px;
+      margin: 8px 0
+    }
+  </style>
+</head>
+<body>
+  <h2>Şirkete Katıl</h2>
+  <div class="row">
+    <input id="companyId" placeholder="companyId" style="padding:8px;border:1px solid #ddd;border-radius:8px;width:260px"/>
+    <input id="token" placeholder="Davet Kodu" style="padding:8px;border:1px solid #ddd;border-radius:8px;width:200px"/>
+    <button id="btnJoin" style="padding:8px 12px">Katıl</button>
+  </div>
+  <div id="msg"></div>
+
+  <script type="module">
+    import { db, auth, requireAuth } from "./firebase.js";
+    import { doc, setDoc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+    await requireAuth();
+    const me = auth.currentUser;
+    const msg = document.getElementById("msg");
+
+    document.getElementById("btnJoin").onclick = async () => {
+      const companyId = document.getElementById("companyId").value.trim();
+      const token = document.getElementById("token").value.trim();
+      if (!companyId || !token) return alert("companyId ve davet kodu zorunlu");
+
+      try {
+        // 1) Üyelik dokümanını oluştur (Rules: token aktif olmalı)
+        await setDoc(doc(db,"companies",companyId,"memberships",me.uid), {
+          token, joinedAt: new Date()
+        });
+
+        // 2) Kendi users/{uid}.companies listene bu companyId'yi ekle
+        const uRef = doc(db,"users", me.uid);
+        const uSnap = await getDoc(uRef);
+        const prev = uSnap.exists() && Array.isArray(uSnap.data().companies) ? uSnap.data().companies : [];
+        if (!prev.includes(companyId)) prev.push(companyId);
+        await updateDoc(uRef, { companies: prev });
+
+        msg.innerHTML = `<div style="color:green">Şirkete katılım tamamlandı. (companyId: <b>${companyId}</b>)</div>`;
+      } catch(e) {
+        msg.innerHTML = `<div style="color:#b00020">Katılım başarısız: ${(e.code||e.message||e)}</div>`;
+      }
+    };
+  </script>
+</body>
+</html>

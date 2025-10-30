@@ -4,12 +4,14 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "preinstall": "npm config set legacy-peer-deps true",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "api": "tsx server/src/index.ts",
     "dev:api": "tsx watch server/index.ts",
     "lint": "eslint .",
     "preview": "vite preview",
+    "test:setup": "npm i -D @firebase/rules-unit-testing@^3.0.4",
     "emulators": "firebase emulators:start",
     "backfill:categories": "node scripts/backfill-categories.js",
     "backfill:satfk": "node scripts/backfill-satfk.js",
@@ -36,7 +38,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
-    "@firebase/rules-unit-testing": "^3.0.0",
     "@types/cors": "^2.8.19",
     "@types/jest": "^29.5.12",
     "@types/multer": "^2.0.0",

@@ -14,7 +14,13 @@ if (!admin.apps.length) {
   }
 }
 
-const db = admin.apps.length ? admin.firestore() : null;
+let db: FirebaseFirestore.Firestore | null = null;
+try {
+  db = admin.apps.length ? admin.firestore() : null;
+} catch (err) {
+  console.log('[Firestore] Disabled, falling back to in-memory DB', err);
+  db = null;
+}
 const DB:any = { demands: new Map<string, any>(), bySATFK: new Map<string,string>() };
 
 function genSATFK(){
@@ -28,8 +34,13 @@ export async function commitDemand({ demand, items }:{ demand:any, items:any[] }
     // Check in DB or Firestore
     if (DB.bySATFK.has(satfk)) throw new Error('Bu SATFK daha önce kullanılmış');
     if (db) {
-      const snapshot = await db.collection('demands').where('satfk', '==', satfk).limit(1).get();
-      if (!snapshot.empty) throw new Error('Bu SATFK daha önce kullanılmış');
+      try {
+        const snapshot = await db.collection('demands').where('satfk', '==', satfk).limit(1).get();
+        if (!snapshot.empty) throw new Error('Bu SATFK daha önce kullanılmış');
+      } catch (err) {
+        console.log('[Firestore] SATFK check failed, using mock DB', (err as any)?.message);
+        db = null;
+      }
     }
   } else {
     do { satfk = genSATFK(); } while (DB.bySATFK.has(satfk));
@@ -51,8 +62,16 @@ export async function commitDemand({ demand, items }:{ demand:any, items:any[] }
 
   // Save to Firestore (if available) or fallback to in-memory DB
   if (db) {
-    await db.collection('demands').doc(demandId).set(payload);
-    console.log(`[Firestore] Saved demand ${demandId} (${satfk})`);
+    try {
+      await db.collection('demands').doc(demandId).set(payload);
+      console.log(`[Firestore] Saved demand ${demandId} (${satfk})`);
+    } catch (err) {
+      console.log('[Firestore] write failed, using mock DB', (err as any)?.message);
+      db = null;
+      DB.demands.set(demandId, payload);
+      DB.bySATFK.set(satfk, demandId);
+      console.log(`[Mock DB] Saved demand ${demandId} (${satfk})`);
+    }
   } else {
     DB.demands.set(demandId, payload);
     DB.bySATFK.set(satfk, demandId);

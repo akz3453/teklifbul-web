@@ -183,10 +183,17 @@ export async function previewXlsx(buf: Buffer){
   };
 
   const items:any[] = [];
+  const matrix:string[][] = [];
   const invalidRows:number[] = [];
 
   for (let r=headerRow+1; r<=wsItems.rowCount; r++){
     const row = wsItems.getRow(r);
+    // collect raw row values (first 25 columns) for mapping UI
+    const rawVals:string[] = [];
+    for (let c=1; c<=Math.min(25, row.cellCount || 25); c++){
+      rawVals.push(String(readCell(row.getCell(c).value) ?? ''));
+    }
+    if (rawVals.some(v=>v && v.trim())) matrix.push(rawVals);
     const get = (k:keyof typeof colIdx)=> colIdx[k]===-1 ? undefined : readCell(row.getCell(colIdx[k]+1).value);
 
     const rowCurrency = normalizeCurrency(get('currency')) ?? demand.currency;
@@ -233,6 +240,7 @@ export async function previewXlsx(buf: Buffer){
     profileHint: names.join(','),
     headerRow, headers, colIdx, confidence,
     demand, items,
+    matrix,
     requiredItemFields: REQUIRED_ITEM,
     warnings
   };

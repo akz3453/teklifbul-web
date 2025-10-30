@@ -408,27 +408,6 @@
         const tipHtml = rest.map(chip).join(' ');
         html += ` <span class="cat-more"><button class="cat-toggle" data-rest="${payload}">+${rest.length}</button><div class="cat-tip">${tipHtml}</div></span>`;
       }
-
-  // Load first item meta (name, image, target price) for a set of demands
-  async function loadFirstItemMeta(rows){
-    const cache = new Map();
-    await Promise.all(rows.map(async (r)=>{
-      try{
-        const qItem = query(collection(db,'demands', r.id, 'items'), orderBy('lineNo','asc'), limit(1));
-        const s = await getDocs(qItem);
-        if (!s.empty){
-          const it = s.docs[0].data();
-          const img = it.imageUrl || it.image || null;
-          const target = it.targetUnitPrice || it.targetPrice || r.targetPrice || null;
-          r._firstItem = { name: it.name || it.description || '', imageUrl: img, target };
-          cache.set(r.id, r._firstItem);
-        } else {
-          r._firstItem = { name: '', imageUrl: null, target: r.targetPrice || null };
-        }
-      }catch(e){ r._firstItem = { name:'', imageUrl:null, target: r.targetPrice || null }; }
-    }));
-    return rows;
-  }
       return html || '-';
     }
     // Expand handler (event delegation)
@@ -443,6 +422,27 @@
         wrap.innerHTML = all.map(t=>`<span class=\"cat-chip\">${t}</span>`).join(' ');
       } catch(_){}
     });
+
+    // Load first item meta (name, image, target price) for a set of demands
+    async function loadFirstItemMeta(rows){
+      const cache = new Map();
+      await Promise.all(rows.map(async (r)=>{
+        try{
+          const qItem = query(collection(db,'demands', r.id, 'items'), orderBy('lineNo','asc'), limit(1));
+          const s = await getDocs(qItem);
+          if (!s.empty){
+            const it = s.docs[0].data();
+            const img = it.imageUrl || it.image || null;
+            const target = it.targetUnitPrice || it.targetPrice || r.targetPrice || null;
+            r._firstItem = { name: it.name || it.description || '', imageUrl: img, target };
+            cache.set(r.id, r._firstItem);
+          } else {
+            r._firstItem = { name: '', imageUrl: null, target: r.targetPrice || null };
+          }
+        }catch(e){ r._firstItem = { name:'', imageUrl:null, target: r.targetPrice || null }; }
+      }));
+      return rows;
+    }
 
     // Tab functionality
     function showTab(which){

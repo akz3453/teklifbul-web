@@ -242,12 +242,26 @@
 
   <div class="container--wide" style="padding:20px 0">
     <h1 id="pageTitle">Yeni Talep Oluştur</h1>
-    <p>
-      <a href="./demands.html">← Talepler</a> • 
-      <a href="./dashboard.html">← Dashboard</a> • 
-      <a href="./bids.html">Gelen Teklifler</a> • 
-      <a href="./main-demands.html">Ana Talep Ekranı</a>
-    </p>
+    
+
+    <!-- Import options: Excel / Word / PDF -->
+    <div style="margin:8px 0; display:flex; gap:8px; flex-wrap:wrap;">
+      <button id="btnImportXlsx" class="btn btn-primary">📤 Excel'den İçe Aktar</button>
+      <button id="btnImportDocx" class="btn btn-primary">📤 Word'den İçe Aktar</button>
+      <button id="btnImportPdf"  class="btn btn-primary">📤 PDF'den İçe Aktar</button>
+      <input id="fileXlsx" type="file" accept=".xlsx" style="display:none" />
+      <input id="fileDocx" type="file" accept=".docx" style="display:none" />
+      <input id="filePdf"  type="file" accept=".pdf"  style="display:none" />
+    </div>
+    <div id="importMapping" class="card" style="display:none; padding:12px; margin:8px 0;">
+      <div style="font-weight:600; margin-bottom:8px;">İçe Aktarma Eşlemesi</div>
+      <div id="mapFields" style="display:flex; gap:12px; flex-wrap:wrap;"></div>
+      <div style="margin-top:8px; display:flex; gap:8px;">
+        <button id="applyMappingBtn" class="btn btn-primary">Eşle ve Forma Aktar</button>
+        <button id="cancelMappingBtn" class="btn btn-outline">İptal</button>
+      </div>
+      <div id="mapHint" class="muted small" style="margin-top:6px; color:#64748b;">Zorunlu alanlar: Ürün Adı, Miktar, Birim</div>
+    </div>
 
   <h3>Başlık Bilgileri</h3>
   <div class="row">
@@ -828,6 +842,99 @@
         }
       });
     });
+  </script>
+
+  <!-- Import inline script (preview + commit modal) -->
+  <script type="module">
+    const $ = (s)=>document.querySelector(s);
+    const btnX = $('#btnImportXlsx');
+    const btnD = $('#btnImportDocx');
+    const btnP = $('#btnImportPdf');
+    const fX = $('#fileXlsx');
+    const fD = $('#fileDocx');
+    const fP = $('#filePdf');
+
+    btnX?.addEventListener('click', ()=> fX?.click());
+    btnD?.addEventListener('click', ()=> fD?.click());
+    btnP?.addEventListener('click', ()=> fP?.click());
+
+    async function previewSelected(file){
+      if (!file) return;
+      try{
+        const fd = new FormData();
+        fd.append('file', file);
+        const r = await fetch('/api/import/preview',{ method:'POST', body: fd });
+        let j=null; try{ j = await r.json(); }catch(_){ j=null; }
+        if (!r.ok){
+          const msg = (j && (j.details||j.error)) || 'Önizleme hatası';
+          alert('❌ ' + msg); return;
+        }
+        // If matrix/headers available, open mapping UI; else apply directly
+        if (j?.headers && Array.isArray(j.matrix)) {
+          buildMappingUI(j.headers, j.colIdx, j.matrix, j);
+        } else if (window.applyImportPreview) {
+          window.applyImportPreview(j);
+          alert(`Profil: ${j.profileHint}\nGüven: ${j.confidence}%\n\nVeriler forma aktarıldı. Lütfen kontrol edin, eksikleri düzenleyip 'Talep Oluştur' ile kaydedin.`);
+        }
+      }catch(e){ alert('❌ Import hatası: ' + (e.message||e)); }
+    }
+
+    fX?.addEventListener('change', ()=> previewSelected(fX.files?.[0]));
+    fD?.addEventListener('change', ()=> previewSelected(fD.files?.[0]));
+    fP?.addEventListener('change', ()=> previewSelected(fP.files?.[0]));
+
+    function buildMappingUI(headers, colIdx, matrix, full){
+      const wrap = document.getElementById('importMapping');
+      const box = document.getElementById('mapFields');
+      wrap.style.display = '';
+      box.innerHTML = '';
+      const fields = [
+        { key:'itemName', label:'Ürün Adı', required:true },
+        { key:'qty', label:'Miktar', required:true },
+        { key:'unit', label:'Birim', required:true },
+        { key:'brand', label:'Marka' },
+        { key:'model', label:'Model' },
+        { key:'unitPriceExcl', label:'Birim Fiyat' },
+        { key:'vatPct', label:'KDV' }
+      ];
+      const selects = {} as any;
+      fields.forEach(f=>{
+        const div = document.createElement('div');
+        div.style.minWidth = '180px';
+        const lab = document.createElement('label');
+        lab.textContent = f.label + (f.required?' *':'');
+        lab.style.display = 'block'; lab.style.fontSize='12px'; lab.style.color='#374151';
+        const sel = document.createElement('select');
+        sel.innerHTML = headers.map((h,i)=>`<option value="${i}">${h||('Sütun '+(i+1))}</option>`).join('');
+        if (colIdx && typeof colIdx[f.key] === 'number' && colIdx[f.key] >=0) sel.value = String(colIdx[f.key]);
+        div.appendChild(lab); div.appendChild(sel); box.appendChild(div); selects[f.key]=sel;
+      });
+      document.getElementById('cancelMappingBtn')?.addEventListener('click', ()=>{ wrap.style.display='none'; });
+      document.getElementById('applyMappingBtn')?.addEventListener('click', ()=>{
+        // Build items from matrix using mapping
+        const get = (arr,i)=> (i>=0 && i<arr.length) ? arr[i] : '';
+        const toNum = (s)=>{ const x=String(s||'').trim(); if(!x) return ''; const hasDot=x.includes('.'); const hasComma=x.includes(','); let n=x; if(hasDot&&hasComma){ if(x.lastIndexOf(',')>x.lastIndexOf('.')){ n=x.replace(/\./g,'').replace(',', '.'); } else { n=x.replace(/,/g,''); } } else if(hasComma&&!hasDot){ n=x.replace(',', '.'); } return isFinite(Number(n))? Number(n):''; };
+        const mapped:any[] = [];
+        for (let r=0; r<matrix.length; r++){
+          const row = matrix[r];
+          const it:any = {
+            itemName: get(row, parseInt(selects.itemName.value)),
+            qty: toNum(get(row, parseInt(selects.qty.value))),
+            unit: get(row, parseInt(selects.unit.value)),
+            brand: get(row, parseInt(selects.brand.value)),
+            model: get(row, parseInt(selects.model.value)),
+            unitPriceExcl: toNum(get(row, parseInt(selects.unitPriceExcl.value))),
+            vatPct: toNum(get(row, parseInt(selects.vatPct.value)))
+          };
+          const any = Object.values(it).some(v=>String(v||'').trim());
+          if (any) mapped.push(it);
+        }
+        // Apply to form
+        const payload = { ...full, items: mapped };
+        window.applyImportPreview && window.applyImportPreview(payload as any);
+        wrap.style.display='none';
+      }, { once: true });
+    }
   </script>
 
   <datalist id="unitList">
@@ -1687,6 +1794,46 @@
       quickCertBtns.forEach(btn => btn.addEventListener('click', () => tryAddCert(btn.getAttribute('data-cert'))));
       renderCerts();
     }
+
+    // Expose import preview applier for inline script
+    window.applyImportPreview = function(preview){
+      try{
+        const d = preview?.demand || {};
+        const normDate = (s)=>{
+          if (!s) return '';
+          const str = String(s).trim();
+          // ISO
+          if (/^\d{4}-\d{2}-\d{2}/.test(str)) return str.slice(0,10);
+          // dd.MM.yyyy or dd/MM/yyyy
+          const m = str.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})$/);
+          if (m){ const dd=m[1].padStart(2,'0'), mm=m[2].padStart(2,'0'); let yy=m[3]; if (yy.length===2) yy='20'+yy; return `${yy}-${mm}-${dd}`; }
+          return '';
+        };
+        const setVal = (id, val)=>{ const elx = document.getElementById(id); if (elx && val!=null && val!=='') elx.value = val; };
+        setVal('title', d.title || '');
+        setVal('requester', d.requester || '');
+        setVal('demandDate', normDate(d.demandDate));
+        setVal('dueDate', normDate(d.dueDate));
+        setVal('currency', d.currency || 'TRY');
+
+        // Replace items with parsed ones
+        if (Array.isArray(preview?.items)){
+          itemsBody.innerHTML = '';
+          lineCounter = 0;
+          preview.items.forEach((it)=>{
+            const data = {
+              name: it.itemName || it.name || '',
+              qty: typeof it.qty === 'number' ? it.qty : (parseFloat(it.qty) || ''),
+              unit: it.unit || '',
+              brandModel: [it.brand, it.model].filter(Boolean).join(' '),
+              targetPrice: typeof it.unitPriceExcl === 'number' ? it.unitPriceExcl : (parseFloat(it.unitPriceExcl)||'')
+            };
+            // Only add meaningful rows
+            if (data.name && (data.qty || data.unit)) addRow(data);
+          });
+        }
+      }catch(e){ console.error('applyImportPreview error', e); alert('❌ Önizleme verileri forma aktarılırken hata oluştu.'); }
+    };
 
     // Hariç tut alanı kaldırıldı
 

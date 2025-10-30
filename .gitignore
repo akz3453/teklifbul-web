@@ -20,7 +20,13 @@ Thumbs.db
 
 # Environment/Secrets
 .env
-*.env.local
+.env.*
+!.env.example
+.cursor/
+.cursor/*.json
+
+# npm auth/config (keep private if it contains tokens)
+.npmrc
 
 # Coverage
 coverage/

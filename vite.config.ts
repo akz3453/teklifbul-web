@@ -15,7 +15,7 @@ export default defineConfig({
       'Content-Security-Policy': "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.gstatic.com;"
     },
     proxy: {
-      '/api': 'http://localhost:3000'
+      '/api': 'http://localhost:5174'
     }
   }
 })

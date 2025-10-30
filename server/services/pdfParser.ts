@@ -4,7 +4,7 @@ import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 
 let __pdfParseFn: null | ((buf: Buffer | Uint8Array) => Promise<{ text: string }>) = null;
-async function getPdfParse(): Promise<(buf: Buffer | Uint8Array) => Promise<{ text: string }>> {
+async function getPdfParse(): Promise<((buf: Buffer | Uint8Array) => Promise<{ text: string }>) | null> {
   if (__pdfParseFn) return __pdfParseFn;
   // Prefer dynamic import to let Node/tsx resolve ESM/CJS shapes
   try {
@@ -28,7 +28,44 @@ async function getPdfParse(): Promise<(buf: Buffer | Uint8Array) => Promise<{ te
     const fn = typeof mod === 'function' ? mod : (typeof (mod as any)?.default === 'function' ? (mod as any).default : null);
     if (fn) { __pdfParseFn = fn; return fn; }
   } catch {}
-  throw new Error('[pdfParser] Unable to resolve pdf-parse function export');
+  // Could not resolve pdf-parse; signal null so caller can fallback
+  return null;
+}
+
+// Fallback parser using pdfjs-dist (no external native deps)
+async function parseWithPdfJs(buf: Buffer | Uint8Array): Promise<{ text: string }>{
+  // Try multiple build entrypoints for node/esm
+  let pdfjs: any = null;
+  let lastErr: any = null;
+  const candidates = [
+    'pdfjs-dist/legacy/build/pdf.mjs',
+    'pdfjs-dist/legacy/build/pdf.js',
+    'pdfjs-dist/build/pdf.mjs',
+    'pdfjs-dist/build/pdf.js'
+  ];
+  for (const id of candidates) {
+    try {
+      pdfjs = await import(id);
+      if (pdfjs?.getDocument) break;
+    } catch (e) { lastErr = e; }
+  }
+  if (!pdfjs?.getDocument) {
+    throw new Error(`[pdfParser] Unable to load pdfjs-dist fallback: ${(lastErr as any)?.message || lastErr}`);
+  }
+  // Ensure plain Uint8Array (Buffer subclasses may be rejected)
+  const u8 = buf instanceof Uint8Array ? new Uint8Array(buf) : new Uint8Array(Buffer.from(buf as any));
+  const loadingTask = pdfjs.getDocument({ data: u8 });
+  const pdf = await loadingTask.promise;
+  let out = '';
+  const total = pdf.numPages || 0;
+  for (let p = 1; p <= total; p++) {
+    const page = await pdf.getPage(p);
+    const content = await page.getTextContent();
+    const text = (content.items || []).map((it: any) => it.str || '').join(' ');
+    out += (out ? '\n' : '') + text;
+  }
+  try { await pdf?.destroy?.(); } catch{}
+  return { text: out };
 }
 
 const demandSchema = z.object({
@@ -130,7 +167,7 @@ const RX = {
 
 export async function previewPdf(buf: Buffer) {
   const pdfParse = await getPdfParse();
-  const data = await pdfParse(buf);
+  const data = pdfParse ? await pdfParse(buf) : await parseWithPdfJs(buf);
   const text = (data.text || "").replace(/\r/g, "");
   const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
 

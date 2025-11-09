@@ -90,7 +90,10 @@ async function migrateTaxOfficesLowerFields(batchSize: number = 1000) {
           return 0;
         }
 
-        const batch = db.batch();
+        // Firestore batch limit kontrolü - 500'den fazla ise böl
+        const batches: FirebaseFirestore.WriteBatch[] = [];
+        let currentBatch = db.batch();
+        let currentBatchCount = 0;
         let batchUpdated = 0;
 
         snapshot.forEach((doc) => {
@@ -120,59 +123,26 @@ async function migrateTaxOfficesLowerFields(batchSize: number = 1000) {
             }
 
             const officeRef = officesRef.doc(doc.id);
-            batch.update(officeRef, updateData);
+            currentBatch.update(officeRef, updateData);
+            currentBatchCount++;
             batchUpdated++;
+
+            // Firestore batch limit: 500
+            if (currentBatchCount >= 500) {
+              batches.push(currentBatch);
+              currentBatch = db.batch();
+              currentBatchCount = 0;
+            }
           }
         });
 
+        // Kalan batch'i ekle
+        if (currentBatchCount > 0) {
+          batches.push(currentBatch);
+        }
+
         // Batch commit (Firestore limit: 500)
         if (batchUpdated > 0) {
-          // Firestore batch limit kontrolü - 500'den fazla ise böl
-          const batches: FirebaseFirestore.WriteBatch[] = [];
-          let currentBatch = db.batch();
-          let currentBatchCount = 0;
-
-          snapshot.forEach((doc) => {
-            const data = doc.data();
-            const provinceNameLower = normalizeTurkishLower(data.province_name || '');
-            const districtNameLower = data.district_name 
-              ? normalizeTurkishLower(data.district_name) 
-              : '';
-            const officeNameLower = normalizeTurkishLower(data.office_name || '');
-
-            const needsUpdate = 
-              data.province_name_lower !== provinceNameLower ||
-              (data.district_name && data.district_name_lower !== districtNameLower) ||
-              data.office_name_lower !== officeNameLower;
-
-            if (needsUpdate) {
-              const updateData: Record<string, string> = {
-                province_name_lower: provinceNameLower,
-                office_name_lower: officeNameLower,
-              };
-
-              if (data.district_name) {
-                updateData.district_name_lower = districtNameLower;
-              }
-
-              const officeRef = officesRef.doc(doc.id);
-              currentBatch.update(officeRef, updateData);
-              currentBatchCount++;
-
-              // Firestore batch limit: 500
-              if (currentBatchCount >= 500) {
-                batches.push(currentBatch);
-                currentBatch = db.batch();
-                currentBatchCount = 0;
-              }
-            }
-          });
-
-          // Kalan batch'i ekle
-          if (currentBatchCount > 0) {
-            batches.push(currentBatch);
-          }
-
           // Tüm batch'leri commit et
           for (const batchToCommit of batches) {
             await batchToCommit.commit();

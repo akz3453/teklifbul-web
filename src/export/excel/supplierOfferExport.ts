@@ -9,14 +9,30 @@ import type { Offer } from '../../domain/offer/schema';
 import * as path from 'path';
 import * as fs from 'fs';
 import { logger } from '../../shared/log/logger.js';
+import { checkAborted, calculateBatchProgress } from '../../shared/utils/async-utils.js';
 
 const TEMPLATE_PATH = path.join(process.cwd(), 'assets', 'SATINALMAVETEKLİFFORMU.xlsx');
 const SHEET_NAME = 'SATIN ALMA VE TEKLIF FORMU';
 
 /**
- * Excel export fonksiyonu
+ * Excel export fonksiyonu (progress ve cancel desteği ile)
+ * Teklifbul Rule v1.0 - Uzun async işlemler için progress bar + cancel
+ * 
+ * @param offer - Teklif verisi
+ * @param signal - AbortSignal (iptal için)
+ * @param reportProgress - Progress callback (0-100)
  */
-export async function exportSupplierOffer(offer: Offer): Promise<ExcelJS.Buffer> {
+export async function exportSupplierOffer(
+  offer: Offer,
+  signal?: AbortSignal,
+  reportProgress?: (progress: number) => void
+): Promise<ExcelJS.Buffer> {
+  const report = (p: number) => {
+    if (reportProgress) reportProgress(p);
+    if (signal) checkAborted(signal);
+  };
+
+  report(5);
   const workbook = new ExcelJS.Workbook();
   
   // Şablon varsa yükle, yoksa yeni oluştur
@@ -29,34 +45,46 @@ export async function exportSupplierOffer(offer: Offer): Promise<ExcelJS.Buffer>
   } catch (error) {
     logger.warn('Şablon yüklenemedi, yeni dosya oluşturuluyor:', error);
   }
+  report(15);
   
   // Worksheet al veya oluştur
   let worksheet = workbook.getWorksheet(SHEET_NAME);
   if (!worksheet) {
     worksheet = workbook.addWorksheet(SHEET_NAME);
   }
+  report(20);
   
   // Şablon yoksa başlık satırlarını oluştur
   if (!templateExists) {
     setupHeaders(worksheet);
   }
+  report(25);
   
   // Başlık bilgilerini doldur (N1..P4 bölgesi)
   fillHeaderSection(worksheet, offer);
+  report(30);
   
   // Satır bilgilerini doldur (satır 6 ve sonrası)
   const startRow = 6;
-  offer.lines.forEach((line, index) => {
+  const totalLines = offer.lines.length;
+  for (let index = 0; index < totalLines; index++) {
+    const line = offer.lines[index];
     const row = startRow + index;
     fillLineRow(worksheet, row, line, index + 1);
-  });
+    
+    // Her satır için progress güncelle (30% - 85%)
+    const lineProgress = 30 + calculateBatchProgress(index + 1, totalLines) * 0.55;
+    report(lineProgress);
+  }
   
   // Toplam satırı (satır 9 veya son satırdan sonra)
   const totalRow = startRow + offer.lines.length;
   fillTotalRow(worksheet, totalRow);
+  report(90);
   
   // Buffer olarak döndür
   const buffer = await workbook.xlsx.writeBuffer();
+  report(100);
   return buffer as ExcelJS.Buffer;
 }
 
@@ -269,20 +297,50 @@ function fillTotalRow(worksheet: ExcelJS.Worksheet, rowNum: number) {
 }
 
 /**
- * Tarayıcıda çalışan versiyon (browser)
+ * Tarayıcıda çalışan versiyon (browser) - Progress ve cancel desteği ile
+ * Teklifbul Rule v1.0
+ * 
+ * @param offerData - Teklif verisi
+ * @param signal - AbortSignal (iptal için)
+ * @param reportProgress - Progress callback (0-100)
  */
-export async function exportSupplierOfferBrowser(offerData: Offer): Promise<Blob> {
+export async function exportSupplierOfferBrowser(
+  offerData: Offer,
+  signal?: AbortSignal,
+  reportProgress?: (progress: number) => void
+): Promise<Blob> {
+  const report = (p: number) => {
+    if (reportProgress) reportProgress(p);
+    if (signal) checkAborted(signal);
+  };
+
+  report(10);
+  
   // Node.js ortamında çalıştırılacak, tarayıcı için API endpoint kullan
+  const controller = new AbortController();
+  if (signal) {
+    signal.addEventListener('abort', () => controller.abort());
+  }
+
+  report(20);
+  
   const response = await fetch('/api/offers/export', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ offer: offerData }),
+    signal: controller.signal,
   });
+  
+  report(60);
   
   if (!response.ok) {
     throw new Error('Excel export başarısız');
   }
   
-  return await response.blob();
+  report(80);
+  const blob = await response.blob();
+  report(100);
+  
+  return blob;
 }
 

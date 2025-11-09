@@ -12,6 +12,9 @@ import { mapDemandToOfferHeader, mapDemandItemsToOfferLines, calculateDifference
 import { requiresCurrencyInfo, createCurrencyInfo, getCurrencyNameTR } from '../../../services/currency';
 import type { DemandData } from '../../../domain/offer/schema';
 import { toast } from '../../../shared/ui/toast.js';
+import { exportSupplierOfferBrowser } from '../../../export/excel/supplierOfferExport';
+import { useCancellableTask } from '../../../shared/hooks/useCancellableTask';
+import { ProgressBar } from '../../../shared/ui/ProgressBar';
 
 interface OfferTabProps {
   demandId: string;
@@ -99,6 +102,9 @@ function formatPaymentTerms(terms: any): string {
 export default function OfferTab({ demandId, demandData, onSubmit }: OfferTabProps) {
   const [showCurrencySection, setShowCurrencySection] = useState(false);
   const [currencyInfo, setCurrencyInfo] = useState<any>(null);
+  
+  // Excel export için progress tracking
+  const exportTask = useCancellableTask<Blob>();
   
   // Form başlangıç değerleri
   const defaultValues = useMemo(() => {
@@ -195,6 +201,38 @@ export default function OfferTab({ demandId, demandData, onSubmit }: OfferTabPro
       }
     } catch (error: any) {
       toast.error(`Hata: ${error.message}`);
+    }
+  };
+
+  // Excel export handler
+  const handleExcelExport = async () => {
+    const formData = watch();
+    if (!formData) {
+      toast.error('Form verisi bulunamadı');
+      return;
+    }
+
+    try {
+      await exportTask.start(async (signal, reportProgress) => {
+        const blob = await exportSupplierOfferBrowser(formData, signal, reportProgress);
+        
+        // Blob'u indir
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `teklif_${demandData.header?.satfkCode || 'export'}_${new Date().toISOString().split('T')[0]}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
+        toast.success('Excel dosyası indirildi');
+        return blob;
+      });
+    } catch (error: any) {
+      if (error.message !== 'İşlem iptal edildi') {
+        toast.error(`Excel export hatası: ${error.message}`);
+      }
     }
   };
   
@@ -393,14 +431,35 @@ export default function OfferTab({ demandId, demandData, onSubmit }: OfferTabPro
           </button>
         </div>
         
+        {/* Excel Export Progress */}
+        {exportTask.isRunning && (
+          <div style={{ marginBottom: '20px' }}>
+            <ProgressBar
+              value={exportTask.progress}
+              onCancel={exportTask.cancel}
+              label="Excel dosyası oluşturuluyor..."
+              showPercentage={true}
+            />
+          </div>
+        )}
+
         {/* Gönder Butonu */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
           <button
             type="button"
-            onClick={() => {/* Excel export */}}
-            style={{ padding: '12px 24px', backgroundColor: '#6b7280', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+            onClick={handleExcelExport}
+            disabled={exportTask.isRunning}
+            style={{ 
+              padding: '12px 24px', 
+              backgroundColor: exportTask.isRunning ? '#9ca3af' : '#6b7280', 
+              color: 'white', 
+              border: 'none', 
+              borderRadius: '4px', 
+              cursor: exportTask.isRunning ? 'not-allowed' : 'pointer',
+              opacity: exportTask.isRunning ? 0.6 : 1
+            }}
           >
-            Excel İndir
+            {exportTask.isRunning ? 'İndiriliyor...' : 'Excel İndir'}
           </button>
           <button
             type="submit"

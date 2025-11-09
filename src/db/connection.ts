@@ -65,10 +65,11 @@ export function getRedisClient(): Redis | null {
   if (!redisClient) {
     redisClient = createRedisClient();
     
-    redisClient.on('error', (err) => {
+    redisClient.on('error', (err: unknown) => {
       // Geliştirme modunda sadece uyarı ver, uygulamayı durdurma
+      const msg = err instanceof Error ? err.message : String(err);
       if (process.env.NODE_ENV !== 'production') {
-        console.warn('⚠️  Redis client error (cache disabled):', err.message);
+        console.warn('⚠️  Redis client error (cache disabled):', msg);
       } else {
         console.error('Redis client error:', err);
       }

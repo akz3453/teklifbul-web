@@ -60,9 +60,15 @@ Bu dosya, projedeki standartlaşma çalışmalarının durumunu takip eder.
 
 ### 🟢 Düşük Öncelik
 
-- [ ] **ESLint sıkılaştırma**
-  - `.eslintrc` içinde `no-console` kuralı eklenebilir
-  - `logger.ts` için exception
+- [x] **ESLint sıkılaştırma** ✅
+  - ✅ `no-console` kuralı aktif (logger.ts hariç)
+  - ✅ ESLint konfigürasyonu güncellendi
+
+- [x] **Kalite Kapıları (Husky + lint-staged)** ✅
+  - ✅ Pre-commit hook: lint + type-check
+  - ✅ Pre-push hook: smoke test (opsiyonel)
+  - ✅ lint-staged konfigürasyonu
+  - ✅ Dokümantasyon (README-DEV.md)
 
 - [ ] **Kod dokümantasyonu iyileştirme**
   - JSDoc comment'leri

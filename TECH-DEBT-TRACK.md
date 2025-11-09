@@ -28,11 +28,12 @@ Bu dosya, projedeki standartlaşma çalışmalarının durumunu takip eder.
   - `getCategories()` - Search yoksa Firestore pagination kullanıyor
   - Cache mekanizması mevcut
 
-- [x] **Progress bar + Cancel** - `feat/progress-and-cancel`
+- [x] **Progress bar + Cancel** - `feat/progress-and-cancel` → `feat/export-progress-cancel`
   - `ProgressBar` component oluşturuldu
   - `useCancellableTask` hook oluşturuldu
   - `async-utils.ts` - AbortController wrapper
-  - Örnek kullanım eklendi
+  - Excel export entegrasyonu tamamlandı (`OfferTab.tsx`)
+  - `exportSupplierOffer` ve `exportSupplierOfferBrowser` progress desteği eklendi
 
 ---
 
@@ -49,11 +50,11 @@ Bu dosya, projedeki standartlaşma çalışmalarının durumunu takip eder.
   - Case-insensitive search için normalize edilmiş alan gerekir
   - Cache mevcut (24 saat), bu yüzden düşük öncelik
 
-- [ ] **Progress bar entegrasyonu**
-  - Uzun süren işlemlere entegre edilmeli:
-    - Excel import/export
-    - Büyük veri yükleme işlemleri
-    - Migration script'leri
+- [ ] **Progress bar entegrasyonu (kalan)**
+  - ✅ Excel export (`OfferTab.tsx`) - Tamamlandı
+  - [ ] Excel import
+  - [ ] Büyük veri yükleme işlemleri
+  - [ ] Migration script'leri
 
 ### 🟢 Düşük Öncelik
 
@@ -78,7 +79,7 @@ Bu dosya, projedeki standartlaşma çalışmalarının durumunu takip eder.
 
 ### Progress Bar Entegrasyonu
 - **Oluşturulan component'ler:** 2 (ProgressBar, useCancellableTask)
-- **Entegre edilen akışlar:** 0 (örnek mevcut)
+- **Entegre edilen akışlar:** 1 (Excel export - `OfferTab.tsx`)
 
 ---
 

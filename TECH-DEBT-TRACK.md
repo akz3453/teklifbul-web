@@ -53,7 +53,7 @@ Bu dosya, projedeki standartlaşma çalışmalarının durumunu takip eder.
 - [ ] **Progress bar entegrasyonu (kalan)**
   - ✅ Excel export (`OfferTab.tsx`) - Tamamlandı
   - ✅ Excel import (`OfferTab.tsx`) - Tamamlandı
-  - [ ] Büyük veri yükleme işlemleri
+  - ✅ Büyük veri yükleme işlemleri (`ChunkedUpload` component) - Tamamlandı
   - [ ] Migration script'leri
 
 ### 🟢 Düşük Öncelik
@@ -78,8 +78,8 @@ Bu dosya, projedeki standartlaşma çalışmalarının durumunu takip eder.
 - **src/ klasöründe:** 0 adet ✅
 
 ### Progress Bar Entegrasyonu
-- **Oluşturulan component'ler:** 2 (ProgressBar, useCancellableTask)
-- **Entegre edilen akışlar:** 2 (Excel export + import - `OfferTab.tsx`)
+- **Oluşturulan component'ler:** 3 (ProgressBar, useCancellableTask, ChunkedUpload)
+- **Entegre edilen akışlar:** 3 (Excel export + import - `OfferTab.tsx`, Chunked upload - `ChunkedUpload.tsx`)
 
 ---
 

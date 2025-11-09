@@ -18,13 +18,35 @@ import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore as getAdminFirestore } from 'firebase-admin/firestore';
 import { runCancellableBatches } from '../src/shared/utils/migration-runner';
 import { logger } from '../src/shared/log/logger';
+import { createRequire } from 'module';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
 // Firebase Admin initialize
 if (getApps().length === 0) {
-  const serviceAccount = require('../serviceAccountKey.json');
-  initializeApp({
-    credential: cert(serviceAccount),
-  });
+  try {
+    // Önce environment variable'dan kontrol et
+    if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+      const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+      initializeApp({
+        credential: cert(serviceAccount),
+      });
+    } else {
+      // JSON dosyasını direkt oku
+      const serviceAccountPath = join(process.cwd(), 'serviceAccountKey.json');
+      if (!readFileSync(serviceAccountPath, { flag: 'r' })) {
+        throw new Error('serviceAccountKey.json bulunamadi');
+      }
+      const serviceAccount = JSON.parse(readFileSync(serviceAccountPath, 'utf-8'));
+      initializeApp({
+        credential: cert(serviceAccount),
+      });
+    }
+  } catch (error: any) {
+    logger.error('Firebase Admin initialize hatasi', error);
+    logger.error('Lutfen serviceAccountKey.json dosyasini proje kokune ekleyin veya FIREBASE_SERVICE_ACCOUNT environment variable ayarlayin');
+    process.exit(1);
+  }
 }
 
 const db = getAdminFirestore();

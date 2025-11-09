@@ -16,10 +16,28 @@ import { logger } from '../src/shared/log/logger';
 
 // Firebase Admin initialize
 if (getApps().length === 0) {
-  const serviceAccount = require('../serviceAccountKey.json');
-  initializeApp({
-    credential: cert(serviceAccount),
-  });
+  try {
+    // Önce environment variable'dan kontrol et
+    if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+      const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+      initializeApp({
+        credential: cert(serviceAccount),
+      });
+    } else {
+      // JSON dosyasını direkt oku
+      const { readFileSync } = await import('fs');
+      const { join } = await import('path');
+      const serviceAccountPath = join(process.cwd(), 'serviceAccountKey.json');
+      const serviceAccount = JSON.parse(readFileSync(serviceAccountPath, 'utf-8'));
+      initializeApp({
+        credential: cert(serviceAccount),
+      });
+    }
+  } catch (error: any) {
+    console.error('Firebase Admin initialize hatasi:', error.message);
+    console.error('Lutfen serviceAccountKey.json dosyasini proje kokune ekleyin veya FIREBASE_SERVICE_ACCOUNT environment variable ayarlayin');
+    process.exit(1);
+  }
 }
 
 const db = getAdminFirestore();

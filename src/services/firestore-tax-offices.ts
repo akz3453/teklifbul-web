@@ -23,6 +23,10 @@ interface TaxOffice {
   office_name: string;
   office_code?: string;
   office_type?: string;
+  // Optimizasyon: lowercase alanlar (index için)
+  province_name_lower?: string;
+  district_name_lower?: string;
+  office_name_lower?: string;
 }
 
 /**
@@ -84,7 +88,26 @@ export async function getProvinces(): Promise<string[]> {
 }
 
 /**
- * Vergi daireleri listesi
+ * Türkçe karakter normalizasyonu (lowercase - index için)
+ */
+function normalizeTurkishLower(text: string): string {
+  if (!text) return '';
+  return text
+    .toLowerCase()
+    .replace(/ı/g, 'i')
+    .replace(/ş/g, 's')
+    .replace(/ğ/g, 'g')
+    .replace(/ü/g, 'u')
+    .replace(/ö/g, 'o')
+    .replace(/ç/g, 'c')
+    .trim();
+}
+
+/**
+ * Vergi daireleri listesi (optimize edilmiş - index kullanıyor)
+ * Teklifbul Rule v1.0 - Performans optimizasyonu
+ * 
+ * Önce index'li sorgu dener, yoksa fallback olarak client-side filter kullanır.
  */
 export async function getTaxOffices(options: {
   province: string;
@@ -103,33 +126,71 @@ export async function getTaxOffices(options: {
   
   try {
     const officesRef = collection(db, 'tax_offices');
+    const normalizedProvinceLower = normalizeTurkishLower(province);
     
-    // Tüm vergi dairelerini al (Firestore'da case-insensitive search yok, client-side filter)
-    const snapshot = await getDocs(officesRef);
+    // Optimizasyon: Index'li sorgu kullan (province_name_lower alanı varsa)
+    // Fallback: Eski yöntem (tüm koleksiyonu çekip client-side filter)
+    let snapshot;
+    let useIndexedQuery = false;
     
-    // Client-side filter
+    try {
+      // Index'li sorgu dene
+      const q = query(
+        officesRef,
+        where('province_name_lower', '==', normalizedProvinceLower),
+        orderBy('office_name_lower', 'asc')
+      );
+      snapshot = await getDocs(q);
+      useIndexedQuery = true;
+      logger.info('✅ Index\'li sorgu kullanıldı', { province: normalizedProvinceLower });
+    } catch (indexError: any) {
+      // Index yoksa veya alan yoksa fallback
+      if (indexError.code === 'failed-precondition' || indexError.message?.includes('index')) {
+        logger.warn('⚠️  Index bulunamadı, fallback kullanılıyor', { error: indexError.message });
+        // Fallback: Tüm koleksiyonu çek
+        snapshot = await getDocs(officesRef);
+        useIndexedQuery = false;
+      } else {
+        throw indexError;
+      }
+    }
+    
+    // Client-side filter (index'li sorgu kullanılmadıysa veya district filter varsa)
     let offices = snapshot.docs
       .map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as TaxOffice[];
     
-    // Province filter (case-insensitive, Turkish character aware)
-    const normalizedProvince = normalizeTurkish(province);
-    offices = offices.filter(office => 
-      normalizeTurkish(office.province_name) === normalizedProvince
-    );
+    // Province filter (index'li sorgu kullanılmadıysa)
+    if (!useIndexedQuery) {
+      const normalizedProvince = normalizeTurkish(province);
+      offices = offices.filter(office => {
+        // Önce lowercase alanını kontrol et, yoksa eski yöntem
+        if (office.province_name_lower) {
+          return office.province_name_lower === normalizedProvinceLower;
+        }
+        return normalizeTurkish(office.province_name) === normalizedProvince;
+      });
+    }
     
     // District filter (eğer varsa)
     if (district) {
-      const normalizedDistrict = normalizeTurkish(district);
-      offices = offices.filter(office => 
-        office.district_name && normalizeTurkish(office.district_name) === normalizedDistrict
-      );
+      const normalizedDistrictLower = normalizeTurkishLower(district);
+      offices = offices.filter(office => {
+        if (!office.district_name) return false;
+        // Önce lowercase alanını kontrol et, yoksa eski yöntem
+        if (office.district_name_lower) {
+          return office.district_name_lower === normalizedDistrictLower;
+        }
+        return normalizeTurkish(office.district_name) === normalizeTurkish(district);
+      });
     }
     
-    // Sort by office_name
-    offices.sort((a, b) => a.office_name.localeCompare(b.office_name, 'tr'));
+    // Sort by office_name (index'li sorgu kullanıldıysa zaten sıralı)
+    if (!useIndexedQuery) {
+      offices.sort((a, b) => a.office_name.localeCompare(b.office_name, 'tr'));
+    }
     
     // Cache'e kaydet (24 saat)
     await cache.set(cacheKey, offices, 86400);

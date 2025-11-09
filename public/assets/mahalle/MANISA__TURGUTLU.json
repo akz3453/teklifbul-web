@@ -1,0 +1,250 @@
+{
+  "districtId": "MANISA__TURGUTLU",
+  "districtName": "Turgutlu",
+  "neighborhoods": [
+    {
+      "id": "ACARLAR",
+      "name": "Acarlar"
+    },
+    {
+      "id": "AKCAPINAR",
+      "name": "Akçapınar"
+    },
+    {
+      "id": "AKKOY",
+      "name": "Akköy"
+    },
+    {
+      "id": "ALBAYRAK",
+      "name": "Albayrak"
+    },
+    {
+      "id": "ALTAY",
+      "name": "Altay"
+    },
+    {
+      "id": "ASAGIBOZKIR",
+      "name": "Aşağıbozkır"
+    },
+    {
+      "id": "ATATURK",
+      "name": "Atatürk"
+    },
+    {
+      "id": "AVSAR",
+      "name": "Avşar"
+    },
+    {
+      "id": "AYVACIK",
+      "name": "Ayvacık"
+    },
+    {
+      "id": "BAKTIRLI",
+      "name": "Baktırlı"
+    },
+    {
+      "id": "BOZKIR",
+      "name": "Bozkır"
+    },
+    {
+      "id": "BOZKURT",
+      "name": "Bozkurt"
+    },
+    {
+      "id": "CUMHURIYET",
+      "name": "Cumhuriyet"
+    },
+    {
+      "id": "CAMPINAR",
+      "name": "Çampınar"
+    },
+    {
+      "id": "CATALKOPRU",
+      "name": "Çatalköprü"
+    },
+    {
+      "id": "CEPNIBEKTAS",
+      "name": "Çepnibektaş"
+    },
+    {
+      "id": "CEPNIDERE",
+      "name": "Çepnidere"
+    },
+    {
+      "id": "CIKRIKCI",
+      "name": "Çıkrıkçı"
+    },
+    {
+      "id": "DAGYENIKOY",
+      "name": "Dağyeniköy"
+    },
+    {
+      "id": "DALBAHCE",
+      "name": "Dalbahçe"
+    },
+    {
+      "id": "DERBENT",
+      "name": "Derbent"
+    },
+    {
+      "id": "ERGENEKON",
+      "name": "Ergenekon"
+    },
+    {
+      "id": "GOKGEDIK",
+      "name": "Gökgedik"
+    },
+    {
+      "id": "GUNEY",
+      "name": "Güney"
+    },
+    {
+      "id": "HACIISALAR",
+      "name": "Hacıisalar"
+    },
+    {
+      "id": "IRLAMAZ",
+      "name": "Irlamaz"
+    },
+    {
+      "id": "ISTASYONALTI",
+      "name": "İstasyonaltı"
+    },
+    {
+      "id": "ISTIKLAL",
+      "name": "İstiklal"
+    },
+    {
+      "id": "IZZETTIN",
+      "name": "İzzettin"
+    },
+    {
+      "id": "KABACINAR",
+      "name": "Kabaçınar"
+    },
+    {
+      "id": "KARAKOY",
+      "name": "Karaköy"
+    },
+    {
+      "id": "KARAOLUK",
+      "name": "Karaoluk"
+    },
+    {
+      "id": "KAYRAK",
+      "name": "Kayrak"
+    },
+    {
+      "id": "KURTULUS",
+      "name": "Kurtuluş"
+    },
+    {
+      "id": "KURUDERE",
+      "name": "Kurudere"
+    },
+    {
+      "id": "KUSLAR",
+      "name": "Kuşlar"
+    },
+    {
+      "id": "MUSACALI",
+      "name": "Musacalı"
+    },
+    {
+      "id": "MUSALARYENIKOY",
+      "name": "Musalaryeniköy"
+    },
+    {
+      "id": "MUSTAFA_KEMAL",
+      "name": "Mustafa Kemal"
+    },
+    {
+      "id": "OSMANCIK",
+      "name": "Osmancık"
+    },
+    {
+      "id": "OREN",
+      "name": "Ören"
+    },
+    {
+      "id": "OZYURT",
+      "name": "Özyurt"
+    },
+    {
+      "id": "SARIBEY",
+      "name": "Sarıbey"
+    },
+    {
+      "id": "SELVILITEPE",
+      "name": "Selvilitepe"
+    },
+    {
+      "id": "SINIRLI",
+      "name": "Sinirli"
+    },
+    {
+      "id": "SIVRICE",
+      "name": "Sivrice"
+    },
+    {
+      "id": "SUBASI",
+      "name": "Subaşı"
+    },
+    {
+      "id": "SEHITLER",
+      "name": "Şehitler"
+    },
+    {
+      "id": "TEMREK",
+      "name": "Temrek"
+    },
+    {
+      "id": "TURAN",
+      "name": "Turan"
+    },
+    {
+      "id": "TURGUTLAR",
+      "name": "Turgutlar"
+    },
+    {
+      "id": "URGANLI",
+      "name": "Urganlı"
+    },
+    {
+      "id": "YAKUPLAR",
+      "name": "Yakuplar"
+    },
+    {
+      "id": "YAYLA",
+      "name": "Yayla"
+    },
+    {
+      "id": "YEDI_EYLUL",
+      "name": "Yedi Eylül"
+    },
+    {
+      "id": "YENI",
+      "name": "Yeni"
+    },
+    {
+      "id": "YENIKOY",
+      "name": "Yeniköy"
+    },
+    {
+      "id": "YILDIRIM",
+      "name": "Yıldırım"
+    },
+    {
+      "id": "YILMAZLAR",
+      "name": "Yılmazlar"
+    },
+    {
+      "id": "YIGITLER",
+      "name": "Yiğitler"
+    },
+    {
+      "id": "YUNUSDERE",
+      "name": "Yunusdere"
+    }
+  ]
+}

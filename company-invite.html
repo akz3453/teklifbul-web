@@ -27,6 +27,10 @@
   <script type="module">
     import { db, auth, requireAuth } from "./firebase.js";
     import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+    // Teklifbul Rule v1.0 - Toast Notification System
+    import { toast } from './src/shared/ui/toast.js';
+    // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
+    import { MESSAGES } from './src/shared/constants/messages.js';
 
     function randToken(len=10) {
       const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -41,7 +45,7 @@
     
     document.getElementById("btnNew").onclick = async () => {
       const companyId = document.getElementById("companyId").value.trim();
-      if (!companyId) return alert("companyId girin");
+      if (!companyId) return toast.error(MESSAGES.ERROR_COMPANY_ID_REQUIRED);
       const token = randToken(12);
       try {
         await setDoc(doc(db,"companies",companyId,"invites",token), {
@@ -50,7 +54,7 @@
         out.innerHTML = `<div class="row">Davet Kodu: <b>${token}</b>  (companyId: <b>${companyId}</b>)</div>
         <div>Bu kodu kullanıcıya verin; <code>company-join.html</code> sayfasında kullanacak.</div>`;
       } catch(e) {
-        alert("Davet oluşturulamadı: " + (e.code||e.message||e));
+        toast.error(MESSAGES.ERROR_INVITE_CREATE + ": " + (e.code||e.message||e));
       }
     };
   </script>

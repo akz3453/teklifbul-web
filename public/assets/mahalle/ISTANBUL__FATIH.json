@@ -1,0 +1,230 @@
+{
+  "districtId": "ISTANBUL__FATIH",
+  "districtName": "Fatih",
+  "neighborhoods": [
+    {
+      "id": "AKSARAY",
+      "name": "Aksaray"
+    },
+    {
+      "id": "AKSEMSETTIN",
+      "name": "Akşemsettin"
+    },
+    {
+      "id": "ALEMDAR",
+      "name": "Alemdar"
+    },
+    {
+      "id": "ALI_KUSCU",
+      "name": "Ali Kuşçu"
+    },
+    {
+      "id": "ATIKALI",
+      "name": "Atikali"
+    },
+    {
+      "id": "AYVANSARAY",
+      "name": "Ayvansaray"
+    },
+    {
+      "id": "BALABANAGA",
+      "name": "Balabanağa"
+    },
+    {
+      "id": "BALAT",
+      "name": "Balat"
+    },
+    {
+      "id": "BEYAZIT",
+      "name": "Beyazıt"
+    },
+    {
+      "id": "BINBIRDIREK",
+      "name": "Binbirdirek"
+    },
+    {
+      "id": "CANKURTARAN",
+      "name": "Cankurtaran"
+    },
+    {
+      "id": "CERRAHPASA",
+      "name": "Cerrahpaşa"
+    },
+    {
+      "id": "CIBALI",
+      "name": "Cibali"
+    },
+    {
+      "id": "DEMIRTAS",
+      "name": "Demirtaş"
+    },
+    {
+      "id": "DERVIS_ALI",
+      "name": "Derviş Ali"
+    },
+    {
+      "id": "EMIN_SINAN",
+      "name": "Emin Sinan"
+    },
+    {
+      "id": "HACI_KADIN",
+      "name": "Hacı Kadın"
+    },
+    {
+      "id": "HASEKI_SULTAN",
+      "name": "Haseki Sultan"
+    },
+    {
+      "id": "HIRKAI_SERIF",
+      "name": "Hırka-i Şerif"
+    },
+    {
+      "id": "HOBYAR",
+      "name": "Hobyar"
+    },
+    {
+      "id": "HOCA_GIYASETTIN",
+      "name": "Hoca Gıyasettin"
+    },
+    {
+      "id": "HOCAPASA",
+      "name": "Hocapaşa"
+    },
+    {
+      "id": "ISKENDERPASA",
+      "name": "İskenderpaşa"
+    },
+    {
+      "id": "KALENDERHANE",
+      "name": "Kalenderhane"
+    },
+    {
+      "id": "KARAGUMRUK",
+      "name": "Karagümrük"
+    },
+    {
+      "id": "KATIP_KASIM",
+      "name": "Katip Kasım"
+    },
+    {
+      "id": "KEMALPASA",
+      "name": "Kemalpaşa"
+    },
+    {
+      "id": "KOCA_MUSTAFAPASA",
+      "name": "Koca Mustafapaşa"
+    },
+    {
+      "id": "KUCUK_AYASOFYA",
+      "name": "Küçük Ayasofya"
+    },
+    {
+      "id": "MERCAN",
+      "name": "Mercan"
+    },
+    {
+      "id": "MESIHPASA",
+      "name": "Mesihpaşa"
+    },
+    {
+      "id": "MEVLANAKAPI",
+      "name": "Mevlanakapı"
+    },
+    {
+      "id": "MIMAR_HAYRETTIN",
+      "name": "Mimar Hayrettin"
+    },
+    {
+      "id": "MIMAR_KEMALETTIN",
+      "name": "Mimar Kemalettin"
+    },
+    {
+      "id": "MOLLA_FENARI",
+      "name": "Molla Fenari"
+    },
+    {
+      "id": "MOLLA_GURANI",
+      "name": "Molla Gürani"
+    },
+    {
+      "id": "MOLLA_HUSREV",
+      "name": "Molla Hüsrev"
+    },
+    {
+      "id": "MUHSINE_HATUN",
+      "name": "Muhsine Hatun"
+    },
+    {
+      "id": "NISANCA",
+      "name": "Nişanca"
+    },
+    {
+      "id": "RUSTEMPASA",
+      "name": "Rüstempaşa"
+    },
+    {
+      "id": "SARAC_ISHAK",
+      "name": "Saraç Ishak"
+    },
+    {
+      "id": "SEYYID_OMER",
+      "name": "Seyyid Ömer"
+    },
+    {
+      "id": "SILIVRIKAPI",
+      "name": "Silivrikapı"
+    },
+    {
+      "id": "SULTAN_AHMET",
+      "name": "Sultan Ahmet"
+    },
+    {
+      "id": "SURURI",
+      "name": "Sururi"
+    },
+    {
+      "id": "SULEYMANIYE",
+      "name": "Süleymaniye"
+    },
+    {
+      "id": "SUMBUL_EFENDI",
+      "name": "Sümbül Efendi"
+    },
+    {
+      "id": "SEHREMINI",
+      "name": "Şehremini"
+    },
+    {
+      "id": "SEHSUVAR_BEY",
+      "name": "Şehsuvar Bey"
+    },
+    {
+      "id": "TAHTAKALE",
+      "name": "Tahtakale"
+    },
+    {
+      "id": "TAYA_HATUN",
+      "name": "Taya Hatun"
+    },
+    {
+      "id": "TOPKAPI",
+      "name": "Topkapı"
+    },
+    {
+      "id": "YAVUZ_SINAN",
+      "name": "Yavuz Sinan"
+    },
+    {
+      "id": "YAVUZ_SULTAN_SELIM",
+      "name": "Yavuz Sultan Selim"
+    },
+    {
+      "id": "YEDIKULE",
+      "name": "Yedikule"
+    },
+    {
+      "id": "ZEYREK",
+      "name": "Zeyrek"
+    }
+  ]
+}

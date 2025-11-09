@@ -1,0 +1,42 @@
+{
+  "districtId": "SIVAS__ZARA",
+  "districtName": "Zara",
+  "neighborhoods": [
+    {
+      "id": "AHMETBASYURT",
+      "name": "Ahmetbaşyurt"
+    },
+    {
+      "id": "CARSIBASI",
+      "name": "Çarşıbaşı"
+    },
+    {
+      "id": "HATIP",
+      "name": "Hatip"
+    },
+    {
+      "id": "KARSIYAKA",
+      "name": "Karşıyaka"
+    },
+    {
+      "id": "KIZILIRMAK",
+      "name": "Kızılırmak"
+    },
+    {
+      "id": "RESITPASA",
+      "name": "Reşitpaşa"
+    },
+    {
+      "id": "SEHITLER",
+      "name": "Şehitler"
+    },
+    {
+      "id": "SEYHMERZUBAN",
+      "name": "Şeyhmerzuban"
+    },
+    {
+      "id": "YENICAMII",
+      "name": "Yenicamii"
+    }
+  ]
+}

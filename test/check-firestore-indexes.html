@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Firestore Index Kontrolü</title>
+  <style>
+    body {
+      font-family: system-ui, Arial, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f9fafb;
+    }
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 24px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    h1 {
+      color: #1f2937;
+      margin-top: 0;
+    }
+    .status {
+      padding: 12px;
+      border-radius: 6px;
+      margin: 12px 0;
+      font-weight: 500;
+    }
+    .status.info {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+    .status.success {
+      background: #d1fae5;
+      color: #065f46;
+    }
+    .status.error {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    .status.warning {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    button {
+      padding: 12px 24px;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 14px;
+      margin: 8px 8px 8px 0;
+    }
+    button:hover {
+      background: #2563eb;
+    }
+    .index-item {
+      background: #f9fafb;
+      padding: 16px;
+      border-radius: 6px;
+      margin: 12px 0;
+      border-left: 4px solid #3b82f6;
+    }
+    .index-item.required {
+      border-left-color: #ef4444;
+    }
+    .index-item.exists {
+      border-left-color: #10b981;
+    }
+    .index-item h3 {
+      margin: 0 0 8px 0;
+      font-size: 16px;
+      color: #1f2937;
+    }
+    .index-item .description {
+      color: #6b7280;
+      font-size: 14px;
+      margin: 8px 0;
+    }
+    .index-item .query {
+      background: #1f2937;
+      color: #f9fafb;
+      padding: 12px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 12px;
+      margin: 8px 0;
+      overflow-x: auto;
+    }
+    .index-item .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-top: 8px;
+    }
+    .status-badge.exists {
+      background: #d1fae5;
+      color: #065f46;
+    }
+    .status-badge.missing {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    .status-badge.testing {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    .create-link {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 8px 16px;
+      background: #3b82f6;
+      color: white;
+      text-decoration: none;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    .create-link:hover {
+      background: #2563eb;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🔍 Firestore Index Kontrolü</h1>
+    <p>Bu sayfa, kategori eşleştirme için gerekli Firestore indexlerini kontrol eder.</p>
+    
+    <div id="status" class="status info" style="display:none;"></div>
+    
+    <button id="checkBtn">İndexleri Kontrol Et</button>
+    
+    <div id="indexesContainer"></div>
+  </div>
+
+  <script type="module">
+    import { db, requireAuth } from "./firebase.js";
+    import {
+      collection,
+      query,
+      where,
+      getDocs,
+      limit,
+      orderBy
+    } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+    const checkBtn = document.getElementById("checkBtn");
+    const statusEl = document.getElementById("status");
+    const container = document.getElementById("indexesContainer");
+
+    // Required indexes for supplier matching
+    const requiredIndexes = [
+      {
+        id: "users-supplierCategories",
+        name: "Users - Supplier Categories Query",
+        description: "Tedarikçi eşleştirme için: isActive, roles, supplierCategories",
+        collection: "users",
+        fields: [
+          { field: "isActive", order: "asc" },
+          { field: "roles", order: "asc" },
+          { field: "supplierCategories", order: "asc" }
+        ],
+        queryCode: `query(
+  collection(db, 'users'),
+  where('isActive', '==', true),
+  where('roles', 'array-contains', 'supplier'),
+  where('supplierCategories', 'array-contains-any', ['sac-metal', 'elektrik'])
+)`
+      },
+      {
+        id: "users-groupIds",
+        name: "Users - Group IDs Query",
+        description: "Grup bazlı tedarikçi eşleştirme için: isActive, groupIds",
+        collection: "users",
+        fields: [
+          { field: "isActive", order: "asc" },
+          { field: "groupIds", order: "asc" }
+        ],
+        queryCode: `query(
+  collection(db, 'users'),
+  where('isActive', '==', true),
+  where('groupIds', 'array-contains-any', ['group-1', 'group-2'])
+)`
+      },
+      {
+        id: "demands-supplierCategoryKeys",
+        name: "Demands - Supplier Category Keys Query",
+        description: "Gelen talepler için: isPublished, supplierCategoryKeys, createdAt",
+        collection: "demands",
+        fields: [
+          { field: "isPublished", order: "asc" },
+          { field: "supplierCategoryKeys", order: "asc" },
+          { field: "createdAt", order: "desc" }
+        ],
+        queryCode: `query(
+  collection(db, 'demands'),
+  where('isPublished', '==', true),
+  where('supplierCategoryKeys', 'array-contains-any', ['sac-metal', 'elektrik']),
+  orderBy('createdAt', 'desc'),
+  limit(50)
+)`
+      },
+      {
+        id: "demands-categoryTags",
+        name: "Demands - Category Tags Query (Fallback)",
+        description: "Gelen talepler için fallback: isPublished, categoryTags, createdAt",
+        collection: "demands",
+        fields: [
+          { field: "isPublished", order: "asc" },
+          { field: "categoryTags", order: "asc" },
+          { field: "createdAt", order: "desc" }
+        ],
+        queryCode: `query(
+  collection(db, 'demands'),
+  where('isPublished', '==', true),
+  where('categoryTags', 'array-contains-any', ['sac-metal', 'elektrik']),
+  orderBy('createdAt', 'desc'),
+  limit(50)
+)`
+      }
+    ];
+
+    function showStatus(message, type = "info") {
+      statusEl.textContent = message;
+      statusEl.className = `status ${type}`;
+      statusEl.style.display = "block";
+    }
+
+    async function testIndex(indexConfig) {
+      try {
+        const { collection: collName, fields, queryCode } = indexConfig;
+        
+        // Build test query based on index
+        let testQuery;
+        
+        if (collName === "users") {
+          if (indexConfig.id === "users-supplierCategories") {
+            testQuery = query(
+              collection(db, "users"),
+              where("isActive", "==", true),
+              where("roles", "array-contains", "supplier"),
+              where("supplierCategories", "array-contains-any", ["sac-metal", "elektrik"]),
+              limit(1)
+            );
+          } else if (indexConfig.id === "users-groupIds") {
+            testQuery = query(
+              collection(db, "users"),
+              where("isActive", "==", true),
+              where("groupIds", "array-contains-any", ["test-group"]),
+              limit(1)
+            );
+          }
+        } else if (collName === "demands") {
+          if (indexConfig.id === "demands-supplierCategoryKeys") {
+            testQuery = query(
+              collection(db, "demands"),
+              where("isPublished", "==", true),
+              where("supplierCategoryKeys", "array-contains-any", ["sac-metal", "elektrik"]),
+              limit(1)
+            );
+          } else if (indexConfig.id === "demands-categoryTags") {
+            testQuery = query(
+              collection(db, "demands"),
+              where("isPublished", "==", true),
+              where("categoryTags", "array-contains-any", ["sac-metal", "elektrik"]),
+              limit(1)
+            );
+          }
+        }
+        
+        if (!testQuery) {
+          return { exists: false, error: "Test query oluşturulamadı" };
+        }
+        
+        // Try to execute query
+        const snapshot = await getDocs(testQuery);
+        return { exists: true, count: snapshot.size };
+        
+      } catch (error) {
+        // Check if error is about missing index
+        if (error.code === "failed-precondition" || 
+            error.message?.includes("index") ||
+            error.message?.includes("requires an index")) {
+          return { exists: false, error: error.message };
+        }
+        // Other errors might mean index exists but query failed for other reasons
+        return { exists: true, error: error.message };
+      }
+    }
+
+    async function checkIndexes() {
+      try {
+        checkBtn.disabled = true;
+        container.innerHTML = "";
+        showStatus("🔍 İndexler kontrol ediliyor...", "info");
+
+        const user = await requireAuth();
+        console.log("✅ Kullanıcı doğrulandı:", user.email);
+
+        const results = [];
+
+        for (const indexConfig of requiredIndexes) {
+          showStatus(`🔍 Kontrol ediliyor: ${indexConfig.name}...`, "info");
+          
+          const result = await testIndex(indexConfig);
+          results.push({ ...indexConfig, result });
+          
+          // Small delay to avoid rate limiting
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+
+        // Render results
+        container.innerHTML = "";
+        
+        results.forEach(({ id, name, description, queryCode, collection: collName, fields, result }) => {
+          const indexDiv = document.createElement("div");
+          indexDiv.className = `index-item ${result.exists ? 'exists' : 'required'}`;
+          
+          const statusBadge = result.exists 
+            ? `<span class="status-badge exists">✅ Index Mevcut</span>`
+            : `<span class="status-badge missing">❌ Index Eksik</span>`;
+          
+          const errorInfo = result.error 
+            ? `<div style="margin-top:8px; color:#dc2626; font-size:13px;">⚠️ ${result.error}</div>`
+            : "";
+          
+          const createLink = !result.exists
+            ? `<a href="https://console.firebase.google.com/project/_/firestore/indexes?create_composite=${collName}__${fields.map(f => `${f.field}__${f.order}`).join('_')}" 
+                 target="_blank" class="create-link">📝 Firestore Console'da Oluştur</a>`
+            : "";
+          
+          indexDiv.innerHTML = `
+            <h3>${name} ${statusBadge}</h3>
+            <div class="description">${description}</div>
+            <div class="query">${queryCode.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+            ${errorInfo}
+            ${createLink}
+          `;
+          
+          container.appendChild(indexDiv);
+        });
+
+        const missingCount = results.filter(r => !r.result.exists).length;
+        const existsCount = results.filter(r => r.result.exists).length;
+
+        if (missingCount === 0) {
+          showStatus(`✅ Tüm indexler mevcut! (${existsCount}/${results.length})`, "success");
+        } else {
+          showStatus(`⚠️ ${missingCount} index eksik! (${existsCount}/${results.length} mevcut)`, "warning");
+        }
+
+      } catch (error) {
+        console.error("Index kontrol hatası:", error);
+        showStatus(`❌ Hata: ${error.message}`, "error");
+      } finally {
+        checkBtn.disabled = false;
+      }
+    }
+
+    checkBtn.addEventListener("click", checkIndexes);
+
+    // Auto-check auth on load
+    requireAuth().then(user => {
+      showStatus("✅ Hazır - İndexleri kontrol edebilirsiniz", "success");
+    }).catch(err => {
+      showStatus("❌ Lütfen önce giriş yapın", "error");
+      checkBtn.disabled = true;
+    });
+  </script>
+</body>
+</html>

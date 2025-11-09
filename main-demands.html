@@ -270,6 +270,9 @@
 
   <!-- Main Script -->
   <script type="module">
+    // Teklifbul Rule v1.0 - Structured Logging
+    import { logger } from "./src/shared/log/logger.js";
+    
     import { initGlobalHeader } from './assets/js/ui/header.js';
     import { db, auth, requireAuth } from "./firebase.js";
     
@@ -296,7 +299,7 @@
           categoryFilter.appendChild(option);
         });
       } catch (e) {
-        console.warn("Categories not loaded:", e);
+        logger.warn("Categories not loaded", e);
       }
     }
 
@@ -310,13 +313,12 @@
       productsGrid.innerHTML = "";
       emptyState.style.display = "none";
 
-      console.log("🔍 Loading main demands...");
+      logger.info("Loading main demands...");
 
       // Get all published public demands using service
       const demands = await getPublicDemands(50);
       
-      console.log("📋 Found public demands:", demands.length);
-      console.log("📋 Demands data:", demands);
+      logger.info("Found public demands", { count: demands.length, data: demands });
 
       if (demands.length === 0) {
         showEmptyState();
@@ -487,7 +489,7 @@
     // Listen for company changes
     window.addEventListener('company:changed', async (e) => {
       const { companyId } = e.detail;
-      console.log('🏢 Company changed, reloading main demands for:', companyId);
+      logger.info('Company changed, reloading main demands', { companyId });
       
       // Re-run data loading
       await loadMainDemands();
@@ -495,7 +497,7 @@
   </script>
 
   <!-- Theme Script -->
-  <script src="/assets/js/theme.js" defer></script>
+  <script type="module" src="/assets/js/theme.js" defer></script>
 
 </body>
 </html>

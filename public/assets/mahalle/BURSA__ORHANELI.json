@@ -1,0 +1,250 @@
+{
+  "districtId": "BURSA__ORHANELI",
+  "districtName": "Orhaneli",
+  "neighborhoods": [
+    {
+      "id": "300_EVLER",
+      "name": "300 Evler"
+    },
+    {
+      "id": "AGACHISAR",
+      "name": "Ağaçhisar"
+    },
+    {
+      "id": "AKALAN",
+      "name": "Akalan"
+    },
+    {
+      "id": "AKCABUK",
+      "name": "Akçabük"
+    },
+    {
+      "id": "ALTINTAS",
+      "name": "Altıntaş"
+    },
+    {
+      "id": "ARGIN",
+      "name": "Argın"
+    },
+    {
+      "id": "BALIOGLU",
+      "name": "Balıoğlu"
+    },
+    {
+      "id": "BASKOY",
+      "name": "Başköy"
+    },
+    {
+      "id": "BELENOLUK",
+      "name": "Belenoluk"
+    },
+    {
+      "id": "CELEPLER",
+      "name": "Celepler"
+    },
+    {
+      "id": "CEKI",
+      "name": "Çeki"
+    },
+    {
+      "id": "CINARCIK",
+      "name": "Çınarcık"
+    },
+    {
+      "id": "CIVILI",
+      "name": "Çivili"
+    },
+    {
+      "id": "CORELER",
+      "name": "Çöreler"
+    },
+    {
+      "id": "DAGGUNEY",
+      "name": "Dağgüney"
+    },
+    {
+      "id": "DELIBALLILAR",
+      "name": "Deliballılar"
+    },
+    {
+      "id": "DEMIRCI",
+      "name": "Demirci"
+    },
+    {
+      "id": "DERE",
+      "name": "Dere"
+    },
+    {
+      "id": "DUNDAR",
+      "name": "Dündar"
+    },
+    {
+      "id": "EMIR",
+      "name": "Emir"
+    },
+    {
+      "id": "ERENLER",
+      "name": "Erenler"
+    },
+    {
+      "id": "ESENTEPE",
+      "name": "Esentepe"
+    },
+    {
+      "id": "ESKIDANISMENT",
+      "name": "Eskidanişment"
+    },
+    {
+      "id": "FADIL",
+      "name": "Fadıl"
+    },
+    {
+      "id": "FEVZIPASA",
+      "name": "Fevzipaşa"
+    },
+    {
+      "id": "FIROZ",
+      "name": "Firoz"
+    },
+    {
+      "id": "GAZIOLUK",
+      "name": "Gazioluk"
+    },
+    {
+      "id": "GAZIPASA",
+      "name": "Gazipaşa"
+    },
+    {
+      "id": "GIRENCIK",
+      "name": "Girencik"
+    },
+    {
+      "id": "GOKTEPE",
+      "name": "Göktepe"
+    },
+    {
+      "id": "GOYNUKBELEN",
+      "name": "Göynükbelen"
+    },
+    {
+      "id": "GUMUSPINAR",
+      "name": "Gümüşpınar"
+    },
+    {
+      "id": "IKIZOLUK",
+      "name": "İkizoluk"
+    },
+    {
+      "id": "ISMETPASA",
+      "name": "İsmetpaşa"
+    },
+    {
+      "id": "KABAKLAR",
+      "name": "Kabaklar"
+    },
+    {
+      "id": "KADI",
+      "name": "Kadı"
+    },
+    {
+      "id": "KARABEKIRPASA",
+      "name": "Karabekirpaşa"
+    },
+    {
+      "id": "KARAOGLANLAR",
+      "name": "Karaoğlanlar"
+    },
+    {
+      "id": "KARASI",
+      "name": "Karasi"
+    },
+    {
+      "id": "KARINCALI",
+      "name": "Karıncalı"
+    },
+    {
+      "id": "KOCU",
+      "name": "Koçu"
+    },
+    {
+      "id": "KUSUMLAR",
+      "name": "Kusumlar"
+    },
+    {
+      "id": "KUCUKORHAN",
+      "name": "Küçükorhan"
+    },
+    {
+      "id": "LETAFET",
+      "name": "Letafet"
+    },
+    {
+      "id": "MAHALLER",
+      "name": "Mahaller"
+    },
+    {
+      "id": "NALINLAR",
+      "name": "Nalınlar"
+    },
+    {
+      "id": "ORTA",
+      "name": "Orta"
+    },
+    {
+      "id": "OSMANIYECATAK",
+      "name": "Osmaniyeçatak"
+    },
+    {
+      "id": "SADAGI",
+      "name": "Sadağı"
+    },
+    {
+      "id": "SEMERCI",
+      "name": "Semerci"
+    },
+    {
+      "id": "SERCELER",
+      "name": "Serçeler"
+    },
+    {
+      "id": "SIRIL",
+      "name": "Sırıl"
+    },
+    {
+      "id": "SOGUT",
+      "name": "Söğüt"
+    },
+    {
+      "id": "SULEYMANBEY",
+      "name": "Süleymanbey"
+    },
+    {
+      "id": "SUKRIYE",
+      "name": "Şükriye"
+    },
+    {
+      "id": "TEPECIK",
+      "name": "Tepecik"
+    },
+    {
+      "id": "TOPUK",
+      "name": "Topuk"
+    },
+    {
+      "id": "YAKUPLAR",
+      "name": "Yakuplar"
+    },
+    {
+      "id": "YENIDANISMENT",
+      "name": "Yenidanişment"
+    },
+    {
+      "id": "YESILLER",
+      "name": "Yeşiller"
+    },
+    {
+      "id": "YORUKLER",
+      "name": "Yörükler"
+    }
+  ]
+}

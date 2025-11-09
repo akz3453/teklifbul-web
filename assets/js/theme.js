@@ -4,6 +4,9 @@
  * with persistent storage across pages
  */
 
+// Teklifbul Rule v1.0 - Structured Logging
+import { logger } from '../../src/shared/log/logger.js';
+
 document.addEventListener('DOMContentLoaded', function () {
   const STORAGE_KEY = 'tb_theme'; // 'dark' | 'light' | null
   const root = document.documentElement;
@@ -39,5 +42,5 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
-  console.log('✅ Theme system initialized - mode:', mode);
+  logger.info('Theme system initialized', { mode });
 });

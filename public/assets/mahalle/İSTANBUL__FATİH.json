@@ -1,0 +1,234 @@
+{
+  "districtId": "İSTANBUL__FATİH",
+  "districtName": "Fatih",
+  "neighborhoods": [
+    {
+      "id": "DERVİŞ_ALİ",
+      "name": "Derviş Ali"
+    },
+    {
+      "id": "YEDİKULE",
+      "name": "Yedikule"
+    },
+    {
+      "id": "KOCA_MUSTAFAPAŞA",
+      "name": "Koca Mustafapaşa"
+    },
+    {
+      "id": "CERRAHPAŞA",
+      "name": "Cerrahpaşa"
+    },
+    {
+      "id": "SEYYİD_ÖMER",
+      "name": "Seyyid Ömer"
+    },
+    {
+      "id": "MOLLA_GÜRANİ",
+      "name": "Molla Gürani"
+    },
+    {
+      "id": "ZEYREK",
+      "name": "Zeyrek"
+    },
+    {
+      "id": "MEVLANAKAPI",
+      "name": "Mevlanakapı"
+    },
+    {
+      "id": "KARAGÜMRÜK",
+      "name": "Karagümrük"
+    },
+    {
+      "id": "ATİKALİ",
+      "name": "Atikali"
+    },
+    {
+      "id": "AYVANSARAY",
+      "name": "Ayvansaray"
+    },
+    {
+      "id": "CİBALİ",
+      "name": "Cibali"
+    },
+    {
+      "id": "BALAT",
+      "name": "Balat"
+    },
+    {
+      "id": "ŞEHREMİNİ",
+      "name": "Şehremini"
+    },
+    {
+      "id": "İSKENDERPAŞA",
+      "name": "İskenderpaşa"
+    },
+    {
+      "id": "SÜMBÜL_EFENDİ",
+      "name": "Sümbül Efendi"
+    },
+    {
+      "id": "TOPKAPI",
+      "name": "Topkapı"
+    },
+    {
+      "id": "AKSARAY",
+      "name": "Aksaray"
+    },
+    {
+      "id": "ALİ_KUŞÇU",
+      "name": "Ali Kuşçu"
+    },
+    {
+      "id": "YAVUZ_SULTAN_SELİM",
+      "name": "Yavuz Sultan Selim"
+    },
+    {
+      "id": "SİLİVRİKAPI",
+      "name": "Silivrikapı"
+    },
+    {
+      "id": "AKŞEMSETTİN",
+      "name": "Akşemsettin"
+    },
+    {
+      "id": "HIRKA_İ_ŞERİF",
+      "name": "Hırka-i Şerif"
+    },
+    {
+      "id": "ALEMDAR",
+      "name": "Alemdar"
+    },
+    {
+      "id": "BALABANAĞA",
+      "name": "Balabanağa"
+    },
+    {
+      "id": "BEYAZIT",
+      "name": "Beyazıt"
+    },
+    {
+      "id": "BİNBİRDİREK",
+      "name": "Binbirdirek"
+    },
+    {
+      "id": "CANKURTARAN",
+      "name": "Cankurtaran"
+    },
+    {
+      "id": "DEMİRTAŞ",
+      "name": "Demirtaş"
+    },
+    {
+      "id": "EMİN_SİNAN",
+      "name": "Emin Sinan"
+    },
+    {
+      "id": "HACI_KADIN",
+      "name": "Hacı Kadın"
+    },
+    {
+      "id": "HOBYAR",
+      "name": "Hobyar"
+    },
+    {
+      "id": "HOCA_GIYASETTİN",
+      "name": "Hoca Gıyasettin"
+    },
+    {
+      "id": "HOCAPAŞA",
+      "name": "Hocapaşa"
+    },
+    {
+      "id": "KALENDERHANE",
+      "name": "Kalenderhane"
+    },
+    {
+      "id": "KATİP_KASIM",
+      "name": "Katip Kasım"
+    },
+    {
+      "id": "KEMALPAŞA",
+      "name": "Kemalpaşa"
+    },
+    {
+      "id": "KÜÇÜK_AYASOFYA",
+      "name": "Küçük Ayasofya"
+    },
+    {
+      "id": "MERCAN",
+      "name": "Mercan"
+    },
+    {
+      "id": "MESİHPAŞA",
+      "name": "Mesihpaşa"
+    },
+    {
+      "id": "MİMAR_HAYRETTİN",
+      "name": "Mimar Hayrettin"
+    },
+    {
+      "id": "MİMAR_KEMALETTİN",
+      "name": "Mimar Kemalettin"
+    },
+    {
+      "id": "MOLLA_FENARİ",
+      "name": "Molla Fenari"
+    },
+    {
+      "id": "MOLLA_HÜSREV",
+      "name": "Molla Hüsrev"
+    },
+    {
+      "id": "MUHSİNE_HATUN",
+      "name": "Muhsine Hatun"
+    },
+    {
+      "id": "NİŞANCA",
+      "name": "Nişanca"
+    },
+    {
+      "id": "RÜSTEMPAŞA",
+      "name": "Rüstempaşa"
+    },
+    {
+      "id": "SARAÇ_İSHAK",
+      "name": "Saraç İshak"
+    },
+    {
+      "id": "SARIDEMİR",
+      "name": "Sarıdemir"
+    },
+    {
+      "id": "SÜLEYMANİYE",
+      "name": "Süleymaniye"
+    },
+    {
+      "id": "SULTAN_AHMET",
+      "name": "Sultan Ahmet"
+    },
+    {
+      "id": "SURURİ",
+      "name": "Sururi"
+    },
+    {
+      "id": "ŞEHSUVAR_BEY",
+      "name": "Şehsuvar Bey"
+    },
+    {
+      "id": "TAHTAKALE",
+      "name": "Tahtakale"
+    },
+    {
+      "id": "YAVUZ_SİNAN",
+      "name": "Yavuz Sinan"
+    },
+    {
+      "id": "HASEKİ_SULTAN",
+      "name": "Haseki Sultan"
+    },
+    {
+      "id": "TAYA_HATUN",
+      "name": "Taya Hatun"
+    }
+  ]
+}

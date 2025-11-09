@@ -1,0 +1,246 @@
+{
+  "districtId": "İZMİR__TORBALI",
+  "districtName": "Torbalı",
+  "neighborhoods": [
+    {
+      "id": "ÇAPAK",
+      "name": "Çapak"
+    },
+    {
+      "id": "ERTUĞRUL",
+      "name": "Ertuğrul"
+    },
+    {
+      "id": "MURATBEY",
+      "name": "Muratbey"
+    },
+    {
+      "id": "ÖZBEY",
+      "name": "Özbey"
+    },
+    {
+      "id": "TEPEKÖY",
+      "name": "Tepeköy"
+    },
+    {
+      "id": "TORBALI",
+      "name": "Torbalı"
+    },
+    {
+      "id": "NAİME",
+      "name": "Naime"
+    },
+    {
+      "id": "İSTİKLAL",
+      "name": "İstiklal"
+    },
+    {
+      "id": "KUŞÇUBURUN",
+      "name": "Kuşçuburun"
+    },
+    {
+      "id": "KARAKUYU",
+      "name": "Karakuyu"
+    },
+    {
+      "id": "ALPKENT",
+      "name": "Alpkent"
+    },
+    {
+      "id": "YEMİŞLİK",
+      "name": "Yemişlik"
+    },
+    {
+      "id": "KIRBAŞ",
+      "name": "Kırbaş"
+    },
+    {
+      "id": "YEDİ_EYLÜL",
+      "name": "Yedi Eylül"
+    },
+    {
+      "id": "FEVZİÇAKMAK",
+      "name": "Fevziçakmak"
+    },
+    {
+      "id": "BÜLBÜLDERE",
+      "name": "Bülbüldere"
+    },
+    {
+      "id": "ORTAKÖY",
+      "name": "Ortaköy"
+    },
+    {
+      "id": "KARŞIYAKA",
+      "name": "Karşıyaka"
+    },
+    {
+      "id": "ATATÜRK",
+      "name": "Atatürk"
+    },
+    {
+      "id": "İNÖNÜ",
+      "name": "İnönü"
+    },
+    {
+      "id": "TÜRKMENKÖY",
+      "name": "Türkmenköy"
+    },
+    {
+      "id": "AYRANCILAR",
+      "name": "Ayrancılar"
+    },
+    {
+      "id": "MUSTAFA_KEMAL_ATATÜRK",
+      "name": "Mustafa Kemal Atatürk"
+    },
+    {
+      "id": "GAZİ_MUSTAFA_KEMAL",
+      "name": "Gazi Mustafa Kemal"
+    },
+    {
+      "id": "PANCAR",
+      "name": "Pancar"
+    },
+    {
+      "id": "19_MAYIS",
+      "name": "19 Mayıs"
+    },
+    {
+      "id": "YAZIBAŞI",
+      "name": "Yazıbaşı"
+    },
+    {
+      "id": "KAZIM_KARABEKİR",
+      "name": "Kazım Karabekir"
+    },
+    {
+      "id": "SUBAŞI",
+      "name": "Subaşı"
+    },
+    {
+      "id": "ŞEHİTLER",
+      "name": "Şehitler"
+    },
+    {
+      "id": "EĞERCİ",
+      "name": "Eğerci"
+    },
+    {
+      "id": "PAMUKYAZI",
+      "name": "Pamukyazı"
+    },
+    {
+      "id": "ÇAYBAŞI",
+      "name": "Çaybaşı"
+    },
+    {
+      "id": "YENİMAHALLE",
+      "name": "Yenimahalle"
+    },
+    {
+      "id": "BAHÇELİEVLER",
+      "name": "Bahçelievler"
+    },
+    {
+      "id": "ATALAN",
+      "name": "Atalan"
+    },
+    {
+      "id": "GÖLLÜCE",
+      "name": "Göllüce"
+    },
+    {
+      "id": "CUMHURİYET",
+      "name": "Cumhuriyet"
+    },
+    {
+      "id": "AHMETLİ",
+      "name": "Ahmetli"
+    },
+    {
+      "id": "ARSLANLAR",
+      "name": "Arslanlar"
+    },
+    {
+      "id": "ÇAMLICA",
+      "name": "Çamlıca"
+    },
+    {
+      "id": "DAĞTEKE",
+      "name": "Dağteke"
+    },
+    {
+      "id": "DEMİRCİ",
+      "name": "Demirci"
+    },
+    {
+      "id": "DÜVERLİK",
+      "name": "Düverlik"
+    },
+    {
+      "id": "HELVACI",
+      "name": "Helvacı"
+    },
+    {
+      "id": "KAPLANCIK",
+      "name": "Kaplancık"
+    },
+    {
+      "id": "KARAKIZLAR",
+      "name": "Karakızlar"
+    },
+    {
+      "id": "DİRMİL",
+      "name": "Dirmil"
+    },
+    {
+      "id": "ORMANKÖY",
+      "name": "Ormanköy"
+    },
+    {
+      "id": "SAĞLIK",
+      "name": "Sağlık"
+    },
+    {
+      "id": "TAŞKESİK",
+      "name": "Taşkesik"
+    },
+    {
+      "id": "TULUM",
+      "name": "Tulum"
+    },
+    {
+      "id": "YENİKÖY",
+      "name": "Yeniköy"
+    },
+    {
+      "id": "YEŞİLKÖY",
+      "name": "Yeşilköy"
+    },
+    {
+      "id": "YOĞURTÇULAR",
+      "name": "Yoğurtçular"
+    },
+    {
+      "id": "DAĞKIZILCA",
+      "name": "Dağkızılca"
+    },
+    {
+      "id": "BOZKÖY",
+      "name": "Bozköy"
+    },
+    {
+      "id": "ÇAKIRBEYLİ",
+      "name": "Çakırbeyli"
+    },
+    {
+      "id": "KARAOT",
+      "name": "Karaot"
+    },
+    {
+      "id": "SAİPLER",
+      "name": "Saipler"
+    }
+  ]
+}

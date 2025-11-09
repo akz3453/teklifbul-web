@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>Stok Takip Sistemi - Ana Sayfa</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="/utils.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <style>
+    body{font-family:system-ui, Arial; background:#f8fafc; color:#111827; margin:0}
+    .container{max-width:1200px;margin:0 auto;padding:20px}
+    h1{margin:0 0 8px 0}
+    .subtitle{color:#6b7280;margin:0 0 32px 0}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:20px;cursor:pointer;transition:all 0.2s}
+    .card:hover{box-shadow:0 4px 6px rgba(0,0,0,0.1);border-color:#2563eb}
+    .card h3{margin:0 0 12px 0;font-size:18px;color:#2563eb}
+    .card p{margin:0;color:#6b7280;font-size:14px;line-height:1.6}
+    .icon{font-size:32px;margin-bottom:12px}
+    .section{margin-top:40px}
+    .section h2{border-bottom:2px solid #e5e7eb;padding-bottom:8px;margin-bottom:20px}
+    .status{display:inline-block;padding:4px 8px;background:#dcfce7;color:#065f46;border-radius:4px;font-size:12px;font-weight:600}
+  </style>
+</head>
+<body>
+  <!-- Common Header -->
+  <header id="app-header"></header>
+
+  <div class="container">
+    <h1>📦 Stok Takip ve ŞMTF Sistemi</h1>
+    <p class="subtitle">Teklifbul entegrasyonlu envanter yönetim sistemi</p>
+    
+    <div style="margin-bottom:32px;padding:16px;background:#f0f9ff;border-left:4px solid #0284c7;border-radius:4px">
+      <strong>Hoş Geldiniz!</strong> Bu sayfa, stok takip sisteminin tüm modüllerine erişim sağlar.
+    </div>
+
+    <div class="section">
+      <h2>🛠️ Stok Yönetimi</h2>
+      <div class="grid">
+        <div class="card" onclick="location.href='/pages/stock-import.html'">
+          <div class="icon">📥</div>
+          <h3>Stok İçe Aktar</h3>
+          <p>Excel dosyasından toplu stok kartı yükleme. Otomatik validasyon ve index oluşturma.</p>
+          <span class="status">✅ Hazır</span>
+        </div>
+        
+        <div class="card" onclick="location.href='/pages/price-update.html'">
+          <div class="icon">💰</div>
+          <h3>Toplu Fiyat Güncelleme</h3>
+          <p>Filtreleme ile toplu fiyat güncelleme. Excel export/import akışı.</p>
+          <span class="status">✅ Hazır</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>📊 Stok Hareketleri</h2>
+      <div class="grid">
+        <div class="card" onclick="location.href='/pages/stock-movements.html'">
+          <div class="icon">🔄</div>
+          <h3>Stok Hareketleri</h3>
+          <p>Giriş, çıkış, transfer ve düzeltme işlemleri. Otomatik ortalama maliyet güncellemesi.</p>
+          <span class="status">✅ Hazır</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>📋 Talep Yönetimi (ŞMTF/IMTF/DMTF)</h2>
+      <div class="grid">
+        <div class="card" onclick="location.href='/pages/request-site.html'">
+          <div class="icon">🏗️</div>
+          <h3>Şantiye Malzeme Talep</h3>
+          <p>Yıldızlı arama ile ürün eşleştirme. FOUND/MULTI/NEW rozet sistemi.</p>
+          <span class="status">✅ Hazır</span>
+        </div>
+        
+        <div class="card" onclick="toast.info(MESSAGES.INFO_DEMAND_ID_REQUIRED)">
+          <div class="icon">📄</div>
+          <h3>Talep Detayı</h3>
+          <p>Talep görüntüleme, onay/red işlemleri. Satın alma entegrasyonu.</p>
+          <span class="status">⚠️ ID gerekli</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>🧾 Fatura Karşılaştırma</h2>
+      <div class="grid">
+        <div class="card" onclick="location.href='/pages/invoice-import.html'">
+          <div class="icon">📑</div>
+          <h3>Fatura / İrsaliye Karşılaştır</h3>
+          <p>Excel'den fatura import, teklif ile karşılaştırma. Adet/fiyat farkı tespiti.</p>
+          <span class="status">✅ Hazır</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>📈 Raporlar</h2>
+      <div class="grid">
+        <div class="card" onclick="location.href='/pages/reports.html'">
+          <div class="icon">📊</div>
+          <h3>Stok Raporları</h3>
+          <p>Min stok, maliyet altı satışlar, lokasyon bazlı stok, gerçek maliyet raporları.</p>
+          <span class="status">✅ Hazır</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>⚙️ Sistem</h2>
+      <div class="grid">
+        <div class="card" onclick="toast.info(MESSAGES.INFO_INIT_STOCK_DATA)">
+          <div class="icon">🔧</div>
+          <h3>Veri İnit</h3>
+          <p>Örnek lokasyon ve stok verilerini yükleyin. Tek seferlik çalıştırın.</p>
+          <span class="status">⚠️ Manual</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:40px;padding:20px;background:#fef3c7;border-radius:8px">
+      <h3 style="margin:0 0 8px 0">📚 Dokümantasyon</h3>
+      <ul style="margin:0;padding-left:20px;line-height:1.8">
+        <li><strong>INVENTORY_SYSTEM_README.md</strong> - Detaylı sistem dokümantasyonu</li>
+        <li><strong>INVENTORY_IMPLEMENTATION_SUMMARY.md</strong> - İmplementasyon özeti</li>
+        <li><strong>firestore.rules</strong> - Güvenlik kuralları (TODO: Deploy)</li>
+      </ul>
+    </div>
+
+    <div style="margin-top:20px;padding:20px;background:#dcfce7;border-radius:8px;border:2px solid #059669">
+      <h3 style="margin:0 0 8px 0">🧪 Test Sayfası</h3>
+      <p style="margin:4px 0">Tüm sistem özelliklerini test etmek için:</p>
+      <a href="/test-inventory-system.html" style="display:inline-block;margin-top:8px;padding:12px 24px;background:#059669;color:white;text-decoration:none;border-radius:6px;font-weight:600">
+        🧪 Run All Tests →
+      </a>
+    </div>
+
+    <div style="margin-top:20px;padding:16px;background:#fff;border:1px solid #e5e7eb;border-radius:8px">
+      <h3 style="margin:0 0 12px 0">🎯 Özellikler</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;font-size:14px">
+        <div>✅ Yıldızlı arama (*ÇİM*32*KG*)</div>
+        <div>✅ Otomatik index oluşturma</div>
+        <div>✅ Ortalama maliyet hesaplama</div>
+        <div>✅ Excel import/export</div>
+        <div>✅ Türkçe normalizasyon</div>
+        <div>✅ Fatura karşılaştırma</div>
+        <div>✅ Lokasyon bazlı stok</div>
+        <div>✅ FOUND/MULTI/NEW rozetler</div>
+      </div>
+    </div>
+
+    <div style="margin-top:20px;text-align:center;color:#6b7280;font-size:14px">
+      <p>Teklifbul &copy; 2025 - Stok Takip ve ŞMTF Sistemi</p>
+    </div>
+  </div>
+
+  <script type="module">
+    // Teklifbul Rule v1.0 - Structured Logging
+    import { logger } from './src/shared/log/logger.js';
+    // Teklifbul Rule v1.0 - Toast Notification System
+    import { toast } from './src/shared/ui/toast.js';
+    // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
+    import { MESSAGES } from './src/shared/constants/messages.js';
+    
+    import { initGlobalHeader } from './assets/js/ui/header.js';
+    
+    // Teklifbul Rule v1.0 - Toast'u global scope'a ekle (onclick attribute'ları için)
+    window.toast = toast;
+    
+    // Initialize global header
+    initGlobalHeader({ mount: '#app-header', activeRoute: 'inventory' });
+    
+    // Check Firebase connection
+    import('/firebase.js').then(({ auth }) => {
+      logger.info('Firebase loaded');
+      if (auth.currentUser) {
+        logger.info('User authenticated', { email: auth.currentUser.email });
+      } else {
+        logger.warn('User not authenticated - Some features may be limited');
+      }
+    }).catch(err => {
+      logger.error('Firebase error', err);
+    });
+  </script>
+</body>
+</html>
+

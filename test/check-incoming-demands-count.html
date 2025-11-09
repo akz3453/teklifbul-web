@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tedarik Firması 1 - Gelen Talep Sayısı</title>
+  <style>
+    body {
+      font-family: system-ui, Arial;
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    h1 { color: #111827; margin-top: 0; }
+    .btn {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+      margin-right: 12px;
+      margin-bottom: 12px;
+    }
+    .btn:hover { background: #2563eb; }
+    .result {
+      margin-top: 20px;
+      padding: 16px;
+      border-radius: 6px;
+      background: #f9fafb;
+      border-left: 4px solid #3b82f6;
+    }
+    .result.success {
+      background: #d1fae5;
+      border-color: #10b981;
+      color: #065f46;
+    }
+    .result.error {
+      background: #fee2e2;
+      border-color: #ef4444;
+      color: #991b1b;
+    }
+    .result.info {
+      background: #dbeafe;
+      border-color: #3b82f6;
+      color: #1e40af;
+    }
+    .demand-item {
+      padding: 8px;
+      margin: 8px 0;
+      background: white;
+      border-radius: 4px;
+      border: 1px solid #e5e7eb;
+    }
+    .category-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      background: #e0f2fe;
+      color: #0277bd;
+      border-radius: 4px;
+      font-size: 12px;
+      margin-right: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>📊 Tedarik Firması 1 - Gelen Talep Sayısı</h1>
+    <p>Bu sayfa "Tedarik Firması 1" için sistemdeki gelen talep sayısını kontrol eder.</p>
+    
+    <button class="btn" onclick="checkIncomingDemands()">Gelen Talep Sayısını Kontrol Et</button>
+    <button class="btn" onclick="checkAllSuppliers()">Tüm Tedarik Firmalarını Listele</button>
+    
+    <div id="status" style="display:none;"></div>
+    <div id="result"></div>
+  </div>
+
+  <script type="module">
+    import { db, requireAuth } from "./firebase.js";
+    import {
+      collection,
+      getDocs,
+      query,
+      where,
+      orderBy,
+      limit,
+      doc,
+      getDoc
+    } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+    // Slug normalize helper
+    function toSlug(name) {
+      if (!name) return '';
+      return String(name)
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[şŞ]/g, 's').replace(/[ıİ]/g, 'i').replace(/[ğĞ]/g, 'g')
+        .replace(/[çÇ]/g, 'c').replace(/[öÖ]/g, 'o').replace(/[üÜ]/g, 'u')
+        .toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    }
+
+    function showResult(message, type = 'info') {
+      const resultDiv = document.getElementById('result');
+      resultDiv.className = `result ${type}`;
+      resultDiv.innerHTML = message;
+      resultDiv.style.display = 'block';
+    }
+
+    window.checkIncomingDemands = async function() {
+      try {
+        showResult('⏳ Kontrol ediliyor...', 'info');
+        
+        const user = await requireAuth();
+        console.log('Kullanıcı:', user.email || user.uid);
+        
+        // Kullanıcı bilgilerini al
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (!userDoc.exists()) {
+          showResult('❌ Kullanıcı bilgisi bulunamadı. Önce ayarlardan profil oluşturun.', 'error');
+          return;
+        }
+        
+        const userData = userDoc.data();
+        const userCompanyId = userData.companyId;
+        const companyName = userData.companyName || 'Bilinmeyen Firma';
+        
+        // Tedarikçi kategorilerini al
+        const mySupplierCats = Array.isArray(userData.supplierCategoryKeys) 
+          ? userData.supplierCategoryKeys.slice(0, 10)
+          : Array.isArray(userData.supplierCategories)
+          ? userData.supplierCategories.slice(0, 10)
+          : [];
+        
+        // Kategorileri slug'a çevir
+        const mySupplierCatKeys = mySupplierCats
+          .map(toSlug)
+          .filter(Boolean)
+          .slice(0, 10);
+        
+        console.log('Firma:', companyName);
+        console.log('Şirket ID:', userCompanyId);
+        console.log('Kategoriler (orijinal):', mySupplierCats);
+        console.log('Kategoriler (slug):', mySupplierCatKeys);
+        
+        // Gelen talepleri sorgula
+        let incomingSnap;
+        let queryMethod = '';
+        
+        try {
+          const incomingQ = query(
+            collection(db, 'demands'),
+            where('isPublished', '==', true),
+            where('supplierCategoryKeys', 'array-contains-any', mySupplierCatKeys),
+            orderBy('createdAt', 'desc'),
+            limit(100)
+          );
+          incomingSnap = await getDocs(incomingQ);
+          queryMethod = 'supplierCategoryKeys';
+          console.log(`📥 Found ${incomingSnap.docs.length} published demands with supplierCategoryKeys match`);
+        } catch (err) {
+          console.log("⚠️ supplierCategoryKeys query failed, trying categoryTags fallback:", err.message);
+          try {
+            const incomingQ = query(
+              collection(db, 'demands'),
+              where('isPublished', '==', true),
+              where('categoryTags', 'array-contains-any', mySupplierCatKeys),
+              orderBy('createdAt', 'desc'),
+              limit(100)
+            );
+            incomingSnap = await getDocs(incomingQ);
+            queryMethod = 'categoryTags (fallback)';
+            console.log(`📥 Found ${incomingSnap.docs.length} published demands with categoryTags match`);
+          } catch (err2) {
+            // Hiç kategori yoksa tüm yayınlanmış talepleri göster
+            if (mySupplierCatKeys.length === 0) {
+              const incomingQ = query(
+                collection(db, 'demands'),
+                where('isPublished', '==', true),
+                orderBy('createdAt', 'desc'),
+                limit(100)
+              );
+              incomingSnap = await getDocs(incomingQ);
+              queryMethod = 'all published (no categories)';
+              console.log(`📥 Found ${incomingSnap.docs.length} published demands (no categories to filter)`);
+            } else {
+              throw err2;
+            }
+          }
+        }
+        
+        // Kendi şirketinin taleplerini filtrele
+        const incomingDemands = incomingSnap.docs
+          .map(d => {
+            const data = d.data();
+            return { id: d.id, ...data };
+          })
+          .filter(d => {
+            // Kendi şirketinin taleplerini gösterme
+            if (d.creatorCompanyId && userCompanyId && d.creatorCompanyId === userCompanyId) {
+              return false;
+            }
+            return true;
+          });
+        
+        console.log(`✅ Processed ${incomingDemands.length} incoming demands (after company filter)`);
+        
+        // Sonuçları göster
+        let resultHtml = `
+          <h3>📊 ${companyName} - Gelen Talep Sonuçları</h3>
+          <div style="margin: 16px 0;">
+            <strong>Toplam Gelen Talep:</strong> <span style="font-size: 24px; color: #3b82f6; font-weight: bold;">${incomingDemands.length}</span>
+          </div>
+          <div style="margin: 8px 0; font-size: 14px; color: #6b7280;">
+            Sorgu metodu: ${queryMethod}<br>
+            Kullanılan kategoriler: ${mySupplierCatKeys.length > 0 ? mySupplierCatKeys.join(', ') : 'Kategori yok (tüm talepler gösteriliyor)'}<br>
+            Toplam yayınlanmış talep (filtre öncesi): ${incomingSnap.docs.length}<br>
+            Kendi şirketinin talepleri: ${incomingSnap.docs.length - incomingDemands.length}
+          </div>
+        `;
+        
+        if (incomingDemands.length > 0) {
+          resultHtml += '<h4 style="margin-top: 24px;">Gelen Talepler:</h4>';
+          incomingDemands.slice(0, 20).forEach((demand, index) => {
+            const demandCats = demand.supplierCategoryKeys || demand.categoryTags || [];
+            const matchedCats = demandCats.filter(cat => mySupplierCatKeys.includes(toSlug(cat)));
+            
+            resultHtml += `
+              <div class="demand-item">
+                <strong>${index + 1}. ${demand.title || 'Başlıksız Talep'}</strong><br>
+                <small style="color: #6b7280;">
+                  Talep Kodu: ${demand.demandCode || demand.satfk || 'Yok'} | 
+                  Oluşturulma: ${demand.createdAt ? new Date(demand.createdAt.toDate()).toLocaleDateString('tr-TR') : 'Bilinmiyor'}
+                </small><br>
+                ${matchedCats.length > 0 ? `<div style="margin-top: 4px;">Eşleşen Kategoriler: ${matchedCats.map(c => `<span class="category-badge">${c}</span>`).join('')}</div>` : ''}
+              </div>
+            `;
+          });
+          
+          if (incomingDemands.length > 20) {
+            resultHtml += `<div style="margin-top: 8px; color: #6b7280; font-size: 14px;">... ve ${incomingDemands.length - 20} talep daha</div>`;
+          }
+        } else {
+          resultHtml += `
+            <div style="margin-top: 16px; padding: 16px; background: #fef3c7; border-radius: 4px; color: #92400e;">
+              ⚠️ Gelen talep bulunamadı.<br>
+              <small style="display: block; margin-top: 8px;">
+                Nedenleri:<br>
+                • Yayınlanmış talep yok<br>
+                • Kategori eşleşmesi yok (${mySupplierCatKeys.length > 0 ? mySupplierCatKeys.join(', ') : 'Kategori ayarlanmamış'})<br>
+                • Tüm talepler kendi şirketinize ait
+              </small>
+            </div>
+          `;
+        }
+        
+        showResult(resultHtml, incomingDemands.length > 0 ? 'success' : 'info');
+        
+      } catch (error) {
+        console.error('Hata:', error);
+        showResult(`❌ Hata: ${error.message}`, 'error');
+      }
+    };
+
+    window.checkAllSuppliers = async function() {
+      try {
+        showResult('⏳ Tedarik firmaları listeleniyor...', 'info');
+        
+        await requireAuth();
+        
+        // Tüm tedarikçi firmalarını listele
+        const suppliersQ = query(
+          collection(db, 'users'),
+          where('roles.supplier', '==', true),
+          where('isActive', '==', true)
+        );
+        
+        const suppliersSnap = await getDocs(suppliersQ);
+        const suppliers = suppliersSnap.docs.map(d => ({
+          id: d.id,
+          ...d.data()
+        }));
+        
+        let resultHtml = `
+          <h3>📋 Aktif Tedarik Firmaları (${suppliers.length})</h3>
+          <div style="margin-top: 16px;">
+        `;
+        
+        for (let i = 0; i < suppliers.length; i++) {
+          const s = suppliers[i];
+          const companyName = s.companyName || s.displayName || 'İsimsiz Firma';
+          const categories = (s.supplierCategoryKeys || s.supplierCategories || []).slice(0, 5);
+          
+          resultHtml += `
+            <div class="demand-item">
+              <strong>${i + 1}. ${companyName}</strong><br>
+              <small style="color: #6b7280;">
+                Kategoriler: ${categories.length > 0 ? categories.join(', ') : 'Kategori yok'}
+              </small>
+            </div>
+          `;
+        }
+        
+        resultHtml += '</div>';
+        showResult(resultHtml, 'info');
+        
+      } catch (error) {
+        console.error('Hata:', error);
+        showResult(`❌ Hata: ${error.message}`, 'error');
+      }
+    };
+  </script>
+</body>
+</html>
+

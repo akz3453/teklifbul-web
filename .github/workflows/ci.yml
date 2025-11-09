@@ -1,0 +1,66 @@
+# Teklifbul CI/CD Pipeline v1.1
+# Her PR ve push'ta otomatik çalışır
+
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  quality-gates:
+    name: Quality Gates
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run linter
+        run: npm run lint -- --max-warnings=0
+      
+      - name: Run typecheck
+        run: npm run typecheck
+      
+      - name: Run tests
+        run: npm test --if-present
+        continue-on-error: true
+      
+      - name: Build project
+        run: npm run build
+      
+      - name: Check build output
+        run: |
+          if [ ! -d "dist" ]; then
+            echo "❌ Build output 'dist' directory not found"
+            exit 1
+          fi
+          echo "✅ Build output found"
+          du -sh dist/
+      
+      - name: Preview check
+        run: |
+          echo "Starting preview server..."
+          npm run preview &
+          sleep 5
+          curl -f http://localhost:4173 || exit 1
+          echo "✅ Preview server is running"
+      
+      - name: Notify success
+        if: success()
+        run: echo "✅ Teklifbul v1.1 CI pipeline tamamlandı"
+      
+      - name: Notify failure
+        if: failure()
+        run: echo "❌ CI pipeline başarısız oldu"

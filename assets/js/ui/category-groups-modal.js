@@ -3,6 +3,9 @@
  * Test sayfasındaki gibi çalışan basit modal
  */
 
+// Teklifbul Rule v1.0 - Structured Logging
+import { logger } from '../../../src/shared/log/logger.js';
+
 // Categories embedded directly to avoid import issues
 const EMBEDDED_CATEGORIES = [
   "Sac/Metal",
@@ -29,19 +32,19 @@ async function loadCategories() {
   try {
     // Try to load from external file first
     const mod = await import('../../../categories.js');
-    console.log('✅ Categories loaded from file:', mod.CATEGORIES);
+    logger.info('Categories loaded from file', { count: mod.CATEGORIES?.length });
     return mod.CATEGORIES || EMBEDDED_CATEGORIES;
   } catch (e) {
-    console.warn('categories.js yüklenemedi, embedded kategoriler kullanılıyor:', e);
+    logger.warn('categories.js yüklenemedi, embedded kategoriler kullanılıyor', e);
     try {
       // Fallback: absolute path
       const mod2 = await import('/categories.js');
-      console.log('✅ Categories loaded (fallback):', mod2.CATEGORIES);
+      logger.info('Categories loaded (fallback)', { count: mod2.CATEGORIES?.length });
       return mod2.CATEGORIES || EMBEDDED_CATEGORIES;
     } catch (e2) {
-      console.warn('categories.js yüklenemedi, embedded kategoriler kullanılıyor:', e2);
+      logger.warn('categories.js yüklenemedi, embedded kategoriler kullanılıyor', e2);
       // Use embedded categories as final fallback
-      console.log('✅ Using embedded categories:', EMBEDDED_CATEGORIES);
+      logger.info('Using embedded categories', { count: EMBEDDED_CATEGORIES.length });
       return EMBEDDED_CATEGORIES;
     }
   }
@@ -49,7 +52,7 @@ async function loadCategories() {
 
 // Simple category groups modal - BASIT VERSİYON
 function initCategoryGroupsModal() {
-  console.log('🔄 Category groups modal initializing...');
+  logger.info('Category groups modal initializing...');
   
   // Remove existing modal if any
   const existingModal = document.getElementById('categoryGroupsModal');
@@ -114,7 +117,7 @@ function initCategoryGroupsModal() {
   
   // Add modal to page
   document.body.insertAdjacentHTML('beforeend', modalHTML);
-  console.log('✅ Modal HTML added to page');
+  logger.info('Modal HTML added to page');
   
   // Get modal elements
   const modal = document.getElementById('categoryGroupsModal');
@@ -129,7 +132,7 @@ function initCategoryGroupsModal() {
   const categoryList = document.getElementById('categoryList');
   const selectedCount = document.getElementById('selectedCount');
   
-  console.log('✅ Modal element found:', modal);
+  logger.info('Modal element found', { modal: !!modal });
   
   // State
   let currentStep = 1;
@@ -171,11 +174,11 @@ function initCategoryGroupsModal() {
     
     try {
       // Save group (you can implement this)
-      console.log('💾 Saving group:', groupData);
+      logger.info('Saving group', groupData);
       alert(`Grup "${groupName}" başarıyla oluşturuldu!`);
       closeModal();
     } catch (error) {
-      console.error('Error saving group:', error);
+      logger.error('Error saving group', error);
       alert('Grup kaydedilirken hata oluştu');
     }
   });
@@ -204,14 +207,14 @@ function initCategoryGroupsModal() {
   }
   
   async function loadAndPopulateCategories() {
-    console.log('🔄 Loading categories...');
+    logger.info('Loading categories...');
     allCategories = await loadCategories();
-    console.log('✅ Categories loaded:', allCategories);
+    logger.info('Categories loaded', { count: allCategories.length });
     populateCategories();
   }
   
   function populateCategories(searchTerm = '') {
-    console.log('🔄 Populating categories...');
+    logger.info('Populating categories...');
     
     // Clear existing categories
     categoryList.innerHTML = '';
@@ -221,7 +224,7 @@ function initCategoryGroupsModal() {
       category.toLowerCase().includes(searchTerm.toLowerCase())
     );
     
-    console.log(`📋 Showing ${filteredCategories.length} categories`);
+    logger.info(`Showing ${filteredCategories.length} categories`);
     
     // Add each category
     filteredCategories.forEach(category => {
@@ -247,10 +250,37 @@ function initCategoryGroupsModal() {
         z-index: 1 !important;
       `;
       
+      // Teklifbul Rule v1.0 - Kategori öneri sistemi: tooltip ve detay desteği
       categoryDiv.innerHTML = `
         <input type="checkbox" ${isSelected ? 'checked' : ''} style="margin-right: 12px; width: 20px; height: 20px; transform: scale(1.2);">
         <span style="flex: 1; color: #1f2937;">${category}</span>
+        <span class="category-info-icon" data-category="${category}" 
+              style="margin-left: 8px; cursor: pointer; color: #3b82f6; font-size: 18px;"
+              title="Kategori bilgisi" aria-label="Kategori bilgisi">
+          ⓘ
+        </span>
       `;
+      
+      // Tooltip için event listener
+      const infoIcon = categoryDiv.querySelector('.category-info-icon');
+      if (infoIcon) {
+        infoIcon.addEventListener('click', (e) => {
+          e.stopPropagation();
+          showCategoryInfo(category);
+        });
+        
+        // Hover tooltip (basit)
+        let tooltipTimeout;
+        infoIcon.addEventListener('mouseenter', () => {
+          tooltipTimeout = setTimeout(() => {
+            loadCategoryTooltip(category, infoIcon);
+          }, 500);
+        });
+        infoIcon.addEventListener('mouseleave', () => {
+          clearTimeout(tooltipTimeout);
+          hideTooltip();
+        });
+      }
       
       // Click handler
       categoryDiv.addEventListener('click', (e) => {
@@ -274,11 +304,11 @@ function initCategoryGroupsModal() {
       });
       
       categoryList.appendChild(categoryDiv);
-      console.log(`✅ Category "${category}" added to DOM`);
+      logger.info(`Category "${category}" added to DOM`);
     });
     
     updateSelectedCount();
-    console.log(`✅ ${filteredCategories.length} categories rendered`);
+    logger.info(`${filteredCategories.length} categories rendered`);
     
     // AGGRESSIVE CSS FORCE - Container
     categoryList.style.cssText = `
@@ -296,11 +326,156 @@ function initCategoryGroupsModal() {
       z-index: 1 !important;
     `;
     
-    console.log('🔧 AGGRESSIVE CSS forced for categoryList');
+    logger.info('AGGRESSIVE CSS forced for categoryList');
   }
   
   function updateSelectedCount() {
     selectedCount.textContent = selectedCategories.size;
+  }
+  
+  // Teklifbul Rule v1.0 - Kategori bilgi tooltip ve detay kartı
+  let tooltipElement = null;
+  let categoryDetailsCache = new Map();
+  
+  async function loadCategoryTooltip(categoryName, anchorElement) {
+    try {
+      // Cache kontrolü
+      if (categoryDetailsCache.has(categoryName)) {
+        showTooltip(categoryDetailsCache.get(categoryName), anchorElement);
+        return;
+      }
+      
+      // API'den kategori detayını al
+      const { getCategoryDetails } = await import('/assets/js/services/category-suggest.js');
+      const details = await getCategoryDetails(categoryName);
+      
+      if (details) {
+        categoryDetailsCache.set(categoryName, details);
+        showTooltip(details, anchorElement);
+      }
+    } catch (error) {
+      logger.warn('Category tooltip load failed', error);
+    }
+  }
+  
+  function showTooltip(details, anchorElement) {
+    if (!details.short_desc && (!details.examples || details.examples.length === 0)) {
+      return; // Bilgi yoksa tooltip gösterme
+    }
+    
+    // Mevcut tooltip'i kaldır
+    if (tooltipElement) {
+      tooltipElement.remove();
+    }
+    
+    // Yeni tooltip oluştur
+    tooltipElement = document.createElement('div');
+    tooltipElement.style.cssText = `
+      position: absolute;
+      background: #1f2937;
+      color: white;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      max-width: 300px;
+      z-index: 10000;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      pointer-events: none;
+    `;
+    
+    let content = `<div style="font-weight: 600; margin-bottom: 6px;">${details.name}</div>`;
+    if (details.short_desc) {
+      content += `<div style="margin-bottom: 6px; line-height: 1.4;">${details.short_desc}</div>`;
+    }
+    if (details.examples && details.examples.length > 0) {
+      content += `<div style="font-size: 11px; color: #d1d5db; margin-top: 6px;">
+        Örnekler: ${details.examples.slice(0, 4).join(', ')}
+      </div>`;
+    }
+    
+    tooltipElement.innerHTML = content;
+    document.body.appendChild(tooltipElement);
+    
+    // Pozisyonlandır
+    const rect = anchorElement.getBoundingClientRect();
+    tooltipElement.style.top = `${rect.bottom + 8}px`;
+    tooltipElement.style.left = `${rect.left}px`;
+  }
+  
+  function hideTooltip() {
+    if (tooltipElement) {
+      tooltipElement.remove();
+      tooltipElement = null;
+    }
+  }
+  
+  async function showCategoryInfo(categoryName) {
+    try {
+      const { getCategoryDetails } = await import('/assets/js/services/category-suggest.js');
+      const details = await getCategoryDetails(categoryName);
+      
+      if (!details) {
+        alert(`"${categoryName}" kategorisi için detay bulunamadı.`);
+        return;
+      }
+      
+      // Modal veya kart göster
+      let infoCard = document.getElementById('categoryInfoCard');
+      if (!infoCard) {
+        infoCard = document.createElement('div');
+        infoCard.id = 'categoryInfoCard';
+        infoCard.style.cssText = `
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background: white;
+          padding: 24px;
+          border-radius: 12px;
+          box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+          max-width: 500px;
+          z-index: 10001;
+        `;
+        document.body.appendChild(infoCard);
+      }
+      
+      let content = `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3 style="margin: 0; color: #1f2937;">${details.name}</h3>
+        <button id="closeCategoryInfo" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #6b7280;">&times;</button>
+      </div>`;
+      
+      if (details.short_desc) {
+        content += `<div style="margin-bottom: 16px; color: #374151; line-height: 1.6;">${details.short_desc}</div>`;
+      }
+      
+      if (details.examples && details.examples.length > 0) {
+        content += `<div style="margin-top: 16px;">
+          <div style="font-weight: 600; margin-bottom: 8px; color: #1f2937;">Bu kategoride neler var?</div>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+            ${details.examples.map(ex => `<span style="background: #e0e7ff; color: #1e40af; padding: 4px 10px; border-radius: 12px; font-size: 12px;">${ex}</span>`).join('')}
+          </div>
+        </div>`;
+      }
+      
+      infoCard.innerHTML = content;
+      infoCard.style.display = 'block';
+      
+      // Kapat butonu
+      document.getElementById('closeCategoryInfo').addEventListener('click', () => {
+        infoCard.style.display = 'none';
+      });
+      
+      // Dışarı tıklayınca kapat
+      infoCard.addEventListener('click', (e) => {
+        if (e.target === infoCard) {
+          infoCard.style.display = 'none';
+        }
+      });
+      
+    } catch (error) {
+      logger.error('Show category info failed', error);
+      alert('Kategori bilgisi yüklenirken hata oluştu.');
+    }
   }
   
   function closeModal() {
@@ -313,7 +488,7 @@ function initCategoryGroupsModal() {
   }
   
   function showModal(group = null) {
-    console.log('🔄 showModal called with group:', group);
+    logger.info('showModal called with group', group);
     
     if (group) {
       // Edit mode
@@ -328,7 +503,7 @@ function initCategoryGroupsModal() {
     }
     
     modal.style.display = 'block';
-    console.log('✅ Modal displayed');
+    logger.info('Modal displayed');
   }
   
   // Public API
@@ -344,4 +519,4 @@ const categoryGroupsModal = initCategoryGroupsModal();
 // Export for use in other files
 window.categoryGroupsModal = categoryGroupsModal;
 
-console.log('✅ Category groups modal initialized');
+logger.info('Category groups modal initialized');

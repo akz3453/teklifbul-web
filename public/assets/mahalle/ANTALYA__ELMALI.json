@@ -1,0 +1,246 @@
+{
+  "districtId": "ANTALYA__ELMALI",
+  "districtName": "Elmalı",
+  "neighborhoods": [
+    {
+      "id": "BAYINDIR",
+      "name": "Bayındır"
+    },
+    {
+      "id": "BAYRALAR",
+      "name": "Bayralar"
+    },
+    {
+      "id": "BEYLER",
+      "name": "Beyler"
+    },
+    {
+      "id": "BOZHÜYÜK",
+      "name": "Bozhüyük"
+    },
+    {
+      "id": "BÜYÜKSÖĞLE",
+      "name": "Büyüksöğle"
+    },
+    {
+      "id": "DEREKÖY",
+      "name": "Dereköy"
+    },
+    {
+      "id": "DÜDENKÖY",
+      "name": "Düdenköy"
+    },
+    {
+      "id": "ESKİHİSAR",
+      "name": "Eskihisar"
+    },
+    {
+      "id": "EYMİR",
+      "name": "Eymir"
+    },
+    {
+      "id": "GEÇİTKÖY",
+      "name": "Geçitköy"
+    },
+    {
+      "id": "GEÇMEN",
+      "name": "Geçmen"
+    },
+    {
+      "id": "GÖKPINAR",
+      "name": "Gökpınar"
+    },
+    {
+      "id": "GÖLTARLA",
+      "name": "Göltarla"
+    },
+    {
+      "id": "HACIMUSALAR",
+      "name": "Hacımusalar"
+    },
+    {
+      "id": "HACIYUSUFLAR",
+      "name": "Hacıyusuflar"
+    },
+    {
+      "id": "İMİRCİK",
+      "name": "İmircik"
+    },
+    {
+      "id": "KARAMIK",
+      "name": "Karamık"
+    },
+    {
+      "id": "KIŞLAKÖY",
+      "name": "Kışlaköy"
+    },
+    {
+      "id": "KOCAPINAR",
+      "name": "Kocapınar"
+    },
+    {
+      "id": "KUZKÖY",
+      "name": "Kuzköy"
+    },
+    {
+      "id": "KÜÇÜKSÖĞLE",
+      "name": "Küçüksöğle"
+    },
+    {
+      "id": "MACUN",
+      "name": "Macun"
+    },
+    {
+      "id": "MURSAL",
+      "name": "Mursal"
+    },
+    {
+      "id": "PİRHASANLAR",
+      "name": "Pirhasanlar"
+    },
+    {
+      "id": "SALUR",
+      "name": "Salur"
+    },
+    {
+      "id": "TAVULLAR",
+      "name": "Tavullar"
+    },
+    {
+      "id": "YAKAÇİFTLİKKÖYÜ",
+      "name": "Yakaçiftlikköyü"
+    },
+    {
+      "id": "YALNIZDAM",
+      "name": "Yalnızdam"
+    },
+    {
+      "id": "YAPRAKLI",
+      "name": "Yapraklı"
+    },
+    {
+      "id": "YILMAZLI",
+      "name": "Yılmazlı"
+    },
+    {
+      "id": "YÖRENLER",
+      "name": "Yörenler"
+    },
+    {
+      "id": "AFŞAR",
+      "name": "Afşar"
+    },
+    {
+      "id": "AHATLI",
+      "name": "Ahatlı"
+    },
+    {
+      "id": "AKÇAENİŞ",
+      "name": "Akçaeniş"
+    },
+    {
+      "id": "ARMUTLU",
+      "name": "Armutlu"
+    },
+    {
+      "id": "ÇAYBAŞI",
+      "name": "Çaybaşı"
+    },
+    {
+      "id": "İSLAMLAR",
+      "name": "İslamlar"
+    },
+    {
+      "id": "KIZILCA",
+      "name": "Kızılca"
+    },
+    {
+      "id": "SARILAR",
+      "name": "Sarılar"
+    },
+    {
+      "id": "TEKKEKÖY",
+      "name": "Tekkeköy"
+    },
+    {
+      "id": "ZÜMRÜTOVA",
+      "name": "Zümrütova"
+    },
+    {
+      "id": "MÜREN",
+      "name": "Müren"
+    },
+    {
+      "id": "İLYAĞI",
+      "name": "İlyağı"
+    },
+    {
+      "id": "ÇOBANİSA",
+      "name": "Çobanisa"
+    },
+    {
+      "id": "ÇUKURELMA",
+      "name": "Çukurelma"
+    },
+    {
+      "id": "GÜMÜŞYAKA",
+      "name": "Gümüşyaka"
+    },
+    {
+      "id": "KARAKÖY",
+      "name": "Karaköy"
+    },
+    {
+      "id": "OVACIK",
+      "name": "Ovacık"
+    },
+    {
+      "id": "ÖZDEMİR",
+      "name": "Özdemir"
+    },
+    {
+      "id": "YUVA",
+      "name": "Yuva"
+    },
+    {
+      "id": "AKÇAY",
+      "name": "Akçay"
+    },
+    {
+      "id": "CAMİATİK",
+      "name": "Camiatik"
+    },
+    {
+      "id": "CAMİCEDİT",
+      "name": "Camicedit"
+    },
+    {
+      "id": "GÜNDOĞAN",
+      "name": "Gündoğan"
+    },
+    {
+      "id": "İPLİKPAZARI",
+      "name": "İplikpazarı"
+    },
+    {
+      "id": "KAPMESCİT",
+      "name": "Kapmescit"
+    },
+    {
+      "id": "KARYAĞDI",
+      "name": "Karyağdı"
+    },
+    {
+      "id": "TAHTAMESCİT",
+      "name": "Tahtamescit"
+    },
+    {
+      "id": "TOKLULAR",
+      "name": "Toklular"
+    },
+    {
+      "id": "YENİ",
+      "name": "Yeni"
+    }
+  ]
+}

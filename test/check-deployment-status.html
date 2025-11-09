@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <title>Deployment Durum Kontrolü</title>
+  <style>
+    body{font-family:system-ui;max-width:900px;margin:50px auto;padding:20px;background:#f8fafc}
+    .status-card{background:white;border:1px solid #e5e7eb;border-radius:8px;padding:20px;margin:16px 0}
+    .status-card h2{margin:0 0 16px 0;font-size:18px}
+    .status-item{margin:12px 0;padding:12px;background:#f9fafb;border-radius:6px;border-left:4px solid #d1d5db}
+    .status-item.success{border-left-color:#059669;background:#dcfce7}
+    .status-item.warning{border-left-color:#d97706;background:#fef3c7}
+    .status-item.error{border-left-color:#dc2626;background:#fee2e2}
+    .btn{padding:12px 24px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;font-weight:600;margin:8px 4px}
+    .btn:hover{background:#2563eb}
+    .btn-success{background:#059669}
+    .btn-success:hover{background:#047857}
+    .icon{font-size:24px;margin-right:8px}
+  </style>
+</head>
+<body>
+  <h1>🔍 Deployment Durum Kontrolü</h1>
+  <p>Stok takip sisteminin deployment durumunu kontrol edin.</p>
+
+  <div class="status-card">
+    <h2>1️⃣ Firestore Rules Deployment</h2>
+    <div id="rulesStatus" class="status-item warning">
+      <span class="icon">⏳</span> Kontrol ediliyor...
+    </div>
+    <button class="btn" onclick="checkRules()">Rules Durumunu Kontrol Et</button>
+  </div>
+
+  <div class="status-card">
+    <h2>2️⃣ Örnek Veri Başlatma</h2>
+    <div id="dataStatus" class="status-item warning">
+      <span class="icon">⏳</span> Kontrol ediliyor...
+    </div>
+    <button class="btn" onclick="checkData()">Veri Durumunu Kontrol Et</button>
+    <button class="btn btn-success" onclick="initData()">Veriyi Başlat</button>
+  </div>
+
+  <div class="status-card">
+    <h2>3️⃣ Otomatik Testler</h2>
+    <div id="testStatus" class="status-item warning">
+      <span class="icon">⏳</span> Bekleniyor...
+    </div>
+    <button class="btn" onclick="runTests()">Testleri Çalıştır</button>
+  </div>
+
+  <div class="status-card">
+    <h2>📋 Genel Durum</h2>
+    <div id="overallStatus"></div>
+  </div>
+
+  <script type="module">
+    import { db, auth, requireAuth } from '/firebase.js';
+    import { collection, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+
+    window.checkRules = async function() {
+      const statusDiv = document.getElementById('rulesStatus');
+      statusDiv.className = 'status-item warning';
+      statusDiv.innerHTML = '<span class="icon">⏳</span> Rules durumu kontrol ediliyor...';
+      
+      try {
+        await requireAuth();
+        
+        // Try to read stocks collection - if rules are deployed, this should work
+        const stocksSnap = await getDocs(collection(db, 'stocks'));
+        
+        statusDiv.className = 'status-item success';
+        statusDiv.innerHTML = `
+          <span class="icon">✅</span> Rules aktif görünüyor!
+          <br><small>stocks koleksiyonuna erişim başarılı (${stocksSnap.size} kayıt)</small>
+        `;
+      } catch (error) {
+        if (error.message.includes('permission') || error.message.includes('Permission')) {
+          statusDiv.className = 'status-item error';
+          statusDiv.innerHTML = `
+            <span class="icon">❌</span> Rules deploy edilmemiş!
+            <br><small>Hata: ${error.message}</small>
+            <br><strong>Çözüm:</strong> firebase deploy --only firestore:rules çalıştırın
+          `;
+        } else {
+          statusDiv.className = 'status-item warning';
+          statusDiv.innerHTML = `
+            <span class="icon">⚠️</span> Kontrol edilemedi: ${error.message}
+          `;
+        }
+      }
+    };
+
+    window.checkData = async function() {
+      const statusDiv = document.getElementById('dataStatus');
+      statusDiv.className = 'status-item warning';
+      statusDiv.innerHTML = '<span class="icon">⏳</span> Veri kontrol ediliyor...';
+      
+      try {
+        await requireAuth();
+        
+        const stocksSnap = await getDocs(collection(db, 'stocks'));
+        const locsSnap = await getDocs(collection(db, 'stock_locations'));
+        
+        if (stocksSnap.size > 0 && locsSnap.size > 0) {
+          statusDiv.className = 'status-item success';
+          statusDiv.innerHTML = `
+            <span class="icon">✅</span> Veri yüklenmiş!
+            <br><small>Stoklar: ${stocksSnap.size} | Lokasyonlar: ${locsSnap.size}</small>
+          `;
+        } else {
+          statusDiv.className = 'status-item warning';
+          statusDiv.innerHTML = `
+            <span class="icon">⚠️</span> Veri yüklenmemiş!
+            <br><small>Stoklar: ${stocksSnap.size} | Lokasyonlar: ${locsSnap.size}</small>
+            <br><strong>Çözüm:</strong> Aşağıdaki "Veriyi Başlat" butonuna tıklayın
+          `;
+        }
+      } catch (error) {
+        statusDiv.className = 'status-item error';
+        statusDiv.innerHTML = `
+          <span class="icon">❌</span> Hata: ${error.message}
+        `;
+      }
+    };
+
+    window.initData = async function() {
+      // Open init page
+      window.open('/test-init-stock.html', '_blank');
+      document.getElementById('dataStatus').innerHTML = `
+        <span class="icon">⏳</span> Init sayfası açıldı!
+        <br><small>Yeni sekmede açılan sayfada "Initialize Sample Data" butonuna tıklayın.</small>
+      `;
+    };
+
+    window.runTests = async function() {
+      const statusDiv = document.getElementById('testStatus');
+      statusDiv.innerHTML = '<span class="icon">⏳</span> Testler çalıştırılıyor...';
+      
+      try {
+        // Open test page
+        window.open('/test-inventory-system.html', '_blank');
+        statusDiv.className = 'status-item success';
+        statusDiv.innerHTML = `
+          <span class="icon">✅</span> Test sayfası açıldı!
+          <br><small>Yeni sekmede test sayfası açıldı, oradan "Run All Tests" butonuna tıklayın.</small>
+        `;
+      } catch (error) {
+        statusDiv.className = 'status-item error';
+        statusDiv.innerHTML = `
+          <span class="icon">❌</span> Hata: ${error.message}
+        `;
+      }
+    };
+
+    // Auto-check on load
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        checkRules();
+        checkData();
+      }, 1000);
+    });
+
+    // Update overall status
+    setInterval(() => {
+      const rulesStatus = document.getElementById('rulesStatus').className;
+      const dataStatus = document.getElementById('dataStatus').className;
+      const testStatus = document.getElementById('testStatus').className;
+      
+      const successCount = [rulesStatus, dataStatus].filter(s => s.includes('success')).length;
+      const overallDiv = document.getElementById('overallStatus');
+      
+      if (successCount === 2) {
+        overallDiv.innerHTML = `
+          <div class="status-item success">
+            <span class="icon">✅</span> <strong>Sistem Hazır!</strong>
+            <br><small>Tüm deployment adımları tamamlandı. Sistem kullanıma hazır!</small>
+          </div>
+        `;
+      } else if (successCount === 1) {
+        overallDiv.innerHTML = `
+          <div class="status-item warning">
+            <span class="icon">⚠️</span> <strong>Kısmen Tamamlandı</strong>
+            <br><small>Bazı adımlar eksik. Yukarıdaki kontrolleri tamamlayın.</small>
+          </div>
+        `;
+      } else {
+        overallDiv.innerHTML = `
+          <div class="status-item error">
+            <span class="icon">❌</span> <strong>Deployment Gerekli</strong>
+            <br><small>Yukarıdaki adımları tamamlayın.</small>
+          </div>
+        `;
+      }
+    }, 2000);
+  </script>
+</body>
+</html>
+

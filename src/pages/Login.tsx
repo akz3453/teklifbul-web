@@ -1,12 +1,17 @@
 import React, { useState } from "react";
 import { auth } from "../lib/firebase";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
+import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
+
+  // Kullanıcı varsa guard zaten yönlendirecek, burada navigate etmeye gerek yok
+  // PublicRoute zaten kontrol ediyor
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -15,11 +20,11 @@ export default function Login() {
       if (isLogin) {
         // Giriş yap
         await signInWithEmailAndPassword(auth, email, password);
-        alert("✅ Giriş başarılı!");
+        // Guard otomatik yönlendirecek, navigate gerekmez
       } else {
         // Kayıt ol
         await createUserWithEmailAndPassword(auth, email, password);
-        alert("🎉 Kayıt başarılı!");
+        // Guard otomatik yönlendirecek, navigate gerekmez
       }
     } catch (err: any) {
       alert("⚠️ Hata: " + err.message);

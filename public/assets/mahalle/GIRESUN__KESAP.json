@@ -1,0 +1,30 @@
+{
+  "districtId": "GIRESUN__KESAP",
+  "districtName": "Keşap",
+  "neighborhoods": [
+    {
+      "id": "ALAKAS",
+      "name": "Alakaş"
+    },
+    {
+      "id": "BOZKURT",
+      "name": "Bozkurt"
+    },
+    {
+      "id": "FINDIKLI",
+      "name": "Fındıklı"
+    },
+    {
+      "id": "KARABEDIR",
+      "name": "Karabedir"
+    },
+    {
+      "id": "UGURCA",
+      "name": "Uğurca"
+    },
+    {
+      "id": "YOLICI",
+      "name": "Yoliçi"
+    }
+  ]
+}

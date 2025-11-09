@@ -5,7 +5,7 @@
 
 ## Overview
 
-This implementation adds comprehensive multi-role support, tax certificate management, and intelligent category-based demand targeting to the TeklifBul platform.
+This implementation adds comprehensive multi- role support, tax certificate management, and intelligent category-based demand targeting to the TeklifBul platform.
 
 ## Key Features Implemented
 

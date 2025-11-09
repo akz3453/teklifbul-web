@@ -3,6 +3,9 @@
  * Excel şablonunu kullanarak teklifleri karşılaştırır
  */
 
+// Teklifbul Rule v1.0 - Structured Logging
+import { logger } from './shared/log/logger.js';
+
 import * as XLSX from './assets/vendor/xlsx.full.min.js';
 
 export class PriceComparisonSystem {
@@ -24,10 +27,10 @@ export class PriceComparisonSystem {
             const sheetName = workbook.SheetNames[0];
             this.templateData = workbook.Sheets[sheetName];
             
-            console.log('✅ Excel şablonu yüklendi');
+            logger.info('Excel şablonu yüklendi');
             return true;
         } catch (error) {
-            console.error('❌ Excel şablonu yüklenemedi:', error);
+            logger.error('Excel şablonu yüklenemedi', error);
             return false;
         }
     }
@@ -245,7 +248,7 @@ export class PriceComparisonSystem {
             return true;
             
         } catch (error) {
-            console.error('Fiyat karşılaştırması oluşturulurken hata:', error);
+            logger.error('Fiyat karşılaştırması oluşturulurken hata', error);
             throw error;
         }
     }

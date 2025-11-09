@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Match Service Test</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 { color: #1f2937; margin-bottom: 20px; }
+    .test-section {
+      margin-bottom: 30px;
+      padding: 20px;
+      background: #f9fafb;
+      border-radius: 8px;
+    }
+    .test-section h2 {
+      color: #374151;
+      margin-bottom: 15px;
+      font-size: 18px;
+    }
+    button {
+      padding: 10px 20px;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+    button:hover { background: #2563eb; }
+    button:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+    .results {
+      margin-top: 20px;
+      padding: 15px;
+      background: white;
+      border-radius: 6px;
+      border: 1px solid #e5e7eb;
+    }
+    .result-item {
+      padding: 10px;
+      margin-bottom: 10px;
+      background: #f9fafb;
+      border-left: 4px solid #3b82f6;
+      border-radius: 4px;
+    }
+    .result-item.success { border-left-color: #10b981; }
+    .result-item.error { border-left-color: #ef4444; }
+    .result-item.warning { border-left-color: #f59e0b; }
+    .loading {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #f3f4f6;
+      border-top: 2px solid #3b82f6;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-left: 10px;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    code {
+      background: #f3f4f6;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+    }
+    pre {
+      background: #1f2937;
+      color: #f9fafb;
+      padding: 15px;
+      border-radius: 6px;
+      overflow-x: auto;
+      font-size: 12px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧪 Match Service Test Sayfası</h1>
+    <p style="color: #6b7280; margin-bottom: 30px;">Tedarikçi eşleştirme sistemini test edin</p>
+    
+    <div class="test-section">
+      <h2>1. Kategori ID'leri ile Eşleştirme</h2>
+      <button id="testCategoryIds">Test Et (CAT.ELEKTRIK, CAT.SACMETAL)</button>
+      <div id="results1" class="results" style="display: none;"></div>
+    </div>
+    
+    <div class="test-section">
+      <h2>2. Legacy Slug Formatı ile Eşleştirme</h2>
+      <button id="testLegacySlugs">Test Et (elektrik, sac-metal)</button>
+      <div id="results2" class="results" style="display: none;"></div>
+    </div>
+    
+    <div class="test-section">
+      <h2>3. Karma Format (ID + Slug + Name)</h2>
+      <button id="testMixed">Test Et</button>
+      <div id="results3" class="results" style="display: none;"></div>
+    </div>
+    
+    <div class="test-section">
+      <h2>4. Tüm Aktif Tedarikçileri Listele</h2>
+      <button id="testAllSuppliers">Listele</button>
+      <div id="results4" class="results" style="display: none;"></div>
+    </div>
+    
+    <div class="test-section">
+      <h2>5. Gerçek Talep Senaryosu (25 Kategori)</h2>
+      <button id="testRealDemand">Test Et (Tüm Kategoriler)</button>
+      <div id="results5" class="results" style="display: none;"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { db } from "./firebase.js";
+    import { matchSuppliers } from "./src/matching/match-service.js";
+    import { getAllCategories, normalizeToIds, getNameById } from "./src/categories/category-service.js";
+    import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+    
+    function logResult(containerId, message, type = 'info') {
+      const container = document.getElementById(containerId);
+      container.style.display = 'block';
+      const item = document.createElement('div');
+      item.className = `result-item ${type}`;
+      item.innerHTML = message;
+      container.appendChild(item);
+    }
+    
+    function clearResults(containerId) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = '';
+      container.style.display = 'none';
+    }
+    
+    // Test 1: Category IDs
+    document.getElementById('testCategoryIds').addEventListener('click', async () => {
+      const btn = document.getElementById('testCategoryIds');
+      btn.disabled = true;
+      btn.innerHTML = 'Test ediliyor...<span class="loading"></span>';
+      clearResults('results1');
+      
+      try {
+        logResult('results1', '🧪 Test başlatılıyor: <code>categoryIds: ["CAT.ELEKTRIK", "CAT.SACMETAL"]</code>', 'info');
+        
+        const suppliers = await matchSuppliers(db, {
+          categoryIds: ['CAT.ELEKTRIK', 'CAT.SACMETAL']
+        });
+        
+        logResult('results1', `✅ Başarılı! <strong>${suppliers.length}</strong> tedarikçi bulundu.`, 'success');
+        
+        suppliers.forEach((supplier, index) => {
+          logResult('results1', `
+            <strong>${index + 1}. ${supplier.companyName || supplier.displayName || supplier.email || 'İsimsiz'}</strong><br>
+            ID: <code>${supplier.uid || supplier.id}</code><br>
+            Email: <code>${supplier.email || '-'}</code><br>
+            Kategoriler: <code>${JSON.stringify(supplier.supplierCategoryIds || [])}</code>
+          `, 'info');
+        });
+        
+        if (suppliers.length === 0) {
+          logResult('results1', '⚠️ Tedarikçi bulunamadı. Firestore\'da <code>supplierCategoryIds</code> alanını kontrol edin.', 'warning');
+        }
+      } catch (error) {
+        logResult('results1', `❌ Hata: ${error.message}`, 'error');
+        console.error('Test error:', error);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Test Et (CAT.ELEKTRIK, CAT.SACMETAL)';
+      }
+    });
+    
+    // Test 2: Legacy Slugs
+    document.getElementById('testLegacySlugs').addEventListener('click', async () => {
+      const btn = document.getElementById('testLegacySlugs');
+      btn.disabled = true;
+      btn.innerHTML = 'Test ediliyor...<span class="loading"></span>';
+      clearResults('results2');
+      
+      try {
+        logResult('results2', '🧪 Test başlatılıyor: <code>legacySlugs: ["elektrik", "sac-metal"]</code>', 'info');
+        
+        const suppliers = await matchSuppliers(db, {
+          categoryIds: [], // Primary empty, use legacy
+          legacySlugs: ['elektrik', 'sac-metal']
+        });
+        
+        logResult('results2', `✅ Başarılı! <strong>${suppliers.length}</strong> tedarikçi bulundu (legacy slug formatı ile).`, 'success');
+        
+        suppliers.slice(0, 5).forEach((supplier, index) => {
+          logResult('results2', `
+            <strong>${index + 1}. ${supplier.companyName || supplier.displayName || supplier.email || 'İsimsiz'}</strong><br>
+            ID: <code>${supplier.uid || supplier.id}</code><br>
+            Email: <code>${supplier.email || '-'}</code>
+          `, 'info');
+        });
+        
+        if (suppliers.length > 5) {
+          logResult('results2', `... ve ${suppliers.length - 5} tedarikçi daha`, 'info');
+        }
+      } catch (error) {
+        logResult('results2', `❌ Hata: ${error.message}`, 'error');
+        console.error('Test error:', error);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Test Et (elektrik, sac-metal)';
+      }
+    });
+    
+    // Test 3: Mixed Format
+    document.getElementById('testMixed').addEventListener('click', async () => {
+      const btn = document.getElementById('testMixed');
+      btn.disabled = true;
+      btn.innerHTML = 'Test ediliyor...<span class="loading"></span>';
+      clearResults('results3');
+      
+      try {
+        logResult('results3', '🧪 Test başlatılıyor: Karma format (ID + Slug + Name)', 'info');
+        
+        const suppliers = await matchSuppliers(db, {
+          categoryIds: ['CAT.ELEKTRIK'],
+          legacySlugs: ['hirdavat'],
+          legacyNames: ['Gıda']
+        });
+        
+        logResult('results3', `✅ Başarılı! <strong>${suppliers.length}</strong> tedarikçi bulundu (karma format ile).`, 'success');
+        
+        suppliers.slice(0, 10).forEach((supplier, index) => {
+          logResult('results3', `
+            <strong>${index + 1}. ${supplier.companyName || supplier.displayName || supplier.email || 'İsimsiz'}</strong><br>
+            ID: <code>${supplier.uid || supplier.id}</code>
+          `, 'info');
+        });
+      } catch (error) {
+        logResult('results3', `❌ Hata: ${error.message}`, 'error');
+        console.error('Test error:', error);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Test Et';
+      }
+    });
+    
+    // Test 4: All Suppliers
+    document.getElementById('testAllSuppliers').addEventListener('click', async () => {
+      const btn = document.getElementById('testAllSuppliers');
+      btn.disabled = true;
+      btn.innerHTML = 'Yükleniyor...<span class="loading"></span>';
+      clearResults('results4');
+      
+      try {
+        logResult('results4', '📋 Tüm aktif tedarikçiler listeleniyor...', 'info');
+        
+        const q = query(
+          collection(db, 'users'),
+          where('isActive', '==', true),
+          where('roles', 'array-contains', 'supplier')
+        );
+        
+        const snap = await getDocs(q);
+        
+        logResult('results4', `✅ Toplam <strong>${snap.size}</strong> aktif tedarikçi bulundu.`, 'success');
+        
+        snap.docs.forEach((doc, index) => {
+          const data = doc.data();
+          const hasIds = Array.isArray(data.supplierCategoryIds) && data.supplierCategoryIds.length > 0;
+          const hasSlugs = Array.isArray(data.supplierCategoryKeys) && data.supplierCategoryKeys.length > 0;
+          const hasNames = Array.isArray(data.supplierCategories) && data.supplierCategories.length > 0;
+          
+          const formatStatus = hasIds ? '✅ ID' : (hasSlugs ? '⚠️ Slug' : (hasNames ? '⚠️ Name' : '❌ Yok'));
+          
+          logResult('results4', `
+            <strong>${index + 1}. ${data.companyName || data.displayName || data.email || 'İsimsiz'}</strong><br>
+            ID: <code>${doc.id}</code><br>
+            Format: ${formatStatus}<br>
+            Kategori Sayısı: ${hasIds ? data.supplierCategoryIds.length : (hasSlugs ? data.supplierCategoryKeys.length : (hasNames ? data.supplierCategories.length : 0))}
+          `, hasIds ? 'success' : (hasSlugs || hasNames ? 'warning' : 'error'));
+        });
+      } catch (error) {
+        logResult('results4', `❌ Hata: ${error.message}`, 'error');
+        console.error('Test error:', error);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Listele';
+      }
+    });
+    
+    // Test 5: Real Demand Scenario
+    document.getElementById('testRealDemand').addEventListener('click', async () => {
+      const btn = document.getElementById('testRealDemand');
+      btn.disabled = true;
+      btn.innerHTML = 'Test ediliyor...<span class="loading"></span>';
+      clearResults('results5');
+      
+      try {
+        logResult('results5', '🧪 Gerçek talep senaryosu: Tüm kategoriler (25 adet)', 'info');
+        
+        const allCategories = await getAllCategories();
+        const allCategoryIds = allCategories.map(c => c.id);
+        const allCategorySlugs = allCategories.map(c => c.slug);
+        const allCategoryNames = allCategories.map(c => c.name);
+        
+        logResult('results5', `📊 Test kategorileri: <code>${allCategoryIds.length} ID</code>, <code>${allCategorySlugs.length} Slug</code>, <code>${allCategoryNames.length} Name</code>`, 'info');
+        
+        const startTime = Date.now();
+        const suppliers = await matchSuppliers(db, {
+          categoryIds: allCategoryIds,
+          legacySlugs: allCategorySlugs,
+          legacyNames: allCategoryNames
+        });
+        const endTime = Date.now();
+        
+        logResult('results5', `✅ Başarılı! <strong>${suppliers.length}</strong> tedarikçi bulundu.`, 'success');
+        logResult('results5', `⏱️ Süre: <strong>${endTime - startTime}ms</strong>`, 'info');
+        
+        if (suppliers.length === 0) {
+          logResult('results5', '⚠️ Tedarikçi bulunamadı. Firestore\'da <code>supplierCategoryIds</code>, <code>supplierCategoryKeys</code> veya <code>supplierCategories</code> alanlarını kontrol edin.', 'warning');
+        } else {
+          logResult('results5', `<pre>${JSON.stringify(suppliers.slice(0, 3).map(s => ({
+            id: s.uid || s.id,
+            name: s.companyName || s.displayName,
+            email: s.email,
+            categories: s.supplierCategoryIds?.length || 0
+          })), null, 2)}</pre>`, 'info');
+        }
+      } catch (error) {
+        logResult('results5', `❌ Hata: ${error.message}`, 'error');
+        logResult('results5', `<pre>${error.stack}</pre>`, 'error');
+        console.error('Test error:', error);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Test Et (Tüm Kategoriler)';
+      }
+    });
+  </script>
+</body>
+</html>
+

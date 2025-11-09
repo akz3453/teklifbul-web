@@ -1,0 +1,270 @@
+{
+  "districtId": "MUGLA__MENTESE",
+  "districtName": "Menteşe",
+  "neighborhoods": [
+    {
+      "id": "AKCAOVA",
+      "name": "Akçaova"
+    },
+    {
+      "id": "AKKAYA",
+      "name": "Akkaya"
+    },
+    {
+      "id": "AKYER",
+      "name": "Akyer"
+    },
+    {
+      "id": "ALGI",
+      "name": "Algı"
+    },
+    {
+      "id": "AVCILAR",
+      "name": "Avcılar"
+    },
+    {
+      "id": "BALIBEY",
+      "name": "Balıbey"
+    },
+    {
+      "id": "BAYIR",
+      "name": "Bayır"
+    },
+    {
+      "id": "BOZYER",
+      "name": "Bozyer"
+    },
+    {
+      "id": "CAMIKEBIR",
+      "name": "Camikebir"
+    },
+    {
+      "id": "CAKMAK",
+      "name": "Çakmak"
+    },
+    {
+      "id": "CAMOLUK",
+      "name": "Çamoluk"
+    },
+    {
+      "id": "CATAKBAGYAKA",
+      "name": "Çatakbağyaka"
+    },
+    {
+      "id": "CAYBUKU",
+      "name": "Çaybükü"
+    },
+    {
+      "id": "CIRPI",
+      "name": "Çırpı"
+    },
+    {
+      "id": "CIFTLIK",
+      "name": "Çiftlik"
+    },
+    {
+      "id": "DAGDIBI",
+      "name": "Dağdibi"
+    },
+    {
+      "id": "DAGPINAR",
+      "name": "Dağpınar"
+    },
+    {
+      "id": "DENIZOVA",
+      "name": "Denizova"
+    },
+    {
+      "id": "DERINKUYU",
+      "name": "Derinkuyu"
+    },
+    {
+      "id": "DOGAN",
+      "name": "Doğan"
+    },
+    {
+      "id": "DOKUZCAM",
+      "name": "Dokuzçam"
+    },
+    {
+      "id": "DUGEREK",
+      "name": "Düğerek"
+    },
+    {
+      "id": "EMIRBEYAZIT",
+      "name": "Emirbeyazıt"
+    },
+    {
+      "id": "ESENCAY",
+      "name": "Esençay"
+    },
+    {
+      "id": "FADIL",
+      "name": "Fadıl"
+    },
+    {
+      "id": "GAZELLER",
+      "name": "Gazeller"
+    },
+    {
+      "id": "GOKTEPE",
+      "name": "Göktepe"
+    },
+    {
+      "id": "GULAGZI",
+      "name": "Gülağzı"
+    },
+    {
+      "id": "GUNLUCE",
+      "name": "Günlüce"
+    },
+    {
+      "id": "HACIRUSTEM",
+      "name": "Hacırüstem"
+    },
+    {
+      "id": "IKIZCE",
+      "name": "İkizce"
+    },
+    {
+      "id": "KAFACA",
+      "name": "Kafaca"
+    },
+    {
+      "id": "KARACAOREN",
+      "name": "Karacaören"
+    },
+    {
+      "id": "KARAMEHMET",
+      "name": "Karamehmet"
+    },
+    {
+      "id": "KARSIYAKA",
+      "name": "Karşıyaka"
+    },
+    {
+      "id": "KIRAN",
+      "name": "Kıran"
+    },
+    {
+      "id": "KIRAMETTIN",
+      "name": "Kiramettin"
+    },
+    {
+      "id": "KOZAGAC",
+      "name": "Kozağaç"
+    },
+    {
+      "id": "KOTEKLI",
+      "name": "Kötekli"
+    },
+    {
+      "id": "KUYUCAK",
+      "name": "Kuyucak"
+    },
+    {
+      "id": "KUZLUK",
+      "name": "Kuzluk"
+    },
+    {
+      "id": "MEKE",
+      "name": "Meke"
+    },
+    {
+      "id": "MURATLAR",
+      "name": "Muratlar"
+    },
+    {
+      "id": "MUSLIHITTIN",
+      "name": "Muslihittin"
+    },
+    {
+      "id": "MUSTAKBEY",
+      "name": "Müştakbey"
+    },
+    {
+      "id": "ORHANIYE",
+      "name": "Orhaniye"
+    },
+    {
+      "id": "ORTA",
+      "name": "Orta"
+    },
+    {
+      "id": "ORTAKOY",
+      "name": "Ortaköy"
+    },
+    {
+      "id": "OZLUCE",
+      "name": "Özlüce"
+    },
+    {
+      "id": "PASAPINARI",
+      "name": "Paşapınarı"
+    },
+    {
+      "id": "SALIHPASALAR",
+      "name": "Salihpaşalar"
+    },
+    {
+      "id": "SARNIC",
+      "name": "Sarnıç"
+    },
+    {
+      "id": "SUNGUR",
+      "name": "Sungur"
+    },
+    {
+      "id": "SENYAYLA",
+      "name": "Şenyayla"
+    },
+    {
+      "id": "SEYH",
+      "name": "Şeyh"
+    },
+    {
+      "id": "TASLI",
+      "name": "Taşlı"
+    },
+    {
+      "id": "YARAS",
+      "name": "Yaraş"
+    },
+    {
+      "id": "YEMISENDERE",
+      "name": "Yemişendere"
+    },
+    {
+      "id": "YENIBAGYAKA",
+      "name": "Yenibağyaka"
+    },
+    {
+      "id": "YENICE",
+      "name": "Yenice"
+    },
+    {
+      "id": "YENIKOY",
+      "name": "Yeniköy"
+    },
+    {
+      "id": "YENIKOY_YERKESIK",
+      "name": "Yeniköy (yerkesik)"
+    },
+    {
+      "id": "YERKESIK",
+      "name": "Yerkesik"
+    },
+    {
+      "id": "YESILYURT",
+      "name": "Yeşilyurt"
+    },
+    {
+      "id": "YORUKOGLU",
+      "name": "Yörükoğlu"
+    },
+    {
+      "id": "ZEYTIN",
+      "name": "Zeytin"
+    }
+  ]
+}

@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>Fatura / İrsaliye Karşılaştırma</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="/utils.css" />
+  <style>
+    body{font-family:system-ui, Arial; background:#f8fafc; color:#111827; margin:0}
+    .container{max-width:1100px;margin:0 auto;padding:20px}
+    h1{margin:0 0 8px 0}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin:12px 0}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px; margin-top:8px}
+    label{font-size:12px;color:#374151;font-weight:600;display:block;margin-bottom:6px}
+    input,select{width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:14px}
+    table{width:100%;border-collapse:collapse; margin-top:12px}
+    th,td{border-bottom:1px solid #e5e7eb;padding:8px;text-align:left;font-size:13px}
+    th{background:#f9fafb}
+    .badge{display:inline-block;border-radius:14px;padding:2px 8px;font-size:12px}
+    .b-match{background:#dcfce7;color:#065f46}
+    .b-discrepancy{background:#fee2e2;color:#991b1b}
+    .warn{color:#b45309}
+    .err{color:#b91c1c}
+    .muted{color:#6b7280;font-size:12px}
+    .btn{padding:10px 16px;border:0;border-radius:6px;cursor:pointer;font-weight:600}
+    .btn-primary{background:#2563eb;color:#fff}
+    .btn-secondary{background:#6b7280;color:#fff}
+    .btn[disabled]{opacity:.5;cursor:not-allowed}
+  </style>
+</head>
+<body>
+  <!-- Common Header -->
+  <header id="app-header"></header>
+
+  <div class="container">
+    <h1>Fatura / İrsaliye Karşılaştırma</h1>
+    <p class="muted">Teklif/Sipariş ile fatura/irsaliye karşılaştırması yapın.</p>
+
+    <div class="card">
+      <h2 style="margin:0 0 12px 0;font-size:18px">Teklif Seçimi</h2>
+      <div class="row">
+        <div>
+          <label for="matchedQuoteId">Teklif/Sipariş ID</label>
+          <input id="matchedQuoteId" placeholder="İlişkili teklif ID" />
+        </div>
+        <div>
+          <label for="invoiceNumber">Fatura No</label>
+          <input id="invoiceNumber" placeholder="Fatura numarası" />
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin:0 0 12px 0;font-size:18px">Fatura Dosyası</h2>
+      <input id="invoiceFile" type="file" accept=".xls,.xlsx,.csv" />
+      <p class="muted" style="margin-top:6px">Beklenen kolonlar: SKU | Ürün Adı | Miktar | Birim | Birim Fiyat | Toplam</p>
+    </div>
+
+    <div class="card">
+      <h2 style="margin:0 0 12px 0;font-size:18px">Karşılaştırma Sonuçları</h2>
+      <div id="compareInfo" class="muted">Henüz karşılaştırma yapılmadı.</div>
+      <table id="compareTable" style="display:none">
+        <thead>
+          <tr>
+            <th>Satır</th><th>SKU</th><th>Ürün</th><th>Beklenen</th><th>Gerçek</th><th>Fark</th><th>Durum</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div style="display:flex; gap:8px; justify-content:flex-end">
+      <button class="btn btn-secondary" id="btnBack" onclick="history.back()">Geri</button>
+      <button class="btn btn-primary" id="btnCompare">Karşılaştır</button>
+      <button class="btn btn-primary" id="btnSave" disabled>Kaydet</button>
+    </div>
+  </div>
+
+  <!-- XLSX CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- Firebase -->
+  <script type="module" src="/firebase.js"></script>
+  <!-- Header -->
+  <script type="module">
+    import { initGlobalHeader } from '../assets/js/ui/header.js';
+    initGlobalHeader({ mount: '#app-header', activeRoute: 'inventory' });
+  </script>
+  <!-- Helpers -->
+  <script type="module" src="/scripts/invoice-compare.js"></script>
+  <!-- Main -->
+  <script type="module" src="/scripts/invoice-import.js"></script>
+</body>
+</html>
+

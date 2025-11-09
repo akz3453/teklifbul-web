@@ -1,0 +1,230 @@
+{
+  "districtId": "MUĞLA__BODRUM",
+  "districtName": "Bodrum",
+  "neighborhoods": [
+    {
+      "id": "ÇAMARASI",
+      "name": "Çamarası"
+    },
+    {
+      "id": "ÇARŞI",
+      "name": "Çarşı"
+    },
+    {
+      "id": "ESKİÇEŞME",
+      "name": "Eskiçeşme"
+    },
+    {
+      "id": "KUMBAHÇE",
+      "name": "Kumbahçe"
+    },
+    {
+      "id": "TÜRKKUYUSU",
+      "name": "Türkkuyusu"
+    },
+    {
+      "id": "UMURCA",
+      "name": "Umurca"
+    },
+    {
+      "id": "YENİKÖY",
+      "name": "Yeniköy"
+    },
+    {
+      "id": "YOKUŞBAŞI",
+      "name": "Yokuşbaşı"
+    },
+    {
+      "id": "GÜMBET",
+      "name": "Gümbet"
+    },
+    {
+      "id": "CEVATŞAKİR",
+      "name": "Cevatşakir"
+    },
+    {
+      "id": "TEPECİK",
+      "name": "Tepecik"
+    },
+    {
+      "id": "TORBA",
+      "name": "Torba"
+    },
+    {
+      "id": "CUMHURİYET",
+      "name": "Cumhuriyet"
+    },
+    {
+      "id": "ÇIRKAN",
+      "name": "Çırkan"
+    },
+    {
+      "id": "MÜSKEBİ",
+      "name": "Müskebi"
+    },
+    {
+      "id": "YAHŞİ",
+      "name": "Yahşi"
+    },
+    {
+      "id": "KARABAĞ",
+      "name": "Karabağ"
+    },
+    {
+      "id": "AKÇAALAN",
+      "name": "Akçaalan"
+    },
+    {
+      "id": "BAHÇELİEVLER",
+      "name": "Bahçelievler"
+    },
+    {
+      "id": "KOYUNBABA",
+      "name": "Koyunbaba"
+    },
+    {
+      "id": "DİRMİL",
+      "name": "Dirmil"
+    },
+    {
+      "id": "GERİŞ",
+      "name": "Geriş"
+    },
+    {
+      "id": "FARİLYA",
+      "name": "Farilya"
+    },
+    {
+      "id": "GÖLKÖY",
+      "name": "Gölköy"
+    },
+    {
+      "id": "TÜRKBÜKÜ",
+      "name": "Türkbükü"
+    },
+    {
+      "id": "KIZILAĞAÇ",
+      "name": "Kızılağaç"
+    },
+    {
+      "id": "ÇİFTLİK",
+      "name": "Çiftlik"
+    },
+    {
+      "id": "KARAOVA",
+      "name": "Karaova"
+    },
+    {
+      "id": "KÜÇÜKBÜK",
+      "name": "Küçükbük"
+    },
+    {
+      "id": "GÖLBAŞI",
+      "name": "Gölbaşı"
+    },
+    {
+      "id": "BAHÇEYAKASI",
+      "name": "Bahçeyakası"
+    },
+    {
+      "id": "ÇAMLIK",
+      "name": "Çamlık"
+    },
+    {
+      "id": "ÇÖMLEKÇİ",
+      "name": "Çömlekçi"
+    },
+    {
+      "id": "GÖKPINAR",
+      "name": "Gökpınar"
+    },
+    {
+      "id": "GÜVERCİNLİK",
+      "name": "Güvercinlik"
+    },
+    {
+      "id": "KEMER",
+      "name": "Kemer"
+    },
+    {
+      "id": "KUMKÖY",
+      "name": "Kumköy"
+    },
+    {
+      "id": "MAZIKÖY",
+      "name": "Mazıköy"
+    },
+    {
+      "id": "PINARLIBELEN",
+      "name": "Pınarlıbelen"
+    },
+    {
+      "id": "TEPECİK_KARAOVA",
+      "name": "Tepecik Karaova"
+    },
+    {
+      "id": "SAZKÖY",
+      "name": "Sazköy"
+    },
+    {
+      "id": "YENİKÖY_KARAOVA",
+      "name": "Yeniköy Karaova"
+    },
+    {
+      "id": "AKYARLAR",
+      "name": "Akyarlar"
+    },
+    {
+      "id": "DEREKÖY",
+      "name": "Dereköy"
+    },
+    {
+      "id": "İSLAMHANELERİ",
+      "name": "İslamhaneleri"
+    },
+    {
+      "id": "PEKSİMET",
+      "name": "Peksimet"
+    },
+    {
+      "id": "DAĞBELEN",
+      "name": "Dağbelen"
+    },
+    {
+      "id": "GÜRECE",
+      "name": "Gürece"
+    },
+    {
+      "id": "YAKAKÖY",
+      "name": "Yakaköy"
+    },
+    {
+      "id": "BİTEZ",
+      "name": "Bitez"
+    },
+    {
+      "id": "MUMCULAR",
+      "name": "Mumcular"
+    },
+    {
+      "id": "TURGUTREİS",
+      "name": "Turgutreis"
+    },
+    {
+      "id": "YALIKAVAK",
+      "name": "Yalıkavak"
+    },
+    {
+      "id": "GÜNDOĞAN",
+      "name": "Gündoğan"
+    },
+    {
+      "id": "KONACIK",
+      "name": "Konacık"
+    },
+    {
+      "id": "GÜMÜŞLÜK",
+      "name": "Gümüşlük"
+    }
+  ]
+}

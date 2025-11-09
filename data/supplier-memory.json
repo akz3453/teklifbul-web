@@ -1,0 +1,220 @@
+{
+  "__generic__": [
+    {
+      "alias": "Hedef Fiyat",
+      "field": "unitPriceExcl",
+      "confidence": 0.44767482517482515,
+      "seen": 2
+    },
+    {
+      "alias": "Sipariş Miktarı ",
+      "field": "qty",
+      "confidence": 0.5166666666666666,
+      "seen": 1
+    },
+    {
+      "alias": "Birim",
+      "field": "unit",
+      "confidence": 0.5547499999999999,
+      "seen": 10
+    },
+    {
+      "alias": "Ödeme Şartları",
+      "field": "vatPct",
+      "confidence": 0.4714285714285714,
+      "seen": 1
+    },
+    {
+      "alias": "Sıra No.",
+      "field": "brand",
+      "confidence": 0.5065934065934066,
+      "seen": 13
+    },
+    {
+      "alias": "Malzeme Tanımı                                      ",
+      "field": "itemName",
+      "confidence": 0.4446291208791209,
+      "seen": 13
+    },
+    {
+      "alias": "ACIKLAMA",
+      "field": "title",
+      "confidence": 0.3779326923076924,
+      "seen": 13
+    },
+    {
+      "alias": "Sıra No.",
+      "field": "requester",
+      "confidence": 0.30071428571428566,
+      "seen": 12
+    },
+    {
+      "alias": "Sıra No.",
+      "field": "demandDate",
+      "confidence": 0.25373626373626385,
+      "seen": 13
+    },
+    {
+      "alias": "ACIKLAMA",
+      "field": "dueDate",
+      "confidence": 0.24364697802197807,
+      "seen": 13
+    },
+    {
+      "alias": "Sıra No.",
+      "field": "currency",
+      "confidence": 0.2949862637362637,
+      "seen": 13
+    },
+    {
+      "alias": "Sıra No.",
+      "field": "note",
+      "confidence": 0.22090909090909092,
+      "seen": 11
+    },
+    {
+      "alias": "Hedef Fiyat TL",
+      "field": "unitPriceExcl",
+      "confidence": 0.5374267399267398,
+      "seen": 6
+    },
+    {
+      "alias": "Depodaki Miktar",
+      "field": "qty",
+      "confidence": 0.6041666666666665,
+      "seen": 8
+    },
+    {
+      "alias": "Ürünle ilgili açıklama kısmı buraya yazılır ürün sırasına göre açıklama yeri aşağıya gidebilir",
+      "field": "note",
+      "confidence": 0.3270744680851064,
+      "seen": 2
+    },
+    {
+      "alias": "Ürünle ilgili açıklama kısmı buraya yazılır ürün sırasına göre açıklama yeri aşağıya gidebilir",
+      "field": "requester",
+      "confidence": 0.3317730496453901,
+      "seen": 1
+    },
+    {
+      "alias": "Miktar",
+      "field": "qty",
+      "confidence": 0.4624999999999999,
+      "seen": 6
+    },
+    {
+      "alias": "Birim",
+      "field": "unitPriceExcl",
+      "confidence": 0.66,
+      "seen": 5
+    },
+    {
+      "alias": "Sipariş\nMiktarı",
+      "field": "unit",
+      "confidence": 0.4670833333333333,
+      "seen": 1
+    },
+    {
+      "alias": "Miktarı",
+      "field": "qty",
+      "confidence": 0.37142857142857144,
+      "seen": 1
+    },
+    {
+      "alias": "Model",
+      "field": "model",
+      "confidence": 0.61,
+      "seen": 3
+    },
+    {
+      "alias": "KDV",
+      "field": "vatPct",
+      "confidence": 0.4041666666666666,
+      "seen": 3
+    },
+    {
+      "alias": "T.C. Kimlik No",
+      "field": "title",
+      "confidence": 0.3597435897435898,
+      "seen": 1
+    },
+    {
+      "alias": "Borçlu",
+      "field": "requester",
+      "confidence": 0.23166666666666666,
+      "seen": 1
+    },
+    {
+      "alias": "Tarih",
+      "field": "demandDate",
+      "confidence": 0.4475,
+      "seen": 1
+    },
+    {
+      "alias": "Tarih",
+      "field": "dueDate",
+      "confidence": 0.3,
+      "seen": 1
+    },
+    {
+      "alias": "Tarih",
+      "field": "currency",
+      "confidence": 0.155625,
+      "seen": 1
+    },
+    {
+      "alias": "Borçlu",
+      "field": "note",
+      "confidence": 0.3029166666666666,
+      "seen": 1
+    },
+    {
+      "alias": "Not",
+      "field": "title",
+      "confidence": 0.31999999999999995,
+      "seen": 1
+    },
+    {
+      "alias": "Madde 1",
+      "field": "requester",
+      "confidence": 0.23682539682539683,
+      "seen": 1
+    },
+    {
+      "alias": "Madde 1",
+      "field": "demandDate",
+      "confidence": 0.25357142857142856,
+      "seen": 1
+    },
+    {
+      "alias": "Madde 10",
+      "field": "dueDate",
+      "confidence": 0.18348214285714284,
+      "seen": 1
+    },
+    {
+      "alias": "Madde 1",
+      "field": "currency",
+      "confidence": 0.15133928571428573,
+      "seen": 1
+    },
+    {
+      "alias": "Not",
+      "field": "note",
+      "confidence": 0.5466666666666666,
+      "seen": 1
+    },
+    {
+      "alias": "title",
+      "field": "title",
+      "confidence": 0.9,
+      "seen": 1
+    },
+    {
+      "alias": "currency",
+      "field": "currency",
+      "confidence": 0.6,
+      "seen": 1
+    }
+  ]
+}

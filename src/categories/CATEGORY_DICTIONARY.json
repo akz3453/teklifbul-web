@@ -1,0 +1,203 @@
+[
+  {
+    "id": "CAT.SACMETAL",
+    "slug": "sac-metal",
+    "name": "Sac/Metal",
+    "group": "Endüstriyel",
+    "synonyms": ["sac", "metal", "çelik işleme"],
+    "isActive": true
+  },
+  {
+    "id": "CAT.ELEKTRIK",
+    "slug": "elektrik",
+    "name": "Elektrik",
+    "group": "Elektrik-ELK",
+    "synonyms": ["elektrik malzemeleri"],
+    "isActive": true
+  },
+  {
+    "id": "CAT.ELEKTRONIK",
+    "slug": "elektronik",
+    "name": "Elektronik",
+    "group": "Elektrik-ELK",
+    "synonyms": ["plc", "sensor"],
+    "isActive": true
+  },
+  {
+    "id": "CAT.MAKINEIMALAT",
+    "slug": "makine-imalat",
+    "name": "Makine-İmalat",
+    "group": "Endüstriyel",
+    "synonyms": ["imalat", "cnc"],
+    "isActive": true
+  },
+  {
+    "id": "CAT.HIRDAVAT",
+    "slug": "hirdavat",
+    "name": "Hırdavat",
+    "group": "Endüstriyel",
+    "synonyms": ["vida", "somun"],
+    "isActive": true
+  },
+  {
+    "id": "CAT.AMBALAJ",
+    "slug": "ambalaj",
+    "name": "Ambalaj",
+    "group": "Genel",
+    "synonyms": ["koli", "streç"],
+    "isActive": true
+  },
+  {
+    "id": "CAT.KIMYASAL",
+    "slug": "kimyasal",
+    "name": "Kimyasal",
+    "group": "Endüstriyel",
+    "synonyms": ["solvent"],
+    "isActive": true
+  },
+  {
+    "id": "CAT.INSAAT",
+    "slug": "insaat-malzemeleri",
+    "name": "İnşaat Malzemeleri",
+    "group": "İnşaat",
+    "synonyms": ["yapı"],
+    "isActive": true
+  },
+  {
+    "id": "CAT.MOBILYA",
+    "slug": "mobilya",
+    "name": "Mobilya",
+    "group": "Genel",
+    "synonyms": ["ofis mobilyası"],
+    "isActive": true
+  },
+  {
+    "id": "CAT.BOYA",
+    "slug": "boya",
+    "name": "Boya",
+    "group": "Endüstriyel",
+    "synonyms": ["endüstriyel boya"],
+    "isActive": true
+  },
+  {
+    "id": "CAT.PLASTIK",
+    "slug": "plastik",
+    "name": "Plastik",
+    "group": "Endüstriyel",
+    "synonyms": ["plastik hammadde"],
+    "isActive": true
+  },
+  {
+    "id": "CAT.OTOMOTIVYS",
+    "slug": "otomotiv-yan-sanayi",
+    "name": "Otomotiv Yan Sanayi",
+    "group": "Endüstriyel",
+    "synonyms": ["otomotiv parça"],
+    "isActive": true
+  },
+  {
+    "id": "CAT.ISG",
+    "slug": "is-guvenligi",
+    "name": "İş Güvenliği",
+    "group": "İSG",
+    "synonyms": ["kkd", "baret"],
+    "isActive": true
+  },
+  {
+    "id": "CAT.TEMIZLIK",
+    "slug": "temizlik",
+    "name": "Temizlik",
+    "group": "Genel",
+    "synonyms": ["temizlik ekipmanı"],
+    "isActive": true
+  },
+  {
+    "id": "CAT.GIDA",
+    "slug": "gida",
+    "name": "Gıda",
+    "group": "Genel",
+    "synonyms": ["ikram"],
+    "isActive": true
+  },
+  {
+    "id": "CAT.HIZMET",
+    "slug": "hizmet",
+    "name": "Hizmet",
+    "group": "Hizmet",
+    "synonyms": ["bakım", "işçilik"],
+    "isActive": true
+  },
+  {
+    "id": "CAT.LOJISTIK",
+    "slug": "lojistik",
+    "name": "Lojistik",
+    "group": "Hizmet",
+    "synonyms": ["nakliye"],
+    "isActive": true
+  },
+  {
+    "id": "CAT.AYDINLATMA",
+    "slug": "aydinlatma",
+    "name": "Aydınlatma",
+    "group": "Elektrik-ELK",
+    "synonyms": ["armatur", "projektor"],
+    "isActive": true
+  },
+  {
+    "id": "CAT.AGMG",
+    "slug": "alcak-orta-gerilim",
+    "name": "Alçak/Orta Gerilim",
+    "group": "Elektrik-ELK",
+    "synonyms": ["pano", "şalt", "trafo"],
+    "isActive": true
+  },
+  {
+    "id": "CAT.OTOMASYON",
+    "slug": "otomasyon-plc-scada",
+    "name": "Otomasyon (PLC/SCADA)",
+    "group": "Elektrik-ELK",
+    "synonyms": ["plc", "hmi", "sürücü"],
+    "isActive": true
+  },
+  {
+    "id": "CAT.KAYNAK",
+    "slug": "kaynak-sarf",
+    "name": "Kaynak & Sarf",
+    "group": "Endüstriyel",
+    "synonyms": ["mig", "tig", "kaynak teli"],
+    "isActive": true
+  },
+  {
+    "id": "CAT.RULMAN",
+    "slug": "rulman-guc-aktarim",
+    "name": "Rulman & Güç Aktarım",
+    "group": "Endüstriyel",
+    "synonyms": ["kayış", "kaplin", "redüktör"],
+    "isActive": true
+  },
+  {
+    "id": "CAT.HVAC",
+    "slug": "iklimlendirme-havalandirma",
+    "name": "HVAC",
+    "group": "MEP",
+    "synonyms": ["vrf", "kanal", "fan"],
+    "isActive": true
+  },
+  {
+    "id": "CAT.YANGIN",
+    "slug": "yangin-guvenligi",
+    "name": "Yangın Güvenliği",
+    "group": "MEP",
+    "synonyms": ["sprinkler", "algılama"],
+    "isActive": true
+  },
+  {
+    "id": "CAT.KIRALAMA",
+    "slug": "ekipman-kiralama",
+    "name": "Ekipman Kiralama",
+    "group": "Hizmet",
+    "synonyms": ["forklift", "vinç"],
+    "isActive": true
+  }
+]
+

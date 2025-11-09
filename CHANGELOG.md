@@ -1,10 +1,88 @@
-# 📝 Değişiklik Özeti - Talep Detay Revizyonu
+# 📝 CHANGELOG - Teklifbul Web
 
-## 🎯 Yapılan Değişiklikler
+## [1.1] - 2025-02-01
 
-### ✅ Güncellenen Dosyalar
+### Added
+- MESSAGES constants kullanımı tamamlandı (i18n hazırlığı)
+- TypeScript strict mode aktif (noImplicitAny, strictNullChecks)
+- Firestore index güncellemeleri (bids: demandId+status, demands: companyId+createdAt+categoryIds, inventory: companyId+materialCode)
+- Linter kuralları genişletildi (no-console, no-unused-vars, no-undef)
+- CI/CD pipeline iyileştirildi (GitHub Actions - lint, typecheck, test, build, preview)
+- Build performans optimizasyonları (sourcemap: false, esbuild minify, chunkSizeWarningLimit: 1000)
 
-#### 1. [`firestore.rules`](c:\Users\faruk\OneDrive\Desktop\teklifbul-web\firestore.rules)
+### Improved
+- Performans optimizasyonları (vite.config.ts)
+- Code quality gates (lint, typecheck, test, build)
+- Firestore query performansı (yeni index'ler)
+- Build süresi ve bundle boyutu optimizasyonu
+- Type safety (TypeScript strict mode ile tip güvenliği artırıldı)
+
+### Technical
+- ESLint kuralları: console.log kontrolü (sadece groupCollapsed, info, warn, error izinli), unused vars, undefined vars
+- TypeScript strict mode: strict: true, noImplicitAny: true, strictNullChecks: true
+- CI pipeline: otomatik lint, typecheck, test, build, preview kontrolleri
+- Build config: sourcemap kapalı, esbuild minify, chunk size limit 1000KB
+- Package version: 1.1.0
+
+---
+
+## [2025-01-21] Post-Production Stabilizasyon
+
+### ✅ Test & Debug İzolasyonu
+- Test ve debug dosyaları `test/` klasörüne taşındı
+- `test/README.md` oluşturuldu - bu klasörün prod'a dahil olmadığı belirtildi
+- `vite.config.ts` güncellendi - test/ klasörü prod build'den hariç tutuldu
+- Production build'de test dosyaları artık bulunmuyor
+
+### ✅ Logger: Production Sessize Alma + Sentry Köprüsü
+- `src/shared/log/logger.ts` oluşturuldu (TypeScript)
+- Production'da yalnızca `logger.error()` aktif
+- Development'ta tüm loglar (`info`, `warn`, `group`, `end`) görünür
+- Opsiyonel Sentry köprüsü eklendi (gelecekte entegre edilebilir)
+- Debug modu desteği (`localStorage.getItem('teklifbul:debug')`)
+
+### ✅ Toast Mesajları Merkezîleştirildi (i18n'ye Hazırlık)
+- `src/shared/constants/messages.ts` oluşturuldu
+- Tüm toast mesajları `MESSAGES` constant'ından import ediliyor
+- Hard-coded mesajlar minimize edildi
+- i18n entegrasyonu için hazır yapı
+
+### ✅ CI/CD Kalite Kapıları (GitHub Actions)
+- `.github/workflows/ci.yml` oluşturuldu
+- Her PR'da otomatik çalışan pipeline:
+  - Lint kontrolü (`npm run lint -- --max-warnings=0`)
+  - Typecheck (`npm run typecheck`)
+  - Test (`npm test --if-present`)
+  - Build (`npm run build`)
+  - Test klasörünün build'e dahil olmadığını kontrol
+- Başarısız pipeline → merge engellenir
+
+### ✅ Firestore Güvenlik & Index Sürümleme
+- `package.json` script'leri eklendi:
+  - `npm run deploy:rules` - Firestore rules deploy
+  - `npm run deploy:indexes` - Firestore indexes deploy
+- `firestore.rules` ve `firestore.indexes.json` repo kökünde mevcut
+- Deploy komutları hazır ve çalışır durumda
+
+### ✅ Dokümantasyon
+- `test/README.md` - Test klasörü açıklaması
+- `CHANGELOG.md` - Bu dosya güncellendi
+- Tüm değişiklikler dokümante edildi
+
+### 🔧 Teknik İyileştirmeler
+- `vite.config.ts` - Rollup input'ları belirtildi
+- `package.json` - `typecheck` script'i eklendi
+- TypeScript desteği güçlendirildi
+
+---
+
+## [Önceki Değişiklikler]
+
+### 📝 Değişiklik Özeti - Talep Detay Revizyonu
+
+#### ✅ Güncellenen Dosyalar
+
+##### 1. [`firestore.rules`](c:\Users\faruk\OneDrive\Desktop\teklifbul-web\firestore.rules)
 **Değişiklik:** ACL kurallarına `published` kontrolü eklendi
 
 **Önce:**
@@ -44,7 +122,7 @@ match /demands/{id}/files/{fileId} {
 
 ---
 
-#### 2. [`demand-detail.html`](c:\Users\faruk\OneDrive\Desktop\teklifbul-web\demand-detail.html)
+##### 2. [`demand-detail.html`](c:\Users\faruk\OneDrive\Desktop\teklifbul-web\demand-detail.html)
 **Değişiklik:** Tamamen yeniden yazıldı
 
 **Yeni Özellikler:**
@@ -76,7 +154,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject }
 
 ---
 
-#### 3. [`demand-new.html`](c:\Users\faruk\OneDrive\Desktop\teklifbul-web\demand-new.html)
+##### 3. [`demand-new.html`](c:\Users\faruk\OneDrive\Desktop\teklifbul-web\demand-new.html)
 **Değişiklik:** Header data'ya yeni alanlar eklendi
 
 **Eklenen Alanlar:**
@@ -94,7 +172,7 @@ const headerData = {
 
 ### ✅ Yeni Oluşturulan Dosyalar
 
-#### 4. [`storage.rules`](c:\Users\faruk\OneDrive\Desktop\teklifbul-web\storage.rules) ⭐ **YENİ**
+##### 4. [`storage.rules`](c:\Users\faruk\OneDrive\Desktop\teklifbul-web\storage.rules) ⭐ **YENİ**
 Firebase Storage güvenlik kuralları
 
 ```javascript
@@ -116,7 +194,7 @@ service firebase.storage {
 
 ---
 
-#### 5. [`DEPLOYMENT_GUIDE.md`](c:\Users\faruk\OneDrive\Desktop\teklifbul-web\DEPLOYMENT_GUIDE.md) ⭐ **YENİ**
+##### 5. [`DEPLOYMENT_GUIDE.md`](c:\Users\faruk\OneDrive\Desktop\teklifbul-web\DEPLOYMENT_GUIDE.md) ⭐ **YENİ**
 230 satır deployment rehberi
 
 **İçerik:**
@@ -128,7 +206,7 @@ service firebase.storage {
 
 ---
 
-#### 6. [`FEATURES_GUIDE.md`](c:\Users\faruk\OneDrive\Desktop\teklifbul-web\FEATURES_GUIDE.md) ⭐ **YENİ**
+##### 6. [`FEATURES_GUIDE.md`](c:\Users\faruk\OneDrive\Desktop\teklifbul-web\FEATURES_GUIDE.md) ⭐ **YENİ**
 202 satır özellik dokümantasyonu
 
 **İçerik:**

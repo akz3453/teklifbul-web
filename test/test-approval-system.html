@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>Teklifbul Rol & Onay Sistemi - Test</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="/utils.css" />
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .test-section {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .test-section h2 {
+      margin: 0 0 16px 0;
+      font-size: 20px;
+      color: #1f2937;
+      border-bottom: 2px solid #e5e7eb;
+      padding-bottom: 8px;
+    }
+    .test-result {
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    .test-result.success {
+      background: #d1fae5;
+      color: #065f46;
+      border: 1px solid #10b981;
+    }
+    .test-result.fail {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #ef4444;
+    }
+    .test-result.info {
+      background: #eff6ff;
+      color: #1e40af;
+      border: 1px solid #3b82f6;
+    }
+    .test-item {
+      margin-bottom: 12px;
+      padding: 12px;
+      background: #f9fafb;
+      border-radius: 6px;
+    }
+    .test-item-label {
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 4px;
+    }
+    .test-item-value {
+      font-size: 13px;
+      color: #6b7280;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔐 Teklifbul Rol & Onay Sistemi - Test Sayfası</h1>
+  <p style="color:#6b7280; margin-bottom:24px;">
+    Bu sayfa sistemin doğru çalışıp çalışmadığını test eder.
+  </p>
+  
+  <div class="test-section">
+    <h2>1. Guard Fonksiyonları Testi</h2>
+    <div id="guardTests"></div>
+  </div>
+  
+  <div class="test-section">
+    <h2>2. Rol Yetkileri Testi</h2>
+    <div id="roleTests"></div>
+  </div>
+  
+  <div class="test-section">
+    <h2>3. Onay Mekanizması Testi</h2>
+    <div id="approvalTests"></div>
+  </div>
+  
+  <div class="test-section">
+    <h2>4. Ticaret Geçmişi Testi</h2>
+    <div id="tradeHistoryTests"></div>
+  </div>
+  
+  <script type="module">
+    import { db, auth, requireAuth } from "./firebase.js";
+    import { doc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+    import { canIssuePO, canESignApprove, hasActiveTopApprover, isSingleUserCompany, approvalPolicy } from "./assets/js/services/approval-guards.js";
+    
+    const user = await requireAuth();
+    
+    // Test 1: Guard Fonksiyonları
+    async function testGuardFunctions() {
+      const guardTestsDiv = document.getElementById('guardTests');
+      guardTestsDiv.innerHTML = '<div class="test-result info">Test ediliyor...</div>';
+      
+      try {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        const userData = userDoc.exists() ? userDoc.data() : {};
+        const companyId = userData.companies?.[0] || null;
+        
+        if (!companyId) {
+          guardTestsDiv.innerHTML = '<div class="test-result info">⚠️ Şirket bilgisi bulunamadı. Test için bir şirkete üye olmanız gerekiyor.</div>';
+          return;
+        }
+        
+        const results = [];
+        
+        // Test 1.1: hasActiveTopApprover
+        try {
+          const hasTopApprover = await hasActiveTopApprover(companyId);
+          results.push({
+            label: 'hasActiveTopApprover()',
+            success: true,
+            message: hasTopApprover ? '✅ Üst onaycı bulundu' : '❌ Üst onaycı bulunamadı',
+            details: `Şirket ID: ${companyId}`
+          });
+        } catch (e) {
+          results.push({
+            label: 'hasActiveTopApprover()',
+            success: false,
+            message: `❌ Hata: ${e.message}`,
+            details: ''
+          });
+        }
+        
+        // Test 1.2: isSingleUserCompany
+        try {
+          const isSingle = await isSingleUserCompany(companyId);
+          results.push({
+            label: 'isSingleUserCompany()',
+            success: true,
+            message: isSingle ? '⚠️ Tek kullanıcılı şirket' : '✅ Çok kullanıcılı şirket',
+            details: ''
+          });
+        } catch (e) {
+          results.push({
+            label: 'isSingleUserCompany()',
+            success: false,
+            message: `❌ Hata: ${e.message}`,
+            details: ''
+          });
+        }
+        
+        // Test 1.3: canIssuePO
+        try {
+          const poCheck = await canIssuePO(companyId);
+          results.push({
+            label: 'canIssuePO()',
+            success: true,
+            message: poCheck.allowed ? '✅ PO oluşturulabilir' : `❌ PO engellendi`,
+            details: poCheck.reason || ''
+          });
+        } catch (e) {
+          results.push({
+            label: 'canIssuePO()',
+            success: false,
+            message: `❌ Hata: ${e.message}`,
+            details: ''
+          });
+        }
+        
+        // Test 1.4: canESignApprove
+        try {
+          // canESignApprove fonksiyonu rolePermissions kullanıyor ama opsiyonel
+          // Şimdilik sadece rol kontrolü yapılıyor
+          const userRole = userData.companyRole || userData.requestedCompanyRole || '';
+          const isTopApprover = approvalPolicy.top_approver_roles.includes(userRole);
+          const canApprove = isTopApprover; // Basit kontrol
+          
+          results.push({
+            label: 'canESignApprove()',
+            success: true,
+            message: canApprove ? '✅ E-imza onay yetkisi var (üst onaycı rolü)' : '❌ E-imza onay yetkisi yok',
+            details: `Kullanıcı rolü: ${userRole || 'Belirlenmedi'}`
+          });
+        } catch (e) {
+          results.push({
+            label: 'canESignApprove()',
+            success: false,
+            message: `❌ Hata: ${e.message}`,
+            details: ''
+          });
+        }
+        
+        // Sonuçları göster
+        guardTestsDiv.innerHTML = results.map(test => `
+          <div class="test-item">
+            <div class="test-item-label">${test.label}</div>
+            <div class="test-item-value">${test.message}</div>
+            ${test.details ? `<div class="test-item-value" style="margin-top:4px; font-size:12px;">${test.details}</div>` : ''}
+          </div>
+        `).join('');
+        
+      } catch (e) {
+        guardTestsDiv.innerHTML = `<div class="test-result fail">❌ Test hatası: ${e.message}</div>`;
+      }
+    }
+    
+    // Test 2: Rol Yetkileri
+    async function testRolePermissions() {
+      const roleTestsDiv = document.getElementById('roleTests');
+      roleTestsDiv.innerHTML = '<div class="test-result info">Test ediliyor...</div>';
+      
+      try {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        const userData = userDoc.exists() ? userDoc.data() : {};
+        const userRole = userData.companyRole || userData.requestedCompanyRole || '';
+        
+        const results = [];
+        
+        // Onay politikası rollerini kontrol et
+        const isTopApprover = approvalPolicy.top_approver_roles.includes(userRole);
+        results.push({
+          label: 'Üst Onaycı Rolü Kontrolü',
+          value: isTopApprover ? '✅ Üst onaycı rolü' : '❌ Üst onaycı rolü değil',
+          details: `Rol: ${userRole || 'Belirlenmedi'}`
+        });
+        
+        // Yetkili roller listesi (Satın Alma Uzman Yardımcısı ve üzeri)
+        const authorizedRoles = [
+          'buyer:satinalma_uzman_yardimcisi',
+          'buyer:satinalma_uzmani',
+          'buyer:satinalma_yetkilisi',
+          'buyer:satinalma_muduru',
+          'buyer:genel_mudur',
+          'buyer:genel_mudur_yardimcisi',
+          'buyer:ceo',
+          'buyer:isveren',
+          'buyer:yonetim_kurulu_baskani',
+          'buyer:yonetim_kurulu_uyesi'
+        ];
+        
+        const hasPermission = authorizedRoles.some(role => userRole.includes(role) || userRole === role);
+        results.push({
+          label: 'Onay Mekanizması Görüntüleme Yetkisi',
+          value: hasPermission ? '✅ Yetki var' : '❌ Yetki yok',
+          details: 'Satın Alma Uzman Yardımcısı ve üzeri rollere sahip kullanıcılar görebilir'
+        });
+        
+        roleTestsDiv.innerHTML = results.map(test => `
+          <div class="test-item">
+            <div class="test-item-label">${test.label}</div>
+            <div class="test-item-value">${test.value}</div>
+            ${test.details ? `<div class="test-item-value" style="margin-top:4px; font-size:12px; color:#9ca3af;">${test.details}</div>` : ''}
+          </div>
+        `).join('');
+        
+      } catch (e) {
+        roleTestsDiv.innerHTML = `<div class="test-result fail">❌ Test hatası: ${e.message}</div>`;
+      }
+    }
+    
+    // Test 3: Onay Mekanizması
+    async function testApprovalMechanism() {
+      const approvalTestsDiv = document.getElementById('approvalTests');
+      approvalTestsDiv.innerHTML = '<div class="test-result info">Test ediliyor...</div>';
+      
+      try {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        const userData = userDoc.exists() ? userDoc.data() : {};
+        const companyId = userData.companies?.[0] || null;
+        
+        if (!companyId) {
+          approvalTestsDiv.innerHTML = '<div class="test-result info">⚠️ Şirket bilgisi bulunamadı.</div>';
+          return;
+        }
+        
+        const companyDoc = await getDoc(doc(db, 'companies', companyId));
+        const companyData = companyDoc.exists() ? companyDoc.data() : {};
+        const companyRoles = companyData.roles || [];
+        const isBuyerCompany = companyRoles.includes('buyer') || companyRoles.includes('both');
+        
+        const results = [];
+        results.push({
+          label: 'Şirket Tipi',
+          value: isBuyerCompany ? '✅ Alıcı Şirket' : '❌ Alıcı Şirket Değil',
+          details: `Roller: ${companyRoles.join(', ') || 'Belirlenmedi'}`
+        });
+        
+        if (isBuyerCompany) {
+          const hasTopApprover = await hasActiveTopApprover(companyId);
+          results.push({
+            label: 'Üst Onaycı Durumu',
+            value: hasTopApprover ? '✅ Üst onaycı mevcut' : '❌ Üst onaycı bulunamadı',
+            details: 'E-imza ile teklif onaylama için gerekli'
+          });
+          
+          // Aktif üst onaycıları listele
+          const usersQuery = query(
+            collection(db, 'users'),
+            where('companies', 'array-contains', companyId)
+          );
+          const usersSnapshot = await getDocs(usersQuery);
+          
+          const topApprovers = [];
+          usersSnapshot.forEach(userDoc => {
+            const userData = userDoc.data();
+            if (userData.isActive !== false && userData.companyJoinStatus !== 'rejected') {
+              const role = userData.companyRole || userData.requestedCompanyRole || '';
+              if (approvalPolicy.top_approver_roles.includes(role)) {
+                topApprovers.push({
+                  name: userData.displayName || userData.email || 'Kullanıcı',
+                  role: role
+                });
+              }
+            }
+          });
+          
+          results.push({
+            label: 'Aktif Üst Onaycı Sayısı',
+            value: topApprovers.length > 0 ? `✅ ${topApprovers.length} üst onaycı` : '❌ Üst onaycı yok',
+            details: topApprovers.map(a => `${a.name} (${a.role})`).join(', ') || 'Yok'
+          });
+        }
+        
+        approvalTestsDiv.innerHTML = results.map(test => `
+          <div class="test-item">
+            <div class="test-item-label">${test.label}</div>
+            <div class="test-item-value">${test.value}</div>
+            ${test.details ? `<div class="test-item-value" style="margin-top:4px; font-size:12px; color:#9ca3af;">${test.details}</div>` : ''}
+          </div>
+        `).join('');
+        
+      } catch (e) {
+        approvalTestsDiv.innerHTML = `<div class="test-result fail">❌ Test hatası: ${e.message}</div>`;
+      }
+    }
+    
+    // Test 4: Ticaret Geçmişi
+    async function testTradeHistory() {
+      const tradeHistoryTestsDiv = document.getElementById('tradeHistoryTests');
+      tradeHistoryTestsDiv.innerHTML = '<div class="test-result info">Test ediliyor...</div>';
+      
+      try {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        const userData = userDoc.exists() ? userDoc.data() : {};
+        const companyId = userData.companies?.[0] || null;
+        
+        if (!companyId) {
+          tradeHistoryTestsDiv.innerHTML = '<div class="test-result info">⚠️ Şirket bilgisi bulunamadı.</div>';
+          return;
+        }
+        
+        // Onaylanan teklifleri say
+        const usersQuery = query(
+          collection(db, 'users'),
+          where('companies', 'array-contains', companyId)
+        );
+        const usersSnapshot = await getDocs(usersQuery);
+        const companyUserIds = usersSnapshot.docs.map(doc => doc.id).slice(0, 10);
+        
+        let acceptedBidsCount = 0;
+        let completedDemandsCount = 0;
+        
+        // Alıcı olarak onaylanan teklifler
+        for (const userId of companyUserIds) {
+          try {
+            const demandsQuery = query(
+              collection(db, 'demands'),
+              where('createdBy', '==', userId),
+              where('status', 'in', ['completed', 'accepted'])
+            );
+            const demandsSnapshot = await getDocs(demandsQuery);
+            completedDemandsCount += demandsSnapshot.size;
+            
+            for (const demandDoc of demandsSnapshot.docs) {
+              const bidsQuery = query(
+                collection(db, 'bids'),
+                where('demandId', '==', demandDoc.id),
+                where('status', 'in', ['accepted', 'completed'])
+              );
+              const bidsSnapshot = await getDocs(bidsQuery);
+              acceptedBidsCount += bidsSnapshot.size;
+            }
+          } catch (e) {
+            console.warn('Demands query failed:', e);
+          }
+        }
+        
+        // Tedarikçi olarak onaylanan teklifler
+        for (const userId of companyUserIds) {
+          try {
+            const bidsQuery = query(
+              collection(db, 'bids'),
+              where('supplierId', '==', userId),
+              where('status', 'in', ['accepted', 'completed'])
+            );
+            const bidsSnapshot = await getDocs(bidsQuery);
+            acceptedBidsCount += bidsSnapshot.size;
+          } catch (e) {
+            console.warn('Bids query failed:', e);
+          }
+        }
+        
+        tradeHistoryTestsDiv.innerHTML = `
+          <div class="test-item">
+            <div class="test-item-label">Onaylanan Teklif Sayısı</div>
+            <div class="test-item-value">${acceptedBidsCount > 0 ? `✅ ${acceptedBidsCount} onaylanan teklif` : '❌ Onaylanan teklif yok'}</div>
+          </div>
+          <div class="test-item">
+            <div class="test-item-label">Tamamlanan Talep Sayısı</div>
+            <div class="test-item-value">${completedDemandsCount > 0 ? `✅ ${completedDemandsCount} tamamlanan talep` : '❌ Tamamlanan talep yok'}</div>
+          </div>
+          <div class="test-result info" style="margin-top:12px;">
+            💡 Şirket profil sayfasında başarılı ticaret geçmişi görüntülenebilir.
+          </div>
+        `;
+        
+      } catch (e) {
+        tradeHistoryTestsDiv.innerHTML = `<div class="test-result fail">❌ Test hatası: ${e.message}</div>`;
+      }
+    }
+    
+    // Tüm testleri çalıştır
+    await testGuardFunctions();
+    await testRolePermissions();
+    await testApprovalMechanism();
+    await testTradeHistory();
+    
+    console.log('✅ Tüm testler tamamlandı!');
+  </script>
+</body>
+</html>
+

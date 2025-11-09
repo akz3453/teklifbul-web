@@ -248,6 +248,13 @@
 
   <!-- Main Script -->
   <script type="module">
+    // Teklifbul Rule v1.0 - Structured Logging
+    import { logger } from "./src/shared/log/logger.js";
+    // Teklifbul Rule v1.0 - Toast Notification System
+    import { toast } from './src/shared/ui/toast.js';
+    // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
+    import { MESSAGES } from './src/shared/constants/messages.js';
+    
     import { db, auth, requireAuth } from "./firebase.js";
     import { setupHeader } from "./src/common-company.js";
     import {
@@ -278,7 +285,7 @@
     // ====================
     async function loadData() {
       try {
-        console.log("🔄 Loading revision requests for user:", user.uid);
+        logger.info("Loading revision requests for user", { uid: user.uid });
 
         // Get all revision requests where user is the supplier
         const q = query(
@@ -294,7 +301,7 @@
           allRevisions.push({ id: docSnap.id, ...docSnap.data() });
         });
         
-        console.log("📋 Found revision requests:", allRevisions.length);
+        logger.info("Found revision requests", { count: allRevisions.length });
 
         if (allRevisions.length === 0) {
           showEmptyState();
@@ -310,7 +317,7 @@
               return { id: demandId, data: demandSnap.data() };
             }
           } catch (e) {
-            console.warn("Could not load demand:", demandId);
+            logger.warn("Could not load demand", { demandId });
           }
           return null;
         });
@@ -326,11 +333,11 @@
         await renderRevisions();
 
       } catch (e) {
-        console.error("❌ Error loading revision requests:", e);
+        logger.error("Error loading revision requests", e);
         const code = e?.code || "";
-        if (code === "permission-denied") alert("Yetki reddedildi. İlgili şirketin sahibi/üyesi misiniz?");
-        else if (code === "not-found") alert("Kayıt bulunamadı.");
-        else alert("❌ Revizyon talepleri yüklenirken hata: " + (e.message || e));
+        if (code === "permission-denied") toast.error(MESSAGES.ERROR_PERMISSION_DENIED);
+        else if (code === "not-found") toast.error(MESSAGES.ERROR_NOT_FOUND);
+        else toast.error(MESSAGES.ERROR_REVISION_LOAD + ": " + (e.message || e));
         showEmptyState();
       }
     }
@@ -388,7 +395,7 @@
             requesterName = requesterData?.displayName || requesterData?.companyName || requesterData?.email || "Bilinmeyen";
           }
         } catch (e) {
-          console.warn("Could not load requester name:", e);
+          logger.warn("Could not load requester name", e);
         }
 
         const tr = document.createElement("tr");
@@ -438,11 +445,11 @@
             updatedAt: serverTimestamp()
           });
           
-          alert("Revizyon talebi onaylandı.");
+          toast.success(MESSAGES.SUCCESS_REVISION_APPROVED);
           await loadData();
         } catch (e) {
-          console.error("Error approving revision:", e);
-          alert("Revizyon talebi onaylanırken hata oluştu: " + e.message);
+          logger.error("Error approving revision", e);
+          toast.error(MESSAGES.ERROR_REVISION_APPROVE + ": " + e.message);
         }
       }
     };
@@ -456,11 +463,11 @@
             updatedAt: serverTimestamp()
           });
           
-          alert("Revizyon talebi reddedildi.");
+          toast.success(MESSAGES.SUCCESS_REVISION_REJECTED);
           await loadData();
         } catch (e) {
-          console.error("Error rejecting revision:", e);
-          alert("Revizyon talebi reddedilirken hata oluştu: " + e.message);
+          logger.error("Error rejecting revision", e);
+          toast.error(MESSAGES.ERROR_REVISION_REJECT + ": " + e.message);
         }
       }
     };

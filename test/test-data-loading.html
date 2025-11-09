@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data Loading Test</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+    .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .info-box { background: #e3f2fd; padding: 15px; border-radius: 4px; margin: 10px 0; }
+    .error-box { background: #ffebee; padding: 15px; border-radius: 4px; margin: 10px 0; border-left: 4px solid #f44336; }
+    .success-box { background: #e8f5e9; padding: 15px; border-radius: 4px; margin: 10px 0; border-left: 4px solid #4caf50; }
+    .warning-box { background: #fff3e0; padding: 15px; border-radius: 4px; margin: 10px 0; border-left: 4px solid #ff9800; }
+    button { background: #2196f3; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; margin: 5px; }
+    button:hover { background: #1976d2; }
+    button:disabled { background: #bbdefb; cursor: not-allowed; }
+    pre { background: #f1f1f1; padding: 10px; border-radius: 4px; overflow-x: auto; max-height: 300px; }
+    .test-section { border: 1px solid #e0e0e0; border-radius: 4px; padding: 15px; margin: 15px 0; }
+    .test-result { margin-top: 10px; padding: 10px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📊 Veri Yükleme Testi</h1>
+    <p>Bu sayfa sistemdeki veri yükleme işlemlerini test etmek için oluşturulmuştur.</p>
+    
+    <div class="test-section">
+      <h3>1. Auth ve Kullanıcı Testi</h3>
+      <button id="test-auth">Auth Durumunu Test Et</button>
+      <div id="auth-result" class="test-result"></div>
+    </div>
+    
+    <div class="test-section">
+      <h3>2. Talep Verileri Testi</h3>
+      <button id="test-demands">Talep Verilerini Test Et</button>
+      <div id="demands-result" class="test-result"></div>
+    </div>
+    
+    <div class="test-section">
+      <h3>3. Şirket Verileri Testi</h3>
+      <button id="test-company">Şirket Verilerini Test Et</button>
+      <div id="company-result" class="test-result"></div>
+    </div>
+    
+    <div class="test-section">
+      <h3>4. Kategori Eşleştirme Testi</h3>
+      <button id="test-categories">Kategori Eşleştirmesini Test Et</button>
+      <div id="categories-result" class="test-result"></div>
+    </div>
+    
+    <div class="test-section">
+      <h3>5. Tüm Testleri Çalıştır</h3>
+      <button id="test-all">Tüm Testleri Çalıştır</button>
+      <button id="clear-results">Sonuçları Temizle</button>
+    </div>
+    
+    <div style="margin-top: 20px;">
+      <h3>Detaylı Loglar</h3>
+      <pre id="logs"></pre>
+    </div>
+  </div>
+
+  <script type="module">
+    import { auth, db } from './firebase.js';
+    import { 
+      doc, 
+      getDoc, 
+      collection, 
+      getDocs, 
+      query, 
+      where, 
+      orderBy, 
+      limit 
+    } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+    
+    const logElement = document.getElementById('logs');
+    
+    function log(message) {
+      const timestamp = new Date().toLocaleTimeString();
+      logElement.textContent += `[${timestamp}] ${message}\n`;
+      logElement.scrollTop = logElement.scrollHeight;
+      console.log(message);
+    }
+    
+    function showResult(elementId, content, type = 'info') {
+      const element = document.getElementById(elementId);
+      const boxClass = type === 'success' ? 'success-box' : 
+                      type === 'error' ? 'error-box' : 
+                      type === 'warning' ? 'warning-box' : 'info-box';
+      element.innerHTML = `<div class="${boxClass}">${content}</div>`;
+    }
+    
+    async function testAuth() {
+      log("=== Auth testi başlatılıyor ===");
+      const button = document.getElementById('test-auth');
+      button.disabled = true;
+      
+      try {
+        if (auth.currentUser) {
+          showResult('auth-result', `
+            <strong>✅ Auth Durumu: Başarılı</strong><br>
+            Kullanıcı ID: ${auth.currentUser.uid}<br>
+            Email: ${auth.currentUser.email || 'Belirtilmemiş'}<br>
+          `, 'success');
+          log("Auth testi başarılı: " + auth.currentUser.uid);
+        } else {
+          showResult('auth-result', `
+            <strong>❌ Auth Durumu: Başarısız</strong><br>
+            Kullanıcı oturumu açık değil. Lütfen giriş yapın.
+          `, 'error');
+          log("Auth testi başarısız: Kullanıcı oturumu kapalı");
+        }
+      } catch (error) {
+        showResult('auth-result', `
+          <strong>❌ Auth Testi Hatası</strong><br>
+          Hata: ${error.message}
+        `, 'error');
+        log("Auth testi hatası: " + error.message);
+      } finally {
+        button.disabled = false;
+      }
+    }
+    
+    async function testDemands() {
+      log("=== Talep verileri testi başlatılıyor ===");
+      const button = document.getElementById('test-demands');
+      button.disabled = true;
+      
+      try {
+        if (!auth.currentUser) {
+          showResult('demands-result', `
+            <strong>❌ Talep Testi Başarısız</strong><br>
+            Kullanıcı oturumu açık değil. Önce giriş yapmalısınız.
+          `, 'error');
+          log("Talep testi başarısız: Kullanıcı oturumu kapalı");
+          button.disabled = false;
+          return;
+        }
+        
+        showResult('demands-result', 'Talep verileri yükleniyor...', 'info');
+        
+        // Kullanıcı bilgilerini al
+        const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
+        const userData = userDoc.exists() ? userDoc.data() : {};
+        const userCompanyId = userData.companyId;
+        
+        if (!userCompanyId) {
+          showResult('demands-result', `
+            <strong>⚠️ Uyarı</strong><br>
+            Kullanıcıya şirket atanmamış. Talep verileri şirket bazında filtrelendiği için sonuç bulunmayabilir.
+          `, 'warning');
+          log("Talep testi uyarısı: Kullanıcıya şirket atanmamış");
+        }
+        
+        // Tedarikçi kategorilerini al
+        const supplierCategories = Array.isArray(userData.supplierCategoryKeys) 
+          ? userData.supplierCategoryKeys 
+          : Array.isArray(userData.supplierCategories) 
+          ? userData.supplierCategories 
+          : [];
+        
+        // Gelen talepleri test et (published ve kategori eşleşmesi olanlar)
+        try {
+          let incomingQuery;
+          if (supplierCategories.length > 0) {
+            incomingQuery = query(
+              collection(db, 'demands'),
+              where('isPublished', '==', true),
+              where('supplierCategoryKeys', 'array-contains-any', supplierCategories.slice(0, 10)),
+              orderBy('createdAt', 'desc'),
+              limit(5)
+            );
+          } else {
+            // Kategori yoksa sadece published olanları getir
+            incomingQuery = query(
+              collection(db, 'demands'),
+              where('isPublished', '==', true),
+              orderBy('createdAt', 'desc'),
+              limit(5)
+            );
+          }
+          
+          const incomingSnapshot = await getDocs(incomingQuery);
+          log(`Gelen talepler sorgusu: ${incomingSnapshot.docs.length} kayıt bulundu`);
+          
+          // Giden talepleri test et (kendi şirketinin oluşturduğu published talepler)
+          let outgoingQuery;
+          if (userCompanyId) {
+            outgoingQuery = query(
+              collection(db, 'demands'),
+              where('creatorCompanyId', '==', userCompanyId),
+              where('isPublished', '==', true),
+              orderBy('createdAt', 'desc'),
+              limit(5)
+            );
+          } else {
+            outgoingQuery = query(
+              collection(db, 'demands'),
+              where('createdBy', '==', auth.currentUser.uid),
+              where('isPublished', '==', true),
+              orderBy('createdAt', 'desc'),
+              limit(5)
+            );
+          }
+          
+          const outgoingSnapshot = await getDocs(outgoingQuery);
+          log(`Giden talepler sorgusu: ${outgoingSnapshot.docs.length} kayıt bulundu`);
+          
+          // Taslak talepleri test et
+          let draftQuery;
+          if (userCompanyId) {
+            draftQuery = query(
+              collection(db, 'demands'),
+              where('creatorCompanyId', '==', userCompanyId),
+              where('status', 'in', ['draft', 'withdrawn']),
+              orderBy('updatedAt', 'desc'),
+              limit(5)
+            );
+          } else {
+            draftQuery = query(
+              collection(db, 'demands'),
+              where('createdBy', '==', auth.currentUser.uid),
+              where('status', 'in', ['draft', 'withdrawn']),
+              orderBy('updatedAt', 'desc'),
+              limit(5)
+            );
+          }
+          
+          const draftSnapshot = await getDocs(draftQuery);
+          log(`Taslak talepler sorgusu: ${draftSnapshot.docs.length} kayıt bulundu`);
+          
+          showResult('demands-result', `
+            <strong>✅ Talep Verileri Testi Başarılı</strong><br>
+            Gelen talepler: ${incomingSnapshot.docs.length} kayıt<br>
+            Giden talepler: ${outgoingSnapshot.docs.length} kayıt<br>
+            Taslak talepler: ${draftSnapshot.docs.length} kayıt<br>
+            ${supplierCategories.length > 0 ? `Tedarikçi kategorileri: ${supplierCategories.length} adet` : 'Tedarikçi kategorisi atanmamış'}
+          `, 'success');
+          
+          log("Talep verileri testi başarılı");
+        } catch (queryError) {
+          if (queryError.message.includes('Missing or insufficient permissions')) {
+            showResult('demands-result', `
+              <strong>❌ Yetki Hatası</strong><br>
+              Firestore güvenlik kuralları nedeniyle talep verilerine erişim reddedildi.<br>
+              Hata: ${queryError.message}
+            `, 'error');
+            log("Talep verileri yetki hatası: " + queryError.message);
+          } else {
+            showResult('demands-result', `
+              <strong>❌ Talep Verileri Hatası</strong><br>
+              Hata: ${queryError.message}
+            `, 'error');
+            log("Talep verileri hatası: " + queryError.message);
+          }
+        }
+      } catch (error) {
+        showResult('demands-result', `
+          <strong>❌ Talep Testi Hatası</strong><br>
+          Hata: ${error.message}
+        `, 'error');
+        log("Talep testi genel hatası: " + error.message);
+      } finally {
+        button.disabled = false;
+      }
+    }
+    
+    async function testCompany() {
+      log("=== Şirket verileri testi başlatılıyor ===");
+      const button = document.getElementById('test-company');
+      button.disabled = true;
+      
+      try {
+        if (!auth.currentUser) {
+          showResult('company-result', `
+            <strong>❌ Şirket Testi Başarısız</strong><br>
+            Kullanıcı oturumu açık değil. Önce giriş yapmalısınız.
+          `, 'error');
+          log("Şirket testi başarısız: Kullanıcı oturumu kapalı");
+          button.disabled = false;
+          return;
+        }
+        
+        // Kullanıcı bilgilerini al
+        const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
+        const userData = userDoc.exists() ? userDoc.data() : {};
+        const userCompanyId = userData.companyId;
+        
+        if (!userCompanyId) {
+          showResult('company-result', `
+            <strong>⚠️ Uyarı</strong><br>
+            Kullanıcıya şirket atanmamış. Şirket ID: Belirtilmemiş
+          `, 'warning');
+          log("Şirket testi uyarısı: Kullanıcıya şirket atanmamış");
+          button.disabled = false;
+          return;
+        }
+        
+        // Şirket bilgilerini al
+        const companyDoc = await getDoc(doc(db, 'companies', userCompanyId));
+        if (companyDoc.exists()) {
+          const companyData = companyDoc.data();
+          showResult('company-result', `
+            <strong>✅ Şirket Verileri Testi Başarılı</strong><br>
+            Şirket ID: ${userCompanyId}<br>
+            Şirket Adı: ${companyData.name || 'Belirtilmemiş'}<br>
+            Vergi No: ${companyData.taxNumber || 'Belirtilmemiş'}<br>
+            İlçe: ${companyData.district || 'Belirtilmemiş'}
+          `, 'success');
+          log("Şirket verileri testi başarılı");
+        } else {
+          showResult('company-result', `
+            <strong>❌ Şirket Bulunamadı</strong><br>
+            Şirket ID: ${userCompanyId}<br>
+            Veritabanında bu ID ile şirket kaydı bulunamadı.
+          `, 'error');
+          log("Şirket testi başarısız: Şirket bulunamadı");
+        }
+      } catch (error) {
+        showResult('company-result', `
+          <strong>❌ Şirket Testi Hatası</strong><br>
+          Hata: ${error.message}
+        `, 'error');
+        log("Şirket testi hatası: " + error.message);
+      } finally {
+        button.disabled = false;
+      }
+    }
+    
+    async function testCategories() {
+      log("=== Kategori eşleştirme testi başlatılıyor ===");
+      const button = document.getElementById('test-categories');
+      button.disabled = true;
+      
+      try {
+        if (!auth.currentUser) {
+          showResult('categories-result', `
+            <strong>❌ Kategori Testi Başarısız</strong><br>
+            Kullanıcı oturumu açık değil. Önce giriş yapmalısınız.
+          `, 'error');
+          log("Kategori testi başarısız: Kullanıcı oturumu kapalı");
+          button.disabled = false;
+          return;
+        }
+        
+        // Kullanıcı bilgilerini al
+        const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
+        const userData = userDoc.exists() ? userDoc.data() : {};
+        
+        // Tedarikçi kategorilerini kontrol et
+        const supplierCategoryKeys = Array.isArray(userData.supplierCategoryKeys) 
+          ? userData.supplierCategoryKeys 
+          : [];
+          
+        const supplierCategories = Array.isArray(userData.supplierCategories) 
+          ? userData.supplierCategories 
+          : [];
+        
+        if (supplierCategoryKeys.length > 0) {
+          showResult('categories-result', `
+            <strong>✅ Kategori Eşleştirme Testi Başarılı</strong><br>
+            supplierCategoryKeys alanı dolu: ${supplierCategoryKeys.length} kategori<br>
+            Kategoriler: ${supplierCategoryKeys.slice(0, 5).join(', ')}${supplierCategoryKeys.length > 5 ? '...' : ''}
+          `, 'success');
+          log(`Kategori eşleştirme testi başarılı: ${supplierCategoryKeys.length} kategori`);
+        } else if (supplierCategories.length > 0) {
+          showResult('categories-result', `
+            <strong>✅ Kategori Eşleştirme Testi Başarılı</strong><br>
+            supplierCategories alanı dolu: ${supplierCategories.length} kategori<br>
+            Kategoriler: ${supplierCategories.slice(0, 5).join(', ')}${supplierCategories.length > 5 ? '...' : ''}
+          `, 'success');
+          log(`Kategori eşleştirme testi başarılı: ${supplierCategories.length} kategori`);
+        } else {
+          showResult('categories-result', `
+            <strong>⚠️ Uyarı</strong><br>
+            Kullanıcıya tedarikçi kategorisi atanmamış.<br>
+            Gelen talepler bu kategorilere göre filtrelendiği için talep göremeyebilirsiniz.<br>
+            Lütfen Ayarlar sayfasından tedarikçi kategorilerinizi seçin.
+          `, 'warning');
+          log("Kategori eşleştirme testi uyarısı: Kategori atanmamış");
+        }
+      } catch (error) {
+        showResult('categories-result', `
+          <strong>❌ Kategori Testi Hatası</strong><br>
+          Hata: ${error.message}
+        `, 'error');
+        log("Kategori testi hatası: " + error.message);
+      } finally {
+        button.disabled = false;
+      }
+    }
+    
+    async function runAllTests() {
+      log("=== Tüm testler başlatılıyor ===");
+      const button = document.getElementById('test-all');
+      button.disabled = true;
+      
+      try {
+        await testAuth();
+        await testDemands();
+        await testCompany();
+        await testCategories();
+        log("=== Tüm testler tamamlandı ===");
+      } catch (error) {
+        log("Tüm testler sırasında hata: " + error.message);
+      } finally {
+        button.disabled = false;
+      }
+    }
+    
+    function clearResults() {
+      document.getElementById('auth-result').innerHTML = '';
+      document.getElementById('demands-result').innerHTML = '';
+      document.getElementById('company-result').innerHTML = '';
+      document.getElementById('categories-result').innerHTML = '';
+      logElement.textContent = '';
+    }
+    
+    // Event listeners
+    document.getElementById('test-auth').addEventListener('click', testAuth);
+    document.getElementById('test-demands').addEventListener('click', testDemands);
+    document.getElementById('test-company').addEventListener('click', testCompany);
+    document.getElementById('test-categories').addEventListener('click', testCategories);
+    document.getElementById('test-all').addEventListener('click', runAllTests);
+    document.getElementById('clear-results').addEventListener('click', clearResults);
+    
+    // Sayfa yüklendiğinde auth durumunu kontrol et
+    document.addEventListener('DOMContentLoaded', () => {
+      if (auth.currentUser) {
+        showResult('auth-result', `
+          <strong>✅ Auth Durumu: Başarılı</strong><br>
+          Kullanıcı oturumu açık.<br>
+          Hazır testler çalıştırılabilir.
+        `, 'success');
+      } else {
+        showResult('auth-result', `
+          <strong>⚠️ Auth Durumu: Oturum Kapalı</strong><br>
+          Kullanıcı oturumu kapalı. Lütfen giriş yapın.<br>
+          Bazı testler çalışmayabilir.
+        `, 'warning');
+      }
+    });
+  </script>
+</body>
+</html>

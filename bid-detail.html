@@ -250,6 +250,12 @@
     import { doc, getDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
     import { setupHeader } from "./src/common-company.js";
     import { getStatusLabel, getPaymentMethodLabel } from "./bid-management.js";
+    // Teklifbul Rule v1.0 - Structured Logging
+    import { logger } from './src/shared/log/logger.js';
+    // Teklifbul Rule v1.0 - Toast Notification System
+    import { toast } from './src/shared/ui/toast.js';
+    // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
+    import { MESSAGES } from './src/shared/constants/messages.js';
 
     // Setup common header functionality
     await setupHeader();
@@ -301,7 +307,7 @@
           const supplierSnap = await getDoc(supplierRef);
           supplier = supplierSnap.exists() ? supplierSnap.data() : null;
         } catch (error) {
-          console.warn("Supplier data could not be loaded:", error);
+          logger.warn("Supplier data could not be loaded", error);
         }
       }
       
@@ -328,40 +334,119 @@
       loading.style.display = "none";
       bidDetails.style.display = "block";
       
-      // Setup action buttons
-      document.getElementById("acceptBid").addEventListener("click", () => updateBidStatus("accepted"));
+      // Setup action buttons - Teklifbul Rol & Onay Sistemi
+      // E-imza onay yetkisi kontrolü
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      const currentUserData = userDoc.exists() ? userDoc.data() : {};
+      const rolePermissions = {}; // settings.html'den alınabilir
+      const canApprove = canESignApprove(currentUserData, rolePermissions);
+      
+      const acceptBtn = document.getElementById("acceptBid");
+      if (acceptBtn) {
+        if (canApprove) {
+          acceptBtn.addEventListener("click", async () => {
+            // Guard kontrolü ve audit log ile onayla
+            await updateBidStatusWithGuard("accepted");
+          });
+          acceptBtn.title = "E-imza ile teklif onaylama";
+        } else {
+          acceptBtn.disabled = true;
+          acceptBtn.style.opacity = "0.5";
+          acceptBtn.style.cursor = "not-allowed";
+          acceptBtn.title = "E-imza onay yetkisi yok. Yalnızca üst onaycı rolleri e-imza ile teklif onaylayabilir.";
+        }
+      }
+      
       document.getElementById("rejectBid").addEventListener("click", () => updateBidStatus("rejected"));
       document.getElementById("requestRevision").addEventListener("click", requestRevision);
       document.getElementById("completeBid").addEventListener("click", () => updateBidStatus("completed"));
       document.getElementById("backToList").addEventListener("click", () => window.location.href = "./bids.html");
       
     } catch (error) {
-      console.error("Error loading bid details:", error);
+      logger.error("Error loading bid details", error);
       loading.style.display = "none";
       emptyState.style.display = "block";
     }
     } // End else block
 
-    // Update bid status
-    async function updateBidStatus(newStatus) {
+    // Update bid status with guard check (Teklifbul Rol & Onay Sistemi)
+    async function updateBidStatusWithGuard(newStatus) {
       try {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        const currentUserData = userDoc.exists() ? userDoc.data() : {};
+        const rolePermissions = {};
+        const canApprove = canESignApprove(currentUserData, rolePermissions);
+        
+        if (newStatus === "accepted" && !canApprove) {
+          await createAuditLog({
+            entity_type: 'bid',
+            entity_id: bidId,
+            action: 'approve_attempt',
+            actor_user_id: user.uid,
+            actor_role_key: currentUserData.companyRole || 'unknown',
+            result: 'blocked',
+            reason: 'E-imza onay yetkisi yok',
+            metadata: { bidId }
+          });
+          
+          toast.error(MESSAGES.ERROR_BID_APPROVAL_PERMISSION);
+          return;
+        }
+        
         const bidRef = doc(db, "bids", bidId);
+        const bidSnap = await getDoc(bidRef);
+        const bidData = bidSnap.exists() ? bidSnap.data() : {};
+        
         await updateDoc(bidRef, {
           status: newStatus,
           statusHistory: [{
             status: newStatus,
             timestamp: serverTimestamp(),
             userId: user.uid,
-            notes: `Status updated to ${newStatus}`
-          }]
+            notes: newStatus === "accepted" ? "Bid accepted by buyer with e-signature" : `Status updated to ${newStatus}`,
+            approvedBy: newStatus === "accepted" ? user.uid : undefined,
+            approvedAt: newStatus === "accepted" ? serverTimestamp() : undefined,
+            approvalMethod: newStatus === "accepted" ? "e-signature" : undefined
+          }],
+          approvedBy: newStatus === "accepted" ? user.uid : undefined,
+          approvedAt: newStatus === "accepted" ? serverTimestamp() : undefined
         });
         
-        alert(`Teklif durumu "${getStatusLabel(newStatus)}" olarak güncellendi.`);
+        // Audit log
+        await createAuditLog({
+          entity_type: 'bid',
+          entity_id: bidId,
+          action: newStatus === "accepted" ? 'approve_esign' : `update_status_${newStatus}`,
+          actor_user_id: user.uid,
+          actor_role_key: currentUserData.companyRole || currentUserData.requestedCompanyRole || 'unknown',
+          result: 'success',
+          metadata: { bidId, demandId: bidData.demandId, status: newStatus, supplierId: bidData.supplierId }
+        });
+        
+  toast.success(MESSAGES.SUCCESS_BID_STATUS_UPDATED + ': ' + getStatusLabel(newStatus));
         window.location.reload();
       } catch (error) {
-        console.error("Error updating bid status:", error);
-        alert("Durum güncellenirken bir hata oluştu: " + error.message);
+        logger.error("Error updating bid status", error);
+        
+        // Audit log - hata
+        await createAuditLog({
+          entity_type: 'bid',
+          entity_id: bidId,
+          action: 'update_status',
+          actor_user_id: user.uid,
+          actor_role_key: 'unknown',
+          result: 'failed',
+          reason: error.message || error.toString(),
+          metadata: { bidId, status: newStatus }
+        });
+        
+        toast.error(MESSAGES.ERROR_BID_STATUS_UPDATE + ": " + error.message);
       }
+    }
+    
+    // Update bid status (legacy, guard kontrolü yok)
+    async function updateBidStatus(newStatus) {
+      await updateBidStatusWithGuard(newStatus);
     }
 
     // Request revision
@@ -381,11 +466,11 @@
           }]
         });
         
-        alert("Revizyon talebiniz gönderildi.");
+        toast.success(MESSAGES.SUCCESS_REVISION_SENT);
         window.location.reload();
       } catch (error) {
-        console.error("Error requesting revision:", error);
-        alert("Revizyon talebi gönderilirken bir hata oluştu: " + error.message);
+        logger.error("Error requesting revision", error);
+        toast.error(MESSAGES.ERROR_REVISION_SEND + ": " + error.message);
       }
     }
   </script>

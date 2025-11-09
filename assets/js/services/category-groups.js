@@ -1,26 +1,20 @@
 /**
  * Category Groups Service
  * Handles CRUD operations for user category groups
+ * 
+ * CRITICAL: Updated to use ID-based category system
+ * Categories are stored as category names (not slugs) in groups for readability
+ * They are converted to IDs when used (via normalizeToIds in demand-new.html)
  */
 
 import { db } from '../firebase.js';
+// Teklifbul Rule v1.0 - Structured Logging
+import { logger } from '../../../src/shared/log/logger.js';
 import { collection, addDoc, updateDoc, deleteDoc, getDocs, doc, query, orderBy, serverTimestamp, getDoc } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
 
-/**
- * Convert category name to slug format
- * @param {string} name - Category name to convert
- * @returns {string} Slugified category name
- */
-function toSlug(name) {
-  if (!name || typeof name !== 'string') return '';
-  return name
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g, '-')
-    .replace(/[^a-z0-9-]/g, '')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '');
-}
+// CRITICAL: Category groups store category names (not IDs, not slugs)
+// Normalization to IDs happens in demand-new.html when groups are used
+// This keeps the service simple and avoids import path issues
 
 /**
  * List all category groups for a user
@@ -40,7 +34,7 @@ export async function listGroupsForUser(uid) {
       ...doc.data()
     }));
   } catch (error) {
-    console.error('Error listing category groups:', error);
+    logger.error('Error listing category groups', error);
     throw error;
   }
 }
@@ -75,19 +69,21 @@ export async function createGroup(uid, { name, categories }) {
       throw new Error('A group with this name already exists');
     }
 
-    // Normalize categories to slugs
-    const sluggedCategories = categories
-      .map(cat => toSlug(cat))
-      .filter(slug => slug); // Remove empty slugs
+    // CRITICAL: Store categories as names (not slugs) for readability
+    // They will be normalized to IDs when used in demand-new.html
+    // Ensure categories are valid names (not empty, trim whitespace)
+    const validCategories = categories
+      .map(cat => typeof cat === 'string' ? cat.trim() : String(cat).trim())
+      .filter(name => name.length > 0); // Remove empty
 
-    if (sluggedCategories.length === 0) {
+    if (validCategories.length === 0) {
       throw new Error('No valid categories provided');
     }
 
     // Create group document
     const groupData = {
       name: trimmedName,
-      categories: sluggedCategories,
+      categories: validCategories, // Store as names (will be converted to IDs when used)
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     };
@@ -97,10 +93,10 @@ export async function createGroup(uid, { name, categories }) {
       groupData
     );
 
-    console.log(`✅ Category group created: ${docRef.id}`);
+    logger.info(`Category group created`, { groupId: docRef.id });
     return docRef.id;
   } catch (error) {
-    console.error('Error creating category group:', error);
+    logger.error('Error creating category group', error);
     throw error;
   }
 }
@@ -148,16 +144,17 @@ export async function updateGroup(uid, groupId, updates) {
         throw new Error('At least one category is required');
       }
       
-      // Normalize categories to slugs
-      const sluggedCategories = updates.categories
-        .map(cat => toSlug(cat))
-        .filter(slug => slug); // Remove empty slugs
+      // CRITICAL: Store categories as names (not slugs) for readability
+      // They will be normalized to IDs when used in demand-new.html
+      const validCategories = updates.categories
+        .map(cat => typeof cat === 'string' ? cat.trim() : String(cat).trim())
+        .filter(name => name.length > 0); // Remove empty
 
-      if (sluggedCategories.length === 0) {
+      if (validCategories.length === 0) {
         throw new Error('No valid categories provided');
       }
       
-      updatesToApply.categories = sluggedCategories;
+      updatesToApply.categories = validCategories; // Store as names (will be converted to IDs when used)
     }
 
     await updateDoc(
@@ -165,9 +162,9 @@ export async function updateGroup(uid, groupId, updates) {
       updatesToApply
     );
 
-    console.log(`✅ Category group updated: ${groupId}`);
+    logger.info(`Category group updated`, { groupId });
   } catch (error) {
-    console.error('Error updating category group:', error);
+    logger.error('Error updating category group', error);
     throw error;
   }
 }
@@ -181,9 +178,9 @@ export async function updateGroup(uid, groupId, updates) {
 export async function deleteGroup(uid, groupId) {
   try {
     await deleteDoc(doc(db, 'users', uid, 'categoryGroups', groupId));
-    console.log(`✅ Category group deleted: ${groupId}`);
+    logger.info(`Category group deleted`, { groupId });
   } catch (error) {
-    console.error('Error deleting category group:', error);
+    logger.error('Error deleting category group', error);
     throw error;
   }
 }
@@ -208,7 +205,7 @@ export async function getGroup(uid, groupId) {
     
     return null;
   } catch (error) {
-    console.error('Error getting category group:', error);
+    logger.error('Error getting category group', error);
     throw error;
   }
 }

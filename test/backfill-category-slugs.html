@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kategori Slug Dönüşümü - Backfill</title>
+  <style>
+    body {
+      font-family: system-ui, Arial, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f9fafb;
+    }
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 24px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    h1 {
+      color: #1f2937;
+      margin-top: 0;
+    }
+    .status {
+      padding: 12px;
+      border-radius: 6px;
+      margin: 12px 0;
+      font-weight: 500;
+    }
+    .status.info {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+    .status.success {
+      background: #d1fae5;
+      color: #065f46;
+    }
+    .status.error {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    .status.warning {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    button {
+      padding: 12px 24px;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 14px;
+      margin: 8px 8px 8px 0;
+    }
+    button:hover {
+      background: #2563eb;
+    }
+    button:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+    button.danger {
+      background: #ef4444;
+    }
+    button.danger:hover {
+      background: #dc2626;
+    }
+    .log {
+      margin-top: 16px;
+      padding: 12px;
+      background: #f9fafb;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 12px;
+      max-height: 400px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      border: 1px solid #e5e7eb;
+    }
+    .progress {
+      margin-top: 16px;
+      height: 8px;
+      background: #e5e7eb;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      background: #3b82f6;
+      transition: width 0.3s;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin: 16px 0;
+    }
+    .stat-card {
+      background: #f9fafb;
+      padding: 16px;
+      border-radius: 6px;
+      border: 1px solid #e5e7eb;
+    }
+    .stat-card h3 {
+      margin: 0 0 8px 0;
+      font-size: 14px;
+      color: #6b7280;
+      font-weight: 500;
+    }
+    .stat-card .value {
+      font-size: 32px;
+      font-weight: 700;
+      color: #1f2937;
+    }
+    .stat-card .label {
+      font-size: 12px;
+      color: #9ca3af;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🔄 Kategori Slug Dönüşümü - Backfill Script</h1>
+    <p>Bu script, eski tedarikçi kayıtlarındaki kategorileri slug formatına çevirir (örn: "Sac/Metal" → "sac-metal").</p>
+    
+    <div id="status" class="status info" style="display:none;"></div>
+    <div id="progress" class="progress" style="display:none;">
+      <div id="progressBar" class="progress-bar" style="width:0%"></div>
+    </div>
+    
+    <div class="stats" id="stats" style="display:none;">
+      <div class="stat-card">
+        <h3>Toplam Kullanıcı</h3>
+        <div class="value" id="statTotal">0</div>
+        <div class="label">İşlenen</div>
+      </div>
+      <div class="stat-card">
+        <h3>Tedarikçi</h3>
+        <div class="value" id="statSuppliers">0</div>
+        <div class="label">Bulundu</div>
+      </div>
+      <div class="stat-card">
+        <h3>Güncellenen</h3>
+        <div class="value" id="statUpdated">0</div>
+        <div class="label">Kategori dönüştürüldü</div>
+      </div>
+      <div class="stat-card">
+        <h3>Hata</h3>
+        <div class="value" id="statErrors">0</div>
+        <div class="label">Hatalı kayıt</div>
+      </div>
+    </div>
+    
+    <button id="startBtn">Backfill'i Başlat</button>
+    <button id="previewBtn" class="danger">Önizleme (Değişiklik Yapmadan)</button>
+    
+    <div id="log" class="log"></div>
+  </div>
+
+  <script type="module">
+    import { 
+      db,
+      requireAuth 
+    } from "./firebase.js";
+    import {
+      collection,
+      query,
+      where,
+      getDocs,
+      updateDoc,
+      doc,
+      writeBatch
+    } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+    // Helper: slug normalize (tr-friendly) - same as demand-new.html and settings.html
+    function toSlug(name) {
+      if (!name) return '';
+      return String(name)
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[şŞ]/g, 's').replace(/[ıİ]/g, 'i').replace(/[ğĞ]/g, 'g')
+        .replace(/[çÇ]/g, 'c').replace(/[öÖ]/g, 'o').replace(/[üÜ]/g, 'u')
+        .toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    }
+
+    // Helper: Check if category array needs slug conversion
+    function needsSlugConversion(categories) {
+      if (!Array.isArray(categories) || categories.length === 0) return false;
+      return categories.some(cat => {
+        if (typeof cat !== 'string') return false;
+        // Check if it's NOT in slug format (contains uppercase, spaces, special chars except dash)
+        const isSlugFormat = /^[a-z0-9-]+$/.test(cat) && !cat.includes(' ');
+        return !isSlugFormat;
+      });
+    }
+
+    const startBtn = document.getElementById("startBtn");
+    const previewBtn = document.getElementById("previewBtn");
+    const statusEl = document.getElementById("status");
+    const progressEl = document.getElementById("progress");
+    const progressBar = document.getElementById("progressBar");
+    const logEl = document.getElementById("log");
+    const statsEl = document.getElementById("stats");
+
+    let stats = {
+      total: 0,
+      suppliers: 0,
+      updated: 0,
+      errors: 0
+    };
+
+    function log(message) {
+      const time = new Date().toLocaleTimeString('tr-TR');
+      logEl.textContent += `[${time}] ${message}\n`;
+      logEl.scrollTop = logEl.scrollHeight;
+      console.log(message);
+    }
+
+    function showStatus(message, type = "info") {
+      statusEl.textContent = message;
+      statusEl.className = `status ${type}`;
+      statusEl.style.display = "block";
+    }
+
+    function updateProgress(current, total) {
+      const percent = total > 0 ? Math.round((current / total) * 100) : 0;
+      progressBar.style.width = `${percent}%`;
+      progressEl.style.display = "block";
+    }
+
+    function updateStats() {
+      document.getElementById("statTotal").textContent = stats.total;
+      document.getElementById("statSuppliers").textContent = stats.suppliers;
+      document.getElementById("statUpdated").textContent = stats.updated;
+      document.getElementById("statErrors").textContent = stats.errors;
+      statsEl.style.display = "grid";
+    }
+
+    async function runBackfill(previewOnly = false) {
+      try {
+        // Auth check
+        const user = await requireAuth();
+        log(`✅ Kullanıcı doğrulandı: ${user.email}`);
+
+        startBtn.disabled = true;
+        previewBtn.disabled = true;
+        logEl.textContent = "";
+        stats = { total: 0, suppliers: 0, updated: 0, errors: 0 };
+        updateStats();
+
+        if (previewOnly) {
+          showStatus("🔍 Önizleme modu - Değişiklik yapılmayacak", "info");
+          log("🔍 ÖNİZLEME MODU - Hiçbir değişiklik yapılmayacak");
+        } else {
+          showStatus("🔄 Backfill başlatıldı...", "info");
+          log("🔄 BACKFILL BAŞLATILDI - Değişiklikler yapılacak");
+        }
+
+        // Get all users
+        log("📥 Tüm kullanıcılar alınıyor...");
+        const usersQuery = query(collection(db, "users"));
+        const usersSnapshot = await getDocs(usersQuery);
+        
+        log(`📊 Toplam ${usersSnapshot.size} kullanıcı bulundu`);
+        stats.total = usersSnapshot.size;
+        updateStats();
+
+        let processedCount = 0;
+        const batch = writeBatch(db);
+        const BATCH_SIZE = 500; // Firestore batch limit
+        let batchCount = 0;
+
+        for (const userDoc of usersSnapshot.docs) {
+          processedCount++;
+          const userData = userDoc.data();
+          let needsUpdate = false;
+          const updates = {};
+
+          // Check if user is a supplier
+          const isSupplier = 
+            userData.role === "supplier" || 
+            (Array.isArray(userData.roles) && userData.roles.includes("supplier")) ||
+            userData.isSupplier === true;
+
+          if (!isSupplier) {
+            updateProgress(processedCount, usersSnapshot.size);
+            continue;
+          }
+
+          stats.suppliers++;
+          log(`\n🔍 Tedarikçi kontrol ediliyor: ${userDoc.id} (${userData.companyName || userData.email || 'İsimsiz'})`);
+
+          // Process supplierCategories
+          if (userData.supplierCategories && Array.isArray(userData.supplierCategories)) {
+            if (needsSlugConversion(userData.supplierCategories)) {
+              const originalCats = [...userData.supplierCategories];
+              const slugCats = userData.supplierCategories.map(toSlug).filter(Boolean);
+              
+              log(`  📝 Kategoriler dönüştürülüyor:`);
+              log(`     Öncesi: ${originalCats.join(", ")}`);
+              log(`     Sonrası: ${slugCats.join(", ")}`);
+              
+              if (!previewOnly) {
+                updates.supplierCategories = slugCats;
+                needsUpdate = true;
+              }
+            } else {
+              log(`  ✅ Kategoriler zaten slug formatında: ${userData.supplierCategories.join(", ")}`);
+            }
+          } else if (userData.categories && Array.isArray(userData.categories)) {
+            // Migrate from old categories field
+            const originalCats = [...userData.categories];
+            const slugCats = userData.categories.map(toSlug).filter(Boolean);
+            
+            log(`  🔄 Eski 'categories' field'ından migrasyon:`);
+            log(`     Öncesi: ${originalCats.join(", ")}`);
+            log(`     Sonrası: ${slugCats.join(", ")}`);
+            
+            if (!previewOnly) {
+              updates.supplierCategories = slugCats;
+              updates.categories = null; // Remove old field (Firestore doesn't support undefined in updates)
+              needsUpdate = true;
+            }
+          } else if (userData.category && typeof userData.category === 'string') {
+            // Migrate from old single category field
+            const originalCat = userData.category;
+            const slugCat = toSlug(userData.category);
+            
+            log(`  🔄 Eski 'category' field'ından migrasyon:`);
+            log(`     Öncesi: ${originalCat}`);
+            log(`     Sonrası: ${slugCat}`);
+            
+            if (!previewOnly) {
+              updates.supplierCategories = [slugCat];
+              updates.category = null;
+              needsUpdate = true;
+            }
+          } else {
+            log(`  ⚠️ Kategori bulunamadı`);
+          }
+
+          // Also update supplierCategoryKeys for compatibility
+          if (needsUpdate && updates.supplierCategories) {
+            updates.supplierCategoryKeys = updates.supplierCategories;
+          }
+
+          if (needsUpdate && !previewOnly) {
+            try {
+              const userRef = doc(db, "users", userDoc.id);
+              batch.update(userRef, updates);
+              batchCount++;
+              stats.updated++;
+
+              // Commit batch if reached limit
+              if (batchCount >= BATCH_SIZE) {
+                log(`💾 Batch commit (${batchCount} güncelleme)...`);
+                await batch.commit();
+                batchCount = 0;
+                log(`✅ Batch commit tamamlandı`);
+              }
+            } catch (error) {
+              stats.errors++;
+              log(`❌ Hata (${userDoc.id}): ${error.message}`);
+              console.error(error);
+            }
+          } else if (needsUpdate && previewOnly) {
+            stats.updated++;
+            log(`  🔍 Önizleme: Bu kayıt güncellenecek`);
+          }
+
+          updateProgress(processedCount, usersSnapshot.size);
+          updateStats();
+        }
+
+        // Commit remaining batch
+        if (!previewOnly && batchCount > 0) {
+          log(`💾 Son batch commit (${batchCount} güncelleme)...`);
+          await batch.commit();
+          log(`✅ Son batch commit tamamlandı`);
+        }
+
+        if (previewOnly) {
+          showStatus(`🔍 Önizleme tamamlandı: ${stats.updated} kayıt güncellenecek`, "warning");
+          log(`\n✅ ÖNİZLEME TAMAMLANDI`);
+          log(`📊 Özet:`);
+          log(`   - Toplam kullanıcı: ${stats.total}`);
+          log(`   - Tedarikçi: ${stats.suppliers}`);
+          log(`   - Güncellenecek: ${stats.updated}`);
+          log(`   - Hata: ${stats.errors}`);
+          log(`\n⚠️ Değişiklik yapmak için "Backfill'i Başlat" butonuna tıklayın.`);
+        } else {
+          showStatus(`✅ Backfill tamamlandı: ${stats.updated} kayıt güncellendi`, "success");
+          log(`\n✅ BACKFILL TAMAMLANDI`);
+          log(`📊 Özet:`);
+          log(`   - Toplam kullanıcı: ${stats.total}`);
+          log(`   - Tedarikçi: ${stats.suppliers}`);
+          log(`   - Güncellendi: ${stats.updated}`);
+          log(`   - Hata: ${stats.errors}`);
+        }
+
+      } catch (error) {
+        console.error("Backfill hatası:", error);
+        showStatus(`❌ Hata: ${error.message}`, "error");
+        log(`❌ HATA: ${error.message}`);
+        log(`❌ Stack: ${error.stack}`);
+      } finally {
+        startBtn.disabled = false;
+        previewBtn.disabled = false;
+      }
+    }
+
+    startBtn.addEventListener("click", () => {
+      if (confirm("⚠️ Bu işlem tüm tedarikçi kategorilerini slug formatına çevirecek. Devam etmek istiyor musunuz?")) {
+        runBackfill(false);
+      }
+    });
+
+    previewBtn.addEventListener("click", () => {
+      runBackfill(true);
+    });
+
+    // Auto-check auth on load
+    requireAuth().then(user => {
+      log(`✅ Oturum açık: ${user.email}`);
+      showStatus("✅ Hazır - Backfill'i başlatabilirsiniz", "success");
+    }).catch(err => {
+      log(`❌ Oturum açık değil: ${err.message}`);
+      showStatus("❌ Lütfen önce giriş yapın", "error");
+      startBtn.disabled = true;
+      previewBtn.disabled = true;
+    });
+  </script>
+</body>
+</html>

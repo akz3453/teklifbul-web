@@ -1,0 +1,66 @@
+{
+  "districtId": "ISTANBUL__BAKIRKOY",
+  "districtName": "Bakırköy",
+  "neighborhoods": [
+    {
+      "id": "ATAKOY_1_KISIM",
+      "name": "Ataköy 1. Kısım"
+    },
+    {
+      "id": "ATAKOY_256_KISIM",
+      "name": "Ataköy 2-5-6. Kısım"
+    },
+    {
+      "id": "ATAKOY_3411_KISIM",
+      "name": "Ataköy 3-4-11. Kısım"
+    },
+    {
+      "id": "ATAKOY_78910_KISIM",
+      "name": "Ataköy 7-8-9-10. Kısım"
+    },
+    {
+      "id": "BASINKOY",
+      "name": "Basınköy"
+    },
+    {
+      "id": "CEVIZLIK",
+      "name": "Cevizlik"
+    },
+    {
+      "id": "KARTALTEPE",
+      "name": "Kartaltepe"
+    },
+    {
+      "id": "OSMANIYE",
+      "name": "Osmaniye"
+    },
+    {
+      "id": "SAKIZAGACI",
+      "name": "Sakızağacı"
+    },
+    {
+      "id": "SENLIKKOY",
+      "name": "Şenlikköy"
+    },
+    {
+      "id": "YENIMAHALLE",
+      "name": "Yenimahalle"
+    },
+    {
+      "id": "YESILKOY",
+      "name": "Yeşilköy"
+    },
+    {
+      "id": "YESILYURT",
+      "name": "Yeşilyurt"
+    },
+    {
+      "id": "ZEYTINLIK",
+      "name": "Zeytinlik"
+    },
+    {
+      "id": "ZUHURATBABA",
+      "name": "Zuhuratbaba"
+    }
+  ]
+}

@@ -1,0 +1,278 @@
+{
+  "districtId": "MALATYA__PUTURGE",
+  "districtName": "Pütürge",
+  "neighborhoods": [
+    {
+      "id": "AGALAR",
+      "name": "Ağalar"
+    },
+    {
+      "id": "AKTARLA",
+      "name": "Aktarla"
+    },
+    {
+      "id": "ALICERI",
+      "name": "Aliçeri"
+    },
+    {
+      "id": "ALIHAN",
+      "name": "Alihan"
+    },
+    {
+      "id": "ARINLI",
+      "name": "Arınlı"
+    },
+    {
+      "id": "ARITOPRAK",
+      "name": "Arıtoprak"
+    },
+    {
+      "id": "ARSLANKENT",
+      "name": "Arslankent"
+    },
+    {
+      "id": "BAKIMLI",
+      "name": "Bakımlı"
+    },
+    {
+      "id": "BALPINARI",
+      "name": "Balpınarı"
+    },
+    {
+      "id": "BASMEZRA",
+      "name": "Başmezra"
+    },
+    {
+      "id": "BAYIRKOY",
+      "name": "Bayırköy"
+    },
+    {
+      "id": "BELENKOY",
+      "name": "Belenköy"
+    },
+    {
+      "id": "BOLUKKAYA",
+      "name": "Bölükkaya"
+    },
+    {
+      "id": "BOLUNMEZ",
+      "name": "Bölünmez"
+    },
+    {
+      "id": "BUYUKOZ",
+      "name": "Büyüköz"
+    },
+    {
+      "id": "CAMLIDERE",
+      "name": "Çamlıdere"
+    },
+    {
+      "id": "CAYKOY",
+      "name": "Çayköy"
+    },
+    {
+      "id": "CENGELLI",
+      "name": "Çengelli"
+    },
+    {
+      "id": "CIGIRLI",
+      "name": "Çığırlı"
+    },
+    {
+      "id": "CUKUROYMAGI",
+      "name": "Çukuroymağı"
+    },
+    {
+      "id": "DEREDUZU",
+      "name": "Deredüzü"
+    },
+    {
+      "id": "ERDEMLER",
+      "name": "Erdemler"
+    },
+    {
+      "id": "ERSELE",
+      "name": "Ersele"
+    },
+    {
+      "id": "ESENCIK",
+      "name": "Esencik"
+    },
+    {
+      "id": "ESENLIK",
+      "name": "Esenlik"
+    },
+    {
+      "id": "GERTAN",
+      "name": "Gertan"
+    },
+    {
+      "id": "GOZLUCE",
+      "name": "Gözlüce"
+    },
+    {
+      "id": "GUNDEGER",
+      "name": "Gündeğer"
+    },
+    {
+      "id": "GUNDUZ",
+      "name": "Gündüz"
+    },
+    {
+      "id": "HATIP",
+      "name": "Hatip"
+    },
+    {
+      "id": "KARAKAYA",
+      "name": "Karakaya"
+    },
+    {
+      "id": "KARSIYAKA",
+      "name": "Karşıyaka"
+    },
+    {
+      "id": "KAVAKLIDERE",
+      "name": "Kavaklıdere"
+    },
+    {
+      "id": "KAYADERE",
+      "name": "Kayadere"
+    },
+    {
+      "id": "KOCKOY",
+      "name": "Koçköy"
+    },
+    {
+      "id": "KORUCAK",
+      "name": "Korucak"
+    },
+    {
+      "id": "KOZLUK",
+      "name": "Kozluk"
+    },
+    {
+      "id": "KOKLUKAYA",
+      "name": "Köklükaya"
+    },
+    {
+      "id": "KORME",
+      "name": "Körme"
+    },
+    {
+      "id": "KOYLU",
+      "name": "Köylü"
+    },
+    {
+      "id": "MESEDIBI",
+      "name": "Meşedibi"
+    },
+    {
+      "id": "NOHUTLU",
+      "name": "Nohutlu"
+    },
+    {
+      "id": "ORMANICI",
+      "name": "Ormaniçi"
+    },
+    {
+      "id": "ORENCIK",
+      "name": "Örencik"
+    },
+    {
+      "id": "ORMELI",
+      "name": "Örmeli"
+    },
+    {
+      "id": "ORNEKKOY",
+      "name": "Örnekköy"
+    },
+    {
+      "id": "PAZARCIK",
+      "name": "Pazarcık"
+    },
+    {
+      "id": "POSKIRAN",
+      "name": "Poskıran"
+    },
+    {
+      "id": "SAHILKOY",
+      "name": "Sahilköy"
+    },
+    {
+      "id": "SOGUTLU",
+      "name": "Söğütlü"
+    },
+    {
+      "id": "SIRO_TARAKSU",
+      "name": "Şiro Taraksu"
+    },
+    {
+      "id": "SUKAN",
+      "name": "Şükan"
+    },
+    {
+      "id": "TASBASI",
+      "name": "Taşbaşı"
+    },
+    {
+      "id": "TASMIS",
+      "name": "Taşmış"
+    },
+    {
+      "id": "TASTEPE",
+      "name": "Taştepe"
+    },
+    {
+      "id": "TATLICAK",
+      "name": "Tatlıcak"
+    },
+    {
+      "id": "TEKEDERESI",
+      "name": "Tekederesi"
+    },
+    {
+      "id": "TELUSAGI",
+      "name": "Teluşağı"
+    },
+    {
+      "id": "TEPEHAN",
+      "name": "Tepehan"
+    },
+    {
+      "id": "ULUTAS",
+      "name": "Ulutaş"
+    },
+    {
+      "id": "UZUNKORU",
+      "name": "Uzunkoru"
+    },
+    {
+      "id": "UZUNTAS",
+      "name": "Uzuntaş"
+    },
+    {
+      "id": "UCYAKA",
+      "name": "Üçyaka"
+    },
+    {
+      "id": "YAMAC",
+      "name": "Yamaç"
+    },
+    {
+      "id": "YANDERE",
+      "name": "Yandere"
+    },
+    {
+      "id": "YAZICA",
+      "name": "Yazıca"
+    },
+    {
+      "id": "YEDIYOL",
+      "name": "Yediyol"
+    },
+    {
+      "id": "YESILDERE",
+      "name": "Yeşildere"
+    }
+  ]
+}

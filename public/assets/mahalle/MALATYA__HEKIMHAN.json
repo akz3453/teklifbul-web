@@ -1,0 +1,266 @@
+{
+  "districtId": "MALATYA__HEKIMHAN",
+  "districtName": "Hekimhan",
+  "neighborhoods": [
+    {
+      "id": "AKMAGARA",
+      "name": "Akmağara"
+    },
+    {
+      "id": "AKSUTLU",
+      "name": "Aksütlü"
+    },
+    {
+      "id": "ASAGISAZLICA",
+      "name": "Aşağısazlıca"
+    },
+    {
+      "id": "BAGYOLU",
+      "name": "Bağyolu"
+    },
+    {
+      "id": "BAHCEDAMI",
+      "name": "Bahçedamı"
+    },
+    {
+      "id": "BAHCELIEVLER",
+      "name": "Bahçelievler"
+    },
+    {
+      "id": "BALLIKAYA",
+      "name": "Ballıkaya"
+    },
+    {
+      "id": "BASAK",
+      "name": "Basak"
+    },
+    {
+      "id": "BASKAVAK",
+      "name": "Başkavak"
+    },
+    {
+      "id": "BASKINIK",
+      "name": "Başkınık"
+    },
+    {
+      "id": "BEYKENT",
+      "name": "Beykent"
+    },
+    {
+      "id": "BOGAZGOREN",
+      "name": "Boğazgören"
+    },
+    {
+      "id": "BUDAKLI",
+      "name": "Budaklı"
+    },
+    {
+      "id": "CANAKPINAR",
+      "name": "Çanakpınar"
+    },
+    {
+      "id": "CIMENLIK",
+      "name": "Çimenlik"
+    },
+    {
+      "id": "CULHALI",
+      "name": "Çulhalı"
+    },
+    {
+      "id": "DAVULGU",
+      "name": "Davulgu"
+    },
+    {
+      "id": "DELIHASANYURDU",
+      "name": "Delihasanyurdu"
+    },
+    {
+      "id": "DEREKOY",
+      "name": "Dereköy"
+    },
+    {
+      "id": "DEVECI",
+      "name": "Deveci"
+    },
+    {
+      "id": "DIKENLI",
+      "name": "Dikenli"
+    },
+    {
+      "id": "DIKILI",
+      "name": "Dikili"
+    },
+    {
+      "id": "DUMLU",
+      "name": "Dumlu"
+    },
+    {
+      "id": "DURSUNLU",
+      "name": "Dursunlu"
+    },
+    {
+      "id": "FATIH",
+      "name": "Fatih"
+    },
+    {
+      "id": "GIRMANA",
+      "name": "Girmana"
+    },
+    {
+      "id": "GUCLU",
+      "name": "Güçlü"
+    },
+    {
+      "id": "GUVENC",
+      "name": "Güvenç"
+    },
+    {
+      "id": "GUZELYAYLA",
+      "name": "Güzelyayla"
+    },
+    {
+      "id": "GUZELYURT",
+      "name": "Güzelyurt"
+    },
+    {
+      "id": "HACILAR",
+      "name": "Hacılar"
+    },
+    {
+      "id": "HASANCELEBI",
+      "name": "Hasançelebi"
+    },
+    {
+      "id": "HAYDAROGLU",
+      "name": "Haydaroğlu"
+    },
+    {
+      "id": "ISIKLI",
+      "name": "Işıklı"
+    },
+    {
+      "id": "IGDIR",
+      "name": "İğdir"
+    },
+    {
+      "id": "KARADERE",
+      "name": "Karadere"
+    },
+    {
+      "id": "KARAKOCEK",
+      "name": "Karaköçek"
+    },
+    {
+      "id": "KARAPINAR",
+      "name": "Karapınar"
+    },
+    {
+      "id": "KARSLILAR",
+      "name": "Karslılar"
+    },
+    {
+      "id": "KARSIYAKA",
+      "name": "Karşıyaka"
+    },
+    {
+      "id": "KAVACIK",
+      "name": "Kavacık"
+    },
+    {
+      "id": "KOCAOZU",
+      "name": "Kocaözü"
+    },
+    {
+      "id": "KOZDERE",
+      "name": "Kozdere"
+    },
+    {
+      "id": "KOPRULU_MEHMET_PASA",
+      "name": "Köprülü Mehmet Paşa"
+    },
+    {
+      "id": "KOYLUKOYU",
+      "name": "Köylüköyü"
+    },
+    {
+      "id": "KURSUNLU",
+      "name": "Kurşunlu"
+    },
+    {
+      "id": "MIMAR_SINAN",
+      "name": "Mimar Sinan"
+    },
+    {
+      "id": "MOLLAIBRAHIM",
+      "name": "Mollaibrahim"
+    },
+    {
+      "id": "SALICIK",
+      "name": "Salıcık"
+    },
+    {
+      "id": "SARAYLI",
+      "name": "Saraylı"
+    },
+    {
+      "id": "SARIKIZ",
+      "name": "Sarıkız"
+    },
+    {
+      "id": "SAZLICA",
+      "name": "Sazlıca"
+    },
+    {
+      "id": "SOGUT",
+      "name": "Söğüt"
+    },
+    {
+      "id": "SEHIT_MEHMET_FETHI_AKYUZ",
+      "name": "Şehit Mehmet Fethi Akyüz"
+    },
+    {
+      "id": "TASBASI",
+      "name": "Taşbaşı"
+    },
+    {
+      "id": "TASOLUK",
+      "name": "Taşoluk"
+    },
+    {
+      "id": "TURGUT_OZAL",
+      "name": "Turgut Özal"
+    },
+    {
+      "id": "UGURLU",
+      "name": "Uğurlu"
+    },
+    {
+      "id": "YAGCA",
+      "name": "Yağca"
+    },
+    {
+      "id": "YAYLADAM",
+      "name": "Yayladam"
+    },
+    {
+      "id": "YENI",
+      "name": "Yeni"
+    },
+    {
+      "id": "YESILKALE",
+      "name": "Yeşilkale"
+    },
+    {
+      "id": "YESILKOY",
+      "name": "Yeşilköy"
+    },
+    {
+      "id": "YESILPINAR",
+      "name": "Yeşilpınar"
+    },
+    {
+      "id": "YUKARISELIMLI",
+      "name": "Yukarıselimli"
+    }
+  ]
+}

@@ -3,6 +3,9 @@
  * Provides consistent error handling and empty state rendering across the application
  */
 
+// Teklifbul Rule v1.0 - Structured Logging
+import { logger } from '../../../src/shared/log/logger.js';
+
 /**
  * Handle errors with consistent UI feedback
  * @param {Error} error - The error object
@@ -18,7 +21,7 @@ export function handleError(error, options = {}) {
     onRetry = null
   } = options;
 
-  console.error(`❌ Error in ${context}:`, error);
+  logger.error(`Error in ${context}`, error);
 
   // Extract meaningful error message
   let errorMessage = 'Beklenmeyen bir hata oluştu';
@@ -134,7 +137,7 @@ export function renderEmptyState(target, message, options = {}) {
   } = options;
 
   if (!target) {
-    console.warn('Empty state target element not found');
+    logger.warn('Empty state target element not found');
     return;
   }
 

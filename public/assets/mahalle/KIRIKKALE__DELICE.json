@@ -1,0 +1,46 @@
+{
+  "districtId": "KIRIKKALE__DELICE",
+  "districtName": "Delice",
+  "neighborhoods": [
+    {
+      "id": "GOKCEBEL",
+      "name": "Gökçebel"
+    },
+    {
+      "id": "MERKEZ",
+      "name": "Merkez"
+    },
+    {
+      "id": "SAKARYA",
+      "name": "Sakarya"
+    },
+    {
+      "id": "YENI",
+      "name": "Yeni"
+    },
+    {
+      "id": "YERLIKENT",
+      "name": "Yerlikent"
+    },
+    {
+      "id": "AKTEPE",
+      "name": "Aktepe"
+    },
+    {
+      "id": "CUMHURIYET",
+      "name": "Cumhuriyet"
+    },
+    {
+      "id": "FATIH",
+      "name": "Fatih"
+    },
+    {
+      "id": "KARABEKIR",
+      "name": "Karabekir"
+    },
+    {
+      "id": "MIMAR_SINAN",
+      "name": "Mimar Sinan"
+    }
+  ]
+}

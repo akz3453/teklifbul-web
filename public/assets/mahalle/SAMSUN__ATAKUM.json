@@ -1,0 +1,234 @@
+{
+  "districtId": "SAMSUN__ATAKUM",
+  "districtName": "Atakum",
+  "neighborhoods": [
+    {
+      "id": "KASNAKÇIMERMER",
+      "name": "Kasnakçımermer"
+    },
+    {
+      "id": "AYVALI",
+      "name": "Ayvalı"
+    },
+    {
+      "id": "KAMALI",
+      "name": "Kamalı"
+    },
+    {
+      "id": "KESİLLİ",
+      "name": "Kesilli"
+    },
+    {
+      "id": "SARAYKÖY",
+      "name": "Sarayköy"
+    },
+    {
+      "id": "AKALAN",
+      "name": "Akalan"
+    },
+    {
+      "id": "ÇATMAOLUK",
+      "name": "Çatmaoluk"
+    },
+    {
+      "id": "KULACADAĞ",
+      "name": "Kulacadağ"
+    },
+    {
+      "id": "SARIYUSUF",
+      "name": "Sarıyusuf"
+    },
+    {
+      "id": "ÇAMLIYAZI",
+      "name": "Çamlıyazı"
+    },
+    {
+      "id": "SARITAŞ",
+      "name": "Sarıtaş"
+    },
+    {
+      "id": "KÖSELİ",
+      "name": "Köseli"
+    },
+    {
+      "id": "KARAOYUMCA",
+      "name": "Karaoyumca"
+    },
+    {
+      "id": "MEYVALI",
+      "name": "Meyvalı"
+    },
+    {
+      "id": "YUKARIAKSU",
+      "name": "Yukarıaksu"
+    },
+    {
+      "id": "SARIIŞIK",
+      "name": "Sarıışık"
+    },
+    {
+      "id": "AKSU",
+      "name": "Aksu"
+    },
+    {
+      "id": "ASLANDAMI",
+      "name": "Aslandamı"
+    },
+    {
+      "id": "ELMAÇUKURU",
+      "name": "Elmaçukuru"
+    },
+    {
+      "id": "ERİKLİ",
+      "name": "Erikli"
+    },
+    {
+      "id": "GÜNEYKÖY",
+      "name": "Güneyköy"
+    },
+    {
+      "id": "KABADÜZ",
+      "name": "Kabadüz"
+    },
+    {
+      "id": "ŞENYURT",
+      "name": "Şenyurt"
+    },
+    {
+      "id": "KARAKAVUK",
+      "name": "Karakavuk"
+    },
+    {
+      "id": "KAYAGÜNEY",
+      "name": "Kayagüney"
+    },
+    {
+      "id": "KURUGÖKÇE",
+      "name": "Kurugökçe"
+    },
+    {
+      "id": "ÖZÖREN",
+      "name": "Özören"
+    },
+    {
+      "id": "YEŞİLTEPE",
+      "name": "Yeşiltepe"
+    },
+    {
+      "id": "MEVLANA",
+      "name": "Mevlana"
+    },
+    {
+      "id": "İSTİKLAL",
+      "name": "İstiklal"
+    },
+    {
+      "id": "YENİMAHALLE",
+      "name": "Yenimahalle"
+    },
+    {
+      "id": "TAFLAN_CAMİ",
+      "name": "Taflan Cami"
+    },
+    {
+      "id": "İNCESU",
+      "name": "İncesu"
+    },
+    {
+      "id": "YEŞİLDERE",
+      "name": "Yeşildere"
+    },
+    {
+      "id": "CUMHURİYET",
+      "name": "Cumhuriyet"
+    },
+    {
+      "id": "DENİZEVLERİ",
+      "name": "Denizevleri"
+    },
+    {
+      "id": "ATATEPE",
+      "name": "Atatepe"
+    },
+    {
+      "id": "ATAKENT",
+      "name": "Atakent"
+    },
+    {
+      "id": "ÇOBANLI",
+      "name": "Çobanlı"
+    },
+    {
+      "id": "KURUPELİT_KÖRFEZ",
+      "name": "Kurupelit Körfez"
+    },
+    {
+      "id": "YEŞİLYURT",
+      "name": "Yeşilyurt"
+    },
+    {
+      "id": "BALAÇ",
+      "name": "Balaç"
+    },
+    {
+      "id": "BÜYÜKKOLPINAR",
+      "name": "Büyükkolpınar"
+    },
+    {
+      "id": "ÇAKIRLARYALI",
+      "name": "Çakırlaryalı"
+    },
+    {
+      "id": "BEYPINAR",
+      "name": "Beypınar"
+    },
+    {
+      "id": "ÇOBANÖZÜ",
+      "name": "Çobanözü"
+    },
+    {
+      "id": "ESENEVLER",
+      "name": "Esenevler"
+    },
+    {
+      "id": "İNCESU_YALI",
+      "name": "İncesu Yalı"
+    },
+    {
+      "id": "ÇATALÇAM_GÜZELYURT",
+      "name": "Çatalçam Güzelyurt"
+    },
+    {
+      "id": "TAFLAN_MERKEZ_ORTA",
+      "name": "Taflan Merkez Orta"
+    },
+    {
+      "id": "ALANLI",
+      "name": "Alanlı"
+    },
+    {
+      "id": "ATAKENT_GÜZELYALI",
+      "name": "Atakent Güzelyalı"
+    },
+    {
+      "id": "KÜÇÜKKOLPINAR",
+      "name": "Küçükkolpınar"
+    },
+    {
+      "id": "BÜYÜKOYUMCA",
+      "name": "Büyükoyumca"
+    },
+    {
+      "id": "ÇAKIRLAR",
+      "name": "Çakırlar"
+    },
+    {
+      "id": "MİMARSİNAN",
+      "name": "Mimarsinan"
+    },
+    {
+      "id": "TAFLAN_YALI",
+      "name": "Taflan Yalı"
+    }
+  ]
+}

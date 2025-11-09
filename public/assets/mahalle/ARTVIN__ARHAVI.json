@@ -1,0 +1,34 @@
+{
+  "districtId": "ARTVIN__ARHAVI",
+  "districtName": "Arhavi",
+  "neighborhoods": [
+    {
+      "id": "ASAGI_HACILAR",
+      "name": "Aşağı Hacılar"
+    },
+    {
+      "id": "BOGAZICI",
+      "name": "Boğaziçi"
+    },
+    {
+      "id": "CUMHURIYET",
+      "name": "Cumhuriyet"
+    },
+    {
+      "id": "KALE",
+      "name": "Kale"
+    },
+    {
+      "id": "MUSAZADE",
+      "name": "Musazade"
+    },
+    {
+      "id": "YEMISLIK",
+      "name": "Yemişlik"
+    },
+    {
+      "id": "YUKARI_HACILAR",
+      "name": "Yukarı Hacılar"
+    }
+  ]
+}

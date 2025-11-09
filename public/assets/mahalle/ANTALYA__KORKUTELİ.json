@@ -1,0 +1,242 @@
+{
+  "districtId": "ANTALYA__KORKUTELİ",
+  "districtName": "Korkuteli",
+  "neighborhoods": [
+    {
+      "id": "DURALİLER",
+      "name": "Duraliler"
+    },
+    {
+      "id": "GÖÇERLER",
+      "name": "Göçerler"
+    },
+    {
+      "id": "YUKARIKARAMAN",
+      "name": "Yukarıkaraman"
+    },
+    {
+      "id": "KÜÇÜKKÖY",
+      "name": "Küçükköy"
+    },
+    {
+      "id": "BOZOVA",
+      "name": "Bozova"
+    },
+    {
+      "id": "ÇOMAKLI",
+      "name": "Çomaklı"
+    },
+    {
+      "id": "YELTEN",
+      "name": "Yelten"
+    },
+    {
+      "id": "YEŞİLYAYLA",
+      "name": "Yeşilyayla"
+    },
+    {
+      "id": "ALAADDİN",
+      "name": "Alaaddin"
+    },
+    {
+      "id": "AŞAĞIPAZAR",
+      "name": "Aşağıpazar"
+    },
+    {
+      "id": "KARŞIYAKA",
+      "name": "Karşıyaka"
+    },
+    {
+      "id": "KİREMİTLİ",
+      "name": "Kiremitli"
+    },
+    {
+      "id": "UZUNOLUK",
+      "name": "Uzunoluk"
+    },
+    {
+      "id": "YENİ",
+      "name": "Yeni"
+    },
+    {
+      "id": "BÜYÜKKÖY",
+      "name": "Büyükköy"
+    },
+    {
+      "id": "AKYAR",
+      "name": "Akyar"
+    },
+    {
+      "id": "AVDAN",
+      "name": "Avdan"
+    },
+    {
+      "id": "YELEME",
+      "name": "Yeleme"
+    },
+    {
+      "id": "BAYAT",
+      "name": "Bayat"
+    },
+    {
+      "id": "BAYATBADEMLERİ",
+      "name": "Bayatbademleri"
+    },
+    {
+      "id": "BEĞİŞ",
+      "name": "Beğiş"
+    },
+    {
+      "id": "DEREKÖY",
+      "name": "Dereköy"
+    },
+    {
+      "id": "ESENYURT",
+      "name": "Esenyurt"
+    },
+    {
+      "id": "KEVZER",
+      "name": "Kevzer"
+    },
+    {
+      "id": "GÜZLE",
+      "name": "Güzle"
+    },
+    {
+      "id": "İMECİK",
+      "name": "İmecik"
+    },
+    {
+      "id": "İMRAHOR",
+      "name": "İmrahor"
+    },
+    {
+      "id": "KARABAYIR",
+      "name": "Karabayır"
+    },
+    {
+      "id": "KARATAŞ",
+      "name": "Karataş"
+    },
+    {
+      "id": "KARGALIK",
+      "name": "Kargalık"
+    },
+    {
+      "id": "KARGIN",
+      "name": "Kargın"
+    },
+    {
+      "id": "KEMERAĞZI",
+      "name": "Kemerağzı"
+    },
+    {
+      "id": "KIRKPINAR",
+      "name": "Kırkpınar"
+    },
+    {
+      "id": "KÖSELER",
+      "name": "Köseler"
+    },
+    {
+      "id": "SÖĞÜTCÜK",
+      "name": "Söğütcük"
+    },
+    {
+      "id": "SÜLEKLER",
+      "name": "Sülekler"
+    },
+    {
+      "id": "TAŞKESİĞİ",
+      "name": "Taşkesiği"
+    },
+    {
+      "id": "TATKÖY",
+      "name": "Tatköy"
+    },
+    {
+      "id": "SIMANDIR",
+      "name": "Sımandır"
+    },
+    {
+      "id": "YAZIR",
+      "name": "Yazır"
+    },
+    {
+      "id": "ÇAYKENARI",
+      "name": "Çaykenarı"
+    },
+    {
+      "id": "ÇUKURCA",
+      "name": "Çukurca"
+    },
+    {
+      "id": "GARİPÇE",
+      "name": "Garipçe"
+    },
+    {
+      "id": "KARAKUYU",
+      "name": "Karakuyu"
+    },
+    {
+      "id": "LEYLEKKÖY",
+      "name": "Leylekköy"
+    },
+    {
+      "id": "YAKAKÖY",
+      "name": "Yakaköy"
+    },
+    {
+      "id": "YALINLIGEDİĞİ",
+      "name": "Yalınlıgediği"
+    },
+    {
+      "id": "KIZILCADAĞ",
+      "name": "Kızılcadağ"
+    },
+    {
+      "id": "BAHÇEYAKA",
+      "name": "Bahçeyaka"
+    },
+    {
+      "id": "ÇIVGALAR",
+      "name": "Çıvgalar"
+    },
+    {
+      "id": "KAYABAŞI",
+      "name": "Kayabaşı"
+    },
+    {
+      "id": "KIZILALİLER",
+      "name": "Kızılaliler"
+    },
+    {
+      "id": "KOZAĞACI",
+      "name": "Kozağacı"
+    },
+    {
+      "id": "KÜÇÜKLÜ",
+      "name": "Küçüklü"
+    },
+    {
+      "id": "MAMATLAR",
+      "name": "Mamatlar"
+    },
+    {
+      "id": "NEBİLER",
+      "name": "Nebiler"
+    },
+    {
+      "id": "OSMANKALFALAR",
+      "name": "Osmankalfalar"
+    },
+    {
+      "id": "MANAY",
+      "name": "Manay"
+    },
+    {
+      "id": "YEŞİLOBA",
+      "name": "Yeşiloba"
+    }
+  ]
+}

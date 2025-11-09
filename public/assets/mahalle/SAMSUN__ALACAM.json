@@ -1,0 +1,266 @@
+{
+  "districtId": "SAMSUN__ALACAM",
+  "districtName": "Alaçam",
+  "neighborhoods": [
+    {
+      "id": "AKBULUT",
+      "name": "Akbulut"
+    },
+    {
+      "id": "AKGUNEY",
+      "name": "Akgüney"
+    },
+    {
+      "id": "ALIDEDEBOLMESI",
+      "name": "Alidedebölmesi"
+    },
+    {
+      "id": "ALPARSLAN",
+      "name": "Alparslan"
+    },
+    {
+      "id": "ASAGI_AKGUNEY",
+      "name": "Aşağı Akgüney"
+    },
+    {
+      "id": "ASAGIISIRGANLI",
+      "name": "Aşağıısırganlı"
+    },
+    {
+      "id": "ASAGIKOCLU",
+      "name": "Aşağıkoçlu"
+    },
+    {
+      "id": "BAHSIOYMAGI",
+      "name": "Bahşioymağı"
+    },
+    {
+      "id": "BEKIROGLU",
+      "name": "Bekiroğlu"
+    },
+    {
+      "id": "CESME",
+      "name": "Çeşme"
+    },
+    {
+      "id": "DEMIRCIDERESI",
+      "name": "Demircideresi"
+    },
+    {
+      "id": "DOGANKENT",
+      "name": "Doğankent"
+    },
+    {
+      "id": "DOYRAN",
+      "name": "Doyran"
+    },
+    {
+      "id": "ESENTEPE",
+      "name": "Esentepe"
+    },
+    {
+      "id": "ETYEMEZ",
+      "name": "Etyemez"
+    },
+    {
+      "id": "FATIH",
+      "name": "Fatih"
+    },
+    {
+      "id": "GOCKUN",
+      "name": "Göçkün"
+    },
+    {
+      "id": "GOKCEAGACOYMAGI",
+      "name": "Gökçeağaçoymağı"
+    },
+    {
+      "id": "GOKCEBOGAZ",
+      "name": "Gökçeboğaz"
+    },
+    {
+      "id": "GULKAYA",
+      "name": "Gülkaya"
+    },
+    {
+      "id": "GULTEPE",
+      "name": "Gültepe"
+    },
+    {
+      "id": "GUMUSOVA",
+      "name": "Gümüşova"
+    },
+    {
+      "id": "GUVENLI",
+      "name": "Güvenli"
+    },
+    {
+      "id": "HABILLI",
+      "name": "Habilli"
+    },
+    {
+      "id": "HARMANCIK",
+      "name": "Harmancık"
+    },
+    {
+      "id": "INCIRLI",
+      "name": "İncirli"
+    },
+    {
+      "id": "KADIKOY",
+      "name": "Kadıköy"
+    },
+    {
+      "id": "KALIKDEMIRCI",
+      "name": "Kalıkdemirci"
+    },
+    {
+      "id": "KAPAKLI",
+      "name": "Kapaklı"
+    },
+    {
+      "id": "KARACUKUR",
+      "name": "Karaçukur"
+    },
+    {
+      "id": "KARAHUSEYINLI",
+      "name": "Karahüseyinli"
+    },
+    {
+      "id": "KARLI",
+      "name": "Karlı"
+    },
+    {
+      "id": "KARSIYAKA",
+      "name": "Karşıyaka"
+    },
+    {
+      "id": "KISLAKONAK",
+      "name": "Kışlakonak"
+    },
+    {
+      "id": "KIZLAN",
+      "name": "Kızlan"
+    },
+    {
+      "id": "KILLIK",
+      "name": "Killik"
+    },
+    {
+      "id": "KOSEKOY",
+      "name": "Köseköy"
+    },
+    {
+      "id": "MADENLER",
+      "name": "Madenler"
+    },
+    {
+      "id": "ORTAKOY",
+      "name": "Ortaköy"
+    },
+    {
+      "id": "ORENLI",
+      "name": "Örenli"
+    },
+    {
+      "id": "PELITBUKU",
+      "name": "Pelitbükü"
+    },
+    {
+      "id": "PELITBUKUSEKECEK",
+      "name": "Pelitbüküsekecek"
+    },
+    {
+      "id": "SANCAR",
+      "name": "Sancar"
+    },
+    {
+      "id": "SARILIK",
+      "name": "Sarılık"
+    },
+    {
+      "id": "SOGUKCAM",
+      "name": "Soğukçam"
+    },
+    {
+      "id": "SIRINKOY",
+      "name": "Şirinköy"
+    },
+    {
+      "id": "TASKELIK",
+      "name": "Taşkelik"
+    },
+    {
+      "id": "TEFEKLI",
+      "name": "Tefekli"
+    },
+    {
+      "id": "TEPEBOLMESI",
+      "name": "Tepebölmesi"
+    },
+    {
+      "id": "TERSKIRIK",
+      "name": "Terskırık"
+    },
+    {
+      "id": "TOPLU",
+      "name": "Toplu"
+    },
+    {
+      "id": "UMUTLU",
+      "name": "Umutlu"
+    },
+    {
+      "id": "UZUNKIRAC",
+      "name": "Uzunkıraç"
+    },
+    {
+      "id": "VICIKLER",
+      "name": "Vicikler"
+    },
+    {
+      "id": "YAKACIK",
+      "name": "Yakacık"
+    },
+    {
+      "id": "YENICAMI",
+      "name": "Yenicami"
+    },
+    {
+      "id": "YENICE",
+      "name": "Yenice"
+    },
+    {
+      "id": "YENIKOY",
+      "name": "Yeniköy"
+    },
+    {
+      "id": "YESILKOY",
+      "name": "Yeşilköy"
+    },
+    {
+      "id": "YOGUNPELIT",
+      "name": "Yoğunpelit"
+    },
+    {
+      "id": "YUKARIELMA",
+      "name": "Yukarıelma"
+    },
+    {
+      "id": "YUKARIISIRGANLI",
+      "name": "Yukarıısırganlı"
+    },
+    {
+      "id": "YUKARIKOCLU",
+      "name": "Yukarıkoçlu"
+    },
+    {
+      "id": "YUKARISOGUKCAM",
+      "name": "Yukarısoğukçam"
+    },
+    {
+      "id": "ZEYTIN",
+      "name": "Zeytin"
+    }
+  ]
+}

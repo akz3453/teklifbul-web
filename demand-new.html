@@ -8,7 +8,9 @@
   <script type="importmap">
   {
     "imports": {
-      "categories": "/categories.js"
+      "categories": "/categories.js",
+      "address-verify": "./assets/js/address-verify-modal.js",
+      "google-maps-loader": "./assets/js/google-maps-loader.js"
     }
   }
   </script>
@@ -70,6 +72,37 @@
     }
     .btn-sm { padding: 6px 10px; margin: 4px 0; }
     .badge { display:inline-block; margin:4px 6px 0 0; padding:4px 8px; border-radius:12px; background:#eef2ff; font-size:12px; cursor:pointer; }
+    
+    /* Teklifbul Rule v1.0 - Teslimat adresi textarea'sı her zaman görünür olmalı */
+    #deliveryAddressContainer {
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      min-height: 100px !important;
+    }
+    
+    #deliveryAddress {
+      min-height: 80px !important;
+      width: 100% !important;
+    }
+    
+    /* Teklifbul Rule v1.0 - Disabled textarea'da value görünür olmalı */
+    #deliveryAddress:disabled {
+      background: #f9fafb !important;
+      color: #1f2937 !important;
+      opacity: 1 !important;
+      cursor: default !important;
+    }
+    
+    #deliveryAddress:disabled::placeholder {
+      color: transparent !important;
+    }
+    
+    /* Teklifbul Rule v1.0 - Buton stilleri */
+    #verifyDeliveryAddressBtn {
+      flex-shrink: 0;
+      align-self: flex-start;
+    }
     
     /* SATFK Input Responsive Design */
     #satfk {
@@ -234,6 +267,7 @@
     .items-table .adv-val{ min-width:180px !important; }
     .items-table .quickCert, .items-table .addPair, .items-table .addCert{ width:auto !important; display:inline-block; }
     .items-table .quickCert{ color:#111827 !important; background:#f9fafb !important; border:1px solid #d1d5db !important; border-radius:12px !important; padding:4px 8px !important; font-size:12px !important; }
+    .import-review{background:#fff7ed !important; box-shadow:0 0 0 2px #fb923c inset;}
   </style>
 </head>
 <body>
@@ -246,21 +280,12 @@
 
     <!-- Import options: Excel / Word / PDF -->
     <div style="margin:8px 0; display:flex; gap:8px; flex-wrap:wrap;">
-      <button id="btnImportXlsx" class="btn btn-primary">📤 Excel'den İçe Aktar</button>
-      <button id="btnImportDocx" class="btn btn-primary">📤 Word'den İçe Aktar</button>
-      <button id="btnImportPdf"  class="btn btn-primary">📤 PDF'den İçe Aktar</button>
+      <button type="button" id="btnImportXlsx" class="btn btn-primary">📤 Excel'den İçe Aktar</button>
+      <button type="button" id="btnImportDocx" class="btn btn-primary">📤 Word'den İçe Aktar</button>
+      <button type="button" id="btnImportPdf"  class="btn btn-primary">📤 PDF'den İçe Aktar</button>
       <input id="fileXlsx" type="file" accept=".xlsx" style="display:none" />
       <input id="fileDocx" type="file" accept=".docx" style="display:none" />
       <input id="filePdf"  type="file" accept=".pdf"  style="display:none" />
-    </div>
-    <div id="importMapping" class="card" style="display:none; padding:12px; margin:8px 0;">
-      <div style="font-weight:600; margin-bottom:8px;">İçe Aktarma Eşlemesi</div>
-      <div id="mapFields" style="display:flex; gap:12px; flex-wrap:wrap;"></div>
-      <div style="margin-top:8px; display:flex; gap:8px;">
-        <button id="applyMappingBtn" class="btn btn-primary">Eşle ve Forma Aktar</button>
-        <button id="cancelMappingBtn" class="btn btn-outline">İptal</button>
-      </div>
-      <div id="mapHint" class="muted small" style="margin-top:6px; color:#64748b;">Zorunlu alanlar: Ürün Adı, Miktar, Birim</div>
     </div>
 
   <h3>Başlık Bilgileri</h3>
@@ -285,7 +310,8 @@
     </div>
     <div>
       <label for="siteName">Şantiye *</label>
-      <input id="siteName" placeholder="Şantiye/Saha adı" autocomplete="off" required />
+      <input id="siteName" list="siteNameList" placeholder="Şantiye/Saha adı" autocomplete="off" required />
+      <datalist id="siteNameList"></datalist>
     </div>
   </div>
 
@@ -539,10 +565,95 @@
     const openBtn = document.getElementById('btnOpenPaymentBuyer');
     const modal = document.getElementById('paymentModalBuyer');
     const closeBtn = document.getElementById('closePaymentBuyer');
+    const paymentTermsInput = document.getElementById('paymentTerms');
     let selectedPaymentPrefBuyer = null;
-    openBtn?.addEventListener('click', async ()=>{ modal.style.display = 'block'; if (!window.paymentModule){ try{ await import('/scripts/payment-module.js'); }catch(_){} } if (window.paymentModule){ window.paymentModule.setRole('buyer'); try{ window.paymentModule.setTotals({ totalIncl: 0 }); }catch(_){} } });
+    
+    // Helper function to format payment summary text
+    function formatPaymentSummary(payload) {
+      if (!payload || !payload.paymentType) return '';
+      
+      const parts = [];
+      
+      switch (payload.paymentType) {
+        case 'pesin':
+          parts.push('Peşin');
+          if (payload.pesin?.model === 'escrow') parts.push('(Escrow)');
+          else if (payload.pesin?.model === 'onayli') parts.push('(Teslim & Onay)');
+          else if (payload.pesin?.model === 'onodeme' && payload.pesin?.prepaymentRate) {
+            parts.push(`%${payload.pesin.prepaymentRate} ön ödeme`);
+          }
+          break;
+          
+        case 'krediKarti':
+          parts.push('Kredi Kartı');
+          if (payload.krediKarti?.installments > 1) {
+            parts.push(`${payload.krediKarti.installments} taksit`);
+          }
+          if (payload.krediKarti?.financeRate > 0) {
+            parts.push(`%${payload.krediKarti.financeRate} vade farkı`);
+          }
+          if (payload.krediKarti?.campaign) {
+            parts.push(`(${payload.krediKarti.campaign})`);
+          }
+          break;
+          
+        case 'acikHesap':
+          parts.push('Açık Hesap');
+          if (payload.acikHesap?.netDays) {
+            parts.push(`+${payload.acikHesap.netDays} gün vade`);
+          }
+          if (payload.acikHesap?.invoiceDate) {
+            parts.push(`(Fatura: ${payload.acikHesap.invoiceDate})`);
+          }
+          break;
+          
+        case 'evrak':
+          parts.push('Evrak (çek/senet)');
+          if (payload.evrak?.checks && Array.isArray(payload.evrak.checks)) {
+            const checkCount = payload.evrak.checks.length;
+            const totalAmount = payload.evrak.checks.reduce((sum, c) => sum + (Number(c.amount) || 0), 0);
+            if (checkCount > 0) {
+              parts.push(`${checkCount} çek`);
+              if (totalAmount > 0) {
+                parts.push(`Toplam: ${totalAmount.toFixed(2)} ₺`);
+              }
+            }
+          }
+          break;
+      }
+      
+      return parts.filter(Boolean).join(' - ');
+    }
+    
+    openBtn?.addEventListener('click', async ()=>{ 
+      modal.style.display = 'block'; 
+      if (!window.paymentModule){ 
+        try{ 
+          await import('/scripts/payment-module.js'); 
+        }catch(_){} 
+      } 
+      if (window.paymentModule){ 
+        window.paymentModule.setRole('buyer'); 
+        try{ 
+          window.paymentModule.setTotals({ totalIncl: 0 }); 
+        }catch(_){} 
+      } 
+    });
+    
     closeBtn?.addEventListener('click', ()=> modal.style.display = 'none');
-    document.addEventListener('payment:save', (e)=>{ selectedPaymentPrefBuyer = e.detail; modal.style.display='none'; });
+    
+    // FIX: Update paymentTerms input when payment is saved
+    document.addEventListener('payment:save', (e)=>{
+      selectedPaymentPrefBuyer = e.detail;
+      modal.style.display = 'none';
+      
+      // Format payment summary and set to paymentTerms input
+      const summaryText = formatPaymentSummary(e.detail);
+      if (summaryText && paymentTermsInput) {
+        paymentTermsInput.value = summaryText;
+      }
+    });
+    
     // Expose to header builder
     window.__getBuyerPaymentPref = ()=> selectedPaymentPrefBuyer;
   </script>
@@ -680,7 +791,7 @@
         <th style="width: 120px;">Marka/Model</th>
         <th style="width: 108px;">Miktar *</th>
         <th style="width: 136px;">Birim *</th>
-        <th style="width: 100px;">Ambardaki Miktar</th>
+        <th style="width: 100px;">Depodaki Miktar</th>
         <th style="width: 100px;">Hedef Fiyat (TL)</th>
         <th style="width: 160px;">Ürün Görseli</th>
         <th style="width: 120px;">İstenilen Teslim Tarihi</th>
@@ -715,11 +826,11 @@
   <div class="row">
     <div>
       <label for="requester">Talep Eden *</label>
-      <input id="requester" placeholder="Talep eden kişinin adı soyadı" required />
+      <input id="requester" placeholder="Şantiye/Depo/Mutfak yetkilisi adı soyadı" required />
     </div>
     <div>
-      <label for="purchaseManager">Satın Alma Müdürü</label>
-      <input id="purchaseManager" placeholder="Satın alma müdürü adı soyadı" />
+      <label for="purchaseManager">Satın Alma Yetkilisi</label>
+      <input id="purchaseManager" placeholder="Satın alma yetkilisi adı soyadı" />
     </div>
   </div>
   
@@ -774,8 +885,20 @@
         🔄 Yenile
       </button>
     </div>
-    <div id="deliveryAddressContainer">
-      <textarea id="deliveryAddress" placeholder="Teslimat adresini yazın veya yukarıdan seçin" rows="3" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;"></textarea>
+    <div id="deliveryAddressContainer" style="display: block !important; margin-top: 12px; visibility: visible !important; opacity: 1 !important;">
+      <div style="display: flex; gap: 8px; margin-bottom: 8px; align-items: flex-start; flex-wrap: wrap;">
+        <textarea id="deliveryAddress" placeholder="Teslimat adresini yazın veya yukarıdan seçin" rows="3" style="flex: 1; min-width: 300px; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px; max-height: 200px; resize: vertical; overflow-y: auto; font-family: inherit; font-size: 14px; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word;"></textarea>
+        <button type="button" id="verifyDeliveryAddressBtn" style="padding: 10px 16px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; white-space: nowrap; height: fit-content;">
+          📍 Harita ile Doğrula
+        </button>
+      </div>
+      <div id="deliveryAddressVerified" style="display: none; padding: 8px 12px; background: #f0fdf4; border: 1px solid #10b981; border-radius: 6px; font-size: 12px; color: #065f46;">
+        <span style="font-weight: 600;">✔ Adres doğrulandı</span>
+        <span id="deliveryAddressCoords" style="margin-left: 8px; color: #6b7280;"></span>
+      </div>
+      <!-- Gizli alanlar: koordinatlar -->
+      <input type="hidden" id="delivery_lat" />
+      <input type="hidden" id="delivery_lng" />
     </div>
   </div>
 
@@ -822,9 +945,8 @@
     </div>
   </div>
 
-  <!-- Main Script -->
+  <!-- Main Script (legacy header setup - can be removed if setupHeader is not needed) -->
   <script type="module">
-    import { db, auth, requireAuth } from "./firebase.js";
     import { setupHeader } from "./src/common-company.js";
     
     // Setup common header functionality (logout and company name)
@@ -846,6 +968,13 @@
 
   <!-- Import inline script (preview + commit modal) -->
   <script type="module">
+    // Teklifbul Rule v1.0 - Structured Logging
+    import { logger } from './src/shared/log/logger.js';
+    // Teklifbul Rule v1.0 - Toast Notification System
+    import { toast } from './src/shared/ui/toast.js';
+    // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
+    import { MESSAGES } from './src/shared/constants/messages.js';
+    
     const $ = (s)=>document.querySelector(s);
     const btnX = $('#btnImportXlsx');
     const btnD = $('#btnImportDocx');
@@ -854,87 +983,141 @@
     const fD = $('#fileDocx');
     const fP = $('#filePdf');
 
-    btnX?.addEventListener('click', ()=> fX?.click());
-    btnD?.addEventListener('click', ()=> fD?.click());
-    btnP?.addEventListener('click', ()=> fP?.click());
+    btnX?.addEventListener('click', (e)=>{ e.preventDefault(); if (fX){ fX.value=''; fX.click(); }});
+    btnD?.addEventListener('click', (e)=>{ e.preventDefault(); if (fD){ fD.value=''; fD.click(); }});
+    btnP?.addEventListener('click', (e)=>{ e.preventDefault(); if (fP){ fP.value=''; fP.click(); }});
 
-    async function previewSelected(file){
+    // Teklifbul Rule v1.0 - Import sistemi iyileştirmeleri
+    async function previewSelected(file, fileType){
       if (!file) return;
-      try{
+      
+      try {
+        // Dosya boyutu kontrolü (10MB limit)
+        const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+        if (file.size > MAX_FILE_SIZE) {
+          toast.error(MESSAGES.ERROR_FILE_SIZE_10MB);
+          return;
+        }
+        
+        // Dosya format kontrolü
+        const allowedTypes = {
+          xlsx: ['.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
+          docx: ['.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+          pdf: ['.pdf', 'application/pdf']
+        };
+        
+        if (fileType) {
+          const type = allowedTypes[fileType];
+          const fileName = file.name.toLowerCase();
+          const fileMimeType = file.type;
+          
+          if (type && !type.some(t => fileName.endsWith(t) || fileMimeType.includes(t))) {
+            toast.error(MESSAGES.WARN_FILE_TYPE + ': ' + fileType.toUpperCase());
+            return;
+          }
+        }
+        
+        // Loading state başlat
+        const allButtons = [btnX, btnD, btnP].filter(Boolean);
+        const originalTexts = allButtons.map(btn => btn.textContent);
+        allButtons.forEach(btn => {
+          btn.disabled = true;
+          btn.textContent = '⏳ Yükleniyor...';
+        });
+        
+        // Dosya bilgisi
+        logger.info('Dosya yükleniyor', { 
+          name: file.name, 
+          size: `${(file.size / 1024).toFixed(2)} KB`,
+          type: fileType || 'unknown'
+        });
+        
         const fd = new FormData();
         fd.append('file', file);
-        const r = await fetch('/api/import/preview',{ method:'POST', body: fd });
-        let j=null; try{ j = await r.json(); }catch(_){ j=null; }
-        if (!r.ok){
-          const msg = (j && (j.details||j.error)) || 'Önizleme hatası';
-          alert('❌ ' + msg); return;
+        const r = await fetch('/api/import/preview', { method: 'POST', body: fd });
+        
+        let j = null;
+        try {
+          j = await r.json();
+        } catch (_) {
+          j = null;
         }
-        // If matrix/headers available, open mapping UI; else apply directly
-        if (j?.headers && Array.isArray(j.matrix)) {
-          buildMappingUI(j.headers, j.colIdx, j.matrix, j);
-        } else if (window.applyImportPreview) {
-          window.applyImportPreview(j);
-          alert(`Profil: ${j.profileHint}\nGüven: ${j.confidence}%\n\nVeriler forma aktarıldı. Lütfen kontrol edin, eksikleri düzenleyip 'Talep Oluştur' ile kaydedin.`);
-        }
-      }catch(e){ alert('❌ Import hatası: ' + (e.message||e)); }
-    }
-
-    fX?.addEventListener('change', ()=> previewSelected(fX.files?.[0]));
-    fD?.addEventListener('change', ()=> previewSelected(fD.files?.[0]));
-    fP?.addEventListener('change', ()=> previewSelected(fP.files?.[0]));
-
-    function buildMappingUI(headers, colIdx, matrix, full){
-      const wrap = document.getElementById('importMapping');
-      const box = document.getElementById('mapFields');
-      wrap.style.display = '';
-      box.innerHTML = '';
-      const fields = [
-        { key:'itemName', label:'Ürün Adı', required:true },
-        { key:'qty', label:'Miktar', required:true },
-        { key:'unit', label:'Birim', required:true },
-        { key:'brand', label:'Marka' },
-        { key:'model', label:'Model' },
-        { key:'unitPriceExcl', label:'Birim Fiyat' },
-        { key:'vatPct', label:'KDV' }
-      ];
-      const selects = {} as any;
-      fields.forEach(f=>{
-        const div = document.createElement('div');
-        div.style.minWidth = '180px';
-        const lab = document.createElement('label');
-        lab.textContent = f.label + (f.required?' *':'');
-        lab.style.display = 'block'; lab.style.fontSize='12px'; lab.style.color='#374151';
-        const sel = document.createElement('select');
-        sel.innerHTML = headers.map((h,i)=>`<option value="${i}">${h||('Sütun '+(i+1))}</option>`).join('');
-        if (colIdx && typeof colIdx[f.key] === 'number' && colIdx[f.key] >=0) sel.value = String(colIdx[f.key]);
-        div.appendChild(lab); div.appendChild(sel); box.appendChild(div); selects[f.key]=sel;
-      });
-      document.getElementById('cancelMappingBtn')?.addEventListener('click', ()=>{ wrap.style.display='none'; });
-      document.getElementById('applyMappingBtn')?.addEventListener('click', ()=>{
-        // Build items from matrix using mapping
-        const get = (arr,i)=> (i>=0 && i<arr.length) ? arr[i] : '';
-        const toNum = (s)=>{ const x=String(s||'').trim(); if(!x) return ''; const hasDot=x.includes('.'); const hasComma=x.includes(','); let n=x; if(hasDot&&hasComma){ if(x.lastIndexOf(',')>x.lastIndexOf('.')){ n=x.replace(/\./g,'').replace(',', '.'); } else { n=x.replace(/,/g,''); } } else if(hasComma&&!hasDot){ n=x.replace(',', '.'); } return isFinite(Number(n))? Number(n):''; };
-        const mapped:any[] = [];
-        for (let r=0; r<matrix.length; r++){
-          const row = matrix[r];
-          const it:any = {
-            itemName: get(row, parseInt(selects.itemName.value)),
-            qty: toNum(get(row, parseInt(selects.qty.value))),
-            unit: get(row, parseInt(selects.unit.value)),
-            brand: get(row, parseInt(selects.brand.value)),
-            model: get(row, parseInt(selects.model.value)),
-            unitPriceExcl: toNum(get(row, parseInt(selects.unitPriceExcl.value))),
-            vatPct: toNum(get(row, parseInt(selects.vatPct.value)))
+        
+        if (!r.ok) {
+          const errorCode = j?.error || 'unknown_error';
+          const errorMessages = {
+            'file_missing': 'Dosya seçilmedi. Lütfen bir dosya seçin.',
+            'empty_file': 'Dosya boş görünüyor. Lütfen geçerli bir dosya seçin.',
+            'unsupported_format': 'Desteklenmeyen dosya formatı. Lütfen .xlsx, .docx veya .pdf formatında bir dosya seçin.',
+            'parse_error': 'Dosya okunamadı. Lütfen dosyanın bozuk olmadığından emin olun.',
+            'file_too_large': 'Dosya çok büyük. Maksimum boyut: 10MB'
           };
-          const any = Object.values(it).some(v=>String(v||'').trim());
-          if (any) mapped.push(it);
+          
+          const userMessage = errorMessages[errorCode] || (j?.details || j?.error || 'Önizleme hatası');
+          logger.error('Import hatası', { errorCode, details: j });
+          toast.error(userMessage);
+          return;
         }
-        // Apply to form
-        const payload = { ...full, items: mapped };
-        window.applyImportPreview && window.applyImportPreview(payload as any);
-        wrap.style.display='none';
-      }, { once: true });
+        
+        // Başarılı önizleme
+        logger.info('Dosya başarıyla yüklendi', { 
+          itemsCount: j?.items?.length || 0,
+          confidence: j?.confidence || 0
+        });
+        
+          if (window.applyImportPreview) {
+          window.applyImportPreview(j);
+          const itemsCount = j?.items?.length || 0;
+          toast.success(`${MESSAGES.SUCCESS_FILE_IMPORTED}. ${MESSAGES.SUCCESS_ITEMS_ADDED_COUNT.replace('{n}', String(itemsCount))}.`);
+        } else {
+          logger.warn('applyImportPreview fonksiyonu bulunamadı');
+          toast.warn(MESSAGES.WARN_PREVIEW_DATA);
+        }
+        
+      } catch (e) {
+        logger.error('Import hatası', e);
+        toast.error(MESSAGES.ERROR_IMPORT + ': ' + (e.message || e));
+      } finally {
+        // Loading state bitir
+        const allButtons = [btnX, btnD, btnP].filter(Boolean);
+        const originalTexts = {
+          xlsx: '📤 Excel\'den İçe Aktar',
+          docx: '📤 Word\'den İçe Aktar',
+          pdf: '📤 PDF\'den İçe Aktar'
+        };
+        
+        allButtons.forEach((btn, idx) => {
+          btn.disabled = false;
+          if (btn === btnX) btn.textContent = originalTexts.xlsx;
+          else if (btn === btnD) btn.textContent = originalTexts.docx;
+          else if (btn === btnP) btn.textContent = originalTexts.pdf;
+        });
+      }
     }
+
+    fX?.addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        toast.info(`${MESSAGES.INFO_FILE_SELECTED_BY_TYPE.replace('{type}', 'Excel')}: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
+        previewSelected(file, 'xlsx');
+      }
+    });
+    
+    fD?.addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        toast.info(`${MESSAGES.INFO_FILE_SELECTED_BY_TYPE.replace('{type}', 'Word')}: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
+        previewSelected(file, 'docx');
+      }
+    });
+    
+    fP?.addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        toast.info(`${MESSAGES.INFO_FILE_SELECTED_BY_TYPE.replace('{type}', 'PDF')}: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
+        previewSelected(file, 'pdf');
+      }
+    });
   </script>
 
   <datalist id="unitList">
@@ -979,21 +1162,80 @@
     import { initGlobalHeader } from './assets/js/ui/header.js';
     import { initAutoResize, reinitAutoResize } from './assets/js/ui/auto-resize.js';
     import { requireAuth, db } from "./firebase.js";
+    // Teklifbul Rule v1.0 - Structured Logging
+    import { logger } from './src/shared/log/logger.js';
+    // Teklifbul Rule v1.0 - Toast Notification System
+    import { toast } from './src/shared/ui/toast.js';
+    // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
+    import { MESSAGES } from './src/shared/constants/messages.js';
+    import { slugifyTr } from "./utils/slugify-tr.js";
+    // CRITICAL: Import new ID-based category system
+    import { 
+      normalizeToIds, 
+      getNameById, 
+      getAllCategories,
+      getIdByName,
+      getIdBySlug 
+    } from "./src/categories/category-service.js";
     
-    // Initialize global header
-    initGlobalHeader({ mount: '#app-header', activeRoute: 'new' });
-    import { CATEGORIES } from "./categories.js";
+    // Legacy imports (for backward compatibility during transition)
+    import { CATEGORIES, getCategoryIdByName, getCategoryNameById, getAllCategoryIds } from "./categories.js";
     import { addDoc, collection, serverTimestamp, updateDoc, doc, query, where, getDocs, getDoc, deleteDoc, orderBy, arrayUnion } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
     import { listGroupsForUser, createGroup, updateGroup, deleteGroup } from "./assets/js/services/category-groups.js";
     // Modal artık otomatik olarak yükleniyor - import gerekmiyor
     // SATFK generation moved to Cloud Functions
 
+    // Initialize global header
+    initGlobalHeader({ mount: '#app-header', activeRoute: 'new' });
+
+    // CRITICAL: New ID-based category system
+    // Use normalizeToIds from category-service.js for all conversions
+    function nameToCategoryId(name) {
+      if (!name) return null;
+      // Use new normalizeToIds function which handles all formats (ID/name/slug)
+      const ids = normalizeToIds([name]);
+      return ids.length > 0 ? ids[0] : null;
+    }
+    
+    // Convert category ID to display name (using new system)
+    function categoryIdToName(id) {
+      if (!id) return id;
+      // Try new system first
+      const name = getNameById(id);
+      if (name && name !== id) return name;
+      // Fallback to legacy system
+      const legacyName = getCategoryNameById(id);
+      return legacyName || id;
+    }
+    
+    // Use unified slugifyTr function from utils
+    // Alias for backward compatibility with existing code
+    function toSlug(name) {
+      return slugifyTr(name);
+    }
+
     const user = await requireAuth();
+    // Role-based permission: only specific company roles can open demand
+    try {
+      const snap = await getDoc(doc(db, "users", user.uid));
+      const profile = snap.exists() ? (snap.data()||{}) : {};
+      const joinOk = !profile.companyJoinStatus || profile.companyJoinStatus === 'approved';
+      const allowedRoles = new Set(['satinalma_yetkilisi','genel_mudur','isveren']);
+      const canOpen = joinOk && (profile.companyRole ? allowedRoles.has(profile.companyRole) : true);
+      if (!canOpen) {
+        const btn = document.getElementById('createBtn');
+        if (btn) {
+          btn.disabled = true;
+          btn.title = 'Bu işlem için yetkili değilsiniz. (Satın Alma Yetkilisi / Genel Müdür / İşveren)';
+        }
+        logger.warn('Demand create disabled for role', { role: profile.companyRole, status: profile.companyJoinStatus });
+      }
+    } catch(e) { logger.warn('Role check failed', e); }
 
     const el = id => {
       const element = document.getElementById(id);
       if (!element) {
-        console.warn(`Element bulunamadı: ${id}`);
+        logger.warn(`Element bulunamadı`, { id });
         return null;
       }
       return element;
@@ -1037,14 +1279,46 @@
     let selectedSuppliers = new Set(); // Set of supplier IDs
     let allSuppliers = []; // All available suppliers
 
+    // CRITICAL FIX: Category ID system - chips now store category IDs, not slugs
+    // Cache for category ID -> name mapping
+    let categoryIdToNameMap = null;
+    
+    function loadCategoryMapping() {
+      if (categoryIdToNameMap) return categoryIdToNameMap;
+      
+      // Use ID-based system from categories.js
+      categoryIdToNameMap = new Map();
+      CATEGORIES.forEach(cat => {
+        categoryIdToNameMap.set(cat.id, cat.name);
+        // Backward compatibility: also support slugs and names
+        categoryIdToNameMap.set(toSlug(cat.name), cat.name);
+        categoryIdToNameMap.set(cat.name, cat.name);
+      });
+      
+      return categoryIdToNameMap;
+    }
+    
     function renderChips() {
       const box = el("catChips");
+      if (!box) return;
+      
+      // Load category mapping
+      loadCategoryMapping();
       box.innerHTML = "";
-      [...chips].forEach(v => {
+      
+      [...chips].forEach(categoryIdOrSlug => {
+        // CRITICAL FIX: Convert category ID/slug to display name
+        const displayName = categoryIdToName(categoryIdOrSlug);
+        
         const span = document.createElement("span");
         span.className = "badge";
-        span.textContent = v + " ✕";
-        span.onclick = () => { chips.delete(v); renderChips(); };
+        span.textContent = displayName + " ✕";
+        // Store category ID for deletion
+        span.dataset.value = categoryIdOrSlug;
+        span.onclick = () => { 
+          chips.delete(categoryIdOrSlug); 
+          renderChips(); 
+        };
         box.appendChild(span);
       });
     }
@@ -1053,12 +1327,15 @@
       const container = el("groupButtons");
       container.innerHTML = "";
       
-      // Varsayılan gruplar
+      // Varsayılan gruplar - 25 kategori mantıklı gruplara ayrıldı
       const defaultGroups = [
-        { name: "İnşaat Malzemeleri", categories: ["İnşaat Malzemeleri", "Hırdavat", "Boya"] },
-        { name: "Elektrik", categories: ["Elektrik", "Elektronik"] },
-        { name: "Makine-İmalat", categories: ["Makine-İmalat", "Sac/Metal", "Otomotiv Yan Sanayi"] },
-        { name: "Diğer", categories: ["Ambalaj", "Kimyasal", "Mobilya", "Plastik", "İş Güvenliği", "Temizlik", "Gıda", "Hizmet", "Lojistik"] }
+        { name: "İnşaat & Yapı", categories: ["İnşaat Malzemeleri", "Hırdavat", "Boya"] },
+        { name: "Elektrik & Elektronik", categories: ["Elektrik", "Elektronik", "Aydınlatma", "Alçak/Orta Gerilim", "Otomasyon (PLC/SCADA)"] },
+        { name: "Makine & İmalat", categories: ["Makine-İmalat", "Sac/Metal", "Kaynak & Sarf", "Rulman & Güç Aktarım", "Otomotiv Yan Sanayi"] },
+        { name: "Kimya & Plastik", categories: ["Kimyasal", "Plastik", "Ambalaj"] },
+        { name: "Güvenlik & Sağlık", categories: ["İş Güvenliği", "Yangın Güvenliği", "HVAC"] },
+        { name: "Temizlik & Bakım", categories: ["Temizlik"] },
+        { name: "Hizmetler & Diğer", categories: ["Gıda", "Hizmet", "Lojistik", "Ekipman Kiralama", "Mobilya"] }
       ];
 
       // Varsayılan grupları ekle
@@ -1104,8 +1381,16 @@
             button.style.background = '#10b981';
             button.style.color = 'white';
             
-            // Grup kategorilerini ekle
-            categories.forEach(cat => chips.add(cat));
+            // Grup kategorilerini ekle - CRITICAL FIX: Convert to category ID before adding
+            categories.forEach(cat => {
+              // cat can be name, slug, or ID - convert to ID
+              const categoryId = nameToCategoryId(cat);
+              if (categoryId) {
+                chips.add(categoryId);
+              } else {
+                logger.warn('Unknown category', { category: cat });
+              }
+            });
             renderChips();
           }
         });
@@ -1163,16 +1448,25 @@
               const data = doc.data();
               supplierMap.set(doc.id, { id: doc.id, ...data });
             });
-          } catch (e) {
-            console.warn('⚠️ Supplier query failed:', e?.message || e);
-          }
+                  } catch (e) {
+                    // CRITICAL FIX: Enhanced error logging with code and message
+                    logger.error('Supplier query failed', {
+                      code: e?.code || 'unknown',
+                      message: e?.message || String(e),
+                      error: e
+                    });
+                    // Log Firestore index link if available
+                    if (e?.code === 'failed-precondition') {
+                      logger.error('This query requires a Firestore composite index. Check the error message for the index creation link.');
+                    }
+                  }
         }
 
         // isActive alanı false olanları hariç tut; undefined/true olanlar dahil
         allSuppliers = Array.from(supplierMap.values()).filter(s => s?.isActive !== false);
-        console.log(`✅ ${allSuppliers.length} tedarikçi yüklendi`);
+        logger.info(`${allSuppliers.length} tedarikçi yüklendi`);
       } catch (error) {
-        console.error('❌ Tedarikçi yükleme hatası:', error);
+        logger.error('Tedarikçi yükleme hatası', error);
         allSuppliers = [];
       }
     }
@@ -1314,7 +1608,7 @@
             input.value = selectedDate;
           }
         });
-        console.log(`📅 Termin tarihi tüm ürün kalemlerine uygulandı: ${selectedDate}`);
+        logger.info(`Termin tarihi tüm ürün kalemlerine uygulandı`, { date: selectedDate });
       }
     });
 
@@ -1386,7 +1680,7 @@
         autoInvitees = Array.isArray(list) ? list : [];
         el('autoInviteCount').textContent = String(autoInvitees.length);
       } catch (e) {
-        console.error('Grup üyeleri alınamadı', e);
+        logger.error('Grup üyeleri alınamadı', e);
         autoInvitees = [];
         el('autoInviteCount').textContent = '0';
       }
@@ -1447,7 +1741,7 @@
             el("satfkStatus").textContent = `Önizleme: ${satfkValue} (Talep kaydedilene kadar değişebilir)`;
           }, 2000);
         } catch (error) {
-          console.error('Kopyalama hatası:', error);
+          logger.error('Kopyalama hatası', error);
           el("satfkStatus").textContent = "❌ Kopyalama başarısız";
         }
       }
@@ -1533,7 +1827,7 @@
         const snap = await getDoc(demandRef);
         
         if (!snap.exists()) {
-          alert("❌ Talep bulunamadı.");
+          toast.error(MESSAGES.ERROR_DEMAND_NOT_FOUND);
           location.href = "./demands.html";
           throw new Error("NOT_FOUND");
         }
@@ -1542,14 +1836,14 @@
 
         // Check ownership
         if (d.createdBy !== user.uid) {
-          alert("❌ Bu talebi düzenleyemezsiniz.");
+          toast.error(MESSAGES.ERROR_DEMAND_EDIT_PERMISSION);
           location.href = "./demands.html";
           throw new Error("UNAUTHORIZED");
         }
 
         // Check if published
         if (d.published) {
-          alert("⚠️ Yayınlanmış talepler düzenlenemez. Önce 'Geri Çek' yapın.");
+          toast.warn(MESSAGES.WARN_PUBLISHED_EDIT);
           location.href = `./demand-detail.html?id=${editId}`;
           throw new Error("PUBLISHED");
         }
@@ -1568,19 +1862,41 @@
         // paymentSchedule kaldırıldı
         const _deliveryCityEl = document.getElementById("deliveryCity"); if (_deliveryCityEl) _deliveryCityEl.value = d.deliveryCity || "";
         el("deliveryAddress").value = d.deliveryAddress || "";
+        // Edit modunda teslimat adresi select'ini eşleştirmek için içeriği paylaş
+        window.__desiredDeliveryAddress = d.deliveryAddress || "";
         
         // SATFK is always readonly
         el("satfk").readOnly = true;
         el("satfk").style.background = "#f9fafb";
 
         // Load categories
-        (Array.isArray(d.categoryTags) ? d.categoryTags : []).forEach(c => chips.add(c));
+        // CRITICAL FIX: Categories from existing demand may be IDs, slugs, or names - convert all to IDs
+        (Array.isArray(d.categoryTags) ? d.categoryTags : []).forEach(c => {
+          const categoryId = nameToCategoryId(c);
+          if (categoryId) {
+            chips.add(categoryId);
+          } else {
+            // Legacy: if ID lookup fails, try to add as-is (might be valid ID we don't recognize)
+            logger.warn('Category not found, adding as-is', { category: c });
+            chips.add(c);
+          }
+        });
         if (d.customCategory) el("catInput").value = d.customCategory;
         renderChips();
 
         // Load bidding mode and time-bound settings
         const mode = d.biddingMode || "secret";
         document.querySelector(`input[name="biddingMode"][value="${mode}"]`).checked = true;
+
+        // Teslim şekli restore
+        const dmVal = d.deliveryMethod || '';
+        const dmRadio = document.querySelector(`input[name="deliveryMethod"][value="${dmVal}"]`);
+        const dmCustom = document.getElementById('deliveryMethodCustom');
+        if (dmRadio) {
+          dmRadio.checked = true;
+        } else if (dmCustom) {
+          dmCustom.value = dmVal;
+        }
         
         // Hibrit ayarlarını yükle
         if (d.hybridSettings) {
@@ -1627,7 +1943,7 @@
         });
 
       } catch (error) {
-        console.error("Yeni talep yükleme hatası:", error);
+        logger.error("Yeni talep yükleme hatası", error);
         // Already redirected
       }
     }
@@ -1644,7 +1960,7 @@
         <td><input type="text" class="brandModel" placeholder="Marka/Model" value="${data.brandModel || ""}" /></td>
         <td><input type="number" class="qty" min="1" step="0.01" placeholder="Miktar" required value="${data.qty || ""}" /></td>
         <td><input type="text" class="unit" list="unitList" placeholder="Birim" required value="${data.unit || ""}" /></td>
-        <td><input type="number" class="stockQty" min="0" step="0.01" placeholder="Ambar" value="${data.stockQty || ""}" /></td>
+        <td><input type="number" class="stockQty" min="0" step="0.01" placeholder="Depo" value="${data.stockQty || ""}" /></td>
         <td><input type="number" class="targetPrice" min="0" step="0.01" placeholder="Hedef" value="${data.targetPrice || ""}" /></td>
         <td>
           <input type="file" class="itemImage" accept="image/*" style="max-width:150px;">
@@ -1711,8 +2027,8 @@
       fileInput.addEventListener('change', async (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        if (!file.type.startsWith('image/')) { alert('Lütfen bir resim dosyası seçin.'); e.target.value=''; return; }
-        if (file.size > 5*1024*1024) { alert('Maksimum dosya boyutu 5MB.'); e.target.value=''; return; }
+        if (!file.type.startsWith('image/')) { toast.error(MESSAGES.ERROR_FILE_IMAGE); e.target.value=''; return; }
+        if (file.size > 5*1024*1024) { toast.error(MESSAGES.ERROR_FILE_SIZE_MAX); e.target.value=''; return; }
         const reader = new FileReader();
         reader.onload = () => { hidden.value = reader.result; preview.textContent = file.name; };
         reader.readAsDataURL(file);
@@ -1782,7 +2098,8 @@
           tag.textContent = t;
           const rm = document.createElement('button'); rm.type = 'button'; rm.textContent = '×';
           rm.style.color = '#dc2626'; rm.style.fontSize = '14px'; rm.style.marginLeft = '0';
-          rm.style.background = 'rgba(255,255,255,.2)'; rm.style.border = '1px solid rgba(255,255,255,.6)'; rm.style.borderRadius = '50%'; rm.style.width = '18px'; rm.style.height = '18px'; rm.style.display = 'inline-flex'; rm.style.alignItems = 'center'; rm.style.justifyContent = 'center'; rm.style.padding = '0'; rm.style.lineHeight = '1'; rm.style.cursor = 'pointer'; rm.style.fontWeight = '800';
+          // beyaz zeminli, kırmızı X daha görünür olsun
+          rm.style.background = '#ffffff'; rm.style.border = '1px solid #fca5a5'; rm.style.borderRadius = '50%'; rm.style.width = '18px'; rm.style.height = '18px'; rm.style.display = 'inline-flex'; rm.style.alignItems = 'center'; rm.style.justifyContent = 'center'; rm.style.padding = '0'; rm.style.lineHeight = '1'; rm.style.cursor = 'pointer'; rm.style.fontWeight = '800';
           rm.addEventListener('click', () => { certs = certs.filter(x => x !== t); syncCerts(); renderCerts(); });
           tag.appendChild(rm);
           certTagsHost.appendChild(tag);
@@ -1798,29 +2115,57 @@
     // Expose import preview applier for inline script
     window.applyImportPreview = function(preview){
       try{
-        const d = preview?.demand || {};
+        const demandValues = preview?.demand || {};
+        const demandMeta = preview?.demandMeta || {};
+        const itemMeta = Array.isArray(preview?.itemMeta) ? preview.itemMeta : [];
+        const warnings = Array.isArray(preview?.warnings) ? preview.warnings : [];
+
         const normDate = (s)=>{
           if (!s) return '';
           const str = String(s).trim();
-          // ISO
           if (/^\d{4}-\d{2}-\d{2}/.test(str)) return str.slice(0,10);
-          // dd.MM.yyyy or dd/MM/yyyy
           const m = str.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})$/);
           if (m){ const dd=m[1].padStart(2,'0'), mm=m[2].padStart(2,'0'); let yy=m[3]; if (yy.length===2) yy='20'+yy; return `${yy}-${mm}-${dd}`; }
           return '';
         };
-        const setVal = (id, val)=>{ const elx = document.getElementById(id); if (elx && val!=null && val!=='') elx.value = val; };
-        setVal('title', d.title || '');
-        setVal('requester', d.requester || '');
-        setVal('demandDate', normDate(d.demandDate));
-        setVal('dueDate', normDate(d.dueDate));
-        setVal('currency', d.currency || 'TRY');
 
-        // Replace items with parsed ones
+        const setVal = (id, val)=>{
+          const elx = document.getElementById(id);
+          if (!elx) return;
+          if (elx instanceof HTMLInputElement || elx instanceof HTMLTextAreaElement) {
+            elx.value = val != null ? String(val) : '';
+          }
+        };
+
+        const toggleReview = (id, meta)=>{
+          const elx = document.getElementById(id);
+          if (!elx) return;
+          if (meta?.needsReview) elx.classList.add('import-review'); else elx.classList.remove('import-review');
+        };
+
+        setVal('title', demandValues.title || preview?.demand?.title || '');
+        setVal('requester', demandValues.requester || '');
+        setVal('demandDate', normDate(demandValues.demandDate));
+        setVal('dueDate', normDate(demandValues.dueDate));
+        setVal('currency', demandValues.currency || 'TRY');
+        if (demandValues.note) setVal('note', demandValues.note);
+
+        toggleReview('title', demandMeta.title);
+        toggleReview('requester', demandMeta.requester);
+        toggleReview('demandDate', demandMeta.demandDate);
+        toggleReview('dueDate', demandMeta.dueDate);
+        toggleReview('currency', demandMeta.currency);
+
+        if (warnings.length) {
+          toast.warn(`${MESSAGES.WARN_IMPORT_WARNINGS_HEADING}\n${warnings.join('\n')}`);
+        }
+
         if (Array.isArray(preview?.items)){
           itemsBody.innerHTML = '';
           lineCounter = 0;
-          preview.items.forEach((it)=>{
+          let addedCount = 0;
+          
+          preview.items.forEach((it, idx)=>{
             const data = {
               name: it.itemName || it.name || '',
               qty: typeof it.qty === 'number' ? it.qty : (parseFloat(it.qty) || ''),
@@ -1828,11 +2173,32 @@
               brandModel: [it.brand, it.model].filter(Boolean).join(' '),
               targetPrice: typeof it.unitPriceExcl === 'number' ? it.unitPriceExcl : (parseFloat(it.unitPriceExcl)||'')
             };
-            // Only add meaningful rows
-            if (data.name && (data.qty || data.unit)) addRow(data);
+            if (data.name && (data.qty || data.unit)) {
+              const beforeCount = itemsBody.children.length;
+              addRow(data);
+              const rowsAdded = itemsBody.children.length - beforeCount;
+              if (rowsAdded >= 2) {
+                addedCount++;
+                const detailRow = itemsBody.lastElementChild;
+                const mainRow = detailRow?.previousElementSibling;
+                const review = itemMeta[idx]?.needsReview;
+                if (review) {
+                  mainRow?.classList.add('import-review');
+                } else {
+                  mainRow?.classList.remove('import-review');
+                }
+              }
+            }
           });
+          
+          logger.info('Kalemler forma eklendi', { 
+            totalItems: preview.items.length,
+            addedItems: addedCount
+          });
+        } else {
+          logger.warn('Önizleme verilerinde kalem bulunamadı');
         }
-      }catch(e){ console.error('applyImportPreview error', e); alert('❌ Önizleme verileri forma aktarılırken hata oluştu.'); }
+      }catch(e){ logger.error('applyImportPreview error', e); toast.error(MESSAGES.ERROR_PREVIEW_APPLY); }
     };
 
     // Hariç tut alanı kaldırıldı
@@ -1855,24 +2221,7 @@
       return new Date(datetimeStr);
     }
 
-    // Helper: Convert string to slug format
-    function toSlug(name) {
-      if (!name) return '';
-      const s = String(name)
-        .normalize('NFD')                          // split accents
-        .replace(/[\u0300-\u036f]/g, '')          // remove accents
-        .replace(/[şŞ]/g, 's')
-        .replace(/[ıİ]/g, 'i')
-        .replace(/[ğĞ]/g, 'g')
-        .replace(/[çÇ]/g, 'c')
-        .replace(/[öÖ]/g, 'o')
-        .replace(/[üÜ]/g, 'u')
-        .toLowerCase()
-        .trim()
-        .replace(/[^a-z0-9]+/g, '-')               // non-alnum -> -
-        .replace(/^-+|-+$/g, '');                   // trim dashes
-      return s;
-    }
+    // toSlug already defined above as function for hoisting support
 
     // SATFK is auto-generated by Cloud Function
 
@@ -1889,30 +2238,48 @@
       try {
         const userGroups = await listGroupsForUser(user.uid);
         
-        // Varsayılan gruplar (hard-coded)
+        // Varsayılan gruplar (hard-coded) - 25 kategori mantıklı gruplara ayrıldı
         const defaultGroups = [
           { 
-            name: "İnşaat Malzemeleri", 
+            name: "İnşaat & Yapı", 
             categories: ["İnşaat Malzemeleri", "Hırdavat", "Boya"],
             id: "default-insaat",
             isDefault: true
           },
           { 
-            name: "Elektrik", 
-            categories: ["Elektrik", "Elektronik"],
+            name: "Elektrik & Elektronik", 
+            categories: ["Elektrik", "Elektronik", "Aydınlatma", "Alçak/Orta Gerilim", "Otomasyon (PLC/SCADA)"],
             id: "default-elektrik", 
             isDefault: true
           },
           { 
-            name: "Makine-İmalat", 
-            categories: ["Makine-İmalat", "Sac/Metal", "Otomotiv Yan Sanayi"],
+            name: "Makine & İmalat", 
+            categories: ["Makine-İmalat", "Sac/Metal", "Kaynak & Sarf", "Rulman & Güç Aktarım", "Otomotiv Yan Sanayi"],
             id: "default-makine",
             isDefault: true
           },
           { 
-            name: "Diğer", 
-            categories: ["Ambalaj", "Kimyasal", "Mobilya", "Plastik", "İş Güvenliği", "Temizlik", "Gıda", "Hizmet", "Lojistik"],
-            id: "default-diger",
+            name: "Kimya & Plastik", 
+            categories: ["Kimyasal", "Plastik", "Ambalaj"],
+            id: "default-kimya",
+            isDefault: true
+          },
+          { 
+            name: "Güvenlik & Sağlık", 
+            categories: ["İş Güvenliği", "Yangın Güvenliği", "HVAC"],
+            id: "default-guvenlik",
+            isDefault: true
+          },
+          { 
+            name: "Temizlik & Bakım", 
+            categories: ["Temizlik"],
+            id: "default-temizlik",
+            isDefault: true
+          },
+          { 
+            name: "Hizmetler & Diğer", 
+            categories: ["Gıda", "Hizmet", "Lojistik", "Ekipman Kiralama", "Mobilya"],
+            id: "default-hizmet",
             isDefault: true
           }
         ];
@@ -1923,7 +2290,7 @@
         // Grup butonlarını render et
         renderGroupButtonsFromData(allGroups);
       } catch (error) {
-        console.error('Grup listesi yüklenemedi:', error);
+        logger.error('Grup listesi yüklenemedi', error);
       }
     }
 
@@ -1960,9 +2327,9 @@
         btn.addEventListener("contextmenu", (e) => {
           e.preventDefault();
           if (g.isDefault) {
-            alert('Bu varsayılan grup düzenlenemez. Kendi gruplarınızı oluşturmak için "Kategori Grubu Oluştur" butonunu kullanın.');
+            toast.info(MESSAGES.INFO_DEFAULT_GROUP);
           } else {
-            alert('Grup düzenleme/silme için şu an sadece "Grup Yönet" modali kullanılmaktadır.');
+            toast.info(MESSAGES.INFO_GROUP_EDIT);
           }
         });
 
@@ -1977,11 +2344,27 @@
 
       if (isOpen) {
         // kapat → bu grubun kategorilerini çiplerden kaldır
-        cats.forEach(c => chips.delete(c));
+        // CRITICAL FIX: Convert category names/slugs to IDs before deleting (chips store IDs)
+        cats.forEach(c => {
+          const categoryId = nameToCategoryId(c);
+          if (categoryId) {
+            chips.delete(categoryId);
+          } else {
+            // Fallback: try deleting by name/slug if ID conversion fails
+            chips.delete(c);
+          }
+        });
         expandedGroups.delete(group.id || group.name);
       } else {
-        // aç → çiplere ekle (kümülatif)
-        cats.forEach(c => chips.add(c));
+        // aç → çiplere ekle (kümülatif) - CRITICAL FIX: Convert to category ID before adding
+        cats.forEach(c => {
+          const categoryId = nameToCategoryId(c);
+          if (categoryId) {
+            chips.add(categoryId);
+          } else {
+            logger.warn('Unknown category in group', { category: c });
+          }
+        });
         expandedGroups.add(group.id || group.name);
       }
       renderChips();
@@ -2047,6 +2430,9 @@
     const ghCreateSearch = document.getElementById('ghCreateSearch');
     const ghCreateCount  = document.getElementById('ghCreateCount');
     const ghCreateCats   = document.getElementById('ghCreateCats');
+    
+    // CRITICAL: Category selection state for new group creation (declared early)
+    let createSelected = new Set();
 
     function resetCreatePane(){
       ghCreateName.value = '';
@@ -2056,17 +2442,22 @@
       ghCreateCats.innerHTML = '';
       ghCreateSearch.value = '';
       ghCreateCount.textContent = '';
+      // CRITICAL: Clear selection state when resetting form
+      createSelected.clear();
     }
 
-    function renderChecklist(container, countEl, filter='', prechecked=new Set()){
-      const all = (Array.isArray(CATEGORIES)? CATEGORIES.map(c=>typeof c==='string'?c:c.name):[]).filter(Boolean);
+    // CRITICAL: Use new ID-based category system (25 categories instead of 17)
+    async function renderChecklist(container, countEl, filter='', prechecked=new Set()){
+      // Get all categories from new system
+      const allCategories = getAllCategories();
+      const all = allCategories.map(cat => cat.name).filter(Boolean);
       const list = all.filter(n=>n.toLowerCase().includes(filter.toLowerCase())).sort((a,b)=>a.localeCompare(b,'tr'));
       container.innerHTML = list.map(n=>`
-        <label>
+        <label class="gh-grid-row">
           <input type="checkbox" value="${n}" ${prechecked.has(n)?'checked':''}>
           <span>${n}</span>
         </label>`).join('');
-      countEl.textContent = `${list.length} kategori`;
+      if (countEl) countEl.textContent = `${list.length} kategori`;
     }
 
     document.getElementById('ghCreateCancel')?.addEventListener('click', ()=>{
@@ -2076,31 +2467,81 @@
     document.getElementById('ghCreateNext')?.addEventListener('click', async ()=>{
       const raw = ghCreateName.value;
       const key = normalizeName(raw);
-      if(!key){ alert('Lütfen grup adını yazın.'); return; }
-      const {set:taken} = await getTakenGroupNames();
-      if(taken.has(key)){ alert(`"${raw}" isminde bir grup zaten var.`); return; }
+  if(!key){ toast.warn(MESSAGES.WARN_GROUP_NAME); return; }
+  const {set:taken} = await getTakenGroupNames();
+  if(taken.has(key)){ toast.warn(MESSAGES.WARN_GROUP_EXISTS_FORMAT.replace('{name}', raw)); return; }
       ghCreateStep.style.display = '';
       document.getElementById('ghCreateCats').classList.add('gh-grid');
       document.getElementById('ghCreateCats').parentElement.style.maxHeight = '48vh';
       document.getElementById('ghCreateCats').parentElement.style.overflow = 'auto';
-      renderChecklist(document.getElementById('ghCreateCats'), document.getElementById('ghCreateCount'));
+      // CRITICAL: Reset selection when starting category selection step
+      createSelected.clear();
+      // CRITICAL: Use async renderChecklist with empty selection set
+      renderChecklist(document.getElementById('ghCreateCats'), document.getElementById('ghCreateCount'), '', createSelected).catch(err => logger.error('Render checklist error', err));
+      rebindCreateCheckboxHandlers();
       document.getElementById('ghCreateNext').style.display='none';
       document.getElementById('ghCreateSave').style.display='inline-block';
       ghCreateSearch.focus();
     });
+    
+    // Helper function to rebind checkbox handlers for create mode
+    function rebindCreateCheckboxHandlers() {
+      const createCatsBox = document.getElementById('ghCreateCats');
+      if (!createCatsBox) return;
+      
+      createCatsBox.onchange = (ev) => {
+        if (ev.target.type === 'checkbox'){
+          const v = ev.target.value;
+          if (ev.target.checked) createSelected.add(v);
+          else createSelected.delete(v);
+        }
+      };
+    }
+    
     ghCreateSearch?.addEventListener('input', e=>{
-      renderChecklist(document.getElementById('ghCreateCats'), document.getElementById('ghCreateCount'), e.target.value);
+      // CRITICAL: Use async renderChecklist with preselected categories
+      renderChecklist(document.getElementById('ghCreateCats'), document.getElementById('ghCreateCount'), e.target.value, createSelected).catch(err => logger.error('Render checklist error', err));
+      rebindCreateCheckboxHandlers();
     });
+    
+    // CRITICAL: Tümünü Seç butonu (Yeni Grup Oluştur)
+    const createSelectAllBtn = document.getElementById('ghCreateSelectAll');
+    if (createSelectAllBtn) {
+      createSelectAllBtn.addEventListener('click', () => {
+        const allCategories = getAllCategories();
+        const allNames = allCategories.map(cat => cat.name).filter(Boolean);
+        allNames.forEach(name => createSelected.add(name));
+        // Yeniden render et
+        const searchValue = document.getElementById('ghCreateSearch')?.value || '';
+        renderChecklist(document.getElementById('ghCreateCats'), document.getElementById('ghCreateCount'), searchValue, createSelected).catch(err => logger.error('Render checklist error', err));
+        rebindCreateCheckboxHandlers();
+      });
+    }
+    
+    // CRITICAL: Temizle butonu (Yeni Grup Oluştur)
+    const createClearBtn = document.getElementById('ghCreateClear');
+    if (createClearBtn) {
+      createClearBtn.addEventListener('click', () => {
+        createSelected.clear();
+        // Yeniden render et
+        const searchValue = document.getElementById('ghCreateSearch')?.value || '';
+        renderChecklist(document.getElementById('ghCreateCats'), document.getElementById('ghCreateCount'), searchValue, createSelected).catch(err => logger.error('Render checklist error', err));
+        rebindCreateCheckboxHandlers();
+      });
+    }
 
     document.getElementById('ghCreateSave')?.addEventListener('click', async ()=>{
       const raw = ghCreateName.value;
       const key = normalizeName(raw);
-      const selected = [...ghCreateCats.querySelectorAll('input[type="checkbox"]:checked')].map(i=>i.value);
-      if(!key){ alert('Geçerli bir grup adı girin.'); return; }
-      if(selected.length===0){ alert('En az bir kategori seçin.'); return; }
+      // CRITICAL: Use createSelected set instead of querying DOM
+      const selected = createSelected.size > 0 
+        ? [...createSelected] 
+        : [...ghCreateCats.querySelectorAll('input[type="checkbox"]:checked')].map(i=>i.value);
+  if(!key){ toast.warn(MESSAGES.WARN_VALID_GROUP_NAME); return; }
+      if(selected.length===0){ toast.warn(MESSAGES.WARN_CATEGORY_SELECT); return; }
 
       const {set:taken} = await getTakenGroupNames();
-      if(taken.has(key)){ alert(`"${raw}" isminde bir grup zaten var.`); return; }
+  if(taken.has(key)){ toast.warn(MESSAGES.WARN_GROUP_EXISTS_FORMAT.replace('{name}', raw)); return; }
 
       await createGroup(user.uid, {name: raw.trim(), categories: selected});
       await loadCategoryGroups?.();
@@ -2186,7 +2627,7 @@
 
     // Çoklu Sil
     document.getElementById('ghDelete')?.addEventListener('click', async ()=>{
-      if(ghSelectedIds.size===0){ alert('Lütfen silmek için en az bir grup seçin.'); return; }
+      if(ghSelectedIds.size===0){ toast.warn(MESSAGES.WARN_GROUP_SELECT); return; }
       if(!confirm(`${ghSelectedIds.size} grup silinsin mi?`)) return;
       
       try {
@@ -2196,16 +2637,16 @@
         }
         await loadCategoryGroups?.();
         await renderManageList();
-        alert('✅ Gruplar başarıyla silindi!');
+        toast.success(MESSAGES.SUCCESS_GROUPS_DELETED);
       } catch (error) {
-        console.error('Silme hatası:', error);
-        alert('❌ Silme işlemi başarısız: ' + error.message);
+        logger.error('Silme hatası', error);
+        toast.error(MESSAGES.ERROR_GROUPS_DELETE + ': ' + error.message);
       }
     });
 
     // Tekli Düzenle butonu
     document.getElementById('ghEdit')?.addEventListener('click', ()=>{
-      if(ghSelectedIds.size!==1){ alert('Düzenlemek için bir (1) grup seçin.'); return; }
+      if(ghSelectedIds.size!==1){ toast.warn(MESSAGES.WARN_ONE_GROUP_SELECT); return; }
       const id = [...ghSelectedIds][0];
       openEditPanel(id);
     });
@@ -2244,10 +2685,11 @@
       return dp[m][n];
     }
 
-    // Reusable: grid checklist renderer (prechecked korumalı)
+    // CRITICAL: Reusable grid checklist renderer (prechecked korumalı) - Updated to use new ID-based system (25 categories)
     function renderChecklistGrid(container, countEl, { filter='', prechecked=new Set() } = {}){
-      const all = (Array.isArray(CATEGORIES) ? CATEGORIES.map(c => typeof c === 'string' ? c : c.name) : [])
-                  .filter(Boolean);
+      // Get all categories from new system
+      const allCategories = getAllCategories();
+      const all = allCategories.map(cat => cat.name).filter(Boolean);
       const preN = new Set([...prechecked].map(normalizeCat));    // normalize for compare
       const list = all
         .filter(n => n.toLowerCase().includes(filter.toLowerCase()))
@@ -2278,8 +2720,9 @@
       const nameInput = document.getElementById('ghEditName');
       if (nameInput) nameInput.value = editingGroup.name || '';
 
-      // PRESELECT: gruptaki kategorileri kanonik isimlere eşleyerek set'e yükle
-      const allNames = (Array.isArray(CATEGORIES) ? CATEGORIES.map(c => typeof c === 'string' ? c : c.name) : []).filter(Boolean);
+      // CRITICAL: PRESELECT - Use new ID-based category system (25 categories)
+      const allCategories = getAllCategories();
+      const allNames = allCategories.map(cat => cat.name).filter(Boolean);
       const nameByNorm = new Map(allNames.map(n => [normalizeCat(n), n]));
       const allNorms = Array.from(nameByNorm.keys());
       const mapped = (editingGroup.categories || [])
@@ -2328,12 +2771,9 @@
       // aramada listeyi yeniden çizerken mevcut seçimleri KORU
       const search = document.getElementById('ghEditSearch');
       search.value = '';
-      search.oninput = (e) => {
-        renderChecklistGrid(catsBox, document.getElementById('ghEditCount'), {
-          filter: e.target.value || '',
-          prechecked: editingSelected
-        });
-        // yeniden çizim sonrası değişimleri yakalamaya devam etsin
+      
+      // Helper function to rebind event handlers
+      function rebindCheckboxHandlers() {
         catsBox.onchange = (ev) => {
           if (ev.target.type === 'checkbox'){
             const v = ev.target.value;
@@ -2341,7 +2781,45 @@
             else editingSelected.delete(v);
           }
         };
+      }
+      
+      search.oninput = (e) => {
+        renderChecklistGrid(catsBox, document.getElementById('ghEditCount'), {
+          filter: e.target.value || '',
+          prechecked: editingSelected
+        });
+        rebindCheckboxHandlers();
       };
+
+      // CRITICAL: Tümünü Seç butonu
+      const selectAllBtn = document.getElementById('ghEditSelectAll');
+      if (selectAllBtn) {
+        selectAllBtn.onclick = () => {
+          const allCategories = getAllCategories();
+          const allNames = allCategories.map(cat => cat.name).filter(Boolean);
+          allNames.forEach(name => editingSelected.add(name));
+          // Yeniden render et
+          renderChecklistGrid(catsBox, document.getElementById('ghEditCount'), {
+            filter: search.value || '',
+            prechecked: editingSelected
+          });
+          rebindCheckboxHandlers();
+        };
+      }
+
+      // CRITICAL: Temizle butonu
+      const clearBtn = document.getElementById('ghEditClear');
+      if (clearBtn) {
+        clearBtn.onclick = () => {
+          editingSelected.clear();
+          // Yeniden render et
+          renderChecklistGrid(catsBox, document.getElementById('ghEditCount'), {
+            filter: search.value || '',
+            prechecked: editingSelected
+          });
+          rebindCheckboxHandlers();
+        };
+      }
 
       // paneli göster
       document.getElementById('ghEditPanel').style.display = '';
@@ -2354,12 +2832,12 @@
       const nameInput = document.getElementById('ghEditName');
       const newNameRaw = (nameInput?.value || '').trim();
       const newNameKey = normalizeName(newNameRaw);
-      if (!newNameKey){ alert('Geçerli bir grup adı yazın.'); return; }
+      if (!newNameKey){ toast.warn(MESSAGES.WARN_VALID_GROUP_NAME); return; }
 
       // Duplicate kontrol (kendi grubu hariç)
       const { list } = await getTakenGroupNames();
       const exists = list.some(g => g.id !== editingGroup.id && normalizeName(g.name) === newNameKey);
-      if (exists){ alert(`"${newNameRaw}" isminde bir grup zaten var.`); return; }
+  if (exists){ toast.warn(MESSAGES.WARN_GROUP_EXISTS_FORMAT.replace('{name}', newNameRaw)); return; }
 
       await updateGroup(user.uid, editingGroup.id, { name: newNameRaw, categories: newCats });
       await loadCategoryGroups?.();
@@ -2389,7 +2867,7 @@
     }
 
     if (createBtn) {
-      console.log("✅ createBtn bulundu, event listener ekleniyor");
+      logger.info("createBtn bulundu, event listener ekleniyor");
       createBtn.onclick = async () => {
         try {
           // Header validation
@@ -2432,11 +2910,11 @@
                 if (profileSnap.exists()) {
                   const profile = profileSnap.data();
                   companyId = profile.currentCompanyId || profile.companyId || profile.activeCompanyId || `solo-${user.uid}`;
-                  console.log(`✅ Found companyId from ${collection}:`, companyId);
+                  logger.info(`Found companyId from ${collection}`, { companyId });
                   break;
                 }
               } catch (collectionError) {
-                console.warn(`⚠️ Could not read from ${collection}:`, collectionError.message);
+                logger.warn(`Could not read from ${collection}`, collectionError.message);
                 continue;
               }
             }
@@ -2444,10 +2922,10 @@
             // Fallback if no collection worked
             if (!companyId) {
               companyId = `solo-${user.uid}`;
-              console.log("🔄 Using fallback companyId:", companyId);
+              logger.info("Using fallback companyId", { companyId });
             }
           } catch (e) {
-            console.warn("Profile read error, using fallback:", e);
+            logger.warn("Profile read error, using fallback", e);
             companyId = `solo-${user.uid}`;
           }
 
@@ -2472,13 +2950,30 @@
             ? (inviteMode === 'custom' ? Array.from(selectedSuppliers) : (autoInvitees.map(s => s.id)))
             : [];
 
+          // CRITICAL FIX: Chips now contain category IDs, not slugs
+          // Ensure all chips are valid category IDs
+          const categoryIds = [...chips].map(c => {
+            // If it's already a valid category ID, use it
+            if (CATEGORIES.find(cat => cat.id === c)) return c;
+            // Try to convert name/slug to ID
+            const id = nameToCategoryId(c);
+            return id || c; // Fallback to original if conversion fails
+          }).filter(Boolean);
+          
+          // For backward compatibility, also generate slugs
+          const categorySlugs = categoryIds.map(id => {
+            const name = categoryIdToName(id);
+            return toSlug(name || id);
+          });
+          
           const headerData = {
             demandDate,
             siteName: siteNameVal,
             purchaseLocation: purchaseVal,
             title,
             spec: specValue,
-            categoryTags: [...chips].map(toSlug), // Convert to slug format
+            categoryIds: categoryIds, // NEW: Store category IDs (primary)
+            categoryTags: categorySlugs, // Backward compatibility: also store slugs
             customCategory: document.getElementById("catInput")?.value?.trim() || null,
             dueDate,
             priority,
@@ -2487,6 +2982,8 @@
             paymentPreference: (window.__getBuyerPaymentPref && window.__getBuyerPaymentPref()) || null,
             deliveryCity: deliveryCityValue,
             deliveryAddress: el("deliveryAddress").value.trim() || null,
+            delivery_lat: el("delivery_lat")?.value ? parseFloat(el("delivery_lat").value) : null, // Teklifbul Rule v1.0 - Adres doğrulama koordinatı
+            delivery_lng: el("delivery_lng")?.value ? parseFloat(el("delivery_lng").value) : null, // Teklifbul Rule v1.0 - Adres doğrulama koordinatı
             // paymentSchedule kaldırıldı
             // SATFK: kalıcı alan (CF henüz yazmadan taslakta da görünsün)
             satfk: (document.getElementById('satfk')?.value || (typeof previewSatfk !== 'undefined' ? previewSatfk : null)),
@@ -2497,9 +2994,13 @@
             biddingMode, // 'secret', 'open', 'hybrid'
             hybridSettings, // Hibrit mod ayarları
             updatedAt: serverTimestamp(),
-            companyId: companyId, // Set companyId from profile with fallback
-            // New fields for publish functionality
-            isPublished: true,
+            companyId: companyId, // Set companyId from profile with fallback (backward compatibility)
+            // REFACTORED: Yeni alanlar - refactor için
+            creatorId: user.uid, // Talebi açan kullanıcı
+            creatorCompanyId: companyId, // Talebi açan kullanıcının şirketi
+            supplierCategoryKeys: categoryIds, // Tedarikçi kategori eşleşmesi için (ID format - primary)
+            // New fields for publish functionality - will be updated when approved via modal
+            isPublished: false, // Will be set to true when approved via modal
             visibility: 'private',
             // Yeni eklenen alanlar
             descriptions: getDescriptions(), // 1-2-3-4-5 numaralı açıklamalar
@@ -2508,22 +3009,27 @@
             generalManager: el("generalManager").value.trim() || null, // Genel Müdür
             approver: el("approver").value.trim() || null, // Onay Veren
             deliveryMethod: getDeliveryMethod(), // Teslim Şekli
-            deliveryAddress: el("deliveryAddress").value.trim() || null // Teslimat Adresi
+            deliveryAddress: el("deliveryAddress").value.trim() || null, // Teslimat Adresi
+            delivery_lat: el("delivery_lat")?.value ? parseFloat(el("delivery_lat").value) : null, // Teklifbul Rule v1.0 - Adres doğrulama koordinatı
+            delivery_lng: el("delivery_lng")?.value ? parseFloat(el("delivery_lng").value) : null // Teklifbul Rule v1.0 - Adres doğrulama koordinatı
           };
 
           if (!editing) {
             // ====================
             // CREATE MODE
             // ====================
-            headerData.createdBy = user.uid;
+            headerData.createdBy = user.uid; // Backward compatibility
             headerData.createdAt = serverTimestamp();
+            headerData.updatedAt = serverTimestamp(); // REFACTORED: updatedAt eklendi
             headerData.viewerIds = [user.uid];
-            // Keep published field for backward compatibility
+            // Keep published field for backward compatibility (DEPRECATED)
             headerData.published = false; // Başlangıçta yayınlanmamış
             headerData.filesCount = 0;
             
-            // Talep durumu sistemi
-            headerData.status = 'draft'; // Başlangıçta taslak
+            // REFACTORED: Talep durumu sistemi - sadece status kullanılıyor
+            // FIX: Start as draft, but will be approved via modal
+            headerData.status = 'draft'; // Başlangıçta taslak (modal'dan onaylanacak)
+            headerData.published = false; // Explicitly false until approved
             headerData.statusHistory = [{
               status: 'draft',
               timestamp: Date.now(),
@@ -2538,20 +3044,22 @@
             headerData.targetPrice = null;
             headerData.deliveryLocation = `${deliveryCityValue || ''} ${el("deliveryAddress").value.trim()}`.trim();
 
-            console.log("Creating new demand...");
-            console.log("payload.createdBy:", user.uid);
-            console.log("categoryTags:", headerData.categoryTags);
-            console.log("companyId:", headerData.companyId);
-            console.log("isPublished:", headerData.isPublished);
-            console.log("visibility:", headerData.visibility);
+            logger.info("Creating new demand", {
+              createdBy: user.uid,
+              categoryIds: headerData.categoryIds,
+              categoryTags: headerData.categoryTags,
+              companyId: headerData.companyId,
+              isPublished: headerData.isPublished,
+              visibility: headerData.visibility
+            });
 
             // Create demand header
             let newDemandRef;
             try {
               newDemandRef = await addDoc(collection(db, "demands"), headerData);
-              console.log("✅ Demand created successfully:", newDemandRef.id);
+              logger.info("Demand created successfully", { demandId: newDemandRef.id });
             } catch (createError) {
-              console.error("❌ Error creating demand:", createError);
+              logger.error("Error creating demand", createError);
               if (createError.message && createError.message.includes("Missing or insufficient permissions")) {
                 throw new Error("Yetki reddedildi. İlgili şirketin sahibi/üyesi misiniz?");
               } else {
@@ -2566,73 +3074,67 @@
             if (demandType === 'private') {
               // Özel talep: seçilen tedarikçileri kullan
               supplierUids = Array.from(selectedSuppliers);
-              console.log('Özel talep - seçilen tedarikçiler:', supplierUids.length);
+              logger.info('Özel talep - seçilen tedarikçiler', { count: supplierUids.length });
             } else {
               // Genel talep: kategorilerdeki tedarikçileri bul
-              if (headerData.categoryTags.length) {
+              if ((headerData.categoryIds && headerData.categoryIds.length) || (headerData.categoryTags && headerData.categoryTags.length)) {
                 try {
-                  console.log('Searching suppliers for categories:', headerData.categoryTags);
-                  
-                  // Önce tüm aktif tedarikçileri çek, sonra filtrele
-                  const q = query(
-                    collection(db, "users"),
-                    where("roles.supplier", "==", true),
-                    where("isActive", "==", true)
-                  );
-                  const snap = await getDocs(q);
-                  console.log(`Found ${snap.docs.length} active suppliers`);
-                  
-                  // Debug: Tüm tedarikçilerin kategorilerini logla
-                  snap.docs.forEach((doc, index) => {
-                    const userData = doc.data();
-                    const userCategories = userData.categories || [];
-                    const supplierCategories = userData.supplierCategories || [];
-                    console.log(`Supplier ${index + 1} (${doc.id}):`, {
-                      email: userData.email,
-                      categories: userCategories,
-                      supplierCategories: supplierCategories,
-                      roles: userData.roles
-                    });
+                  logger.info('Searching suppliers for categories', {
+                    categoryIds: headerData.categoryIds,
+                    categoryTags: headerData.categoryTags
                   });
                   
-                  // Manuel filtreleme: kategori eşleşmesi
-                  supplierUids = snap.docs
-                    .filter(doc => {
-                      const userData = doc.data();
-                      // Önce supplierCategories'ı kontrol et, yoksa categories'ı kullan
-                      const userCategories = userData.supplierCategories || userData.categories || [];
-                      // Kategorilerden en az biri eşleşiyorsa ekle
-                      const hasMatch = headerData.categoryTags.some(cat => userCategories.includes(cat));
-                      if (hasMatch) {
-                        console.log(`✅ Match found for supplier ${doc.id}:`, {
-                          supplierCategories: userCategories,
-                          matchingCategories: headerData.categoryTags.filter(cat => userCategories.includes(cat))
-                        });
-                      }
-                      return hasMatch;
-                    })
-                    .map(d => d.id)
-                    .filter(uid => uid !== user.uid);
-                  
-                  console.log("Supplier query returned:", supplierUids.length, "suppliers");
-                  console.log("Supplier IDs:", supplierUids);
-                  
-                  // Log unmatched demands for debugging
-                  if (supplierUids.length === 0) {
-                    console.warn("No matching suppliers found for categories:", headerData.categoryTags);
-                    // Log to unmatchedDemands collection for analysis
-                    try {
-                      await addDoc(collection(db, "unmatchedDemands"), {
-                        demandId: demandId,
-                        categories: headerData.categoryTags,
-                        createdAt: serverTimestamp()
+                  // CRITICAL: Use match-service.js for supplier matching (same as publishDemandAndMatchSuppliers)
+                  try {
+                    const { matchSuppliers } = await import('./src/matching/match-service.js');
+                    
+                    // Prepare legacy formats for backward compatibility
+                    const legacySlugs = Array.isArray(headerData.categoryTags) ? headerData.categoryTags : [];
+                    const legacyNames = (headerData.categoryIds || []).map(id => {
+                      const cat = getAllCategories().find(c => c.id === id);
+                      return cat ? cat.name : null;
+                    }).filter(Boolean);
+                    
+                    // Use match service (same logic as publishDemandAndMatchSuppliers)
+                    const matchedSuppliers = await matchSuppliers(db, {
+                      categoryIds: headerData.categoryIds || [],
+                      legacySlugs: legacySlugs,
+                      legacyNames: legacyNames
+                    });
+                    
+                    logger.info(`Matched ${matchedSuppliers.length} suppliers using match-service.js`);
+                    
+                    // CRITICAL: match-service now returns suppliers with uid/id attached
+                    // Extract supplier IDs (excluding demand creator)
+                    supplierUids = matchedSuppliers
+                      .map(supplier => supplier.uid || supplier.id)
+                      .filter(uid => uid && uid !== user.uid);
+                    
+                    logger.info("Supplier query returned", { count: supplierUids.length, supplierIds: supplierUids });
+                    
+                    // Log unmatched demands for debugging
+                    if (supplierUids.length === 0) {
+                      logger.warn("No matching suppliers found", {
+                        categoryIds: headerData.categoryIds,
+                        categoryTags: headerData.categoryTags
                       });
-                    } catch (logError) {
-                      console.warn("Could not log unmatched demand:", logError.message);
+                      // Log to unmatchedDemands collection for analysis
+                      try {
+                        await addDoc(collection(db, "unmatchedDemands"), {
+                          demandId: demandId,
+                          categoryIds: headerData.categoryIds,
+                          categories: headerData.categoryTags,
+                          createdAt: serverTimestamp()
+                        });
+                      } catch (logError) {
+                        logger.warn("Could not log unmatched demand", logError.message);
+                      }
                     }
+                  } catch (innerError) {
+                    logger.warn("Inner supplier matching error", innerError.message);
                   }
                 } catch (supplierError) {
-                  console.warn("⚠️ Could not find suppliers:", supplierError.message);
+                  logger.warn("Could not find suppliers", supplierError.message);
                 }
               }
             }
@@ -2641,7 +3143,7 @@
             if (supplierUids.length) {
               const allViewers = Array.from(new Set([user.uid, ...supplierUids]));
               await updateDoc(newDemandRef, { viewerIds: allViewers });
-              console.log("Updated viewerIds:", allViewers.length);
+              logger.info("Updated viewerIds", { count: allViewers.length });
             }
 
             // Collect items data from form
@@ -2703,7 +3205,7 @@
             // ====================
             // EDIT MODE
             // ====================
-            console.log("Updating existing demand:", editId);
+            logger.info("Updating existing demand", { demandId: editId });
             
             // Add companyId for multi-company support
             headerData.companyId = companyId;
@@ -2767,15 +3269,15 @@
               });
             }
 
-            alert("✅ Talep güncellendi.");
+            toast.success(MESSAGES.SUCCESS_DEMAND_UPDATED);
             location.href = `./demand-detail.html?id=${editId}`;
           }
         } catch (e) {
-          console.error(e);
+          logger.error("Demand creation/update error", e);
           const code = e?.code || "";
-          if (code === "permission-denied") alert("Yetki reddedildi. İlgili şirketin sahibi/üyesi misiniz?");
-          else if (code === "not-found") alert("Kayıt bulunamadı.");
-          else alert("İşlem başarısız: " + (e?.message || e));
+          if (code === "permission-denied") toast.error(MESSAGES.ERROR_PERMISSION_DENIED);
+          else if (code === "not-found") toast.error(MESSAGES.ERROR_NOT_FOUND);
+          else toast.error(MESSAGES.ERROR_OPERATION_FAILED + ": " + (e?.message || e));
         }
       };
     }
@@ -2813,9 +3315,11 @@
     async function approveDemand(demandId) {
       try {
         // Talep durumunu 'approved' yap ve yayınla
+        // CRITICAL FIX: Set both published and isPublished for compatibility
         await updateDoc(doc(db, 'demands', demandId), {
           status: 'approved',
           published: true,
+          isPublished: true, // New system field
           statusHistory: arrayUnion({
             status: 'approved',
             timestamp: Date.now(),
@@ -2825,16 +3329,21 @@
           updatedAt: serverTimestamp()
         });
         
-        // Tedarikçi eşleştirmesi yap
-        await publishDemandAndMatchSuppliers(demandId);
+        // Tedarikçi eşleştirmesi yap (even if no suppliers found, still publish)
+        try {
+          await publishDemandAndMatchSuppliers(demandId);
+        } catch (matchError) {
+          logger.warn('Tedarikçi eşleştirme hatası (talep yine de yayınlandı)', matchError);
+          // Don't fail the entire approval if supplier matching fails
+        }
         
         closeApprovalModal();
-        alert('✅ Talep onaylandı ve tedarikçi firmalara gönderildi!');
+        toast.success(MESSAGES.SUCCESS_DEMAND_APPROVED);
         location.href = `./demand-detail.html?id=${demandId}`;
         
       } catch (error) {
-        console.error('Talep onaylama hatası:', error);
-        alert('❌ Talep onaylanırken hata oluştu: ' + error.message);
+        logger.error('Talep onaylama hatası', error);
+        toast.error(MESSAGES.ERROR_DEMAND_APPROVE + ': ' + error.message);
       }
     }
     
@@ -2856,12 +3365,12 @@
         });
         
         closeApprovalModal();
-        alert('✅ Talep taslak olarak kaydedildi. İstediğiniz zaman düzenleyebilirsiniz.');
+        toast.success(MESSAGES.SUCCESS_DEMAND_DRAFT);
         location.href = `./demand-detail.html?id=${demandId}`;
         
       } catch (error) {
-        console.error('Taslak kaydetme hatası:', error);
-        alert('❌ Taslak kaydedilirken hata oluştu: ' + error.message);
+        logger.error('Taslak kaydetme hatası', error);
+        toast.error(MESSAGES.ERROR_DEMAND_DRAFT + ': ' + error.message);
       }
     }
     
@@ -2877,7 +3386,7 @@
     // ====================
     async function publishDemandAndMatchSuppliers(demandId) {
       try {
-        console.log("Publishing demand and matching suppliers:", demandId);
+        logger.info("Publishing demand and matching suppliers", { demandId });
         
         // Talep verilerini al
         const demandDoc = await getDoc(doc(db, 'demands', demandId));
@@ -2886,63 +3395,89 @@
         }
         
         const demandData = demandDoc.data();
-        const categories = demandData.categoryTags || [];
+        
+        // CRITICAL: Import match service
+        const { matchSuppliers } = await import('./src/matching/match-service.js');
+        
+        // Collect all category tokens and normalize to IDs
+        const categoryTokens = [];
+        if (Array.isArray(demandData.categoryIds)) {
+          categoryTokens.push(...demandData.categoryIds);
+        }
+        if (Array.isArray(demandData.supplierCategoryKeys)) {
+          categoryTokens.push(...demandData.supplierCategoryKeys);
+        }
+        if (Array.isArray(demandData.categoryTags)) {
+          categoryTokens.push(...demandData.categoryTags);
+        }
+        
+        // Normalize all tokens to IDs using new system
+        const categoryIds = normalizeToIds(categoryTokens);
+        
         const groups = demandData.groupIds || [];
         
-        console.log('Demand categories:', categories);
-        console.log('Demand groups:', groups);
+        logger.info('Demand category data', {
+          categoryIds: demandData.categoryIds,
+          categoryTags: demandData.categoryTags,
+          supplierCategoryKeys: demandData.supplierCategoryKeys,
+          normalizedCategoryIds: categoryIds,
+          groups: groups
+        });
         
         // Belirlenecek tedarikçiler
         const allSuppliers = new Set();
-
-        {
-          // Genel talep: kategori/grup bazlı eşleştirme
-          const supplierQueries = [];
-
-          // Kategori bazlı tedarikçi sorgusu (10'luk batch'ler)
-          if (categories.length > 0) {
-            const categoryBatches = [];
-            for (let i = 0; i < categories.length; i += 10) {
-              categoryBatches.push(categories.slice(i, i + 10));
+        
+        // CRITICAL: Use new match service for supplier matching
+        if (categoryIds.length > 0) {
+          // Prepare legacy formats for backward compatibility
+          const legacySlugs = Array.isArray(demandData.categoryTags) ? demandData.categoryTags : [];
+          const legacyNames = categoryIds.map(id => categoryIdToName(id)).filter(Boolean);
+          
+          // Use match service
+          const matchedSuppliers = await matchSuppliers(db, {
+            categoryIds: categoryIds,
+            legacySlugs: legacySlugs,
+            legacyNames: legacyNames
+          });
+          
+          logger.info(`Matched ${matchedSuppliers.length} suppliers using new ID-based system`);
+          
+          // Collect supplier IDs (excluding demand creator)
+          matchedSuppliers.forEach(supplier => {
+            const supplierId = supplier.uid || supplier.id;
+            if (supplierId && supplierId !== demandData.createdBy) {
+              allSuppliers.add(supplierId);
             }
-            console.log(`📦 Processing ${categories.length} categories in ${categoryBatches.length} batches`);
-            for (const batch of categoryBatches) {
-              supplierQueries.push(
-                query(
-                  collection(db, 'users'),
-                  where('isActive', '==', true),
-                  where('supplierCategories', 'array-contains-any', batch)
-                )
-              );
-            }
-          }
-
-          // Grup bazlı tedarikçi sorgusu
-          if (groups.length > 0) {
-            supplierQueries.push(
-              query(
-                collection(db, 'users'),
-                where('isActive', '==', true),
-                where('groupIds', 'array-contains-any', groups)
-              )
+          });
+        }
+        
+        // Grup bazlı tedarikçi sorgusu (keep for group matching)
+        if (groups.length > 0) {
+          try {
+            const groupQuery = query(
+              collection(db, 'users'),
+              where('isActive', '==', true),
+              where('groupIds', 'array-contains-any', groups)
             );
-          }
-
-          for (const q of supplierQueries) {
-            try {
-              const snap = await getDocs(q);
-              snap.docs.forEach(doc => {
-                if (doc.id !== demandData.createdBy) {
-                  allSuppliers.add(doc.id);
-                }
-              });
-            } catch (queryError) {
-              console.warn('Supplier query failed:', queryError);
-            }
+            const groupSnap = await getDocs(groupQuery);
+            groupSnap.docs.forEach(doc => {
+              if (doc.id !== demandData.createdBy) {
+                allSuppliers.add(doc.id);
+              }
+            });
+            logger.info(`Found ${groupSnap.docs.length} suppliers from groups`);
+          } catch (groupError) {
+            logger.error('Group query failed', groupError);
           }
         }
         
-        console.log('Found suppliers:', allSuppliers.size);
+        logger.info(`Total unique suppliers found`, { count: allSuppliers.size });
+        
+        if (allSuppliers.size === 0) {
+          logger.warn('No matching suppliers found', { categoryIds });
+          logger.warn('Tip: Ensure suppliers have supplierCategoryIds populated with matching categories.');
+        }
+
 
         // Exclude suppliers by name/code if provided (privacy-safe client filter; server can also enforce)
         const excludes = Array.isArray(demandData.excludeSuppliers) ? demandData.excludeSuppliers.map(x => (x?.nameOrCode||'').toLowerCase()).filter(Boolean) : [];
@@ -2957,7 +3492,7 @@
               if (!match) kept.add(sid);
             } catch (e) { kept.add(sid); }
           }
-          console.log(`Excluding ${allSuppliers.size - kept.size} suppliers by user-provided exclude list`);
+          logger.info(`Excluding ${allSuppliers.size - kept.size} suppliers by user-provided exclude list`);
           allSuppliers.clear(); kept.forEach(id => allSuppliers.add(id));
         }
         
@@ -2975,10 +3510,10 @@
         
         await Promise.all(recipientPromises);
         
-        console.log(`✅ Created ${recipientPromises.length} demandRecipients records`);
+        logger.info(`Created ${recipientPromises.length} demandRecipients records`);
         
       } catch (error) {
-        console.error('Error in publishDemandAndMatchSuppliers:', error);
+        logger.error('Error in publishDemandAndMatchSuppliers', error);
         throw error;
       }
     }
@@ -3120,10 +3655,72 @@
     }
     
     // Teslimat adresi yönetimi
-    function setupDeliveryAddressHandlers() {
+    async function setupDeliveryAddressHandlers() {
       const select = document.getElementById('deliveryAddressSelect');
       const textarea = document.getElementById('deliveryAddress');
       const refreshBtn = document.getElementById('refreshAddressesBtn');
+      const verifyBtn = document.getElementById('verifyDeliveryAddressBtn');
+      const verifiedDiv = document.getElementById('deliveryAddressVerified');
+      const coordsSpan = document.getElementById('deliveryAddressCoords');
+      const latInput = document.getElementById('delivery_lat');
+      const lngInput = document.getElementById('delivery_lng');
+      
+      // Adres doğrulama butonu
+      // Teklifbul Rule v1.0 - Buton event listener'ı her zaman bağlanmalı
+      if (verifyBtn) {
+        // Önceki listener'ları temizle (tekrar bağlanma durumunda)
+        verifyBtn.replaceWith(verifyBtn.cloneNode(true));
+        const newVerifyBtn = document.getElementById('verifyDeliveryAddressBtn');
+        
+        newVerifyBtn.addEventListener('click', async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          try {
+            logger.info('Adres doğrulama butonu tıklandı');
+            const currentAddress = textarea?.value || '';
+            
+            if (!currentAddress || currentAddress.trim().length < 5) {
+              toast.error(MESSAGES.ERROR_ADDRESS_MISSING);
+              return;
+            }
+            
+            // Modal'ı import et ve göster
+            const { showAddressVerifyModal } = await import('./assets/js/address-verify-modal.js');
+            
+            showAddressVerifyModal({
+              defaultAddress: currentAddress,
+              onConfirm: (result) => {
+                // Teklifbul Rule v1.0 - Adres doğrulama sonucu
+                if (textarea) {
+                  textarea.value = result.address;
+                  textarea.removeAttribute('disabled'); // Doğrulama sonrası düzenlenebilir yap
+                }
+                if (latInput) latInput.value = result.lat.toString();
+                if (lngInput) lngInput.value = result.lng.toString();
+                
+                // Doğrulama badge'i göster
+                if (verifiedDiv) verifiedDiv.style.display = 'block';
+                if (coordsSpan) {
+                  coordsSpan.textContent = `lat: ${result.lat.toFixed(6)} · lng: ${result.lng.toFixed(6)}`;
+                }
+                
+                logger.info('Adres doğrulandı', result);
+              },
+              onCancel: () => {
+                logger.info('Adres doğrulama iptal edildi');
+              }
+            });
+          } catch (err) {
+            logger.error('Adres doğrulama modal hatası', err);
+            toast.error(MESSAGES.ERROR_ADDRESS_VERIFY + ': ' + (err.message || err));
+          }
+        });
+        
+        logger.info('Adres doğrulama butonu event listener bağlandı');
+      } else {
+        logger.warn('verifyDeliveryAddressBtn bulunamadı');
+      }
       
       // Yenile butonu - Yeni sistem
       refreshBtn.addEventListener('click', async () => {
@@ -3137,7 +3734,7 @@
           const userDoc = await getDoc(doc(db, "users", user.uid));
           if (userDoc.exists()) {
             const userData = userDoc.data();
-            console.log("📋 Kullanıcı verileri:", userData);
+            logger.info("Kullanıcı verileri", userData);
             
             // Fatura adresini seçenek olarak ekle (varsa)
             if (userData.invoiceAddress) {
@@ -3145,29 +3742,29 @@
               opt.value = "invoice";
               opt.textContent = "Fatura Adresi";
               select.appendChild(opt);
-              console.log("✅ Fatura adresi seçeneği eklendi");
+              logger.info("Fatura adresi seçeneği eklendi");
             } else {
-              console.log("⚠️ Fatura adresi bulunamadı");
+              logger.warn("Fatura adresi bulunamadı");
             }
             
             // İlave adresleri başlıkla listele
             const additionalAddresses = userData.additionalAddresses || [];
-            console.log("📋 İlave adresler:", additionalAddresses);
+            logger.info("İlave adresler", { count: additionalAddresses.length });
             
             additionalAddresses.forEach((a, i) => {
               const opt = document.createElement("option");
               opt.value = `addr:${i}`;
               opt.textContent = a.title || `Adres ${i + 1}`;
               select.appendChild(opt);
-              console.log(`✅ Adres seçeneği eklendi: ${a.title}`);
+              logger.info(`Adres seçeneği eklendi`, { title: a.title });
             });
             
-            console.log(`✅ ${additionalAddresses.length} adet ilave adres yüklendi`);
+            logger.info(`${additionalAddresses.length} adet ilave adres yüklendi`);
           } else {
-            console.error("❌ Kullanıcı verisi bulunamadı!");
+            logger.error("Kullanıcı verisi bulunamadı");
           }
         } catch (error) {
-          console.error("❌ Adresler yüklenemedi:", error);
+          logger.error("Adresler yüklenemedi", error);
         }
       });
       
@@ -3186,12 +3783,30 @@
             const userDoc = await getDoc(doc(db, "users", user.uid));
             if (userDoc.exists()) {
               const userData = userDoc.data();
-              textarea.value = userData.invoiceAddress || "";
+              const p = userData.invoiceAddressParts || {};
+              const taxNo = userData.taxNumber || "";
+              const taxOf = userData.taxOffice || "";
+              // Compose in requested order: Mahalle - Cadde - Sokak - Kapı No - Daire - İlçe/İl - Vergi No - Vergi Dairesi
+              const parts = [
+                p.mahalle || null,
+                p.cadde || null,
+                p.sokak || null,
+                p.kapiNo ? `Kapı No: ${p.kapiNo}` : null,
+                p.daire ? `Daire: ${p.daire}` : null,
+                (p.ilce && p.il) ? `${p.ilce} / ${p.il}` : (p.il || p.ilce || null),
+                taxNo ? `Vergi No: ${taxNo}` : null,
+                taxOf ? `Vergi Dairesi: ${taxOf}` : null
+              ].filter(Boolean);
+              const composed = parts.join(" - ");
+              textarea.value = composed || userData.invoiceAddress || "";
               textarea.disabled = true;
-              textarea.placeholder = "Fatura adresi seçildi";
+              // Placeholder'ı kaldır çünkü value var
+              textarea.removeAttribute('placeholder');
+              textarea.style.setProperty('background', '#f9fafb', 'important');
+              textarea.style.setProperty('color', '#1f2937', 'important');
             }
           } catch (error) {
-            console.error("❌ Fatura adresi yüklenemedi:", error);
+            logger.error("Fatura adresi yüklenemedi", error);
           }
           return;
         }
@@ -3204,14 +3819,42 @@
               const userData = userDoc.data();
               const idx = Number(select.value.split(":")[1]);
               const addr = userData.additionalAddresses?.[idx];
+              logger.info("Seçilen adres", { idx, addr, content: addr?.content });
+              
               if (addr) {
-                textarea.value = addr.content || "";
+                // Teklifbul Rule v1.0 - Adres içeriğini textarea'ya yaz (content varsa, yoksa structured data'dan oluştur)
+                let addressContent = addr.content;
+                
+                // Eğer content yoksa, structured data'dan oluştur
+                if (!addressContent || addressContent.trim() === '') {
+                  const parts = [];
+                  if (addr.mahalle) parts.push(`${addr.mahalle}${addr.mahalle.includes('Mahalle') ? '' : ' Mahalle'}`);
+                  if (addr.cadde) parts.push(`${addr.cadde}${addr.cadde.includes('Cadde') ? '' : ' Cadde'}`);
+                  if (addr.street) parts.push(`${addr.street}${addr.street.includes('Sokak') || addr.street.includes('Cadde') ? '' : ' Sokak'}`);
+                  if (addr.building || addr.kapi) parts.push(`Kapı No: ${addr.building || addr.kapi}`);
+                  if (addr.daire) parts.push(`Daire: ${addr.daire}`);
+                  if (addr.district || addr.ilce) parts.push(`İlçe: ${addr.district || addr.ilce}`);
+                  if (addr.city || addr.il) parts.push(`İl: ${addr.city || addr.il}`);
+                  if (addr.postakodu) parts.push(`Posta Kodu: ${addr.postakodu}`);
+                  parts.push('Türkiye');
+                  addressContent = parts.filter(Boolean).join(' - ');
+                }
+                
+                textarea.value = addressContent || "";
                 textarea.disabled = true;
-                textarea.placeholder = `Seçilen adres: ${addr.title}`;
+                // Placeholder'ı kaldır çünkü value var
+                textarea.removeAttribute('placeholder');
+                textarea.style.setProperty('display', 'block', 'important');
+                textarea.style.setProperty('background', '#f9fafb', 'important');
+                textarea.style.setProperty('color', '#1f2937', 'important');
+                
+                logger.info("Adres içeriği textarea'ya yazıldı", { addressContent, length: textarea.value.length });
+              } else {
+                logger.warn("Adres bulunamadı", { index: idx });
               }
             }
           } catch (error) {
-            console.error("❌ İlave adres yüklenemedi:", error);
+            logger.error("İlave adres yüklenemedi", error);
           }
           return;
         }
@@ -3223,7 +3866,11 @@
       });
       
       // İlk yükleme
-      refreshBtn.click();
+      if (refreshBtn) {
+        refreshBtn.click();
+      }
+      
+      logger.info('setupDeliveryAddressHandlers tamamlandı');
     }
     
     // Event listener'ları ekle
@@ -3237,6 +3884,11 @@
       
       // Teslim şekli
       setupDeliveryMethodHandlers();
+      
+      // Teklifbul Rule v1.0 - Teslimat adresi handler'larını başlat
+      setupDeliveryAddressHandlers().catch(err => {
+        logger.error("Teslimat adresi handler'ları başlatılamadı", err);
+      });
     }
 
     if (document.readyState === 'loading') {
@@ -3255,6 +3907,12 @@
     import {
       onAuthStateChanged
     } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+    // Teklifbul Rule v1.0 - Structured Logging
+    import { logger } from './src/shared/log/logger.js';
+    // Teklifbul Rule v1.0 - Toast Notification System
+    import { toast } from './src/shared/ui/toast.js';
+    // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
+    import { MESSAGES } from './src/shared/constants/messages.js';
 
     // ---------- helpers ----------
     async function getCurrentUser() {
@@ -3266,6 +3924,29 @@
 
     function $(sel) { return document.querySelector(sel); }
     function el(html) { const d = document.createElement("div"); d.innerHTML = html.trim(); return d.firstElementChild; }
+
+    // Kullanıcı rolüne göre Onay Kişileri ön-doldurma
+    async function prefillApprovalFields(){
+      try {
+        const u = await getCurrentUser();
+        const snap = await getDoc(doc(db,'users',u.uid));
+        const me = snap.exists() ? snap.data() : {};
+        const name = me.displayName || u.displayName || u.email || '';
+        const role = me.companyRole || '';
+
+        const $req = $('#requester');
+        const $pur = $('#purchaseManager');
+        const $gm  = $('#generalManager');
+        const $apr = $('#approver');
+
+        // Talep Eden otomatik doldurulmaz; adresi oluşturan şantiye/depo/mutfak yetkilisi elle yazılır
+
+        // Rol bazlı alanlar
+        if (role === 'satinalma_yetkilisi' && $pur && !$pur.value) $pur.value = name;
+        if (role === 'genel_mudur' && $gm && !$gm.value) $gm.value = name;
+        if ((role === 'genel_mudur' || role === 'isveren' || role === 'yonetim_kurulu_baskani' || role === 'ceo') && $apr && !$apr.value) $apr.value = name;
+      } catch (e) { logger.warn('prefillApprovalFields failed', e); }
+    }
 
     // ---------- AÇIKLAMA EKLE ----------
     function bindDescriptions() {
@@ -3297,6 +3978,9 @@
         ta.name = `description_${index}`;
         ta.placeholder = `${index}. Açıklama girin...`;
         row.appendChild(ta);
+        
+        // Teklifbul Rule v1.0 - Kategori öneri sistemi entegrasyonu
+        setupCategorySuggestionForTextarea(ta, index);
 
         // Delete button
         const del = document.createElement("button");
@@ -3314,14 +3998,243 @@
       };
       
       if (clearBtn) {
-        clearBtn.onclick = () => { wrap.innerHTML = ""; };
+        clearBtn.onclick = () => { 
+          wrap.innerHTML = ""; 
+          // Öneri kartlarını da temizle
+          document.querySelectorAll('.category-suggestion-card').forEach(card => card.remove());
+        };
       }
+    }
+    
+    // Teklifbul Rule v1.0 - Kategori öneri sistemi: açıklama alanları için
+    async function setupCategorySuggestionForTextarea(textarea, index) {
+      if (!textarea) return;
+      
+      let suggestionCardId = `categorySuggestion_${index}`;
+      let debounceTimeout = null;
+      let lastQuery = ''; // Her textarea için ayrı lastQuery
+      
+      // Debounced öneri fonksiyonu
+      textarea.addEventListener('input', (e) => {
+        const text = e.target.value.trim();
+        
+        clearTimeout(debounceTimeout);
+        
+        // 3 karakterden azsa öneri kartını kaldır
+        if (text.length < 3) {
+          removeSuggestionCard(suggestionCardId);
+          lastQuery = '';
+          return;
+        }
+        
+        // Aynı sorguyu tekrar etme
+        if (text === lastQuery) return;
+        
+        debounceTimeout = setTimeout(async () => {
+          lastQuery = text;
+          await suggestCategoriesForText(text, suggestionCardId, textarea, () => lastQuery);
+        }, 300); // 300ms debounce
+      });
+      
+      // Textarea'dan çıkınca öneri kartını gizle (opsiyonel)
+      textarea.addEventListener('blur', () => {
+        setTimeout(() => {
+          const card = document.getElementById(suggestionCardId);
+          if (card) {
+            // Kullanıcı kart ile etkileşimde değilse gizle
+            if (!card.matches(':hover')) {
+              card.style.display = 'none';
+            }
+          }
+        }, 200);
+      });
+      
+      textarea.addEventListener('focus', () => {
+        const card = document.getElementById(suggestionCardId);
+        if (card && lastQuery.length >= 3) {
+          card.style.display = 'block';
+        }
+      });
+    }
+    
+    async function suggestCategoriesForText(text, cardId, textarea, getLastQuery) {
+      try {
+        // API çağrısı
+        const { suggestCategories } = await import('/assets/js/services/category-suggest.js');
+        const result = await suggestCategories(text);
+        
+        if (!result || result.suggestions.length === 0) {
+          removeSuggestionCard(cardId);
+          return;
+        }
+        
+        // Öneri kartını göster/güncelle
+        showSuggestionCard(result, cardId, textarea);
+        
+        // Auto-select (skor ≥0.70)
+        if (result.auto_select) {
+          showAutoSelectNotification(result.auto_select, textarea);
+        }
+        
+      } catch (error) {
+        logger.warn('Category suggestion failed', error);
+      }
+    }
+    
+    function showSuggestionCard(result, cardId, textarea) {
+      // Mevcut kartı kaldır
+      removeSuggestionCard(cardId);
+      
+      // Yeni kart oluştur
+      const card = document.createElement('div');
+      card.id = cardId;
+      card.className = 'category-suggestion-card';
+      card.style.cssText = `
+        margin-top: 8px;
+        padding: 12px;
+        background: #f0f9ff;
+        border: 1px solid #3b82f6;
+        border-radius: 8px;
+        font-size: 13px;
+      `;
+      
+      let content = `<div style="font-weight: 600; margin-bottom: 8px; color: #1e40af;">
+        💡 Kategori Önerileri (${result.suggestions.length})
+      </div>`;
+      
+      // Top-3 öneri göster
+      result.suggestions.slice(0, 3).forEach((suggestion, idx) => {
+        const scorePercent = Math.round(suggestion.score * 100);
+        const isHighConfidence = suggestion.score >= 0.70;
+        const badgeColor = isHighConfidence ? '#10b981' : '#f59e0b';
+        
+        content += `<div style="margin-bottom: 8px; padding: 8px; background: white; border-radius: 6px; border-left: 3px solid ${badgeColor};">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <span style="font-weight: 600; color: #1f2937;">${idx + 1}. ${suggestion.name}</span>
+            <span style="font-size: 11px; color: ${badgeColor}; font-weight: 600;">${scorePercent}%</span>
+          </div>
+          ${suggestion.reasons && suggestion.reasons.length > 0 ? `
+            <div style="font-size: 11px; color: #6b7280; margin-top: 4px;">
+              Eşleşen: ${suggestion.reasons.slice(0, 3).join(', ')}
+            </div>
+          ` : ''}
+          <button class="apply-category-btn" data-category="${suggestion.name}" 
+                  style="margin-top: 6px; padding: 4px 10px; background: ${badgeColor}; color: white; 
+                         border: none; border-radius: 4px; font-size: 11px; cursor: pointer;">
+            ${isHighConfidence ? '✅ Otomatik Uygula' : 'Seç'}
+          </button>
+        </div>`;
+      });
+      
+      // Kapat butonu
+      content += `<button class="close-suggestion-btn" style="margin-top: 8px; padding: 4px 10px; background: #6b7280; 
+                color: white; border: none; border-radius: 4px; font-size: 11px; cursor: pointer;">
+        Kapat
+      </button>`;
+      
+      card.innerHTML = content;
+      
+      // Textarea'nın hemen altına ekle
+      const row = textarea.closest('.description-item');
+      if (row) {
+        row.insertAdjacentElement('afterend', card);
+      } else {
+        textarea.parentElement.appendChild(card);
+      }
+      
+      // Event listeners
+      card.querySelectorAll('.apply-category-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const categoryName = btn.dataset.category;
+          const queryText = textarea.value.trim();
+          await applyCategorySuggestion(categoryName, queryText);
+          removeSuggestionCard(cardId);
+        });
+      });
+      
+      card.querySelector('.close-suggestion-btn')?.addEventListener('click', () => {
+        removeSuggestionCard(cardId);
+      });
+    }
+    
+    function showAutoSelectNotification(categoryName, textarea) {
+      // Textarea'nın yanında küçük bir bildirim göster
+      const existingNotif = document.getElementById(`autoSelectNotif_${textarea.id}`);
+      if (existingNotif) return;
+      
+      const notif = document.createElement('div');
+      notif.id = `autoSelectNotif_${textarea.id}`;
+      notif.style.cssText = `
+        position: absolute;
+        top: -30px;
+        right: 0;
+        padding: 6px 10px;
+        background: #10b981;
+        color: white;
+        border-radius: 4px;
+        font-size: 11px;
+        z-index: 100;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      `;
+      notif.innerHTML = `✅ Önerilen kategori: <strong>${categoryName}</strong>`;
+      
+      const row = textarea.closest('.description-item');
+      if (row) {
+        row.style.position = 'relative';
+        row.appendChild(notif);
+        
+        // 5 saniye sonra kaldır
+        setTimeout(() => {
+          notif.remove();
+        }, 5000);
+      }
+    }
+    
+    async function applyCategorySuggestion(categoryName, queryText = '') {
+      // Kategori chip sistemine ekle
+      if (typeof addCategoryChip === 'function') {
+        addCategoryChip(categoryName);
+      } else if (window.categoryGroupsModal) {
+        // Alternatif: kategori seçim modalını aç ve seç
+  toast.info(MESSAGES.INFO_CATEGORY_SUGGESTED_WITH_NAME.replace('{name}', categoryName));
+      }
+      
+      // Feedback kaydet
+      try {
+        const { saveCategoryFeedback } = await import('/assets/js/services/category-suggest.js');
+        await saveCategoryFeedback({
+          query: queryText || '',
+          suggested_category_id: null, // ID bulunursa eklenecek
+          chosen_category_id: null,
+          query: queryText || ''
+        });
+      } catch (error) {
+        logger.warn('Save feedback failed', error);
+      }
+    }
+    
+    function removeSuggestionCard(cardId) {
+      const card = document.getElementById(cardId);
+      if (card) {
+        card.remove();
+      }
+    }
+    
+    // Mevcut açıklama alanları için de setup yap (sayfa yüklendiğinde)
+    function setupExistingDescriptionFields() {
+      const existingTextareas = document.querySelectorAll('#descriptionsContainer textarea');
+      existingTextareas.forEach((ta, idx) => {
+        const index = idx + 1;
+        setupCategorySuggestionForTextarea(ta, index);
+      });
     }
 
     // ---------- ADRES SEÇİMİ ----------
     async function loadAddressesForDemand() {
       const sel = $("#deliveryAddressSelect");
       const ta  = $("#deliveryAddress");
+      const siteInput = $("#siteName");
+      const siteList = document.getElementById("siteNameList");
       if (!sel || !ta) return;
 
       // varsayılan
@@ -3333,26 +4246,188 @@
         const data = (await getDoc(uref)).data() || {};
 
         // list: fatura + ilave adresler
+        // Teklifbul Rule v1.0 - Content yoksa structured data'dan oluştur
         const list = [];
-        if (data.invoiceAddress) list.push({ title: "Fatura Adresi", content: data.invoiceAddress });
-        (Array.isArray(data.additionalAddresses) ? data.additionalAddresses : []).forEach(a => {
-          if (a?.title && a?.content) list.push({ title: a.title, content: a.content });
+        if (data.invoiceAddress) list.push({ title: "Fatura Adresi", content: data.invoiceAddress, kind: "invoice" });
+        const additional = Array.isArray(data.additionalAddresses) ? data.additionalAddresses : [];
+        additional.forEach(a => {
+          if (a?.title) {
+            // Content varsa kullan, yoksa structured data'dan oluştur
+            let content = a.content || "";
+            if (!content || content.trim() === '') {
+              const parts = [];
+              if (a.mahalle) parts.push(`${a.mahalle}${a.mahalle.includes('Mahalle') ? '' : ' Mahalle'}`);
+              if (a.cadde) parts.push(`${a.cadde}${a.cadde.includes('Cadde') ? '' : ' Cadde'}`);
+              if (a.street) parts.push(`${a.street}${a.street.includes('Sokak') || a.street.includes('Cadde') ? '' : ' Sokak'}`);
+              if (a.building || a.kapi) parts.push(`Kapı No: ${a.building || a.kapi}`);
+              if (a.daire) parts.push(`Daire: ${a.daire}`);
+              if (a.district || a.ilce) parts.push(`İlçe: ${a.district || a.ilce}`);
+              if (a.city || a.il) parts.push(`İl: ${a.city || a.il}`);
+              if (a.postakodu) parts.push(`Posta Kodu: ${a.postakodu}`);
+              parts.push('Türkiye');
+              content = parts.filter(Boolean).join(' - ');
+            }
+            list.push({ 
+              title: a.title, 
+              content: content, 
+              kind: "addr",
+              // Structured data'yı da sakla (geriye dönük uyumluluk için)
+              ...a
+            });
+          }
         });
 
         // select'i doldur
+        // Teklifbul Rule v1.0 - Value formatı: "invoice" veya "addr:0", "addr:1" (yeni sistemle uyumlu)
         sel.innerHTML = `<option value="">Başlık seçin</option>` +
-          list.map((a, i) => `<option value="${i}">${a.title}</option>`).join("");
+          list.map((a, i) => {
+            const value = a.kind === "invoice" ? "invoice" : `addr:${i - (list[0]?.kind === "invoice" ? 1 : 0)}`;
+            return `<option value="${value}">${a.title}</option>`;
+          }).join("");
 
-        // change → textarea doldur
+        // Site adı önerileri (yalnızca ilave adres başlıkları)
+        if (siteList) {
+          siteList.innerHTML = additional
+            .filter(a => a?.title)
+            .map(a => `<option value="${a.title}"></option>`)
+            .join("");
+        }
+
+        // başlık → index eşlemesi ve global referans
+        window.__deliveryTitleIndex = Object.fromEntries(list.map((a, i) => [a.title, String(i)]));
+        window.__deliveryList = list;
+
+        // helper: province fill
+        const purchaseInput = document.getElementById('purchaseLocation');
+        function extractProvince(str){
+          const m = /İl:\s*([^\-]+)/i.exec(String(str||''));
+          return m ? m[1].trim() : '';
+        }
+
+        // change → textarea doldur + Alım Yeri (İl) doldur
+        // Teklifbul Rule v1.0 - Eski sistem handler'ı, yeni sistemle uyumlu (invoice veya addr:0 formatı)
         sel.onchange = () => {
           const v = sel.value;
-          ta.value = v === "" ? "" : (list[Number(v)]?.content || "");
+          if (v === "") {
+            ta.value = "";
+            ta.disabled = false;
+            ta.placeholder = "Teslimat adresini yazın veya yukarıdan seçin";
+            ta.style.setProperty('display', 'block', 'important');
+            return;
+          }
+          
+          // Value formatı: "invoice" veya "addr:0", "addr:1" gibi
+          let selectedAddr = null;
+          if (v === "invoice") {
+            selectedAddr = list.find(a => a.kind === "invoice");
+          } else if (v.startsWith("addr:")) {
+            const idx = Number(v.split(":")[1]);
+            // Fatura adresi varsa index 1'den başlar, yoksa 0'dan
+            const invoiceCount = list[0]?.kind === "invoice" ? 1 : 0;
+            selectedAddr = list[idx + invoiceCount];
+          } else {
+            // Geriye dönük uyumluluk: sadece sayı ise
+            selectedAddr = list[Number(v)];
+          }
+          
+          if (selectedAddr) {
+            let addressContent = selectedAddr.content || "";
+            
+            // Eğer content boşsa, structured data'dan oluştur (geriye dönük uyumluluk)
+            if (!addressContent || addressContent.trim() === '') {
+              const parts = [];
+              if (selectedAddr.mahalle) parts.push(`${selectedAddr.mahalle}${selectedAddr.mahalle.includes('Mahalle') ? '' : ' Mahalle'}`);
+              if (selectedAddr.cadde) parts.push(`${selectedAddr.cadde}${selectedAddr.cadde.includes('Cadde') ? '' : ' Cadde'}`);
+              if (selectedAddr.street) parts.push(`${selectedAddr.street}${selectedAddr.street.includes('Sokak') || selectedAddr.street.includes('Cadde') ? '' : ' Sokak'}`);
+              if (selectedAddr.building || selectedAddr.kapi) parts.push(`Kapı No: ${selectedAddr.building || selectedAddr.kapi}`);
+              if (selectedAddr.daire) parts.push(`Daire: ${selectedAddr.daire}`);
+              if (selectedAddr.district || selectedAddr.ilce) parts.push(`İlçe: ${selectedAddr.district || selectedAddr.ilce}`);
+              if (selectedAddr.city || selectedAddr.il) parts.push(`İl: ${selectedAddr.city || selectedAddr.il}`);
+              if (selectedAddr.postakodu) parts.push(`Posta Kodu: ${selectedAddr.postakodu}`);
+              parts.push('Türkiye');
+              addressContent = parts.filter(Boolean).join(' - ');
+            }
+            
+            ta.value = addressContent;
+            ta.disabled = true;
+            ta.placeholder = `Seçilen adres: ${selectedAddr.title || 'Adres'}`;
+            ta.style.setProperty('display', 'block', 'important');
+            ta.style.setProperty('visibility', 'visible', 'important');
+            ta.style.setProperty('opacity', '1', 'important');
+            ta.style.setProperty('background', 'white', 'important');
+            ta.style.setProperty('color', '#1f2937', 'important');
+            ta.style.setProperty('min-height', '80px', 'important');
+            
+            // Teklifbul Rule v1.0 - Textarea'nın value'sunu zorla güncelle (disabled olsa bile)
+            // Textarea'da textContent değil value kullanılmalı
+            ta.value = addressContent;
+            // Placeholder'ı kaldır çünkü value var
+            ta.removeAttribute('placeholder');
+            
+            logger.info("Adres içeriği yüklendi (eski sistem)", { addressContent, length: ta.value.length });
+          } else {
+            ta.value = "";
+            ta.disabled = false;
+            ta.placeholder = "Teslimat adresini yazın veya yukarıdan seçin";
+          }
+          
+          // province fill from address text
+          if (purchaseInput) {
+            const p = extractProvince(ta.value);
+            if (p) { purchaseInput.value = p; purchaseInput.dispatchEvent(new Event('change', { bubbles:true })); }
+          }
         };
 
+        // Şantiye alanı seçilince başlığa göre adresi otomatik çek
+        if (siteInput) {
+          const applySiteBinding = () => {
+            const name = siteInput.value.trim();
+            if (!name) return;
+            // Başlığa göre adresi bul
+            const addr = list.find(a => a.title === name);
+            if (addr) {
+              // Value formatı: "invoice" veya "addr:0"
+              let value = "";
+              if (addr.kind === "invoice") {
+                value = "invoice";
+              } else {
+                const addrIndex = list.filter(a => a.kind !== "invoice").indexOf(addr);
+                value = `addr:${addrIndex}`;
+              }
+              sel.value = value;
+              sel.onchange && sel.onchange();
+              logger.info("Şantiye adına göre adres seçildi", { value, name });
+            }
+          };
+          siteInput.addEventListener('change', applySiteBinding);
+          siteInput.addEventListener('blur', applySiteBinding);
+        }
+
+        // Edit modunda: içerik eşleşirse select'i set et
+        try {
+          const desired = (window.__desiredDeliveryAddress || '').trim();
+          if (desired) {
+            const addr = list.find(a => (a.content||'').trim() === desired);
+            if (addr) {
+              // Value formatı: "invoice" veya "addr:0"
+              let value = "";
+              if (addr.kind === "invoice") {
+                value = "invoice";
+              } else {
+                const addrIndex = list.filter(a => a.kind !== "invoice").indexOf(addr);
+                value = `addr:${addrIndex}`;
+              }
+              sel.value = value;
+              sel.onchange && sel.onchange();
+              logger.info("Edit modunda adres seçildi", { value });
+            }
+          }
+        } catch {}
+
         // debug
-        console.log("📦 Teslimat adres listesi yüklendi:", list);
+        logger.info("Teslimat adres listesi yüklendi", { count: list.length });
       } catch (e) {
-        console.warn("⚠️ Adresler yüklenemedi:", e);
+        logger.warn("Adresler yüklenemedi", e);
       }
     }
 
@@ -3366,20 +4441,76 @@
       bindDescriptions();
       bindRefreshButton();
       loadAddressesForDemand(); // sayfa açılışında bir kez yükle
+      setupExistingDescriptionFields(); // Mevcut açıklama alanları için kategori önerisi
+      
+      // Teklifbul Rule v1.0 - Teslimat adresi textarea'sının her zaman görünür olduğundan emin ol
+      const deliveryContainer = document.getElementById('deliveryAddressContainer');
+      const deliveryTextarea = document.getElementById('deliveryAddress');
+      if (deliveryContainer) {
+        deliveryContainer.style.setProperty('display', 'block', 'important');
+        deliveryContainer.style.setProperty('visibility', 'visible', 'important');
+        deliveryContainer.style.setProperty('opacity', '1', 'important');
+        deliveryContainer.style.setProperty('height', 'auto', 'important');
+        deliveryContainer.style.setProperty('min-height', '100px', 'important');
+      }
+      if (deliveryTextarea) {
+        deliveryTextarea.style.setProperty('display', 'block', 'important');
+        deliveryTextarea.style.setProperty('visibility', 'visible', 'important');
+        deliveryTextarea.style.setProperty('opacity', '1', 'important');
+        deliveryTextarea.style.setProperty('min-height', '80px', 'important');
+        deliveryTextarea.style.setProperty('width', '100%', 'important');
+        logger.info('Teslimat adresi textarea görünür yapıldı', { height: deliveryTextarea.offsetHeight });
+      }
     }
 
     if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initDemandPageWiring);
+      document.addEventListener('DOMContentLoaded', () => { 
+        initDemandPageWiring(); 
+        prefillApprovalFields();
+        // Teklifbul Rule v1.0 - Sayfa yüklendikten sonra textarea'yı tekrar görünür yap
+        setTimeout(() => {
+          const ta = document.getElementById('deliveryAddress');
+          const container = document.getElementById('deliveryAddressContainer');
+          if (ta) {
+            ta.style.setProperty('display', 'block', 'important');
+            ta.style.setProperty('visibility', 'visible', 'important');
+            ta.style.setProperty('opacity', '1', 'important');
+            ta.style.setProperty('min-height', '80px', 'important');
+          }
+          if (container) {
+            container.style.setProperty('display', 'block', 'important');
+            container.style.setProperty('visibility', 'visible', 'important');
+            container.style.setProperty('opacity', '1', 'important');
+          }
+        }, 100);
+      });
     } else {
       initDemandPageWiring();
+      // Teklifbul Rule v1.0 - Sayfa yüklendikten sonra textarea'yı tekrar görünür yap
+      setTimeout(() => {
+        const ta = document.getElementById('deliveryAddress');
+        const container = document.getElementById('deliveryAddressContainer');
+        if (ta) {
+          ta.style.setProperty('display', 'block', 'important');
+          ta.style.setProperty('visibility', 'visible', 'important');
+          ta.style.setProperty('opacity', '1', 'important');
+          ta.style.setProperty('min-height', '80px', 'important');
+        }
+        if (container) {
+          container.style.setProperty('display', 'block', 'important');
+          container.style.setProperty('visibility', 'visible', 'important');
+          container.style.setProperty('opacity', '1', 'important');
+        }
+      }, 100);
+      prefillApprovalFields();
     }
   </script>
 
   <!-- Category Groups Modal Script -->
-  <script src="/assets/js/ui/category-groups-modal.js" defer></script>
+  <script type="module" src="/assets/js/ui/category-groups-modal.js" defer></script>
 
   <!-- Theme Script -->
-  <script src="/assets/js/theme.js" defer></script>
+  <script type="module" src="/assets/js/theme.js" defer></script>
 
   <!-- Çoklu-Sekmeli Grup Hub Modal -->
   <div id="groupHubModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1100;">
@@ -3403,10 +4534,12 @@
         <input id="ghCreateName" placeholder="Örn: İnşaat Malzemeleri"
           style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;margin:8px 0 12px;">
         <div id="ghCreateStepCats" style="display:none;margin-top:8px;">
-          <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
             <input id="ghCreateSearch" placeholder="Kategori ara..."
-              style="flex:1;padding:8px;border:1px solid #d1d5db;border-radius:8px;">
-            <small id="ghCreateCount" style="color:#6b7280;"></small>
+              style="flex:1;min-width:200px;padding:8px;border:1px solid #d1d5db;border-radius:8px;">
+            <button id="ghCreateSelectAll" type="button" style="background:#3b82f6;color:#fff;border:0;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;white-space:nowrap;">✅ Tümünü Seç</button>
+            <button id="ghCreateClear" type="button" style="background:#6b7280;color:#fff;border:0;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;white-space:nowrap;">🗑️ Temizle</button>
+            <small id="ghCreateCount" style="color:#6b7280;min-width:80px;text-align:right;"></small>
           </div>
           <div id="ghCreateCats" style="border:1px solid #e5e7eb;border-radius:8px;max-height:36vh;overflow:auto;padding:8px;"></div>
         </div>
@@ -3436,9 +4569,11 @@
             <input id="ghEditName" placeholder="Grup adı (örn: Tüm Tedarikçi Gruplarım)" style="flex:1;padding:8px;border:1px solid #d1d5db;border-radius:8px;">
           </div>
 
-          <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
-            <input id="ghEditSearch" placeholder="Kategori ara..." style="flex:1;padding:8px;border:1px solid #d1d5db;border-radius:8px;">
-            <small id="ghEditCount" style="color:#6b7280;"></small>
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
+            <input id="ghEditSearch" placeholder="Kategori ara..." style="flex:1;min-width:200px;padding:8px;border:1px solid #d1d5db;border-radius:8px;">
+            <button id="ghEditSelectAll" type="button" style="background:#3b82f6;color:#fff;border:0;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;white-space:nowrap;">✅ Tümünü Seç</button>
+            <button id="ghEditClear" type="button" style="background:#6b7280;color:#fff;border:0;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;white-space:nowrap;">🗑️ Temizle</button>
+            <small id="ghEditCount" style="color:#6b7280;min-width:80px;text-align:right;"></small>
           </div>
 
           <div id="ghEditScroll" style="max-height:48vh;overflow:auto;border:1px solid #e5e7eb;border-radius:8px;padding:10px;">
@@ -3516,6 +4651,8 @@
       height:18px !important;
       margin:0 !important;
       flex-shrink:0 !important;
+      cursor:pointer !important;
+      align-self:center !important; /* Checkbox'ı dikey olarak ortala */
     }
     
     .gh-grid-row span{
@@ -3523,6 +4660,7 @@
       font-size:14px !important;
       color:#374151 !important;
       line-height:1.4 !important;
+      align-self:center !important; /* Metni dikey olarak ortala */
     }
 
     /* Düzenle butonu renk durumları */
@@ -3532,5 +4670,47 @@
   </style>
 
   <script type="module" src="/js/ui-standard.js"></script>
+  <script type="module">
+    // Şantiye adı → Alım Yeri (İl) bağlama
+    const siteInput = document.getElementById('siteName');
+    const provinceInput = document.getElementById('purchaseLocation');
+    const dataList = document.getElementById('siteNameList');
+    let savedSites = Array.isArray(window.__initialSavedSites) ? window.__initialSavedSites : [];
+
+    window.__setSavedSites = (arr) => {
+      savedSites = Array.isArray(arr) ? arr : [];
+      paintSites();
+    };
+
+    function paintSites(){
+      if (!dataList) return;
+      const cur = siteInput?.value || '';
+      dataList.innerHTML = '';
+      savedSites.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.title || s.fullAddress || s.id || '';
+        dataList.appendChild(opt);
+      });
+      if (cur) siteInput.value = cur;
+    }
+
+    function findSiteByTitle(title){
+      const t = String(title || '').trim().toLocaleLowerCase('tr');
+      return savedSites.find(s => String(s.title||'').trim().toLocaleLowerCase('tr') === t) || null;
+    }
+
+    function applyProvinceFromSite(){
+      const sel = findSiteByTitle(siteInput?.value || '');
+      if (!sel || !provinceInput) return;
+      provinceInput.value = sel.provinceName || sel.provinceId || '';
+      provinceInput.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      paintSites();
+      siteInput?.addEventListener('change', applyProvinceFromSite);
+      siteInput?.addEventListener('blur', applyProvinceFromSite);
+    });
+  </script>
 </body>
 </html>

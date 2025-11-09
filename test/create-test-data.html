@@ -1,0 +1,532 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Test Verisi Oluştur</title>
+  <style>
+    body {
+      font-family: system-ui, Arial;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    h1 { color: #111827; margin-top: 0; }
+    button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+      margin-right: 12px;
+    }
+    button:hover { background: #2563eb; }
+    button:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+    .btn-danger {
+      background: #ef4444;
+    }
+    .btn-danger:hover {
+      background: #dc2626;
+    }
+    .status {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    .status.success {
+      background: #d1fae5;
+      color: #065f46;
+    }
+    .status.error {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    .status.info {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+    .log {
+      margin-top: 16px;
+      padding: 12px;
+      background: #f9fafb;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 12px;
+      max-height: 300px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+    .progress {
+      margin-top: 16px;
+      height: 8px;
+      background: #e5e7eb;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      background: #3b82f6;
+      transition: width 0.3s;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🧪 Test Verisi Oluşturucu</h1>
+    <p>Bu sayfa 10 adet test talebi ve tüm tedarikçilerden teklifler oluşturur.</p>
+    
+    <button id="createBtn">Test Verileri Oluştur</button>
+    <button id="clearBtn" class="btn-danger">Tüm Test Verilerini Sil</button>
+    <button id="clearAllBtn" class="btn-danger" style="background: #dc2626;">⚠️ TÜM TALEPLERİ SİL (Dikkatli Kullan!)</button>
+    
+    <div id="status" class="status info" style="display:none;"></div>
+    <div id="progress" class="progress" style="display:none;">
+      <div id="progressBar" class="progress-bar" style="width:0%"></div>
+    </div>
+    <div id="log" class="log" style="display:none;"></div>
+  </div>
+
+  <script type="module">
+    import { db, requireAuth } from "./firebase.js";
+    import {
+      collection,
+      getDocs,
+      addDoc,
+      deleteDoc,
+      doc,
+      query,
+      where,
+      serverTimestamp,
+      writeBatch,
+      Timestamp
+    } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+    const createBtn = document.getElementById("createBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    const clearAllBtn = document.getElementById("clearAllBtn");
+    const statusEl = document.getElementById("status");
+    const progressEl = document.getElementById("progress");
+    const progressBar = document.getElementById("progressBar");
+    const logEl = document.getElementById("log");
+
+    function log(message) {
+      console.log(message);
+      if (logEl) {
+        logEl.style.display = "block";
+        logEl.textContent += message + "\n";
+        logEl.scrollTop = logEl.scrollHeight;
+      }
+    }
+
+    function showStatus(message, type = "info") {
+      statusEl.textContent = message;
+      statusEl.className = `status ${type}`;
+      statusEl.style.display = "block";
+    }
+
+    function updateProgress(current, total) {
+      const percent = Math.round((current / total) * 100);
+      progressBar.style.width = percent + "%";
+      progressEl.style.display = "block";
+    }
+
+    // Helper: Slug normalize
+    function toSlug(name) {
+      if (!name) return '';
+      return String(name)
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[şŞ]/g, 's').replace(/[ıİ]/g, 'i').replace(/[ğĞ]/g, 'g')
+        .replace(/[çÇ]/g, 'c').replace(/[öÖ]/g, 'o').replace(/[üÜ]/g, 'u')
+        .toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    }
+
+    // SATFK oluştur
+    function generateSATFK() {
+      const now = new Date();
+      const dateStr = now.getFullYear().toString() + 
+                     String(now.getMonth() + 1).padStart(2, '0') + 
+                     String(now.getDate()).padStart(2, '0');
+      const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+      return `SATFK-${dateStr}-${random}`;
+    }
+
+    // Test verileri oluştur
+    createBtn.addEventListener("click", async () => {
+      try {
+        createBtn.disabled = true;
+        clearBtn.disabled = true;
+        logEl.textContent = "";
+        showStatus("Başlıyor...", "info");
+        
+        const user = await requireAuth();
+        log(`✅ Kullanıcı: ${user.email || user.uid}`);
+        
+        // Kullanıcı bilgilerini al
+        const userDoc = await getDocs(query(collection(db, "users"), where("__name__", "==", user.uid)));
+        let userData = {};
+        if (!userDoc.empty) {
+          userData = userDoc.docs[0].data();
+        }
+        const userCompanyId = userData.companyId || user.uid;
+        
+        log(`✅ Şirket ID: ${userCompanyId}`);
+        
+        // Tüm tedarikçileri bul
+        log("📋 Tedarikçiler bulunuyor...");
+        const suppliersQuery = query(
+          collection(db, "users"),
+          where("roles", "array-contains", "supplier")
+        );
+        const suppliersSnap = await getDocs(suppliersQuery);
+        const suppliers = suppliersSnap.docs.map(d => ({
+          id: d.id,
+          ...d.data()
+        }));
+        
+        log(`✅ ${suppliers.length} tedarikçi bulundu`);
+        
+        if (suppliers.length === 0) {
+          showStatus("❌ Hiç tedarikçi bulunamadı. Önce tedarikçi oluşturun.", "error");
+          createBtn.disabled = false;
+          clearBtn.disabled = false;
+          return;
+        }
+        
+        // Kategorileri topla (tüm tedarikçilerden)
+        const allCategories = new Set();
+        suppliers.forEach(s => {
+          const cats = s.supplierCategoryKeys || s.supplierCategories || s.categories || [];
+          cats.forEach(cat => allCategories.add(cat));
+        });
+        const categoryArray = Array.from(allCategories).slice(0, 10); // Max 10 kategori
+        const categorySlugs = categoryArray.map(toSlug);
+        
+        log(`✅ Kullanılacak kategoriler: ${categoryArray.join(", ")}`);
+        
+        // 10 talep oluştur
+        const demands = [];
+        const demandItems = [];
+        const demandRecipients = [];
+        const bids = [];
+        
+        const titles = [
+          "Test Talep 1 - İnşaat Malzemeleri",
+          "Test Talep 2 - Elektrik Malzemeleri",
+          "Test Talep 3 - Makine Parçaları",
+          "Test Talep 4 - Hırdavat Ürünleri",
+          "Test Talep 5 - Kimyasal Maddeler",
+          "Test Talep 6 - Ambalaj Malzemeleri",
+          "Test Talep 7 - Mobilya Ürünleri",
+          "Test Talep 8 - Boya ve Vernik",
+          "Test Talep 9 - Plastik Ürünler",
+          "Test Talep 10 - Lojistik Hizmetleri"
+        ];
+        
+        const dueDate = new Date();
+        dueDate.setDate(dueDate.getDate() + 30); // 30 gün sonra
+        
+        for (let i = 0; i < 10; i++) {
+          const satfk = generateSATFK();
+          const demandData = {
+            satfk: satfk,
+            title: titles[i],
+            status: "published",
+            isPublished: true,
+            published: true,
+            createdBy: user.uid,
+            creatorCompanyId: userCompanyId,
+            companyId: userCompanyId,
+            categoryTags: categoryArray.slice(0, 5), // İlk 5 kategori
+            supplierCategoryKeys: categorySlugs.slice(0, 5),
+            priority: i % 3 === 0 ? "price" : (i % 3 === 1 ? "speed" : "quality"),
+            biddingMode: i % 2 === 0 ? "secret" : "open",
+            dueDate: Timestamp.fromDate(dueDate),
+            deadline: Timestamp.fromDate(dueDate),
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            publishedAt: serverTimestamp()
+          };
+          
+          demands.push(demandData);
+        }
+        
+        log(`📝 ${demands.length} talep oluşturuluyor...`);
+        
+        // Batch ile talepleri oluştur
+        let createdDemands = [];
+        const batch = writeBatch(db);
+        
+        for (let i = 0; i < demands.length; i++) {
+          const demandRef = doc(collection(db, "demands"));
+          batch.set(demandRef, demands[i]);
+          createdDemands.push({ id: demandRef.id, ...demands[i] });
+          updateProgress(i + 1, demands.length * 3); // Talepler için progress
+        }
+        
+        await batch.commit();
+        log(`✅ ${createdDemands.length} talep oluşturuldu`);
+        
+        // Her talep için item'lar oluştur
+        log("📦 Talep kalemleri oluşturuluyor...");
+        for (const demand of createdDemands) {
+          const itemRef = doc(collection(db, "demands", demand.id, "items"));
+          const itemData = {
+            lineNo: 1,
+            name: `${demand.title} - Test Ürün`,
+            description: "Test amaçlı oluşturulmuş ürün açıklaması",
+            quantity: Math.floor(Math.random() * 100) + 10,
+            unit: "adet",
+            createdAt: serverTimestamp()
+          };
+          await addDoc(collection(db, "demands", demand.id, "items"), itemData);
+        }
+        log(`✅ Tüm talep kalemleri oluşturuldu`);
+        
+        // Demand recipients oluştur (tüm tedarikçilere)
+        log("📨 Demand recipients oluşturuluyor...");
+        const recipientsBatch = writeBatch(db);
+        let recipientCount = 0;
+        
+        for (const demand of createdDemands) {
+          for (const supplier of suppliers) {
+            const recipientRef = doc(collection(db, "demandRecipients"));
+            recipientsBatch.set(recipientRef, {
+              demandId: demand.id,
+              buyerId: user.uid,
+              supplierId: supplier.id,
+              status: "pending",
+              matchedAt: serverTimestamp(),
+              createdAt: serverTimestamp()
+            });
+            recipientCount++;
+          }
+        }
+        
+        await recipientsBatch.commit();
+        log(`✅ ${recipientCount} demand recipient oluşturuldu`);
+        
+        // Her talep için tüm tedarikçilerden teklif oluştur
+        log("💰 Teklifler oluşturuluyor...");
+        const bidsBatch = writeBatch(db);
+        let bidCount = 0;
+        const totalBids = createdDemands.length * suppliers.length;
+        let currentBid = 0;
+        
+        for (const demand of createdDemands) {
+          for (const supplier of suppliers) {
+            currentBid++;
+            const bidRef = doc(collection(db, "bids"));
+            
+            const unitPrice = Math.floor(Math.random() * 1000) + 100;
+            const quantity = Math.floor(Math.random() * 100) + 10;
+            const totalAmount = unitPrice * quantity;
+            
+            bidsBatch.set(bidRef, {
+              demandId: demand.id,
+              supplierId: supplier.id,
+              supplierName: supplier.companyName || supplier.displayName || "Tedarikçi",
+              buyerId: user.uid,
+              status: "sent",
+              currency: "TRY",
+              totalAmount: totalAmount,
+              vatRate: 20,
+              shippingCost: Math.floor(Math.random() * 500),
+              shippingType: "Karayolu",
+              paymentTerms: "30 gün vade",
+              notes: "Test amaçlı oluşturulmuş teklif",
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+              items: [{
+                lineNo: 1,
+                quantity: quantity,
+                unit: "adet",
+                unitPrice: unitPrice,
+                description: `${demand.title} - Teklif Ürün`,
+                totalPrice: totalAmount,
+                currency: "TRY",
+                vatRate: 20
+              }]
+            });
+            bidCount++;
+            
+            if (currentBid % 10 === 0) {
+              updateProgress(createdDemands.length + (currentBid / totalBids * createdDemands.length), createdDemands.length * 3);
+            }
+          }
+        }
+        
+        await bidsBatch.commit();
+        log(`✅ ${bidCount} teklif oluşturuldu`);
+        
+        updateProgress(100, 100);
+        showStatus(
+          `✅ Başarılı! ${createdDemands.length} talep, ${recipientCount} recipient, ${bidCount} teklif oluşturuldu.`,
+          "success"
+        );
+        
+      } catch (error) {
+        console.error("Hata:", error);
+        showStatus(`❌ Hata: ${error.message}`, "error");
+        log(`❌ Hata detayı: ${error.stack}`);
+      } finally {
+        createBtn.disabled = false;
+        clearBtn.disabled = false;
+      }
+    });
+
+    // Test verilerini temizle
+    clearBtn.addEventListener("click", async () => {
+      if (!confirm("Tüm test verilerini silmek istediğinize emin misiniz? Bu işlem geri alınamaz!")) {
+        return;
+      }
+      
+      try {
+        clearBtn.disabled = true;
+        showStatus("Temizleniyor...", "info");
+        log("🗑️ Test verileri siliniyor...");
+        
+        // Test talepleri bul (title'ı "Test Talep" ile başlayanlar)
+        const testDemandsQuery = query(
+          collection(db, "demands"),
+          where("title", ">=", "Test Talep"),
+          where("title", "<=", "Test Talep\uf8ff")
+        );
+        const testDemands = await getDocs(testDemandsQuery);
+        
+        log(`📝 ${testDemands.docs.length} test talebi bulundu`);
+        
+        // Her talep için items, bids, recipients sil
+        for (const demandDoc of testDemands.docs) {
+          const demandId = demandDoc.id;
+          
+          // Items sil
+          const itemsSnap = await getDocs(collection(db, "demands", demandId, "items"));
+          for (const item of itemsSnap.docs) {
+            await deleteDoc(doc(db, "demands", demandId, "items", item.id));
+          }
+          
+          // Bids sil
+          const bidsSnap = await getDocs(query(collection(db, "bids"), where("demandId", "==", demandId)));
+          for (const bid of bidsSnap.docs) {
+            await deleteDoc(doc(db, "bids", bid.id));
+          }
+          
+          // Recipients sil
+          const recipientsSnap = await getDocs(query(collection(db, "demandRecipients"), where("demandId", "==", demandId)));
+          for (const recipient of recipientsSnap.docs) {
+            await deleteDoc(doc(db, "demandRecipients", recipient.id));
+          }
+          
+          // Talep sil
+          await deleteDoc(doc(db, "demands", demandId));
+        }
+        
+        log(`✅ Tüm test verileri silindi`);
+        showStatus("✅ Tüm test verileri temizlendi", "success");
+        
+      } catch (error) {
+        console.error("Hata:", error);
+        showStatus(`❌ Hata: ${error.message}`, "error");
+        log(`❌ Hata detayı: ${error.stack}`);
+      } finally {
+        clearBtn.disabled = false;
+      }
+    });
+
+    // TÜM talepleri sil (sadece test değil, her şeyi)
+    clearAllBtn.addEventListener("click", async () => {
+      const confirmation = prompt(
+        "⚠️ DİKKAT: Bu işlem TÜM talepleri, teklifleri, recipients'ları ve items'ları silecektir!\n\n" +
+        "Onaylamak için 'SİL' yazın ve Enter'a basın:"
+      );
+      
+      if (confirmation !== "SİL") {
+        showStatus("İşlem iptal edildi", "info");
+        return;
+      }
+      
+      if (!confirm("Son bir kez daha onaylıyor musunuz? Bu işlem GERİ ALINAMAZ!")) {
+        return;
+      }
+      
+      try {
+        clearAllBtn.disabled = true;
+        createBtn.disabled = true;
+        clearBtn.disabled = true;
+        showStatus("Tüm talepler siliniyor...", "info");
+        log("🗑️ TÜM talepler siliniyor...");
+        
+        // TÜM talepleri al
+        const allDemands = await getDocs(collection(db, "demands"));
+        log(`📝 ${allDemands.docs.length} talep bulundu`);
+        
+        let deletedCount = 0;
+        const total = allDemands.docs.length;
+        
+        // Her talep için items, bids, recipients sil
+        for (let i = 0; i < allDemands.docs.length; i++) {
+          const demandDoc = allDemands.docs[i];
+          const demandId = demandDoc.id;
+          
+          try {
+            // Items sil
+            const itemsSnap = await getDocs(collection(db, "demands", demandId, "items"));
+            for (const item of itemsSnap.docs) {
+              await deleteDoc(doc(db, "demands", demandId, "items", item.id));
+            }
+            
+            // Bids sil
+            const bidsSnap = await getDocs(query(collection(db, "bids"), where("demandId", "==", demandId)));
+            for (const bid of bidsSnap.docs) {
+              await deleteDoc(doc(db, "bids", bid.id));
+            }
+            
+            // Recipients sil
+            const recipientsSnap = await getDocs(query(collection(db, "demandRecipients"), where("demandId", "==", demandId)));
+            for (const recipient of recipientsSnap.docs) {
+              await deleteDoc(doc(db, "demandRecipients", recipient.id));
+            }
+            
+            // Talep sil
+            await deleteDoc(doc(db, "demands", demandId));
+            deletedCount++;
+            
+            updateProgress(deletedCount, total);
+            log(`✅ ${deletedCount}/${total} talep silindi: ${demandDoc.data().title || demandId}`);
+          } catch (error) {
+            log(`⚠️ Talep ${demandId} silinirken hata: ${error.message}`);
+          }
+        }
+        
+        log(`✅ Toplam ${deletedCount} talep ve ilgili veriler silindi`);
+        showStatus(`✅ Tüm talepler temizlendi (${deletedCount} talep)`, "success");
+        
+      } catch (error) {
+        console.error("Hata:", error);
+        showStatus(`❌ Hata: ${error.message}`, "error");
+        log(`❌ Hata detayı: ${error.stack}`);
+      } finally {
+        clearAllBtn.disabled = false;
+        createBtn.disabled = false;
+        clearBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
+

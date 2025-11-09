@@ -1,0 +1,262 @@
+{
+  "districtId": "ANKARA__ŞEREFLİKOÇHİSAR",
+  "districtName": "Şereflikoçhisar",
+  "neighborhoods": [
+    {
+      "id": "ACIKUYU",
+      "name": "Acıkuyu"
+    },
+    {
+      "id": "ACIÖZ",
+      "name": "Acıöz"
+    },
+    {
+      "id": "AKARCA",
+      "name": "Akarca"
+    },
+    {
+      "id": "AKİN",
+      "name": "Akin"
+    },
+    {
+      "id": "AKTAŞ",
+      "name": "Aktaş"
+    },
+    {
+      "id": "ALİUŞAĞI",
+      "name": "Aliuşağı"
+    },
+    {
+      "id": "BAĞOBASI",
+      "name": "Bağobası"
+    },
+    {
+      "id": "BALTALI",
+      "name": "Baltalı"
+    },
+    {
+      "id": "BÜYÜKDAMLACIK",
+      "name": "Büyükdamlacık"
+    },
+    {
+      "id": "BÜYÜKKIŞLA",
+      "name": "Büyükkışla"
+    },
+    {
+      "id": "ÇATÇAT",
+      "name": "Çatçat"
+    },
+    {
+      "id": "ÇAVUŞKÖY",
+      "name": "Çavuşköy"
+    },
+    {
+      "id": "ÇAYIRÖNÜ",
+      "name": "Çayırönü"
+    },
+    {
+      "id": "CINGIL",
+      "name": "Cıngıl"
+    },
+    {
+      "id": "PARLASAN",
+      "name": "Parlasan"
+    },
+    {
+      "id": "DOĞANKAYA",
+      "name": "Doğankaya"
+    },
+    {
+      "id": "ELEY",
+      "name": "Eley"
+    },
+    {
+      "id": "FADILLI",
+      "name": "Fadıllı"
+    },
+    {
+      "id": "GEÇİTLİ",
+      "name": "Geçitli"
+    },
+    {
+      "id": "HACIBEKTAŞLI",
+      "name": "Hacıbektaşlı"
+    },
+    {
+      "id": "HAMZALI",
+      "name": "Hamzalı"
+    },
+    {
+      "id": "HAYDARLI",
+      "name": "Haydarlı"
+    },
+    {
+      "id": "KADINCIK",
+      "name": "Kadıncık"
+    },
+    {
+      "id": "KADIOBASI",
+      "name": "Kadıobası"
+    },
+    {
+      "id": "KARABÜK",
+      "name": "Karabük"
+    },
+    {
+      "id": "KARAMOLLAUŞAĞI",
+      "name": "Karamollauşağı"
+    },
+    {
+      "id": "KARANDERE",
+      "name": "Karandere"
+    },
+    {
+      "id": "KÜÇÜKDAMLACIK",
+      "name": "Küçükdamlacık"
+    },
+    {
+      "id": "MUSTAFACIK",
+      "name": "Mustafacık"
+    },
+    {
+      "id": "MUSULAR",
+      "name": "Musular"
+    },
+    {
+      "id": "ODUNBOĞAZI",
+      "name": "Odunboğazı"
+    },
+    {
+      "id": "PALAZOBASI",
+      "name": "Palazobası"
+    },
+    {
+      "id": "SADIKLI",
+      "name": "Sadıklı"
+    },
+    {
+      "id": "SEYMENLİ",
+      "name": "Seymenli"
+    },
+    {
+      "id": "ŞANLIKIŞLA",
+      "name": "Şanlıkışla"
+    },
+    {
+      "id": "ŞEKERKÖY",
+      "name": "Şekerköy"
+    },
+    {
+      "id": "ŞEREFLİDAVUTLU",
+      "name": "Şereflidavutlu"
+    },
+    {
+      "id": "ŞEYHLİ",
+      "name": "Şeyhli"
+    },
+    {
+      "id": "ÜZENGİLİK",
+      "name": "Üzengilik"
+    },
+    {
+      "id": "YALNIZPINAR",
+      "name": "Yalnızpınar"
+    },
+    {
+      "id": "YAZISÖĞÜT",
+      "name": "Yazısöğüt"
+    },
+    {
+      "id": "YEŞİLYURT",
+      "name": "Yeşilyurt"
+    },
+    {
+      "id": "BOĞAZİÇİ",
+      "name": "Boğaziçi"
+    },
+    {
+      "id": "EKİCİ",
+      "name": "Ekici"
+    },
+    {
+      "id": "EMEK",
+      "name": "Emek"
+    },
+    {
+      "id": "HACIENBİYA",
+      "name": "Hacıenbiya"
+    },
+    {
+      "id": "HÜRRİYET",
+      "name": "Hürriyet"
+    },
+    {
+      "id": "İSTİKLAL",
+      "name": "İstiklal"
+    },
+    {
+      "id": "KALE",
+      "name": "Kale"
+    },
+    {
+      "id": "SANAYİ",
+      "name": "Sanayi"
+    },
+    {
+      "id": "SARIKAYA",
+      "name": "Sarıkaya"
+    },
+    {
+      "id": "YENİ",
+      "name": "Yeni"
+    },
+    {
+      "id": "YEŞİLOVA",
+      "name": "Yeşilova"
+    },
+    {
+      "id": "ŞEYH_KUYUSU",
+      "name": "Şeyh Kuyusu"
+    },
+    {
+      "id": "TUZLA",
+      "name": "Tuzla"
+    },
+    {
+      "id": "CUMHURİYET",
+      "name": "Cumhuriyet"
+    },
+    {
+      "id": "YUSUFKUYUSU",
+      "name": "Yusufkuyusu"
+    },
+    {
+      "id": "ÇALÖREN",
+      "name": "Çalören"
+    },
+    {
+      "id": "DEVEKOVAN",
+      "name": "Devekovan"
+    },
+    {
+      "id": "GÜLHÜYÜK",
+      "name": "Gülhüyük"
+    },
+    {
+      "id": "KACARLI",
+      "name": "Kacarlı"
+    },
+    {
+      "id": "AKSEKİ",
+      "name": "Akseki"
+    },
+    {
+      "id": "MEHMET_AKİF_ERSOY",
+      "name": "Mehmet Akif Ersoy"
+    },
+    {
+      "id": "DELİLLER",
+      "name": "Deliller"
+    }
+  ]
+}

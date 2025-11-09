@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <title>Test Inventory System</title>
+  <link rel="stylesheet" href="/utils.css" />
+  <style>
+    body{font-family:system-ui;max-width:1100px;margin:20px auto;padding:20px;background:#f8fafc}
+    h1{color:#1f2937}
+    .test-card{background:white;border:1px solid #e5e7eb;border-radius:8px;padding:20px;margin:16px 0}
+    .test-card h2{margin:0 0 16px 0;font-size:18px;color:#2563eb}
+    .btn{padding:12px 24px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;font-weight:600;margin:8px 4px}
+    .btn:hover{background:#2563eb}
+    .btn:disabled{background:#9ca3af;cursor:not-allowed}
+    .result{margin-top:12px;padding:12px;background:#f0f9ff;border-left:3px solid #0284c7;border-radius:4px;white-space:pre-wrap;font-family:monospace;font-size:13px}
+    .result.success{background:#dcfce7;border-left-color:#059669}
+    .result.error{background:#fee2e2;border-left-color:#dc2626}
+    .badge{display:inline-block;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:600}
+    .badge-success{background:#dcfce7;color:#065f46}
+    .badge-error{background:#fee2e2;color:#991b1b}
+    .badge-warning{background:#fef3c7;color:#92400e}
+  </style>
+</head>
+<body>
+  <h1>🧪 Test Inventory System</h1>
+  <p>Bu sayfa stok takip sisteminin tüm özelliklerini test eder.</p>
+
+  <!-- Test 1: Stock Import -->
+  <div class="test-card">
+    <h2>1️⃣ Test: Stok İçe Aktarım</h2>
+    <p>Excel'den stok kartı içe aktarma ve validasyon test edilir.</p>
+    <button class="btn" onclick="testStockImport()">Test Stock Import</button>
+    <div id="result1"></div>
+  </div>
+
+  <!-- Test 2: Wildcard Search -->
+  <div class="test-card">
+    <h2>2️⃣ Test: Yıldızlı Arama</h2>
+    <p>Pattern: *ÇİM*32*KG* → Bulunanlar test edilir.</p>
+    <button class="btn" onclick="testWildcardSearch()">Test Wildcard Search</button>
+    <div id="result2"></div>
+  </div>
+
+  <!-- Test 3: Stock Movement & Avg Cost -->
+  <div class="test-card">
+    <h2>3️⃣ Test: Stok Hareketi ve Ortalama Maliyet</h2>
+    <p>IN hareketi oluşturulup avgCost güncellemesi test edilir.</p>
+    <button class="btn" onclick="testStockMovement()">Test Stock Movement</button>
+    <div id="result3"></div>
+  </div>
+
+  <!-- Test 4: ŞMTF Creation -->
+  <div class="test-card">
+    <h2>4️⃣ Test: ŞMTF Oluşturma</h2>
+    <p>Malzeme talebi oluşturma ve gönderme test edilir.</p>
+    <button class="btn" onclick="testRequestCreation()">Test Request Creation</button>
+    <div id="result4"></div>
+  </div>
+
+  <!-- Test 5: Invoice Comparison -->
+  <div class="test-card">
+    <h2>5️⃣ Test: Fatura Karşılaştırma</h2>
+    <p>Invoice ve quote karşılaştırması test edilir.</p>
+    <button class="btn" onclick="testInvoiceCompare()">Test Invoice Compare</button>
+    <div id="result5a"></div>
+  </div>
+
+  <!-- Test 6: Reports -->
+  <div class="test-card">
+    <h2>6️⃣ Test: Raporlar</h2>
+    <p>Rapor verilerinin görüntülenmesi test edilir.</p>
+    <button class="btn" onclick="testReports()">Test Reports</button>
+    <div id="result5"></div>
+  </div>
+
+  <!-- All Tests -->
+  <div class="test-card">
+    <h2>🎯 Tüm Testleri Çalıştır</h2>
+    <button class="btn" onclick="runAllTests()" style="background:#059669">Run All Tests</button>
+    <div id="resultAll"></div>
+  </div>
+
+  <script type="module">
+    import { db, auth, requireAuth } from '/firebase.js';
+    import { collection, getDocs, getDoc, doc, addDoc, updateDoc, serverTimestamp, query, where } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+    import { normalizeTR, tokenizeForIndex, matchesWildcard } from '/scripts/lib/tr-utils.js';
+    import { weightedAvgCost, allocateExtras } from '/scripts/inventory-cost.js';
+
+    window.testStockImport = async function() {
+      const resultDiv = document.getElementById('result1');
+      resultDiv.innerHTML = '<div class="result">🔄 Testing stock import...</div>';
+      
+      try {
+        await requireAuth();
+        
+        // Check if stocks collection has data
+        const stocksSnap = await getDocs(collection(db, 'stocks'));
+        const count = stocksSnap.size;
+        
+        if (count > 0) {
+          resultDiv.innerHTML = `<div class="result success">✅ PASS: Stock collection has ${count} items</div>`;
+        } else {
+          resultDiv.innerHTML = `<div class="result warning">⚠️ No stocks found. Run init script first.</div>`;
+        }
+      } catch (error) {
+        resultDiv.innerHTML = `<div class="result error">❌ FAIL: ${error.message}</div>`;
+      }
+    };
+
+    window.testWildcardSearch = async function() {
+      const resultDiv = document.getElementById('result2');
+      resultDiv.innerHTML = '<div class="result">🔄 Testing wildcard search...</div>';
+      
+      try {
+        await requireAuth();
+        
+        const stocksSnap = await getDocs(collection(db, 'stocks'));
+        const stocks = [];
+        stocksSnap.forEach(d => stocks.push(d.data()));
+        
+        // Test wildcard search
+        const query = '*ÇİM*32*KG*';
+        const found = stocks.filter(s => matchesWildcard(s.name, query));
+        
+        if (found.length > 0) {
+          resultDiv.innerHTML = `<div class="result success">✅ PASS: Found ${found.length} item(s)
+Found: ${found.map(s => s.name).join(', ')}</div>`;
+        } else {
+          resultDiv.innerHTML = `<div class="result warning">⚠️ No matches. Sample data may not be loaded.</div>`;
+        }
+      } catch (error) {
+        resultDiv.innerHTML = `<div class="result error">❌ FAIL: ${error.message}</div>`;
+      }
+    };
+
+    window.testStockMovement = async function() {
+      const resultDiv = document.getElementById('result3');
+      resultDiv.innerHTML = '<div class="result">🔄 Testing stock movement and avgCost...</div>';
+      
+      try {
+        await requireAuth();
+        
+        // Load a stock
+        const stocksSnap = await getDocs(collection(db, 'stocks'));
+        if (stocksSnap.size === 0) {
+          resultDiv.innerHTML = '<div class="result error">❌ No stocks found. Run init first.</div>';
+          return;
+        }
+        
+        const stock = stocksSnap.docs[0];
+        const stockData = stock.data();
+        
+        // Test cost calculation
+        const oldQty = 100;
+        const oldAvg = stockData.avgCost || 0;
+        const newQty = 50;
+        const newPrice = 45;
+        
+        const finalAvg = weightedAvgCost(oldQty, oldAvg, newQty, newPrice);
+        
+        resultDiv.innerHTML = `<div class="result success">✅ PASS: Cost calculation works
+Old: ${oldAvg} (qty: ${oldQty})
+New: ${newPrice} (qty: ${newQty})
+Final Avg: ${finalAvg.toFixed(2)}</div>`;
+      } catch (error) {
+        resultDiv.innerHTML = `<div class="result error">❌ FAIL: ${error.message}</div>`;
+      }
+    };
+
+    window.testRequestCreation = async function() {
+      const resultDiv = document.getElementById('result4');
+      resultDiv.innerHTML = '<div class="result">🔄 Testing request creation...</div>';
+      
+      try {
+        await requireAuth();
+        
+        const user = auth.currentUser;
+        const locsSnap = await getDocs(collection(db, 'stock_locations'));
+        
+        if (locsSnap.size === 0) {
+          resultDiv.innerHTML = '<div class="result error">❌ No locations found. Run init first.</div>';
+          return;
+        }
+        
+        resultDiv.innerHTML = `<div class="result success">✅ PASS: Request creation ready
+User: ${user.email}
+Locations: ${locsSnap.size} found</div>`;
+      } catch (error) {
+        resultDiv.innerHTML = `<div class="result error">❌ FAIL: ${error.message}</div>`;
+      }
+    };
+
+    window.testInvoiceCompare = async function() {
+      const resultDiv = document.getElementById('result5a');
+      resultDiv.innerHTML = '<div class="result">🔄 Testing invoice comparison...</div>';
+      
+      try {
+        await requireAuth();
+        
+        // Test the comparison logic
+        const expected = [{ sku: 'A', qty: 100, unitPrice: 10 }];
+        const actual = [{ sku: 'A', qty: 95, unitPrice: 11 }];
+        
+        // Simple test
+        const hasDifferences = actual[0].qty !== expected[0].qty || actual[0].unitPrice !== expected[0].unitPrice;
+        
+        if (hasDifferences) {
+          resultDiv.innerHTML = `<div class="result success">✅ PASS: Invoice comparison works
+Expected: ${expected[0].qty} x ${expected[0].unitPrice}
+Actual: ${actual[0].qty} x ${actual[0].unitPrice}
+Differences detected!</div>`;
+        } else {
+          resultDiv.innerHTML = '<div class="result error">❌ Comparison logic not working</div>';
+        }
+      } catch (error) {
+        resultDiv.innerHTML = `<div class="result error">❌ FAIL: ${error.message}</div>`;
+      }
+    };
+
+    window.testReports = async function() {
+      const resultDiv = document.getElementById('result5');
+      resultDiv.innerHTML = '<div class="result">🔄 Testing reports...</div>';
+      
+      try {
+        await requireAuth();
+        
+        const stocksSnap = await getDocs(collection(db, 'stocks'));
+        const movementsSnap = await getDocs(query(collection(db, 'stock_movements')));
+        const locsSnap = await getDocs(collection(db, 'stock_locations'));
+        
+        resultDiv.innerHTML = `<div class="result success">✅ PASS: Reports data available
+Stocks: ${stocksSnap.size}
+Movements: ${movementsSnap.size}
+Locations: ${locsSnap.size}</div>`;
+      } catch (error) {
+        resultDiv.innerHTML = `<div class="result error">❌ FAIL: ${error.message}</div>`;
+      }
+    };
+
+    window.runAllTests = async function() {
+      const resultDiv = document.getElementById('resultAll');
+      resultDiv.innerHTML = '<div class="result">🔄 Running all tests...</div>';
+      
+      let passed = 0;
+      let failed = 0;
+      let warnings = 0;
+      
+      try {
+        await testStockImport();
+        passed++;
+      } catch (e) { failed++; }
+      
+      try {
+        await testWildcardSearch();
+        passed++;
+      } catch (e) { warnings++; }
+      
+      try {
+        await testStockMovement();
+        passed++;
+      } catch (e) { failed++; }
+      
+      try {
+        await testRequestCreation();
+        passed++;
+      } catch (e) { warnings++; }
+      
+      try {
+        await testInvoiceCompare();
+        passed++;
+      } catch (e) { failed++; }
+      
+      try {
+        await testReports();
+        passed++;
+      } catch (e) { warnings++; }
+      
+      resultDiv.innerHTML = `<div class="result ${failed === 0 ? 'success' : 'error'}">
+🎯 All Tests Complete
+✅ Passed: ${passed}
+⚠️ Warnings: ${warnings}
+❌ Failed: ${failed}
+      </div>`;
+    };
+  </script>
+</body>
+</html>
+

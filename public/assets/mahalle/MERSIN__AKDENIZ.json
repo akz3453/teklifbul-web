@@ -1,0 +1,266 @@
+{
+  "districtId": "MERSIN__AKDENIZ",
+  "districtName": "Akdeniz",
+  "neighborhoods": [
+    {
+      "id": "ABDULLAH_SAHUTOGLU",
+      "name": "Abdullah Şahutoğlu"
+    },
+    {
+      "id": "ADANALIOGLU",
+      "name": "Adanalıoğlu"
+    },
+    {
+      "id": "ADANALIOGLU_LIMONLU",
+      "name": "Adanalıoğlu Limonlu"
+    },
+    {
+      "id": "ADNAN_MENDERES",
+      "name": "Adnan Menderes"
+    },
+    {
+      "id": "AKDAM",
+      "name": "Akdam"
+    },
+    {
+      "id": "AKDENIZ",
+      "name": "Akdeniz"
+    },
+    {
+      "id": "ANADOLU",
+      "name": "Anadolu"
+    },
+    {
+      "id": "BAGCILARIHSANIYE",
+      "name": "Bağcılar-ihsaniye"
+    },
+    {
+      "id": "BAGLARBASI",
+      "name": "Bağlarbaşı"
+    },
+    {
+      "id": "BAHCE",
+      "name": "Bahçe"
+    },
+    {
+      "id": "BAHCELI_ASAGIBURHAN",
+      "name": "Bahçeli Aşağıburhan"
+    },
+    {
+      "id": "BAHCELI_KURKCU",
+      "name": "Bahçeli Kürkçü"
+    },
+    {
+      "id": "BAHCELI_YUKARIBURHAN",
+      "name": "Bahçeli Yukarıburhan"
+    },
+    {
+      "id": "BAHSIS",
+      "name": "Bahşiş"
+    },
+    {
+      "id": "BARIS",
+      "name": "Barış"
+    },
+    {
+      "id": "BEKIRDE",
+      "name": "Bekirde"
+    },
+    {
+      "id": "CAMI_SERIF",
+      "name": "Cami Şerif"
+    },
+    {
+      "id": "CAMILI",
+      "name": "Camili"
+    },
+    {
+      "id": "CIVANYAYLAGI",
+      "name": "Civanyaylağı"
+    },
+    {
+      "id": "CUMHURIYET",
+      "name": "Cumhuriyet"
+    },
+    {
+      "id": "CANKAYA",
+      "name": "Çankaya"
+    },
+    {
+      "id": "CAY",
+      "name": "Çay"
+    },
+    {
+      "id": "CILEK",
+      "name": "Çilek"
+    },
+    {
+      "id": "DEMIRHISAR",
+      "name": "Demirhisar"
+    },
+    {
+      "id": "DIKILITAS",
+      "name": "Dikilitaş"
+    },
+    {
+      "id": "ESENLI",
+      "name": "Esenli"
+    },
+    {
+      "id": "EVCI",
+      "name": "Evci"
+    },
+    {
+      "id": "GAZI",
+      "name": "Gazi"
+    },
+    {
+      "id": "GUNDOGDU",
+      "name": "Gündoğdu"
+    },
+    {
+      "id": "GUNES",
+      "name": "Güneş"
+    },
+    {
+      "id": "HAL",
+      "name": "Hal"
+    },
+    {
+      "id": "HAMIDIYE",
+      "name": "Hamidiye"
+    },
+    {
+      "id": "HEBILLI",
+      "name": "Hebilli"
+    },
+    {
+      "id": "HURRIYET",
+      "name": "Hürriyet"
+    },
+    {
+      "id": "IGDIR",
+      "name": "Iğdır"
+    },
+    {
+      "id": "IHSANIYE",
+      "name": "İhsaniye"
+    },
+    {
+      "id": "KARACAILYAS",
+      "name": "Karacailyas"
+    },
+    {
+      "id": "KARACAILYAS_EMEK",
+      "name": "Karacailyas Emek"
+    },
+    {
+      "id": "KARACAILYAS_EVREN",
+      "name": "Karacailyas Evren"
+    },
+    {
+      "id": "KARADUVAR",
+      "name": "Karaduvar"
+    },
+    {
+      "id": "KAZANLI",
+      "name": "Kazanlı"
+    },
+    {
+      "id": "KIREMITHANE",
+      "name": "Kiremithane"
+    },
+    {
+      "id": "KOSELERLI",
+      "name": "Köselerli"
+    },
+    {
+      "id": "KULAK",
+      "name": "Kulak"
+    },
+    {
+      "id": "KULTUR",
+      "name": "Kültür"
+    },
+    {
+      "id": "MAHMUDIYE",
+      "name": "Mahmudiye"
+    },
+    {
+      "id": "MESUDIYE",
+      "name": "Mesudiye"
+    },
+    {
+      "id": "MITHATPASA",
+      "name": "Mithatpaşa"
+    },
+    {
+      "id": "MUFIDE_ILHAN",
+      "name": "Müfide Ilhan"
+    },
+    {
+      "id": "NACARLI",
+      "name": "Nacarlı"
+    },
+    {
+      "id": "NUSRATIYE",
+      "name": "Nusratiye"
+    },
+    {
+      "id": "OZGURLUK",
+      "name": "Özgürlük"
+    },
+    {
+      "id": "PARMAKKURDU",
+      "name": "Parmakkurdu"
+    },
+    {
+      "id": "PUGKARACADAG",
+      "name": "Puğkaracadağ"
+    },
+    {
+      "id": "SARIIBRAHIMLI",
+      "name": "Sarıibrahimli"
+    },
+    {
+      "id": "SITELER",
+      "name": "Siteler"
+    },
+    {
+      "id": "SAKIRGULMEN",
+      "name": "Şakirgülmen"
+    },
+    {
+      "id": "SEVKETSUMER",
+      "name": "Şevketsümer"
+    },
+    {
+      "id": "TOROSLAR",
+      "name": "Toroslar"
+    },
+    {
+      "id": "TURGUTREIS",
+      "name": "Turgutreis"
+    },
+    {
+      "id": "UCOCAK",
+      "name": "Üçocak"
+    },
+    {
+      "id": "YANPAR",
+      "name": "Yanpar"
+    },
+    {
+      "id": "YENI",
+      "name": "Yeni"
+    },
+    {
+      "id": "YESILCIMEN",
+      "name": "Yeşilçimen"
+    },
+    {
+      "id": "YESILOVA",
+      "name": "Yeşilova"
+    }
+  ]
+}

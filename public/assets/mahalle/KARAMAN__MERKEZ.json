@@ -1,0 +1,34 @@
+{
+  "districtId": "KARAMAN__MERKEZ",
+  "districtName": "Merkez",
+  "neighborhoods": [
+    {
+      "id": "ATATÜRK",
+      "name": "Atatürk"
+    },
+    {
+      "id": "GAZİ",
+      "name": "Gazi"
+    },
+    {
+      "id": "FATİH",
+      "name": "Fatih"
+    },
+    {
+      "id": "HÜRRİYET",
+      "name": "Hürriyet"
+    },
+    {
+      "id": "BAHÇELİEVLER",
+      "name": "Bahçelievler"
+    },
+    {
+      "id": "CUMHURİYET",
+      "name": "Cumhuriyet"
+    },
+    {
+      "id": "KETENCİ",
+      "name": "Ketenci"
+    }
+  ]
+}

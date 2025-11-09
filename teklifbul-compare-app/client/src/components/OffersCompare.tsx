@@ -97,7 +97,7 @@ export const OffersCompare: React.FC<OffersCompareProps> = ({
   const filteredAndSortedRows = useMemo(() => {
     if (!comparison?.rows) return [];
 
-    let filtered = comparison.rows.filter(row => {
+    const filtered = comparison.rows.filter(row => {
       // Search filter
       if (filters.search && !row.productName.toLowerCase().includes(filters.search.toLowerCase()) &&
           !row.productCode.toLowerCase().includes(filters.search.toLowerCase())) {

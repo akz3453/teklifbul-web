@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>İç Talep Detayı</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body{font-family:system-ui, Arial; background:#f8fafc; color:#111827; margin:0}
+    .container{max-width:1100px;margin:0 auto;padding:20px}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin:12px 0}
+    table{width:100%;border-collapse:collapse}
+    th,td{border-bottom:1px solid #e5e7eb;padding:8px;text-align:left;font-size:13px}
+    th{background:#f9fafb}
+    .btn{padding:10px 16px;border:0;border-radius:6px;cursor:pointer;font-weight:600}
+    .btn-primary{background:#2563eb;color:#fff}
+  </style>
+</head>
+<body>
+  <!-- Common Header -->
+  <header id="app-header"></header>
+
+  <div class="container">
+    <h1>İç Talep Detayı</h1>
+    <div class="card" id="summary"></div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h2 style="margin:0;font-size:18px">Kalemler</h2>
+        <button class="btn btn-primary" id="btnSend">Talebi Satın Almaya Gönder</button>
+      </div>
+      <div style="overflow:auto">
+        <table id="linesTable">
+          <thead>
+            <tr>
+              <th>No</th><th>SKU</th><th>Ad</th><th>Marka/Model</th><th>Miktar</th><th>Birim</th><th>Durum</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/firebase.js"></script>
+  <!-- Header -->
+  <script type="module">
+    import { initGlobalHeader } from '../assets/js/ui/header.js';
+    initGlobalHeader({ mount: '#app-header', activeRoute: 'inventory' });
+  </script>
+  <script type="module" src="/scripts/purchase-form-detail.js"></script>
+</body>
+</html>
+
+

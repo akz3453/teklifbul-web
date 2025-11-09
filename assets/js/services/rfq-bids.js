@@ -1,5 +1,7 @@
 // RFQ Bidding System Service
 import { db } from '../firebase.js';
+// Teklifbul Rule v1.0 - Structured Logging
+import { logger } from '../../../src/shared/log/logger.js';
 import {
   collection, doc, addDoc, updateDoc, deleteDoc, getDocs, getDoc,
   query, where, orderBy, limit, serverTimestamp, arrayUnion, arrayRemove
@@ -37,7 +39,7 @@ export async function createRFQBid(bidData) {
 
     return bidRef.id;
   } catch (error) {
-    console.error('Error creating RFQ bid:', error);
+    logger.error('Error creating RFQ bid', error);
     throw error;
   }
 }
@@ -76,7 +78,7 @@ export async function updateRFQBid(bidId, bidData) {
 
     return bidId;
   } catch (error) {
-    console.error('Error updating RFQ bid:', error);
+    logger.error('Error updating RFQ bid', error);
     throw error;
   }
 }
@@ -106,7 +108,7 @@ export async function getRFQBidWithItems(bidId) {
       items
     };
   } catch (error) {
-    console.error('Error getting RFQ bid:', error);
+    logger.error('Error getting RFQ bid', error);
     throw error;
   }
 }
@@ -144,7 +146,7 @@ export async function getDemandBidsWithItems(demandId) {
 
     return bids;
   } catch (error) {
-    console.error('Error getting demand bids:', error);
+    logger.error('Error getting demand bids', error);
     throw error;
   }
 }
@@ -168,7 +170,7 @@ export async function updateBidStatus(bidId, newStatus, note = '') {
 
     return bidId;
   } catch (error) {
-    console.error('Error updating bid status:', error);
+    logger.error('Error updating bid status', error);
     throw error;
   }
 }

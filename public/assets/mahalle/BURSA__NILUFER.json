@@ -1,0 +1,262 @@
+{
+  "districtId": "BURSA__NILUFER",
+  "districtName": "Nilüfer",
+  "neighborhoods": [
+    {
+      "id": "23_NISAN",
+      "name": "23 Nisan"
+    },
+    {
+      "id": "19_MAYIS",
+      "name": "19 Mayıs"
+    },
+    {
+      "id": "29_EKIM",
+      "name": "29 Ekim"
+    },
+    {
+      "id": "30_AGUSTOS_ZAFER",
+      "name": "30 Ağustos Zafer"
+    },
+    {
+      "id": "AHMET_YESEVI",
+      "name": "Ahmet Yesevi"
+    },
+    {
+      "id": "AKCALAR",
+      "name": "Akçalar"
+    },
+    {
+      "id": "ALAADDINBEY",
+      "name": "Alaaddinbey"
+    },
+    {
+      "id": "ALTINSEHIR",
+      "name": "Altınşehir"
+    },
+    {
+      "id": "ATAEVLER",
+      "name": "Ataevler"
+    },
+    {
+      "id": "ATLAS",
+      "name": "Atlas"
+    },
+    {
+      "id": "AYVAKOY",
+      "name": "Ayvaköy"
+    },
+    {
+      "id": "BADIRGA",
+      "name": "Badırga"
+    },
+    {
+      "id": "BALAT",
+      "name": "Balat"
+    },
+    {
+      "id": "BALKAN",
+      "name": "Balkan"
+    },
+    {
+      "id": "BARIS",
+      "name": "Barış"
+    },
+    {
+      "id": "BASKOY",
+      "name": "Başköy"
+    },
+    {
+      "id": "BESEVLER",
+      "name": "Beşevler"
+    },
+    {
+      "id": "BUYUKBALIKLI",
+      "name": "Büyükbalıklı"
+    },
+    {
+      "id": "CUMHURIYET",
+      "name": "Cumhuriyet"
+    },
+    {
+      "id": "CALI",
+      "name": "Çalı"
+    },
+    {
+      "id": "CAMLICA",
+      "name": "Çamlıca"
+    },
+    {
+      "id": "CATALAGIL",
+      "name": "Çatalağıl"
+    },
+    {
+      "id": "CAYLI",
+      "name": "Çaylı"
+    },
+    {
+      "id": "DAGYENICE",
+      "name": "Dağyenice"
+    },
+    {
+      "id": "DEMIRCI",
+      "name": "Demirci"
+    },
+    {
+      "id": "DOGANKOY",
+      "name": "Doğanköy"
+    },
+    {
+      "id": "DUMLUPINAR",
+      "name": "Dumlupınar"
+    },
+    {
+      "id": "ERTUGRUL",
+      "name": "Ertuğrul"
+    },
+    {
+      "id": "ESENTEPE",
+      "name": "Esentepe"
+    },
+    {
+      "id": "FADILLI",
+      "name": "Fadıllı"
+    },
+    {
+      "id": "FETHIYE",
+      "name": "Fethiye"
+    },
+    {
+      "id": "GOKCE",
+      "name": "Gökçe"
+    },
+    {
+      "id": "GOLYAZI",
+      "name": "Gölyazı"
+    },
+    {
+      "id": "GORUKLE",
+      "name": "Görükle"
+    },
+    {
+      "id": "GUMUSTEPE",
+      "name": "Gümüştepe"
+    },
+    {
+      "id": "GUNGOREN",
+      "name": "Güngören"
+    },
+    {
+      "id": "HASANAGA",
+      "name": "Hasanağa"
+    },
+    {
+      "id": "ISIKTEPE",
+      "name": "Işıktepe"
+    },
+    {
+      "id": "IHSANIYE",
+      "name": "İhsaniye"
+    },
+    {
+      "id": "INEGAZI",
+      "name": "İnegazi"
+    },
+    {
+      "id": "IRFANIYE",
+      "name": "İrfaniye"
+    },
+    {
+      "id": "KADRIYE",
+      "name": "Kadriye"
+    },
+    {
+      "id": "KARACAOBA",
+      "name": "Karacaoba"
+    },
+    {
+      "id": "KARAMAN",
+      "name": "Karaman"
+    },
+    {
+      "id": "KAYAPA",
+      "name": "Kayapa"
+    },
+    {
+      "id": "KIZILCIKLI",
+      "name": "Kızılcıklı"
+    },
+    {
+      "id": "KONAK",
+      "name": "Konak"
+    },
+    {
+      "id": "KONAKLI",
+      "name": "Konaklı"
+    },
+    {
+      "id": "KORUBASI",
+      "name": "Korubaşı"
+    },
+    {
+      "id": "KURTULUS",
+      "name": "Kurtuluş"
+    },
+    {
+      "id": "KURUCESME",
+      "name": "Kuruçeşme"
+    },
+    {
+      "id": "KULTUR",
+      "name": "Kültür"
+    },
+    {
+      "id": "MAKSEMPINARI",
+      "name": "Makşempınarı"
+    },
+    {
+      "id": "MINARELICAVUS",
+      "name": "Minareliçavuş"
+    },
+    {
+      "id": "ODUNLUK",
+      "name": "Odunluk"
+    },
+    {
+      "id": "OZLUCE",
+      "name": "Özlüce"
+    },
+    {
+      "id": "TAHTALI",
+      "name": "Tahtalı"
+    },
+    {
+      "id": "UNCUKURU",
+      "name": "Unçukuru"
+    },
+    {
+      "id": "UCEVLER",
+      "name": "Üçevler"
+    },
+    {
+      "id": "UCPINAR",
+      "name": "Üçpınar"
+    },
+    {
+      "id": "URUNLU",
+      "name": "Ürünlü"
+    },
+    {
+      "id": "YAYLACIK",
+      "name": "Yaylacık"
+    },
+    {
+      "id": "YOLCATI",
+      "name": "Yolçatı"
+    },
+    {
+      "id": "YUZUNCUYIL",
+      "name": "Yüzüncüyıl"
+    }
+  ]
+}

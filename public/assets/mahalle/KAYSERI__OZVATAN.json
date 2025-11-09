@@ -1,0 +1,58 @@
+{
+  "districtId": "KAYSERI__OZVATAN",
+  "districtName": "Özvatan",
+  "neighborhoods": [
+    {
+      "id": "ALPARSLAN",
+      "name": "Alparslan"
+    },
+    {
+      "id": "ASAGI_BOGAZICI",
+      "name": "Aşağı Boğaziçi"
+    },
+    {
+      "id": "BAHCELI_EVLER",
+      "name": "Bahçeli Evler"
+    },
+    {
+      "id": "CUMHURIYET",
+      "name": "Cumhuriyet"
+    },
+    {
+      "id": "GUNEY",
+      "name": "Güney"
+    },
+    {
+      "id": "KALE",
+      "name": "Kale"
+    },
+    {
+      "id": "KAVAKLI",
+      "name": "Kavaklı"
+    },
+    {
+      "id": "KERMELIK",
+      "name": "Kermelik"
+    },
+    {
+      "id": "KUPELI",
+      "name": "Küpeli"
+    },
+    {
+      "id": "TASLIK",
+      "name": "Taşlık"
+    },
+    {
+      "id": "TUGLASAH",
+      "name": "Tuğlaşah"
+    },
+    {
+      "id": "YENI",
+      "name": "Yeni"
+    },
+    {
+      "id": "YUKARI_BOGAZICI",
+      "name": "Yukarı Boğaziçi"
+    }
+  ]
+}

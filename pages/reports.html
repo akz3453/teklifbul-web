@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>Stok Raporları</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="/utils.css" />
+  <style>
+    body{font-family:system-ui, Arial; background:#f8fafc; color:#111827; margin:0}
+    .container{max-width:1100px;margin:0 auto;padding:20px}
+    h1{margin:0 0 8px 0}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin:12px 0}
+    .tabs{display:flex;gap:8px;margin-bottom:16px; flex-wrap:wrap}
+    .tab{flex:1;min-width:200px;padding:12px;border:1px solid #e5e7eb;background:#f9fafb;cursor:pointer;text-align:center;border-radius:6px}
+    .tab.active{background:#2563eb;color:#fff;border-color:#2563eb}
+    .hidden{display:none}
+    table{width:100%;border-collapse:collapse; margin-top:12px}
+    th,td{border-bottom:1px solid #e5e7eb;padding:8px;text-align:left;font-size:13px}
+    th{background:#f9fafb}
+    .badge{display:inline-block;border-radius:14px;padding:2px 8px;font-size:12px}
+    .b-warning{background:#fef3c7;color:#92400e}
+    .b-error{background:#fee2e2;color:#991b1b}
+    .muted{color:#6b7280;font-size:12px}
+    .btn{padding:10px 16px;border:0;border-radius:6px;cursor:pointer;font-weight:600}
+    .btn-primary{background:#2563eb;color:#fff}
+    .btn-secondary{background:#6b7280;color:#fff}
+    .stat-card{display:inline-block;padding:16px;margin:8px;background:#f0f9ff;border-radius:8px;min-width:150px}
+    .stat-value{font-size:24px;font-weight:bold;color:#0284c7}
+    .stat-label{font-size:12px;color:#075985}
+  </style>
+</head>
+<body>
+  <!-- Common Header -->
+  <header id="app-header"></header>
+
+  <div class="container">
+    <h1>Stok Raporları</h1>
+    <p class="muted">Stok takip raporları ve analizler.</p>
+
+    <div class="tabs">
+      <div class="tab active" data-tab="minstock">⚠️ Min Stok Altı</div>
+      <div class="tab" data-tab="costsale">💰 Maliyet Altı Satış</div>
+      <div class="tab" data-tab="location">🏢 Lokasyon Stok</div>
+      <div class="tab" data-tab="cost">💵 Gerçek Maliyet</div>
+    </div>
+
+    <div id="minstockPanel">
+      <div class="card">
+        <h2 style="margin:0 0 12px 0;font-size:18px">Minimum Stok Altında Ürünler</h2>
+        <div id="minstockStats"></div>
+        <table id="minstockTable">
+          <thead>
+            <tr>
+              <th>SKU</th><th>Ürün Adı</th><th>Marka</th><th>Birim</th><th>Mevcut</th><th>Minimum</th><th>Durum</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="costsalePanel" class="hidden">
+      <div class="card">
+        <h2 style="margin:0 0 12px 0;font-size:18px">Ortalama Maliyet Altında Satışlar</h2>
+        <div id="costsaleStats"></div>
+        <table id="costsaleTable">
+          <thead>
+            <tr>
+              <th>Tarih</th><th>SKU</th><th>Ürün</th><th>Miktar</th><th>Ortalama Maliyet</th><th>Satış Fiyatı</th><th>Fark</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="locationPanel" class="hidden">
+      <div class="card">
+        <h2 style="margin:0 0 12px 0;font-size:18px">Lokasyon (Şantiye/Depo) Stok Durumu</h2>
+        <div id="locationStats"></div>
+        <select id="locationFilter" style="margin-bottom:12px">
+          <option value="">Tüm Lokasyonlar</option>
+        </select>
+        <table id="locationTable">
+          <thead>
+            <tr>
+              <th>SKU</th><th>Ürün Adı</th><th>Lokasyon</th><th>Miktar</th><th>Birim</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="costPanel" class="hidden">
+      <div class="card">
+        <h2 style="margin:0 0 12px 0;font-size:18px">Gerçek Maliyet (Extras Dağıtılmış)</h2>
+        <div id="costStats"></div>
+        <table id="costTable">
+          <thead>
+            <tr>
+              <th>Tarih</th><th>SKU</th><th>Ürün</th><th>Tür</th><th>Miktar</th><th>Birim Maliyet</th><th>İlave</th><th>Toplam Maliyet</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase -->
+  <script type="module" src="/firebase.js"></script>
+  <!-- Header -->
+  <script type="module">
+    import { initGlobalHeader } from '../assets/js/ui/header.js';
+    initGlobalHeader({ mount: '#app-header', activeRoute: 'inventory' });
+  </script>
+  <!-- Main -->
+  <script type="module" src="/scripts/reports.js"></script>
+</body>
+</html>
+

@@ -1,0 +1,37 @@
+{
+  "header": {
+    "satfkCode": ["satfk", "satfk kodu", "talep kodu", "kod"],
+    "title": ["başlık", "talep başlığı", "konu", "talep konusu"],
+    "site": ["şantiye", "şantiye adı", "site", "proje"],
+    "purchaseCity": ["alım yeri", "alım yeri (il)", "purchase city", "şehir", "il"],
+    "priority": ["öncelik", "priority"],
+    "dueDate": ["termin tarihi", "termin", "due date", "teslim tarihi", "bitiş tarihi"],
+    "currency": ["para birimi", "currency", "pb", "döviz"],
+    "paymentTerms": ["ödeme şartları", "payment terms", "ödeme koşulları"],
+    "isSealedBid": ["gizli teklif", "gizli teklif (tek tur)", "sealed bid", "kapalı zarf"]
+  },
+  "line": {
+    "category": ["kategori", "category", "kalem kategorisi"],
+    "itemName": ["ürün adı", "malzeme", "item name", "ürün", "malzeme adı", "açıklama"],
+    "spec": ["spec", "özellikler", "teknik özellikler", "specification", "detay"],
+    "uom": ["birim", "unit", "uom", "unit of measure"],
+    "quantity": ["miktar", "quantity", "qty", "adet"],
+    "unitPrice": ["birim fiyat", "unit price", "birim fiyat (kdv hariç)", "net fiyat"],
+    "vatRate": ["kdv", "kdv oranı", "vat rate", "kdv %", "kdv oranı (%)"],
+    "deliveryDate": ["teslim tarihi", "delivery date", "termin", "sevk tarihi"],
+    "brand": ["marka", "brand", "marka/model"],
+    "notes": ["not", "açıklama", "notes", "ek bilgi"]
+  },
+  "priority": {
+    "price": ["fiyat", "price", "ucuz", "en düşük fiyat"],
+    "date": ["tarih", "date", "hız", "speed", "hızlı teslimat"],
+    "quality": ["kalite", "quality", "en iyi kalite"]
+  },
+  "currency": {
+    "TRY": ["try", "tl", "₺", "türk lirası", "turkish lira"],
+    "USD": ["usd", "$", "dolar", "dollar", "us dollar"],
+    "EUR": ["eur", "€", "euro", "avro"],
+    "GBP": ["gbp", "£", "sterlin", "pound", "british pound"]
+  }
+}
+

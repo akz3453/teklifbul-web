@@ -1,0 +1,282 @@
+{
+  "districtId": "KONYA__MERAM",
+  "districtName": "Meram",
+  "neighborhoods": [
+    {
+      "id": "BAYAT",
+      "name": "Bayat"
+    },
+    {
+      "id": "ÇAYIRBAĞI",
+      "name": "Çayırbağı"
+    },
+    {
+      "id": "KAYIHÜYÜK",
+      "name": "Kayıhüyük"
+    },
+    {
+      "id": "ÇUKURÇİMEN",
+      "name": "Çukurçimen"
+    },
+    {
+      "id": "EVLİYATEKKE",
+      "name": "Evliyatekke"
+    },
+    {
+      "id": "KİLİSTRA",
+      "name": "Kilistra"
+    },
+    {
+      "id": "BOTSA",
+      "name": "Botsa"
+    },
+    {
+      "id": "KARAAĞAÇ",
+      "name": "Karaağaç"
+    },
+    {
+      "id": "KAYADİBİ",
+      "name": "Kayadibi"
+    },
+    {
+      "id": "KUMRALI",
+      "name": "Kumralı"
+    },
+    {
+      "id": "SADIKLAR",
+      "name": "Sadıklar"
+    },
+    {
+      "id": "SARIKIZ",
+      "name": "Sarıkız"
+    },
+    {
+      "id": "YEŞİLDERE",
+      "name": "Yeşildere"
+    },
+    {
+      "id": "YEŞİLTEKKE",
+      "name": "Yeşiltekke"
+    },
+    {
+      "id": "ERENKAYA",
+      "name": "Erenkaya"
+    },
+    {
+      "id": "HASANŞEYH",
+      "name": "Hasanşeyh"
+    },
+    {
+      "id": "KAYALI",
+      "name": "Kayalı"
+    },
+    {
+      "id": "YATAĞAN",
+      "name": "Yatağan"
+    },
+    {
+      "id": "ÇOMAKLAR",
+      "name": "Çomaklar"
+    },
+    {
+      "id": "İKİPINAR",
+      "name": "İkipınar"
+    },
+    {
+      "id": "HATUNSARAY",
+      "name": "Hatunsaray"
+    },
+    {
+      "id": "KIZILÖREN",
+      "name": "Kızılören"
+    },
+    {
+      "id": "İNLİCE",
+      "name": "İnlice"
+    },
+    {
+      "id": "SAĞLIK",
+      "name": "Sağlık"
+    },
+    {
+      "id": "SEFAKÖY",
+      "name": "Sefaköy"
+    },
+    {
+      "id": "KAVAK",
+      "name": "Kavak"
+    },
+    {
+      "id": "ALAKOVA",
+      "name": "Alakova"
+    },
+    {
+      "id": "BORUKTOLU",
+      "name": "Boruktolu"
+    },
+    {
+      "id": "BOYALI",
+      "name": "Boyalı"
+    },
+    {
+      "id": "ÇOMAKLI",
+      "name": "Çomaklı"
+    },
+    {
+      "id": "KARADİĞİNDERESİ",
+      "name": "Karadiğinderesi"
+    },
+    {
+      "id": "PAMUKÇU",
+      "name": "Pamukçu"
+    },
+    {
+      "id": "YENİBAHÇE",
+      "name": "Yenibahçe"
+    },
+    {
+      "id": "ALAVARDI",
+      "name": "Alavardı"
+    },
+    {
+      "id": "ALPASLAN",
+      "name": "Alpaslan"
+    },
+    {
+      "id": "AŞKAN",
+      "name": "Aşkan"
+    },
+    {
+      "id": "AYANBEY",
+      "name": "Ayanbey"
+    },
+    {
+      "id": "DURUNDAY",
+      "name": "Durunday"
+    },
+    {
+      "id": "HARMANCIK",
+      "name": "Harmancık"
+    },
+    {
+      "id": "BAHÇEŞEHİR",
+      "name": "Bahçeşehir"
+    },
+    {
+      "id": "HATIP",
+      "name": "Hatıp"
+    },
+    {
+      "id": "HAVZAN",
+      "name": "Havzan"
+    },
+    {
+      "id": "KARAHÜYÜK",
+      "name": "Karahüyük"
+    },
+    {
+      "id": "KOZAĞAÇ",
+      "name": "Kozağaç"
+    },
+    {
+      "id": "KÖYÇEĞİZ",
+      "name": "Köyçeğiz"
+    },
+    {
+      "id": "LALEBAHCE",
+      "name": "Lalebahce"
+    },
+    {
+      "id": "MELİKŞAH",
+      "name": "Melikşah"
+    },
+    {
+      "id": "ATEŞBAZ_I_VELİ",
+      "name": "Ateşbaz-ı Veli"
+    },
+    {
+      "id": "OSMANGAZİ",
+      "name": "Osmangazi"
+    },
+    {
+      "id": "PİREBİ",
+      "name": "Pirebi"
+    },
+    {
+      "id": "UZUNHARMANLAR",
+      "name": "Uzunharmanlar"
+    },
+    {
+      "id": "YAKA",
+      "name": "Yaka"
+    },
+    {
+      "id": "YENİŞEHİR",
+      "name": "Yenişehir"
+    },
+    {
+      "id": "SAHİBATA",
+      "name": "Sahibata"
+    },
+    {
+      "id": "ALİ_ULVİ_KURUCU",
+      "name": "Ali Ulvi Kurucu"
+    },
+    {
+      "id": "ÇAYBAŞI",
+      "name": "Çaybaşı"
+    },
+    {
+      "id": "GÖDENE",
+      "name": "Gödene"
+    },
+    {
+      "id": "KONEVİ",
+      "name": "Konevi"
+    },
+    {
+      "id": "AYDOĞDU",
+      "name": "Aydoğdu"
+    },
+    {
+      "id": "ULUIRMAK",
+      "name": "Uluırmak"
+    },
+    {
+      "id": "AYMANAS",
+      "name": "Aymanas"
+    },
+    {
+      "id": "ULUĞBEY",
+      "name": "Uluğbey"
+    },
+    {
+      "id": "HADİMİ",
+      "name": "Hadimi"
+    },
+    {
+      "id": "DERE",
+      "name": "Dere"
+    },
+    {
+      "id": "KOVANAĞZI",
+      "name": "Kovanağzı"
+    },
+    {
+      "id": "YAYLAPINAR",
+      "name": "Yaylapınar"
+    },
+    {
+      "id": "KAŞINHANI",
+      "name": "Kaşınhanı"
+    },
+    {
+      "id": "ÇARIKLAR",
+      "name": "Çarıklar"
+    },
+    {
+      "id": "KARADİĞİN",
+      "name": "Karadiğin"
+    }
+  ]
+}

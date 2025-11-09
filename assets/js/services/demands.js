@@ -5,6 +5,8 @@
  */
 
 import { db } from '../../firebase.js';
+// Teklifbul Rule v1.0 - Structured Logging
+import { logger } from '../../../src/shared/log/logger.js';
 import {
   collection,
   query,
@@ -148,12 +150,12 @@ export async function publishDemand(demandId, userId) {
     isPublished: true,
     published: true, // For backward compatibility
     visibility: "public", // Default to public on publish
-    status: 'approved',
+    status: 'published',
     publishedAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
     updatedBy: userId,
     statusHistory: arrayUnion({
-      status: 'approved',
+      status: 'published',
       timestamp: Date.now(),
       userId: userId,
       note: 'Talep onaylandı ve yayınlandı'
@@ -186,7 +188,7 @@ export async function publishDemand(demandId, userId) {
             status: 'matched'
           });
         } catch (logError) {
-          console.warn("Could not log unmatched demand:", logError.message);
+          logger.warn("Could not log unmatched demand", logError.message);
         }
       }
     }

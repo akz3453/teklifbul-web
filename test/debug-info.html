@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Debug Information</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+    .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .info-box { background: #e3f2fd; padding: 15px; border-radius: 4px; margin: 10px 0; }
+    .error-box { background: #ffebee; padding: 15px; border-radius: 4px; margin: 10px 0; border-left: 4px solid #f44336; }
+    .success-box { background: #e8f5e9; padding: 15px; border-radius: 4px; margin: 10px 0; border-left: 4px solid #4caf50; }
+    button { background: #2196f3; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; }
+    button:hover { background: #1976d2; }
+    pre { background: #f1f1f1; padding: 10px; border-radius: 4px; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔧 Sistem Debug Bilgileri</h1>
+    <p>Bu sayfa sistemdeki potansiyel sorunları teşhis etmek için oluşturulmuştur.</p>
+    
+    <div class="info-box">
+      <h3>Auth Durumu</h3>
+      <div id="auth-status">Yükleniyor...</div>
+    </div>
+    
+    <div class="info-box">
+      <h3>Kullanıcı Bilgileri</h3>
+      <div id="user-info">Yükleniyor...</div>
+    </div>
+    
+    <div class="info-box">
+      <h3>Şirket Bilgileri</h3>
+      <div id="company-info">Yükleniyor...</div>
+    </div>
+    
+    <div class="info-box">
+      <h3>Tedarikçi Kategorileri</h3>
+      <div id="supplier-categories">Yükleniyor...</div>
+    </div>
+    
+    <div class="info-box">
+      <h3>Veritabanı Erişimi</h3>
+      <div id="db-access">Yükleniyor...</div>
+    </div>
+    
+    <button id="refresh-btn">Bilgileri Yenile</button>
+    
+    <div style="margin-top: 20px;">
+      <h3>Detaylı Loglar</h3>
+      <pre id="logs"></pre>
+    </div>
+  </div>
+
+  <script type="module">
+    import { auth, db } from './firebase.js';
+    import { 
+      doc, 
+      getDoc, 
+      collection, 
+      getDocs, 
+      query, 
+      where,
+      limit
+    } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+    
+    const logElement = document.getElementById('logs');
+    
+    function log(message) {
+      const timestamp = new Date().toLocaleTimeString();
+      logElement.textContent += `[${timestamp}] ${message}\n`;
+      logElement.scrollTop = logElement.scrollHeight;
+      console.log(message);
+    }
+    
+    async function checkAuthStatus() {
+      log("Auth durumu kontrol ediliyor...");
+      const authStatusEl = document.getElementById('auth-status');
+      
+      if (auth.currentUser) {
+        authStatusEl.innerHTML = `
+          <div class="success-box">
+            <strong>✅ Kullanıcı oturumu açık</strong><br>
+            UID: ${auth.currentUser.uid}<br>
+            Email: ${auth.currentUser.email || 'Yok'}
+          </div>
+        `;
+        log("Kullanıcı oturumu açık: " + auth.currentUser.uid);
+        return auth.currentUser;
+      } else {
+        authStatusEl.innerHTML = `
+          <div class="error-box">
+            <strong>❌ Kullanıcı oturumu kapalı</strong><br>
+            Giriş yapmanız gerekiyor.
+          </div>
+        `;
+        log("Kullanıcı oturumu kapalı");
+        return null;
+      }
+    }
+    
+    async function checkUserInfo(user) {
+      log("Kullanıcı bilgileri kontrol ediliyor...");
+      const userInfoEl = document.getElementById('user-info');
+      
+      if (!user) {
+        userInfoEl.innerHTML = '<div class="error-box">Kullanıcı bilgisi alınamadı</div>';
+        return;
+      }
+      
+      try {
+        // users collection'ından bilgileri al
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          userInfoEl.innerHTML = `
+            <div class="success-box">
+              <strong>Kullanıcı Profili:</strong><br>
+              Ad: ${userData.name || userData.displayName || 'Belirtilmemiş'}<br>
+              Email: ${userData.email || user.email || 'Belirtilmemiş'}<br>
+              Rol: ${userData.role || 'Belirtilmemiş'}<br>
+              Aktif: ${userData.isActive ? 'Evet' : 'Hayır'}<br>
+              Şirket ID: ${userData.companyId || 'Belirtilmemiş'}
+            </div>
+          `;
+          log("Kullanıcı profili yüklendi");
+          return userData;
+        } else {
+          userInfoEl.innerHTML = '<div class="error-box">Kullanıcı profili bulunamadı</div>';
+          log("Kullanıcı profili bulunamadı");
+          return null;
+        }
+      } catch (error) {
+        userInfoEl.innerHTML = `<div class="error-box">Hata: ${error.message}</div>`;
+        log("Kullanıcı bilgisi alınırken hata: " + error.message);
+        return null;
+      }
+    }
+    
+    async function checkCompanyInfo(user, userData) {
+      log("Şirket bilgileri kontrol ediliyor...");
+      const companyInfoEl = document.getElementById('company-info');
+      
+      if (!userData || !userData.companyId) {
+        companyInfoEl.innerHTML = '<div class="error-box">Şirket bilgisi bulunamadı. Ayarlar sayfasından şirket bilgilerinizi girin.</div>';
+        log("Şirket ID bulunamadı");
+        return;
+      }
+      
+      try {
+        const companyDoc = await getDoc(doc(db, 'companies', userData.companyId));
+        if (companyDoc.exists()) {
+          const companyData = companyDoc.data();
+          companyInfoEl.innerHTML = `
+            <div class="success-box">
+              <strong>Şirket Bilgileri:</strong><br>
+              ID: ${userData.companyId}<br>
+              Ad: ${companyData.name || 'Belirtilmemiş'}<br>
+              Vergi No: ${companyData.taxNumber || 'Belirtilmemiş'}<br>
+              İlçe: ${companyData.district || 'Belirtilmemiş'}<br>
+              İlçe Kodu: ${companyData.ilceKodu || 'Belirtilmemiş'}
+            </div>
+          `;
+          log("Şirket bilgileri yüklendi");
+        } else {
+          companyInfoEl.innerHTML = '<div class="error-box">Şirket kaydı bulunamadı</div>';
+          log("Şirket kaydı bulunamadı");
+        }
+      } catch (error) {
+        companyInfoEl.innerHTML = `<div class="error-box">Hata: ${error.message}</div>`;
+        log("Şirket bilgisi alınırken hata: " + error.message);
+      }
+    }
+    
+    async function checkSupplierCategories(user, userData) {
+      log("Tedarikçi kategorileri kontrol ediliyor...");
+      const categoriesEl = document.getElementById('supplier-categories');
+      
+      if (!userData) {
+        categoriesEl.innerHTML = '<div class="error-box">Kullanıcı bilgisi eksik</div>';
+        return;
+      }
+      
+      try {
+        // supplierCategoryKeys veya supplierCategories alanlarını kontrol et
+        const supplierCategoryKeys = Array.isArray(userData.supplierCategoryKeys) 
+          ? userData.supplierCategoryKeys 
+          : [];
+          
+        const supplierCategories = Array.isArray(userData.supplierCategories) 
+          ? userData.supplierCategories 
+          : [];
+        
+        if (supplierCategoryKeys.length > 0) {
+          categoriesEl.innerHTML = `
+            <div class="success-box">
+              <strong>Tedarikçi Kategorileri (supplierCategoryKeys):</strong><br>
+              ${supplierCategoryKeys.join(', ')}<br>
+              <small>Toplam: ${supplierCategoryKeys.length} kategori</small>
+            </div>
+          `;
+          log(`Tedarikçi kategorileri yüklendi (${supplierCategoryKeys.length} adet)`);
+        } else if (supplierCategories.length > 0) {
+          categoriesEl.innerHTML = `
+            <div class="success-box">
+              <strong>Tedarikçi Kategorileri (supplierCategories):</strong><br>
+              ${supplierCategories.join(', ')}<br>
+              <small>Toplam: ${supplierCategories.length} kategori</small>
+            </div>
+          `;
+          log(`Tedarikçi kategorileri yüklendi (${supplierCategories.length} adet)`);
+        } else {
+          categoriesEl.innerHTML = `
+            <div class="error-box">
+              <strong>Tedarikçi kategorisi seçilmemiş</strong><br>
+              Ayarlar sayfasından tedarikçi kategorilerinizi seçmelisiniz.
+            </div>
+          `;
+          log("Tedarikçi kategorisi bulunamadı");
+        }
+      } catch (error) {
+        categoriesEl.innerHTML = `<div class="error-box">Hata: ${error.message}</div>`;
+        log("Tedarikçi kategorileri alınırken hata: " + error.message);
+      }
+    }
+    
+    async function checkDatabaseAccess(user) {
+      log("Veritabanı erişimi kontrol ediliyor...");
+      const dbAccessEl = document.getElementById('db-access');
+      
+      if (!user) {
+        dbAccessEl.innerHTML = '<div class="error-box">Kullanıcı oturumu kapalı</div>';
+        return;
+      }
+      
+      try {
+        // Basit bir sorgu ile veritabanı erişimini test et - limit kaldırıldı, basit test yapılıyor
+        const testQuery = query(collection(db, 'demands'), limit(1));
+        const testSnapshot = await getDocs(testQuery);
+        
+        dbAccessEl.innerHTML = `
+          <div class="success-box">
+            <strong>✅ Veritabanı erişimi başarılı</strong><br>
+            Firestore bağlantısı çalışıyor.<br>
+            <small>Test sorgusu: ${testSnapshot.size} sonuç döndü</small>
+          </div>
+        `;
+        log("Veritabanı erişimi başarılı");
+      } catch (error) {
+        if (error.message.includes('Missing or insufficient permissions')) {
+          dbAccessEl.innerHTML = `
+            <div class="error-box">
+              <strong>❌ Yetki hatası</strong><br>
+              Firestore güvenlik kuralları nedeniyle erişim reddedildi.<br>
+              Hata: ${error.message}
+            </div>
+          `;
+          log("Veritabanı yetki hatası: " + error.message);
+        } else {
+          dbAccessEl.innerHTML = `
+            <div class="error-box">
+              <strong>❌ Veritabanı erişim hatası</strong><br>
+              Hata: ${error.message}
+            </div>
+          `;
+          log("Veritabanı erişim hatası: " + error.message);
+        }
+      }
+    }
+    
+    async function runDiagnostics() {
+      log("=== Sistem teşhisi başlatılıyor ===");
+      
+      try {
+        // Auth durumunu kontrol et
+        const user = await checkAuthStatus();
+        
+        // Kullanıcı bilgilerini al
+        const userData = await checkUserInfo(user);
+        
+        // Şirket bilgilerini kontrol et
+        await checkCompanyInfo(user, userData);
+        
+        // Tedarikçi kategorilerini kontrol et
+        await checkSupplierCategories(user, userData);
+        
+        // Veritabanı erişimini test et
+        await checkDatabaseAccess(user);
+        
+        log("=== Sistem teşhisi tamamlandı ===");
+      } catch (error) {
+        log("Teşhis sırasında hata oluştu: " + error.message);
+        console.error(error);
+      }
+    }
+    
+    // Sayfa yüklendiğinde teşhisi başlat
+    document.addEventListener('DOMContentLoaded', runDiagnostics);
+    
+    // Yenile butonu
+    document.getElementById('refresh-btn').addEventListener('click', runDiagnostics);
+  </script>
+</body>
+</html>

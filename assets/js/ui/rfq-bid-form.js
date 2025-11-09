@@ -1,5 +1,7 @@
 // RFQ Bid Form UI Component
 import { createRFQBid, updateRFQBid, validateBidData, calculateBidTotal } from '../services/rfq-bids.js';
+// Teklifbul Rule v1.0 - Structured Logging
+import { logger } from '../../../src/shared/log/logger.js';
 
 export class RFQBidForm {
   constructor(containerId, demandData, itemsData) {
@@ -150,6 +152,16 @@ export class RFQBidForm {
   renderItemRow(item, index) {
     const demandQty = item.quantity || item.qty || 1;
     const demandUnit = item.unit || item.uom || 'adet';
+    // All available units from demand-new.html unitList
+    const allUnits = [
+      'adet', 'paket', 'kutu', 'koli', 'set', 'çift', 'parça', 'takım', 'çarşaf', 'düzine', 'gros',
+      'kg', 'g', 'ton',
+      'metre', 'm', 'cm', 'mm',
+      'metrekare', 'm²', 'metrekup', 'm³',
+      'litre', 'lt', 'ml',
+      'rulo', 'sac', 'tabaka', 'sheet', 'kangal', 'varil', 'kova', 'bidon', 'kase', 'torba', 'palet', 'rol', 'top', 'yumak', 'diğer'
+    ];
+    
     return `
       <div class="matrix-row" data-item-index="${index}">
         <div class="col-item">
@@ -166,9 +178,10 @@ export class RFQBidForm {
         </div>
         <div class="col-unit">
           <select class="item-unit" data-item-index="${index}">
-            ${['adet','metre','kg','ton','m²','m³','litre','paket','kutu','set','takım','çift','düzine','gros','koli','palet','rol','top','yumak','diğer']
-              .map(u => `<option value="${u}" ${demandUnit===u?'selected':''}>${u}</option>`).join('')}
+            ${demandUnit && !allUnits.includes(demandUnit.toLowerCase()) ? `<option value="${demandUnit}" selected>${demandUnit.charAt(0).toUpperCase() + demandUnit.slice(1)} (Talep)</option>` : ''}
+            ${allUnits.map(u => `<option value="${u}" ${demandUnit && demandUnit.toLowerCase() === u.toLowerCase() ? 'selected' : ''}>${u.charAt(0).toUpperCase() + u.slice(1)}</option>`).join('')}
           </select>
+          ${demandUnit ? `<div style="font-size:11px;color:#059669;margin-top:2px;">Talep: ${demandUnit}</div>` : ''}
         </div>
         <div class="col-compliance">
           <select class="item-compliance" required>
@@ -434,7 +447,7 @@ export class RFQBidForm {
       return bidId;
       
     } catch (error) {
-      console.error('Error submitting bid:', error);
+      logger.error('Error submitting bid', error);
       alert('❌ Teklif gönderilirken hata oluştu: ' + error.message);
     }
   }

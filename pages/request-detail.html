@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>Talep Detayı</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="/utils.css" />
+  <style>
+    body{font-family:system-ui, Arial; background:#f8fafc; color:#111827; margin:0}
+    .container{max-width:1100px;margin:0 auto;padding:20px}
+    h1{margin:0 0 8px 0}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin:12px 0}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px; margin-top:8px}
+    label{font-size:12px;color:#374151;font-weight:600;display:block;margin-bottom:6px}
+    .info-row{margin:8px 0;font-size:14px}
+    .info-label{color:#6b7280;font-size:12px;font-weight:600}
+    table{width:100%;border-collapse:collapse; margin-top:12px}
+    th,td{border-bottom:1px solid #e5e7eb;padding:8px;text-align:left;font-size:13px}
+    th{background:#f9fafb}
+    .badge{display:inline-block;border-radius:14px;padding:2px 8px;font-size:12px}
+    .b-draft{background:#f3f4f6;color:#374151}
+    .b-sent{background:#dbeafe;color:#1e40af}
+    .b-approved{background:#dcfce7;color:#065f46}
+    .b-rejected{background:#fee2e2;color:#991b1b}
+    .muted{color:#6b7280;font-size:12px}
+    .btn{padding:10px 16px;border:0;border-radius:6px;cursor:pointer;font-weight:600}
+    .btn-primary{background:#2563eb;color:#fff}
+    .btn-secondary{background:#6b7280;color:#fff}
+    .btn-danger{background:#dc2626;color:#fff}
+    .btn[disabled]{opacity:.5;cursor:not-allowed}
+  </style>
+</head>
+<body>
+  <!-- Common Header -->
+  <header id="app-header"></header>
+
+  <div class="container">
+    <h1>Talep Detayı</h1>
+
+    <div class="card">
+      <h2 style="margin:0 0 12px 0;font-size:18px">Talep Bilgileri</h2>
+      <div class="info-row">
+        <span class="info-label">Başlık:</span> <span id="reqTitle">-</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Tip:</span> <span id="reqType">-</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Talep Eden:</span> <span id="reqRequester">-</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Lokasyon:</span> <span id="reqLocation">-</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Durum:</span> <span id="reqStatus">-</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Oluşturulma:</span> <span id="reqCreated">-</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Teslimat:</span> <span id="reqDelivery">-</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Nakliye Dahil:</span> <span id="reqFreight">-</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin:0 0 12px 0;font-size:18px">Malzeme Satırları</h2>
+      <table id="linesTable">
+        <thead>
+          <tr>
+            <th>No</th><th>SKU</th><th>Ürün</th><th>Marka/Model</th><th>Miktar</th><th>Birim</th><th>Teslim Tarihi</th><th>Durum</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div id="actionsCard" class="card" style="display:none">
+      <h2 style="margin:0 0 12px 0;font-size:18px">İşlemler</h2>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary" id="btnToPurchasing">Satın Almaya Gönder</button>
+        <button class="btn btn-secondary" id="btnApprove">Onayla</button>
+        <button class="btn btn-danger" id="btnReject">Reddet</button>
+      </div>
+    </div>
+
+    <div style="display:flex; gap:8px; justify-content:flex-end">
+      <button class="btn btn-secondary" id="btnBack" onclick="history.back()">Geri</button>
+    </div>
+  </div>
+
+  <!-- Firebase -->
+  <script type="module" src="/firebase.js"></script>
+  <!-- Header -->
+  <script type="module">
+    import { initGlobalHeader } from '../assets/js/ui/header.js';
+    initGlobalHeader({ mount: '#app-header', activeRoute: 'inventory' });
+  </script>
+  <!-- Main -->
+  <script type="module" src="/scripts/request-detail.js"></script>
+</body>
+</html>
+

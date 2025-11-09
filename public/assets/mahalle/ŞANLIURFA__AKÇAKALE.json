@@ -1,0 +1,506 @@
+{
+  "districtId": "ŞANLIURFA__AKÇAKALE",
+  "districtName": "Akçakale",
+  "neighborhoods": [
+    {
+      "id": "YENİŞEHİR",
+      "name": "Yenişehir"
+    },
+    {
+      "id": "TURGUT_ÖZAL",
+      "name": "Turgut Özal"
+    },
+    {
+      "id": "SÜLEYMANŞAH",
+      "name": "Süleymanşah"
+    },
+    {
+      "id": "SEYRANTEPE",
+      "name": "Seyrantepe"
+    },
+    {
+      "id": "AYDINLI",
+      "name": "Aydınlı"
+    },
+    {
+      "id": "OSMANLI",
+      "name": "Osmanlı"
+    },
+    {
+      "id": "ERTUĞRUL_GAZİ",
+      "name": "Ertuğrul Gazi"
+    },
+    {
+      "id": "CUDİ_DERESİ",
+      "name": "Cudi Deresi"
+    },
+    {
+      "id": "YEŞİLTEPE",
+      "name": "Yeşiltepe"
+    },
+    {
+      "id": "YİĞİTLER",
+      "name": "Yiğitler"
+    },
+    {
+      "id": "TEPECİK",
+      "name": "Tepecik"
+    },
+    {
+      "id": "MAVİTAŞ",
+      "name": "Mavitaş"
+    },
+    {
+      "id": "ÇUKURCA",
+      "name": "Çukurca"
+    },
+    {
+      "id": "YUKARI_ÇUKURCA",
+      "name": "Yukarı Çukurca"
+    },
+    {
+      "id": "OKAYLAR",
+      "name": "Okaylar"
+    },
+    {
+      "id": "KELEBEK",
+      "name": "Kelebek"
+    },
+    {
+      "id": "ŞEFKAT",
+      "name": "Şefkat"
+    },
+    {
+      "id": "MENZİL",
+      "name": "Menzil"
+    },
+    {
+      "id": "ŞAHİNSOYLU",
+      "name": "Şahinsoylu"
+    },
+    {
+      "id": "FİŞENGE",
+      "name": "Fişenge"
+    },
+    {
+      "id": "ORTADEREN",
+      "name": "Ortaderen"
+    },
+    {
+      "id": "KÜÇÜK_HACIEKBER",
+      "name": "Küçük Hacıekber"
+    },
+    {
+      "id": "ADNAN_MENDERES",
+      "name": "Adnan Menderes"
+    },
+    {
+      "id": "ŞAHİNLER",
+      "name": "Şahinler"
+    },
+    {
+      "id": "ZEYTİNDALI",
+      "name": "Zeytindalı"
+    },
+    {
+      "id": "ÇOKALAN",
+      "name": "Çokalan"
+    },
+    {
+      "id": "ÇÖMLEKÇİ",
+      "name": "Çömlekçi"
+    },
+    {
+      "id": "ASLANLI",
+      "name": "Aslanlı"
+    },
+    {
+      "id": "KAYACA",
+      "name": "Kayaca"
+    },
+    {
+      "id": "ACIKUYU",
+      "name": "Acıkuyu"
+    },
+    {
+      "id": "AKBİLEK",
+      "name": "Akbilek"
+    },
+    {
+      "id": "AKÇALI",
+      "name": "Akçalı"
+    },
+    {
+      "id": "AKÇAKÖY",
+      "name": "Akçaköy"
+    },
+    {
+      "id": "AKDİKEN",
+      "name": "Akdiken"
+    },
+    {
+      "id": "AKSAHRINÇ",
+      "name": "Aksahrınç"
+    },
+    {
+      "id": "ALATLAR",
+      "name": "Alatlar"
+    },
+    {
+      "id": "ALINCAK",
+      "name": "Alıncak"
+    },
+    {
+      "id": "ARICAN",
+      "name": "Arıcan"
+    },
+    {
+      "id": "AYYILDIZ",
+      "name": "Ayyıldız"
+    },
+    {
+      "id": "BİLECE",
+      "name": "Bilece"
+    },
+    {
+      "id": "BOLATLAR",
+      "name": "Bolatlar"
+    },
+    {
+      "id": "BÜYÜKTAŞ",
+      "name": "Büyüktaş"
+    },
+    {
+      "id": "BÜYÜKTOKAÇ",
+      "name": "Büyüktokaç"
+    },
+    {
+      "id": "CEVHER",
+      "name": "Cevher"
+    },
+    {
+      "id": "DÜZCE",
+      "name": "Düzce"
+    },
+    {
+      "id": "EKİNYAZI",
+      "name": "Ekinyazı"
+    },
+    {
+      "id": "GÜLVEREN",
+      "name": "Gülveren"
+    },
+    {
+      "id": "GÜNDAŞ",
+      "name": "Gündaş"
+    },
+    {
+      "id": "GÜNEREN",
+      "name": "Güneren"
+    },
+    {
+      "id": "GÜVENÇ",
+      "name": "Güvenç"
+    },
+    {
+      "id": "İKİZCE",
+      "name": "İkizce"
+    },
+    {
+      "id": "KEÇİLİ",
+      "name": "Keçili"
+    },
+    {
+      "id": "KEPEZLİ",
+      "name": "Kepezli"
+    },
+    {
+      "id": "KILIÇLI",
+      "name": "Kılıçlı"
+    },
+    {
+      "id": "NARLIOVA",
+      "name": "Narlıova"
+    },
+    {
+      "id": "OHALİ",
+      "name": "Ohali"
+    },
+    {
+      "id": "ONORTAK",
+      "name": "Onortak"
+    },
+    {
+      "id": "ÖNCÜL",
+      "name": "Öncül"
+    },
+    {
+      "id": "SAKÇA",
+      "name": "Sakça"
+    },
+    {
+      "id": "SALİHLER",
+      "name": "Salihler"
+    },
+    {
+      "id": "SEVİMLİ",
+      "name": "Sevimli"
+    },
+    {
+      "id": "TATLICA",
+      "name": "Tatlıca"
+    },
+    {
+      "id": "TOPÇU",
+      "name": "Topçu"
+    },
+    {
+      "id": "UĞURHAN",
+      "name": "Uğurhan"
+    },
+    {
+      "id": "VİZE",
+      "name": "Vize"
+    },
+    {
+      "id": "YAZLICA",
+      "name": "Yazlıca"
+    },
+    {
+      "id": "YEŞERTİ",
+      "name": "Yeşerti"
+    },
+    {
+      "id": "YUKARIDEREN",
+      "name": "Yukarıderen"
+    },
+    {
+      "id": "ZENGİNOVA",
+      "name": "Zenginova"
+    },
+    {
+      "id": "ZORLU",
+      "name": "Zorlu"
+    },
+    {
+      "id": "AKKEÇİ",
+      "name": "Akkeçi"
+    },
+    {
+      "id": "AŞAĞI_BEĞDEŞ",
+      "name": "Aşağı Beğdeş"
+    },
+    {
+      "id": "AŞAĞI_ÇİNPOLAT",
+      "name": "Aşağı Çinpolat"
+    },
+    {
+      "id": "AYRANLI",
+      "name": "Ayranlı"
+    },
+    {
+      "id": "BAYKUŞ",
+      "name": "Baykuş"
+    },
+    {
+      "id": "BOYBEYİ",
+      "name": "Boybeyi"
+    },
+    {
+      "id": "BÜYÜK_NANELİ",
+      "name": "Büyük Naneli"
+    },
+    {
+      "id": "ÇAKIRLAR",
+      "name": "Çakırlar"
+    },
+    {
+      "id": "DENİZ",
+      "name": "Deniz"
+    },
+    {
+      "id": "DİBEK",
+      "name": "Dibek"
+    },
+    {
+      "id": "DONANDI",
+      "name": "Donandı"
+    },
+    {
+      "id": "DORUMALİ",
+      "name": "Dorumali"
+    },
+    {
+      "id": "EDEBEY",
+      "name": "Edebey"
+    },
+    {
+      "id": "EKE",
+      "name": "Eke"
+    },
+    {
+      "id": "ERDEMLER",
+      "name": "Erdemler"
+    },
+    {
+      "id": "GEÇİTTEPE",
+      "name": "Geçittepe"
+    },
+    {
+      "id": "HACIEKBER",
+      "name": "Hacıekber"
+    },
+    {
+      "id": "NUSRETİYE",
+      "name": "Nusretiye"
+    },
+    {
+      "id": "İNCEDERE",
+      "name": "İncedere"
+    },
+    {
+      "id": "KARATEPE",
+      "name": "Karatepe"
+    },
+    {
+      "id": "KORUKLU",
+      "name": "Koruklu"
+    },
+    {
+      "id": "KÖSEÖREN",
+      "name": "Köseören"
+    },
+    {
+      "id": "KURUDERE",
+      "name": "Kurudere"
+    },
+    {
+      "id": "MERMER",
+      "name": "Mermer"
+    },
+    {
+      "id": "MİLKÖY",
+      "name": "Milköy"
+    },
+    {
+      "id": "NİMET",
+      "name": "Nimet"
+    },
+    {
+      "id": "ORTAÖREN",
+      "name": "Ortaören"
+    },
+    {
+      "id": "SINIRGÖREN",
+      "name": "Sınırgören"
+    },
+    {
+      "id": "UĞRAKLI",
+      "name": "Uğraklı"
+    },
+    {
+      "id": "UĞURTAŞ",
+      "name": "Uğurtaş"
+    },
+    {
+      "id": "YAĞMURALAN",
+      "name": "Yağmuralan"
+    },
+    {
+      "id": "PEKMEZLİ",
+      "name": "Pekmezli"
+    },
+    {
+      "id": "GÖLBAŞI",
+      "name": "Gölbaşı"
+    },
+    {
+      "id": "AŞAĞIDEREN",
+      "name": "Aşağıderen"
+    },
+    {
+      "id": "ERECEK",
+      "name": "Erecek"
+    },
+    {
+      "id": "TUZLUCA",
+      "name": "Tuzluca"
+    },
+    {
+      "id": "YALINLI",
+      "name": "Yalınlı"
+    },
+    {
+      "id": "KAYALIK",
+      "name": "Kayalık"
+    },
+    {
+      "id": "KIRMITLI",
+      "name": "Kırmıtlı"
+    },
+    {
+      "id": "BUKET",
+      "name": "Buket"
+    },
+    {
+      "id": "BULUTLU",
+      "name": "Bulutlu"
+    },
+    {
+      "id": "ŞEHİTNUSRETBEY",
+      "name": "Şehitnusretbey"
+    },
+    {
+      "id": "ŞANLI",
+      "name": "Şanlı"
+    },
+    {
+      "id": "ATATÜRK",
+      "name": "Atatürk"
+    },
+    {
+      "id": "YENİ",
+      "name": "Yeni"
+    },
+    {
+      "id": "BÜYÜCEK",
+      "name": "Büyücek"
+    },
+    {
+      "id": "CEYLANLI",
+      "name": "Ceylanlı"
+    },
+    {
+      "id": "FATİH_SULTAN_MEHMET",
+      "name": "Fatih Sultan Mehmet"
+    },
+    {
+      "id": "FEVZİ_ÇAKMAK",
+      "name": "Fevzi Çakmak"
+    },
+    {
+      "id": "HÜRRİYET",
+      "name": "Hürriyet"
+    },
+    {
+      "id": "TAŞKINLAR",
+      "name": "Taşkınlar"
+    },
+    {
+      "id": "YEDİYOL",
+      "name": "Yediyol"
+    },
+    {
+      "id": "YUKARI_BEĞDEŞ",
+      "name": "Yukarı Beğdeş"
+    },
+    {
+      "id": "YUKARI_ÇİNPOLAT",
+      "name": "Yukarı Çinpolat"
+    },
+    {
+      "id": "YUSUFBEY",
+      "name": "Yusufbey"
+    }
+  ]
+}

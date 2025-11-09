@@ -128,6 +128,7 @@
               <th>Termin</th>
               <th>Marka</th>
               <th>Ödeme</th>
+              <th>Durum</th>
               <th>Tip</th>
               <th>Tarih</th>
               <th></th>
@@ -144,6 +145,8 @@
   <script type="module">
     import { initGlobalHeader } from './assets/js/ui/header.js';
     import { auth, db } from './firebase.js';
+    // Teklifbul Rule v1.0 - Structured Logging
+    import { logger } from './src/shared/log/logger.js';
     
     // Initialize global header
     initGlobalHeader({ mount: '#app-header', activeRoute: 'bids' });
@@ -217,7 +220,8 @@
       tbody.innerHTML = '';
       const filtered = rows.filter(matchesFilters);
       if (filtered.length === 0){
-        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:30px;color:#6b7280;">Henüz teklif yok.</td></tr>';
+        const colCount = CURRENT_TAB === 'outgoing' ? 10 : 9; // outgoing has status column
+        tbody.innerHTML = `<tr><td colspan="${colCount}" style="text-align:center;padding:30px;color:#6b7280;">Henüz teklif yok.</td></tr>`;
         $(emptySel).classList.add('hidden'); // Hide the separate empty div
         $('#stat-total').textContent = '0';
         $('#stat-avg').textContent = '—';
@@ -249,13 +253,30 @@
       // Derive termin (earliest delivery date among items)
       const dates = items.map(i=>i.deliveryDate).filter(Boolean).sort();
       const termin = dates.length ? dates[0] : (r.leadTimeDays ?? '—');
+        // Alıcı Firma: Outgoing bids için buyerCompanyName kullan (supplierName değil)
+        const buyerCompany = (CURRENT_TAB === 'outgoing') 
+          ? (r.buyerCompanyName || '—') 
+          : (r.supplierName || r.buyerCompanyName || '—');
+        // Status helper
+        const getStatusLabel = (status) => {
+          const s = (status || 'sent').toLowerCase();
+          if (s === 'sent') return 'Gönderildi';
+          if (s === 'responded') return 'Yanıtlandı';
+          if (s === 'accepted') return 'Kabul';
+          if (s === 'rejected') return 'Red';
+          if (s === 'completed') return 'Tamamlandı';
+          if (s === 'pending') return 'Beklemede';
+          return status || 'Gönderildi';
+        };
+        
         tr.innerHTML = `
           <td>${r.demandTitle || r.demandId}</td>
-          <td>${r.supplierName || r.buyerCompanyName || '—'}</td>
-        <td>${priceDisplay}</td>
-        <td>${termin}</td>
+          <td>${buyerCompany}</td>
+          <td>${priceDisplay}</td>
+          <td>${termin}</td>
           <td>${r.brand || '—'}</td>
-          <td>${r.paymentTerms || '—'}</td>
+          <td>${r.paymentTerms || r.paymentMethod || '—'}</td>
+          <td>${getStatusLabel(r.status)}</td>
           <td>${badge(r.biddingMode)}</td>
           <td>${fmtDate(r.createdAt)}</td>
           <td><button class="btn-link" data-id="${r.id}" data-demand="${r.demandId}">Görüntüle →</button></td>
@@ -279,11 +300,47 @@
       $('#stat-status').textContent = 'Hazır';
     }
 
+    // Cache for supplier names to avoid repeated queries
+    const SUPPLIER_NAME_CACHE = new Map();
+    
     async function joinSupplierName(uid){
+      if (SUPPLIER_NAME_CACHE.has(uid)) {
+        return SUPPLIER_NAME_CACHE.get(uid);
+      }
       try{
         const u = await getDoc(doc(db,'users', uid));
-        return u.exists() ? (u.data().companyName || 'Bilinmeyen Firma') : 'Bilinmeyen Firma';
-      } catch { return 'Bilinmeyen Firma'; }
+        const name = u.exists() ? (u.data().companyName || 'Bilinmeyen Firma') : 'Bilinmeyen Firma';
+        SUPPLIER_NAME_CACHE.set(uid, name);
+        return name;
+      } catch { 
+        SUPPLIER_NAME_CACHE.set(uid, 'Bilinmeyen Firma');
+        return 'Bilinmeyen Firma'; 
+      }
+    }
+    
+    // Batch load supplier names (optimize multiple lookups)
+    async function batchLoadSupplierNames(uids) {
+      const uncached = Array.from(new Set(uids.filter(uid => !SUPPLIER_NAME_CACHE.has(uid))));
+      if (uncached.length === 0) return;
+      
+      // Batch getDocs for users (10 at a time due to Firestore limit)
+      const batches = [];
+      for (let i = 0; i < uncached.length; i += 10) {
+        const batch = uncached.slice(i, i + 10);
+        batches.push(Promise.all(batch.map(async (uid) => {
+          try {
+            const u = await getDoc(doc(db, 'users', uid));
+            const name = u.exists() ? (u.data().companyName || 'Bilinmeyen Firma') : 'Bilinmeyen Firma';
+            SUPPLIER_NAME_CACHE.set(uid, name);
+            return { uid, name };
+          } catch {
+            const name = 'Bilinmeyen Firma';
+            SUPPLIER_NAME_CACHE.set(uid, name);
+            return { uid, name };
+          }
+        })));
+      }
+      await Promise.all(batches);
     }
     async function joinDemand(demandId){
       if (CACHE_DEMANDS.has(demandId)) return CACHE_DEMANDS.get(demandId);
@@ -300,37 +357,74 @@
 
     async function loadIncoming(user){
       try {
-        // Supplier perspective: bids where this user is supplier? 
-        // Spec asked incoming = to me; for buyer dashboard incoming means bids to my demands.
-        // We'll implement "incoming" as bids to user's demands (buyer view).
-        // 1) get user's demands
+        // OPTIMIZED: Single query for all bids to user's demands using batch whereIn
         const ds = await getDocs(query(collection(db,'demands'), where('createdBy','==', user.uid)));
-        const demandIds = ds.docs.map(d=>d.id);
+        const demandDocs = ds.docs;
+        const demandIds = demandDocs.map(d=>d.id);
+        
+        // Cache demands immediately
+        demandDocs.forEach(d => {
+          const data = {id:d.id, ...d.data()};
+          CACHE_DEMANDS.set(d.id, data);
+        });
+        
         if (demandIds.length === 0) return [];
-        // fetch bids for each demandId (could be optimized with where in batches of 10 if field supported)
-        const all = [];
-        for (const d of ds.docs){
-          const q = query(collection(db,'bids'), where('demandId','==', d.id), orderBy('createdAt','desc'), limit(50));
-          const snap = await getDocs(q);
-          for (const b of snap.docs){
-            const data = { id:b.id, ...b.data() };
-            const dem = await joinDemand(data.demandId);
-            data.demandTitle = dem.title;
-            data.biddingMode = dem.biddingMode || 'secret';
-            data.supplierName = await joinSupplierName(data.supplierId);
-            all.push(data);
+        
+        // OPTIMIZED: Fetch all bids in batches (whereIn supports max 10 items)
+        const allBids = [];
+        for (let i = 0; i < demandIds.length; i += 10) {
+          const batchIds = demandIds.slice(i, i + 10);
+          // Note: whereIn + orderBy requires composite index, if fails use single queries
+          try {
+            const q = query(
+              collection(db,'bids'), 
+              where('demandId','in', batchIds),
+              orderBy('createdAt','desc'),
+              limit(100)
+            );
+            const snap = await getDocs(q);
+            snap.docs.forEach(b => allBids.push({ id:b.id, ...b.data() }));
+          } catch (e) {
+            // Fallback: if whereIn+orderBy fails, query individually (slower but works)
+            logger.warn('whereIn+orderBy query failed, using fallback', e);
+            for (const demandId of batchIds) {
+              const q = query(
+                collection(db,'bids'), 
+                where('demandId','==', demandId),
+                orderBy('createdAt','desc'),
+                limit(50)
+              );
+              const snap = await getDocs(q);
+              snap.docs.forEach(b => allBids.push({ id:b.id, ...b.data() }));
+            }
           }
         }
-        return all.sort((a,b)=> (b.createdAt?.toMillis?.()||0) - (a.createdAt?.toMillis?.()||0));
+        
+        // Batch load all supplier names at once
+        const supplierIds = Array.from(new Set(allBids.map(b => b.supplierId).filter(Boolean)));
+        await batchLoadSupplierNames(supplierIds);
+        
+        // Map data with cached values (no more individual queries)
+        const result = allBids.map(b => {
+          const data = b;
+          const dem = CACHE_DEMANDS.get(data.demandId) || {id:data.demandId, title:data.demandId};
+          data.demandTitle = dem.title;
+          data.biddingMode = dem.biddingMode || 'secret';
+          data.supplierName = SUPPLIER_NAME_CACHE.get(data.supplierId) || 'Bilinmeyen Firma';
+          return data;
+        });
+        
+        return result.sort((a,b)=> (b.createdAt?.toMillis?.()||0) - (a.createdAt?.toMillis?.()||0));
       } catch (err) {
-        console.error('❌ loadIncoming error:', err);
-        handleError(err, { context: 'Gelen teklifler yüklenemedi', showToast: true });
+        logger.error('loadIncoming error', err);
+  handleError(err, { context: MESSAGES.ERROR_LOADING_INCOMING_BIDS, showToast: true });
         return [];
       }
     }
 
     async function loadOutgoing(user){
       try {
+        logger.info('Gönderdiğim teklifler yükleniyor', { uid: user.uid });
         // Bids I sent (as supplier)
         const q = query(
           collection(db,'bids'),
@@ -339,23 +433,67 @@
           limit(100)
         );
         const snap = await getDocs(q);
-        const rows = [];
-        for (const b of snap.docs){
-          const data = { id:b.id, ...b.data() };
-          const dem = await joinDemand(data.demandId);
+        logger.info(`${snap.docs.length} teklif bulundu`);
+        
+        // OPTIMIZED: Collect all demand IDs and load in batch
+        const bidData = snap.docs.map(b => ({ id:b.id, ...b.data() }));
+        const demandIds = Array.from(new Set(bidData.map(b => b.demandId).filter(Boolean)));
+        
+        // OPTIMIZED: Batch load demands using whereIn when possible (reduce N queries to 1-2)
+        const uncachedDemandIds = demandIds.filter(id => !CACHE_DEMANDS.has(id));
+        if (uncachedDemandIds.length > 0) {
+          // Firestore whereIn supports max 10 items, so batch them
+          for (let i = 0; i < uncachedDemandIds.length; i += 10) {
+            const batchIds = uncachedDemandIds.slice(i, i + 10);
+            try {
+              // Try batch query first (if we have a collection query)
+              // Since we need individual docs by ID, we'll use Promise.all but it's still parallel
+              await Promise.all(batchIds.map(async demandId => {
+                try {
+                  const d = await getDoc(doc(db,'demands', demandId));
+                  const data = d.exists() ? {id:d.id, ...d.data()} : {id:demandId, title:demandId};
+                  CACHE_DEMANDS.set(demandId, data);
+                  return data;
+                } catch {
+                  const data = {id:demandId, title:demandId};
+                  CACHE_DEMANDS.set(demandId, data);
+                  return data;
+                }
+              }));
+            } catch (e) {
+              logger.warn('Batch demand load error', e);
+            }
+          }
+        }
+        
+        // OPTIMIZED: Batch load buyer company names
+        const buyerIds = Array.from(new Set(bidData.map(b => {
+          const dem = CACHE_DEMANDS.get(b.demandId);
+          return dem?.createdBy;
+        }).filter(Boolean)));
+        await batchLoadSupplierNames(buyerIds); // Reuse same function for buyer names
+        
+        // Map with cached values (no more individual queries)
+        const rows = bidData.map(data => {
+          const dem = CACHE_DEMANDS.get(data.demandId) || {id:data.demandId, title:data.demandId};
           data.demandTitle = dem.title;
           data.biddingMode = dem.biddingMode || 'secret';
-          // load buyer company name
-          try {
-            const owner = await getDoc(doc(db,'users', dem.createdBy));
-            data.buyerCompanyName = owner.exists() ? (owner.data().companyName || '—') : '—';
-          } catch { data.buyerCompanyName = '—'; }
-          rows.push(data);
-        }
+          // Get buyer company name from cache
+          data.buyerCompanyName = SUPPLIER_NAME_CACHE.get(dem.createdBy) || '—';
+          return data;
+        });
+        logger.info(`${rows.length} teklif işlendi`);
         return rows;
       } catch (err) {
-        console.error('❌ loadOutgoing error:', err);
-        handleError(err, { context: 'Gönderilen teklifler yüklenemedi', showToast: true });
+        logger.error('loadOutgoing error', err);
+        // Check if it's an index error
+        if (err.code === 'failed-precondition' || err.message?.includes('index')) {
+          const errorMsg = 'Firestore index eksik. Konsoldaki "Create index" linkine tıklayıp index oluşturun, ardından sayfayı yenileyin.';
+          logger.error('Index hatası', errorMsg);
+          handleError(err, { context: errorMsg, showToast: true });
+        } else {
+          handleError(err, { context: MESSAGES.ERROR_LOADING_OUTGOING_BIDS, showToast: true });
+        }
         return [];
       }
     }
@@ -374,8 +512,8 @@
           renderTable(LAST_DATA, '#tbl-outgoing', '#outgoing-empty');
         }
       } catch (err) {
-        console.error('❌ loadData error:', err);
-        handleError(err, { context: 'Teklifler yüklenemedi', showToast: true });
+        logger.error('loadData error', err);
+  handleError(err, { context: MESSAGES.ERROR_LOADING_BIDS, showToast: true });
       }
     }
 
@@ -399,10 +537,10 @@
       const { tabName } = e.detail;
       if (tabName === 'Gelen Teklifler') {
         CURRENT_TAB = 'incoming';
-        renderTable(LAST_DATA, '#tbl-incoming', '#incoming-empty');
+        loadData(); // Reload data when tab changes
       } else if (tabName === 'Gönderdiğim Teklifler') {
         CURRENT_TAB = 'outgoing';
-        renderTable(LAST_DATA, '#tbl-outgoing', '#outgoing-empty');
+        loadData(); // Reload data when tab changes
       }
     });
 
@@ -415,7 +553,7 @@
       // restore tab from URL
       const p = new URLSearchParams(location.search);
       showTab(p.get('tab') || 'incoming');
-      // tab clicks
+      // tab clicks - showTab already calls loadData(), so we don't need to call it again
       document.getElementById('tab-incoming').addEventListener('click', ()=>{ history.pushState({},'', '?tab=incoming'); showTab('incoming'); });
       document.getElementById('tab-outgoing').addEventListener('click', ()=>{ history.pushState({},'', '?tab=outgoing'); showTab('outgoing'); });
       window.addEventListener('popstate', ()=>{
@@ -427,7 +565,7 @@
     // Listen for company changes
     window.addEventListener('company:changed', async (e) => {
       const { companyId } = e.detail;
-      console.log('🏢 Company changed, reloading bids for:', companyId);
+      logger.info('Company changed, reloading bids', { companyId });
       
       // Re-run data loading
       await loadData();
@@ -435,7 +573,7 @@
   </script>
 
   <!-- Theme Script -->
-  <script src="/assets/js/theme.js" defer></script>
+  <script type="module" src="/assets/js/theme.js" defer></script>
 
 </body>
 </html>

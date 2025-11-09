@@ -1,0 +1,334 @@
+{
+  "districtId": "MARDIN__NUSAYBIN",
+  "districtName": "Nusaybin",
+  "neighborhoods": [
+    {
+      "id": "8_MART",
+      "name": "8 Mart"
+    },
+    {
+      "id": "ABDULKADIRPASA",
+      "name": "Abdulkadirpaşa"
+    },
+    {
+      "id": "ACIKKOY",
+      "name": "Açıkköy"
+    },
+    {
+      "id": "ACIKYOL",
+      "name": "Açıkyol"
+    },
+    {
+      "id": "AKAGIL",
+      "name": "Akağıl"
+    },
+    {
+      "id": "AKARSU",
+      "name": "Akarsu"
+    },
+    {
+      "id": "AKCATARLA",
+      "name": "Akçatarla"
+    },
+    {
+      "id": "BAHCEBASI",
+      "name": "Bahçebaşı"
+    },
+    {
+      "id": "BAKACIK",
+      "name": "Bakacık"
+    },
+    {
+      "id": "BALABAN",
+      "name": "Balaban"
+    },
+    {
+      "id": "BARIS",
+      "name": "Barış"
+    },
+    {
+      "id": "BEYLIK",
+      "name": "Beylik"
+    },
+    {
+      "id": "BUYUKKARDES",
+      "name": "Büyükkardeş"
+    },
+    {
+      "id": "CAGLAR",
+      "name": "Çağlar"
+    },
+    {
+      "id": "CALI",
+      "name": "Çalı"
+    },
+    {
+      "id": "CATALOZU",
+      "name": "Çatalözü"
+    },
+    {
+      "id": "CIGDEM",
+      "name": "Çiğdem"
+    },
+    {
+      "id": "CILESIZ",
+      "name": "Çilesiz"
+    },
+    {
+      "id": "COLOVA",
+      "name": "Çölova"
+    },
+    {
+      "id": "DAGICI",
+      "name": "Dağiçi"
+    },
+    {
+      "id": "DALLIAGAC",
+      "name": "Dallıağaç"
+    },
+    {
+      "id": "DEMIRTEPE",
+      "name": "Demirtepe"
+    },
+    {
+      "id": "DEVRIM",
+      "name": "Devrim"
+    },
+    {
+      "id": "DIBEK",
+      "name": "Dibek"
+    },
+    {
+      "id": "DICLE",
+      "name": "Dicle"
+    },
+    {
+      "id": "DIRIM",
+      "name": "Dirim"
+    },
+    {
+      "id": "DOGANLI",
+      "name": "Doğanlı"
+    },
+    {
+      "id": "DOGUS",
+      "name": "Doğuş"
+    },
+    {
+      "id": "DURAKBASI",
+      "name": "Durakbaşı"
+    },
+    {
+      "id": "DURUCA",
+      "name": "Duruca"
+    },
+    {
+      "id": "DUZCE",
+      "name": "Düzce"
+    },
+    {
+      "id": "ESKIHISAR",
+      "name": "Eskihisar"
+    },
+    {
+      "id": "ESKIMAGARA",
+      "name": "Eskimağara"
+    },
+    {
+      "id": "ESKIYOL",
+      "name": "Eskiyol"
+    },
+    {
+      "id": "FIRAT",
+      "name": "Fırat"
+    },
+    {
+      "id": "GIRNAVAS",
+      "name": "Gırnavas"
+    },
+    {
+      "id": "GIRMELI",
+      "name": "Girmeli"
+    },
+    {
+      "id": "GORENTEPE",
+      "name": "Görentepe"
+    },
+    {
+      "id": "GUNEBAKAN",
+      "name": "Günebakan"
+    },
+    {
+      "id": "GUNELI",
+      "name": "Güneli"
+    },
+    {
+      "id": "GUNYURDU",
+      "name": "Günyurdu"
+    },
+    {
+      "id": "GURUN",
+      "name": "Gürün"
+    },
+    {
+      "id": "GUVENLI",
+      "name": "Güvenli"
+    },
+    {
+      "id": "HASANTEPE",
+      "name": "Hasantepe"
+    },
+    {
+      "id": "HEYBELI",
+      "name": "Heybeli"
+    },
+    {
+      "id": "IKIZTEPE",
+      "name": "İkiztepe"
+    },
+    {
+      "id": "ILKADIM",
+      "name": "İlkadım"
+    },
+    {
+      "id": "IPEKYOLU",
+      "name": "İpekyolu"
+    },
+    {
+      "id": "KALECIK",
+      "name": "Kalecik"
+    },
+    {
+      "id": "KANTAR",
+      "name": "Kantar"
+    },
+    {
+      "id": "KARACA",
+      "name": "Karaca"
+    },
+    {
+      "id": "KAYADIBI",
+      "name": "Kayadibi"
+    },
+    {
+      "id": "KISLA",
+      "name": "Kışla"
+    },
+    {
+      "id": "KOCADAG",
+      "name": "Kocadağ"
+    },
+    {
+      "id": "KURUKOY",
+      "name": "Kuruköy"
+    },
+    {
+      "id": "KUYULAR",
+      "name": "Kuyular"
+    },
+    {
+      "id": "KUCUKKARDES",
+      "name": "Küçükkardeş"
+    },
+    {
+      "id": "MORYAKUP",
+      "name": "Mor-yakup"
+    },
+    {
+      "id": "NERGIZLI",
+      "name": "Nergizli"
+    },
+    {
+      "id": "ODABASI",
+      "name": "Odabaşı"
+    },
+    {
+      "id": "PAZAR",
+      "name": "Pazar"
+    },
+    {
+      "id": "SELAHADDIN_EYYUBI",
+      "name": "Selahaddin Eyyubi"
+    },
+    {
+      "id": "SINIRTEPE",
+      "name": "Sınırtepe"
+    },
+    {
+      "id": "SOGUTLU",
+      "name": "Söğütlü"
+    },
+    {
+      "id": "TASKOY",
+      "name": "Taşköy"
+    },
+    {
+      "id": "TEKAGAC",
+      "name": "Tekağaç"
+    },
+    {
+      "id": "TEPEALTI",
+      "name": "Tepealtı"
+    },
+    {
+      "id": "TEPEOREN",
+      "name": "Tepeören"
+    },
+    {
+      "id": "TEPEUSTU",
+      "name": "Tepeüstü"
+    },
+    {
+      "id": "TURGUTKOY",
+      "name": "Turgutköy"
+    },
+    {
+      "id": "UCKOY",
+      "name": "Üçköy"
+    },
+    {
+      "id": "UCYOL",
+      "name": "Üçyol"
+    },
+    {
+      "id": "YANDERE",
+      "name": "Yandere"
+    },
+    {
+      "id": "YAVRUKOY",
+      "name": "Yavruköy"
+    },
+    {
+      "id": "YAZYURDU",
+      "name": "Yazyurdu"
+    },
+    {
+      "id": "YENISEHIR",
+      "name": "Yenişehir"
+    },
+    {
+      "id": "YENITURAN",
+      "name": "Yenituran"
+    },
+    {
+      "id": "YERKOY",
+      "name": "Yerköy"
+    },
+    {
+      "id": "YESILKENT",
+      "name": "Yeşilkent"
+    },
+    {
+      "id": "YOLBILEN",
+      "name": "Yolbilen"
+    },
+    {
+      "id": "YOLINDI",
+      "name": "Yolindi"
+    },
+    {
+      "id": "ZEYNELABIDIN",
+      "name": "Zeynelabidin"
+    }
+  ]
+}

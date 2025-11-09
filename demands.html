@@ -55,7 +55,7 @@
           </form>
         </div>
         <div class="toolbar-right">
-          <a href="./demand-new.html" class="btn btn-primary">+ Yeni Talep</a>
+          <a href="./demand-new.html" class="btn btn-primary" id="newDemandBtn">+ Yeni Talep</a>
         </div>
       </div>
     </div>
@@ -110,6 +110,14 @@
         <option value="">— Tümü —</option>
         <option value="draft">Taslak</option>
         <option value="published">Gönderildi</option>
+      </select>
+      
+      <!-- Kullanıcı filtresi - Kendi talepleri vs şirketin diğer kullanıcılarının talepleri -->
+      <label for="f-user" style="font-size:13px; font-weight:600; margin-left:12px; margin-right:6px;">Kullanıcı:</label>
+      <select id="f-user" style="padding:6px; border-radius:4px;">
+        <option value="">— Tümü —</option>
+        <option value="own">Kendi Taleplerim</option>
+        <option value="others">Şirket Diğer Kullanıcıları</option>
       </select>
     </div>
     
@@ -245,7 +253,19 @@
   <script type="module">
     import { initGlobalHeader } from './assets/js/ui/header.js';
     import { db, auth } from "./firebase.js";
-    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+    // Teklifbul Rule v1.0 - Structured Logging
+    import { logger } from './src/shared/log/logger.js';
+    // Teklifbul Rule v1.0 - Toast Notification System
+    import { toast } from './src/shared/ui/toast.js';
+    // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
+    import { MESSAGES } from './src/shared/constants/messages.js';
+    import { doc, getDoc, collection, query, where, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+    // CRITICAL: Import new ID-based category system
+    import { 
+      getAllCategories, 
+      getNameById,
+      normalizeToIds 
+    } from "./src/categories/category-service.js";
     
     // Initialize global header
     initGlobalHeader({ mount: '#app-header', activeRoute: 'demands' });
@@ -276,7 +296,7 @@
               }
             }
           } catch (error) {
-            console.warn(`Profile collection ${collection} okunamadı:`, error.message);
+            logger.warn(`Profile collection ${collection} okunamadı`, error.message);
             continue;
           }
         }
@@ -284,13 +304,20 @@
         // Update company chip
         const companyNameEl = document.getElementById('companyName');
         const companyEmailEl = document.getElementById('companyEmail');
+        const companyIconEl = document.querySelector('.company-icon');
         
         if (companyNameEl) companyNameEl.textContent = companyName;
         if (companyEmailEl) companyEmailEl.textContent = userEmail;
         
-        console.log(`🏢 Company chip updated: ${companyName}`);
+        // FIX: Update company icon with first letter of company name dynamically
+        if (companyIconEl && companyName && companyName !== 'Şirket Adı Yok') {
+          const firstLetter = companyName.trim().charAt(0).toUpperCase();
+          companyIconEl.textContent = firstLetter;
+        }
+        
+        logger.info('Company chip updated', { companyName });
       } catch (error) {
-        console.error('Company chip fill error:', error);
+        logger.error('Company chip fill error', error);
       }
     }
     
@@ -312,10 +339,25 @@
     import { db, requireAuth, logout } from "./firebase.js";
     import {
       collection, getDocs, getDoc, query, where, deleteDoc, doc, orderBy, limit, startAfter,
-      updateDoc, arrayUnion, serverTimestamp
+      updateDoc, arrayUnion, serverTimestamp, writeBatch, addDoc
     } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+    // Teklifbul Rule v1.0 - Structured Logging
+    import { logger } from './src/shared/log/logger.js';
+    // Teklifbul Rule v1.0 - Toast Notification System
+    import { toast } from './src/shared/ui/toast.js';
+    // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
+    import { MESSAGES } from './src/shared/constants/messages.js';
+    // CRITICAL: Import new ID-based category system
+    import { 
+      getAllCategories, 
+      getNameById,
+      normalizeToIds 
+    } from "./src/categories/category-service.js";
+    // Import match service for supplier matching
+    import { matchSuppliers } from "./src/matching/match-service.js";
     
-    (async () => {
+    // Main async function
+    async function initDemandsPage() {
 
     // --- UI refs ---
     const tbody        = document.getElementById("demands-body");
@@ -334,6 +376,59 @@
     // --- Auth ---
     const user = await requireAuth();
     const uid  = user.uid;
+    
+    // Readonly mod kontrolü - Teklifbul Rule v1.0
+    const urlParams = new URLSearchParams(window.location.search);
+    const isReadOnly = urlParams.get('readonly') === 'true';
+    
+    // Kullanıcı durumu kontrolü
+    let userIsPending = false;
+    try {
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        userIsPending = userData.companyJoinStatus === 'pending' || userData.companyJoinStatus === 'rejected';
+      }
+    } catch (e) {
+      logger.warn('User status check failed', e);
+    }
+    
+    const readonlyMode = isReadOnly || userIsPending;
+    
+    // Readonly modunda uyarı göster ve butonları gizle
+    if (readonlyMode) {
+      const readonlyBanner = document.createElement('div');
+      readonlyBanner.style.cssText = 'background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 16px; margin: 16px 0; text-align: center;';
+      readonlyBanner.innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;">
+          <span style="font-size: 24px;">⏳</span>
+          <div>
+            <strong style="color: #92400e; font-size: 16px;">Onay Bekleniyor</strong>
+            <p style="color: #92400e; font-size: 14px; margin: 4px 0 0 0;">
+              Şirket yöneticileri kaydınızı onaylayana kadar sadece görüntüleme yapabilirsiniz. İşlem yapamazsınız.
+            </p>
+            <a href="./company-join-waiting.html" style="color: #92400e; text-decoration: underline; font-size: 13px; margin-top: 8px; display: inline-block;">
+              Bekleme durumunu kontrol et →
+            </a>
+          </div>
+        </div>
+      `;
+      const container = document.querySelector('.container--wide');
+      if (container) {
+        const toolbar = container.querySelector('.toolbar');
+        if (toolbar) {
+          container.insertBefore(readonlyBanner, toolbar);
+        } else {
+          container.insertBefore(readonlyBanner, container.firstChild);
+        }
+      }
+      
+      // Yeni Talep butonunu gizle
+      const newDemandBtn = document.getElementById('newDemandBtn');
+      if (newDemandBtn) {
+        newDemandBtn.style.display = 'none';
+      }
+    }
 
     // Durum çevirisi fonksiyonu
     function translateStatus(status) {
@@ -397,10 +492,20 @@
     }
 
     // Render categories: show top 3 chips, expandable to all
+    // CRITICAL: Accept categoryIds, categoryTags, or legacy formats and convert to display names
     function renderCategoriesCell(cats = []){
-      const arr = (Array.isArray(cats) ? cats : []).filter(Boolean);
-      const top = arr.slice(0,3);
-      const rest = arr.slice(3);
+      if (!cats || cats.length === 0) return '-';
+      
+      // Normalize to IDs first (handles IDs, slugs, names)
+      const categoryIds = normalizeToIds(Array.isArray(cats) ? cats : []);
+      
+      // Convert IDs to display names
+      const displayNames = categoryIds.map(id => getNameById(id)).filter(Boolean);
+      
+      if (displayNames.length === 0) return '-';
+      
+      const top = displayNames.slice(0,3);
+      const rest = displayNames.slice(3);
       const chip = (t) => `<span class="cat-chip">${t}</span>`;
       let html = top.map(chip).join(' ');
       if (rest.length) {
@@ -408,7 +513,7 @@
         const tipHtml = rest.map(chip).join(' ');
         html += ` <span class="cat-more"><button class="cat-toggle" data-rest="${payload}">+${rest.length}</button><div class="cat-tip">${tipHtml}</div></span>`;
       }
-      return html || '-';
+      return html;
     }
     // Expand handler (event delegation)
     document.addEventListener('click', (e)=>{
@@ -423,10 +528,13 @@
       } catch(_){}
     });
 
-    // Load first item meta (name, image, target price) for a set of demands
+    // OPTIMIZED: Load first item meta only for first 10 demands (lazy loading for performance)
     async function loadFirstItemMeta(rows){
+      // Only load for first 10 to reduce requests
+      const rowsToLoad = rows.slice(0, 10);
       const cache = new Map();
-      await Promise.all(rows.map(async (r)=>{
+      
+      await Promise.all(rowsToLoad.map(async (r)=>{
         try{
           const qItem = query(collection(db,'demands', r.id, 'items'), orderBy('lineNo','asc'), limit(1));
           const s = await getDocs(qItem);
@@ -441,6 +549,14 @@
           }
         }catch(e){ r._firstItem = { name:'', imageUrl:null, target: r.targetPrice || null }; }
       }));
+      
+      // For remaining rows, set empty firstItem
+      rows.slice(10).forEach(r => {
+        if (!r._firstItem) {
+          r._firstItem = { name: '', imageUrl: null, target: r.targetPrice || null };
+        }
+      });
+      
       return rows;
     }
 
@@ -490,13 +606,13 @@
       const satfk = searchInput.value.trim();
       
       if (!satfk) {
-        alert('Lütfen bir SATFK girin');
+        toast.warn(MESSAGES.WARN_SATFK_REQUIRED);
         return;
       }
       
       // Validate SATFK format
       if (!satfk.match(/^SATFK-\d{8}-[0-9A-Z]+$/)) {
-        alert('Geçersiz SATFK formatı. Örnek: SATFK-20251024-00C9');
+        toast.error(MESSAGES.ERROR_SATFK_INVALID);
         return;
       }
       
@@ -510,7 +626,7 @@
         const snap = await getDocs(q);
         
         if (snap.empty) {
-          alert('Bu SATFK ile talep bulunamadı');
+          toast.warn(MESSAGES.WARN_SATFK_NOT_FOUND);
           return;
         }
         
@@ -518,11 +634,12 @@
         const demandId = snap.docs[0].id;
         
         // Redirect to demand detail
-        window.location.href = `./demand-detail.html?id=${demandId}`;
+        const readonlyParam = readonlyMode ? '&readonly=true' : '';
+        window.location.href = `./demand-detail.html?id=${demandId}${readonlyParam}`;
         
       } catch (error) {
-        console.error('Arama hatası:', error);
-        alert('Arama sırasında hata oluştu');
+        logger.error('Arama hatası', error);
+        toast.error(MESSAGES.ERROR_SEARCH);
       }
     }
     
@@ -531,8 +648,8 @@
       document.getElementById('searchInput').value = '';
     }
     
-    // Get URL parameters once for the entire page
-    const urlParams = new URLSearchParams(window.location.search);
+    // Get URL parameters once for the entire page (already defined above)
+    // urlParams is already defined at line 369, reusing it here
     
     // Check for search parameter in URL
     const searchQuery = urlParams.get('q');
@@ -561,17 +678,8 @@
         const d = r.dueDate ? new Date(r.dueDate) : null;
         const statusText = translateStatus(r.statusText || r.status || 'draft');
         
-        // Bid sayısını hesapla (async olarak)
-        const bidCount = await (async () => {
-          try {
-            const bidQuery = query(collection(db, 'bids'), where('demandId', '==', r.id));
-            const bidSnap = await getDocs(bidQuery);
-            return bidSnap.docs.length;
-          } catch (error) {
-            console.warn(`Bid count error for demand ${r.id}:`, error);
-            return 0;
-          }
-        })();
+        // OPTIMIZED: Use pre-loaded bid count instead of querying
+        const bidCount = r._bidCount !== undefined ? r._bidCount : 0;
         
         const bidDisplay = bidCount > 0 
           ? `<span style="background:#d1fae5;color:#065f46;padding:2px 6px;border-radius:4px;font-size:12px">${bidCount} teklif</span>`
@@ -581,7 +689,7 @@
           <td style="text-align:center"><input type="checkbox" class="draft-select" data-id="${r.id}"></td>
           <td>${r.satfk || '-'}</td>
           <td>${r.title || '-'}</td>
-          <td class="td-cats"><div class="cat-wrap">${renderCategoriesCell(r.categoryTags)}</div></td>
+          <td class="td-cats"><div class="cat-wrap">${renderCategoriesCell(r.categoryIds || r.categoryTags || [])}</div></td>
           <td>${d? d.toLocaleDateString('tr-TR') : '-'}</td>
           <td><span style="background: #fef3c7; color: #92400e; padding: 4px 8px; border-radius: 4px; font-size: 12px;">${statusText}</span></td>
           <td>${bidDisplay}</td>
@@ -623,25 +731,11 @@
         else if (r.deadline) d = new Date(r.deadline);
         const tr = document.createElement('tr');
         
-        // Durum gösterimi - gelen talepler için recipientStatus kullan
-        let statusText;
-        if (r.recipientStatus) {
-          statusText = translateStatus(r.recipientStatus);
-        } else {
-          statusText = translateStatus(r.status || (r.isPublished ? 'published' : 'draft'));
-        }
+        // REFACTORED: Durum gösterimi - sadece status alanı kullanılıyor
+        const statusText = translateStatus(r.status || 'draft');
         
-        // Bid sayısını hesapla (async olarak)
-        const bidCount = await (async () => {
-          try {
-            const bidQuery = query(collection(db, 'bids'), where('demandId', '==', r.id));
-            const bidSnap = await getDocs(bidQuery);
-            return bidSnap.docs.length;
-          } catch (error) {
-            console.warn(`Bid count error for demand ${r.id}:`, error);
-            return 0;
-          }
-        })();
+        // OPTIMIZED: Use pre-loaded bid count instead of querying
+        const bidCount = r._bidCount !== undefined ? r._bidCount : 0;
         
         const bidDisplay = bidCount > 0 
           ? `<span style="background:#d1fae5;color:#065f46;padding:2px 6px;border-radius:4px;font-size:12px">${bidCount} teklif</span>`
@@ -652,7 +746,10 @@
         const companyTd = isIncoming ? `<td><span style=\"background:#e0f2fe;color:#0277bd;padding:2px 6px;border-radius:4px;font-size:12px\">${companyName}</span></td>` : '';
 
         // Tablo sütunları hedef tabloya göre hizalanır
-        const detailLink = (src) => `demand-detail.html?id=${encodeURIComponent(r.id)}&source=${src}`;
+        const detailLink = (src) => {
+          const baseUrl = `demand-detail.html?id=${encodeURIComponent(r.id)}&source=${src}`;
+          return readonlyMode ? `${baseUrl}&readonly=true` : baseUrl;
+        };
         const fi = r._firstItem || {};
         const thumb = fi.imageUrl ? `<img src="${fi.imageUrl}" alt="" style=\"width:44px;height:44px;object-fit:cover;border-radius:6px;border:1px solid #e5e7eb;margin-right:8px;\">` : '';
         const titleBlock = `
@@ -668,7 +765,7 @@
           <td>${r.satfk || '-'}</td>
           <td>${titleBlock}</td>
           ${companyTd}
-          <td class="td-cats"><div class="cat-wrap">${renderCategoriesCell(r.categoryTags)}</div></td>
+          <td class="td-cats"><div class="cat-wrap">${renderCategoriesCell(r.categoryIds || r.categoryTags || [])}</div></td>
           <td>${d? d.toLocaleDateString('tr-TR') : '-'}</td>
           <td>${statusText}</td>
           <td>${bidDisplay}</td>
@@ -676,18 +773,15 @@
           : `
           <td>${r.satfk || '-'}</td>
           <td>${titleBlock}</td>
-          <td class="td-cats"><div class="cat-wrap">${renderCategoriesCell(r.categoryTags)}</div></td>
+          <td class="td-cats"><div class="cat-wrap">${renderCategoriesCell(r.categoryIds || r.categoryTags || [])}</div></td>
           <td>${d? d.toLocaleDateString('tr-TR') : '-'}</td>
           <td>${statusText}</td>
           <td>${bidDisplay}</td>
           <td><a href="${detailLink('outgoing')}">Görüntüle →</a></td>`;
         
-        // Data attributes ekle
+        // Data attributes ekle (refactored - sadece gerekli alanlar)
         tr.dataset.id = r.id;
-        tr.dataset.recipientStatus = r.recipientStatus || 'pending';
-        tr.dataset.biddingMode = r.biddingMode || 'secret';
-        tr.dataset.visibility = r.visibility || 'public';
-        tr.dataset.published = r.published ? 'true' : 'false';
+        tr.dataset.status = r.status || 'draft';
         
         tb.appendChild(tr);
       }
@@ -700,14 +794,17 @@
 
     function demandRowHtml(r, isIncoming){
       const d = r._dueDate || null;
-      const statusText = translateStatus(r.recipientStatus || r.status || (r.isPublished ? 'published' : 'draft'));
+      const statusText = translateStatus(r.status || 'published');
       const bidCount = typeof r._bidCount === 'number' ? r._bidCount : 0;
       const bidDisplay = bidCount > 0 
         ? `<span style="background:#d1fae5;color:#065f46;padding:2px 6px;border-radius:4px;font-size:12px">${bidCount} teklif</span>`
         : '<span style="color:#6b7280;font-size:12px">Henüz teklif yok</span>';
       const companyName = r.companyName || r.company?.name || 'Bilinmeyen Firma';
       const companyTd = isIncoming ? `<td><span style=\"background:#e0f2fe;color:#0277bd;padding:2px 6px;border-radius:4px;font-size:12px\">${companyName}</span></td>` : '';
-      const detailLink = (src) => `demand-detail.html?id=${encodeURIComponent(r.id)}&source=${src}`;
+      const detailLink = (src) => {
+        const baseUrl = `demand-detail.html?id=${encodeURIComponent(r.id)}&source=${src}`;
+        return readonlyMode ? `${baseUrl}&readonly=true` : baseUrl;
+      };
       const fi = r._firstItem || {};
       const thumb = fi.imageUrl ? `<img src="${fi.imageUrl}" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:6px;border:1px solid #e5e7eb;margin-right:8px;">` : '';
       const titleBlock = `
@@ -729,24 +826,31 @@
         <td><a href="${detailLink('incoming')}">Görüntüle →</a></td>`;
     }
 
+    // OPTIMIZED: This function is now integrated into loadIncoming for batch processing
+    // Kept for backward compatibility but should use batch approach instead
     async function markOwnBidFlags(rows, u){
-      // For each demand, detect if current user has a bid
-      for (const r of rows) {
-        try {
-          // Try composite query first
-          const qOwn = query(collection(db,'bids'), where('demandId','==', r.id), where('supplierId','==', u.uid), limit(1));
-          const s = await getDocs(qOwn);
-          r.hasOwnBid = s.docs.length > 0;
-        } catch (e) {
-          // Fallback: query by demand only and filter in-memory
-          try {
-            const qAlt = query(collection(db,'bids'), where('demandId','==', r.id), limit(10));
-            const s2 = await getDocs(qAlt);
-            r.hasOwnBid = s2.docs.some(d => (d.data()?.supplierId) === u.uid);
-          } catch {
-            r.hasOwnBid = false;
-          }
-        }
+      // If hasOwnBid is already set (from batch processing), skip
+      if (rows.length > 0 && rows[0].hasOwnBid !== undefined) {
+        return rows;
+      }
+      
+      // Fallback: batch query if not already done
+      const demandIds = rows.map(r => r.id).slice(0, 10);
+      if (demandIds.length === 0) return rows;
+      
+      try {
+        const bidsQuery = query(
+          collection(db, 'bids'),
+          where('demandId', 'in', demandIds),
+          where('supplierId', '==', u.uid)
+        );
+        const snap = await getDocs(bidsQuery);
+        const ownBidSet = new Set(snap.docs.map(d => d.data().demandId));
+        rows.forEach(r => {
+          r.hasOwnBid = ownBidSet.has(r.id);
+        });
+      } catch (e) {
+        rows.forEach(r => { r.hasOwnBid = false; });
       }
       return rows;
     }
@@ -763,7 +867,9 @@
       if ((given.length + waiting.length) === 0) { if (emptyEl) emptyEl.classList.remove('hidden'); return; } else { if (emptyEl) emptyEl.classList.add('hidden'); }
       if (bodyGiven) {
         for (const r of given) {
-          const tr = document.createElement('tr'); tr.dataset.id = r.id; tr.dataset.recipientStatus = r.recipientStatus || 'pending'; tr.dataset.biddingMode = r.biddingMode || 'secret'; tr.dataset.visibility = r.visibility || 'public';
+          const tr = document.createElement('tr');
+          tr.dataset.id = r.id;
+          tr.dataset.status = r.status || 'published';
           // Normalize due date for display cache
           let d=null; if (r.dueDate?.toDate) d=r.dueDate.toDate(); else if (r.dueDate) d=new Date(r.dueDate); else if (r.deadline?.toDate) d=r.deadline.toDate(); else if (r.deadline) d=new Date(r.deadline); r._dueDate=d;
           tr.innerHTML = demandRowHtml(r, true);
@@ -772,7 +878,9 @@
       }
       if (bodyWaiting) {
         for (const r of waiting) {
-          const tr = document.createElement('tr'); tr.dataset.id = r.id; tr.dataset.recipientStatus = r.recipientStatus || 'pending'; tr.dataset.biddingMode = r.biddingMode || 'secret'; tr.dataset.visibility = r.visibility || 'public';
+          const tr = document.createElement('tr');
+          tr.dataset.id = r.id;
+          tr.dataset.status = r.status || 'published';
           let d=null; if (r.dueDate?.toDate) d=r.dueDate.toDate(); else if (r.dueDate) d=new Date(r.dueDate); else if (r.deadline?.toDate) d=r.deadline.toDate(); else if (r.deadline) d=new Date(r.deadline); r._dueDate=d;
           tr.innerHTML = demandRowHtml(r, true);
           bodyWaiting.appendChild(tr);
@@ -780,116 +888,233 @@
       }
     }
 
+    // REFACTORED: Gelen talepler - sadece tedarikçi görür
     async function loadIncoming(u){
       try {
-        console.log("Loading all published demands...");
-        // Load current user's category slugs
+        // Get current user's supplier categories
+        // Check multiple field names for backward compatibility
         const meDoc = await getDoc(doc(db, 'users', u.uid));
         const myData = meDoc.exists() ? meDoc.data() : {};
-        const myCats = Array.isArray(myData.supplierCategories) ? myData.supplierCategories : [];
-        const myCatSlugs = new Set(myCats.map(toSlug));
         
-        // Tüm yayınlanmış talepleri al
-        const q = query(
-          collection(db,'demands'), 
-          where('isPublished', '==', true),
-          orderBy('createdAt', 'desc'), 
-          limit(100)
-        );
-        
-        const snap = await getDocs(q);
-        console.log(`Found ${snap.docs.length} published demands`);
-        
-        let rows = snap.docs
-          .filter(d => d.data().createdBy !== u.uid) // Kendi taleplerini filtrele
-          .map(d => ({ id: d.id, ...d.data() }));
-
-        // Filter by creator role=buyer and category overlap
-        const creatorIds = Array.from(new Set(rows.map(r => r.createdBy).filter(Boolean)));
-        const creatorCache = new Map();
-        await Promise.all(creatorIds.map(async (cid) => {
-          try { const cdoc = await getDoc(doc(db, 'users', cid)); creatorCache.set(cid, cdoc.exists() ? cdoc.data() : {}); } catch(e){ creatorCache.set(cid, {}); }
-        }));
-
-        // Load company names by companyId if available (from demand or creator profile)
-        const companyIds = new Set(rows.map(r => r.companyId).filter(Boolean));
-        creatorIds.forEach(cid => {
-          const c = creatorCache.get(cid) || {};
-          if (c.companyId) companyIds.add(c.companyId);
-        });
-        const companyIdList = Array.from(companyIds);
-        const companyCache = new Map();
-        await Promise.all(companyIdList.map(async (compId) => {
-          try { const cdoc = await getDoc(doc(db, 'companies', compId)); companyCache.set(compId, cdoc.exists() ? cdoc.data() : {}); } catch(e){ companyCache.set(compId, {}); }
-        }));
-
-        rows = rows.filter(r => {
-          const creator = creatorCache.get(r.createdBy) || {};
-          const roles = Array.isArray(creator.roles) ? creator.roles.map(x=>String(x).toLowerCase()) : [];
-          const isBuyer = roles.includes('buyer');
-          const demandCats = Array.isArray(r.categoryTags) ? r.categoryTags : [];
-          const hasOverlap = demandCats.some(c => myCatSlugs.has(toSlug(c)));
-          return isBuyer && hasOverlap;
-        }).map(r => {
-          // ensure fields for renderer/filters
-          r.biddingMode     = r.biddingMode || 'secret';
-          r.visibility      = r.visibility || 'public';
-          r.recipientStatus = 'available';
-          const creator     = creatorCache.get(r.createdBy) || {};
-          const comp        = companyCache.get(r.companyId) || companyCache.get(creator.companyId) || {};
-          r.companyName     = pickCompanyName({ demandRow: r, creatorProfile: creator, companyDoc: comp });
-          return r;
-        });
-        
-        console.log(`Processed ${rows.length} demands (filtered by buyer+category overlap)`);
-        
-        // Kendi teklif durumunu işaretle
-        await markOwnBidFlags(rows, u);
-        // Bid sayısını da önceden hesapla (opsiyonel)
-        for (const r of rows) {
-          try {
-            const bidSnap = await getDocs(query(collection(db,'bids'), where('demandId','==', r.id)));
-            r._bidCount = bidSnap.docs.length;
-          } catch { r._bidCount = 0; }
+        // CRITICAL: Get supplier categories in ID format (new system)
+        // Priority: supplierCategoryIds > supplierCategoryKeys (slugs) > supplierCategories (names)
+        let mySupplierCategoryTokens = [];
+        if (Array.isArray(myData.supplierCategoryIds) && myData.supplierCategoryIds.length > 0) {
+          mySupplierCategoryTokens = myData.supplierCategoryIds;
+        } else if (Array.isArray(myData.supplierCategoryKeys) && myData.supplierCategoryKeys.length > 0) {
+          mySupplierCategoryTokens = myData.supplierCategoryKeys;
+        } else if (Array.isArray(myData.supplierCategories) && myData.supplierCategories.length > 0) {
+          mySupplierCategoryTokens = myData.supplierCategories;
         }
-
-        // Load first item meta (image/target) for visual summary
+        
+        // Normalize all tokens to IDs
+        const mySupplierCategoryIds = normalizeToIds(mySupplierCategoryTokens).slice(0, 10); // Firestore limit
+        
+        // Reduced logging: Only log summary
+        if (mySupplierCategoryIds.length === 0) {
+          logger.warn("No supplier categories found for user. Incoming demands may be empty.");
+        } else {
+          logger.info(`User has ${mySupplierCategoryIds.length} supplier categories (IDs)`);
+        }
+        
+        if (mySupplierCategoryIds.length === 0) {
+          logger.warn("Kullanıcının tedarikçi kategorisi yok, gelen talep gösterilemez");
+          document.querySelector('#incomingEmpty').classList.remove('hidden');
+          document.querySelector('#incomingEmpty').textContent = 'Tedarikçi kategorisi seçmelisiniz. Ayarlar sayfasından kategorilerinizi seçin.';
+          return;
+        }
+        
+        // Get user's company ID
+        const userCompanyId = myData.companyId;
+        
+        // Query: isPublished=true AND (supplierCategoryIds OR categoryIds OR legacy fields) hasAny AND creatorCompanyId != userCompanyId
+        // Note: Published demands have status='published' or 'approved' and isPublished=true
+        // CRITICAL: Try categoryIds first (new system), then fallback to legacy fields
+        let snap;
+        try {
+          // Primary: Use categoryIds (new ID-based system)
+          const incomingQ = query(
+            collection(db, 'demands'),
+            where('isPublished', '==', true),
+            where('categoryIds', 'array-contains-any', mySupplierCategoryIds),
+            orderBy('createdAt', 'desc'),
+            limit(50)
+          );
+          snap = await getDocs(incomingQ);
+          logger.info(`Found ${snap.docs.length} published demands with categoryIds match`);
+        } catch (err) {
+          // Check if it's an index error
+          if (err.code === 'failed-precondition') {
+            logger.warn("categoryIds index not found. Using fallback", err.message);
+          } else {
+            logger.warn("categoryIds query failed", err.message);
+          }
+          
+          // Fallback 1: Try legacy categoryTags if categoryIds query fails
+          // Note: Demands use 'categoryIds', not 'supplierCategoryIds'
+          // supplierCategoryIds is a field on users collection, not demands
+          try {
+            // Convert category IDs to slugs for legacy matching
+            const allCategories = getAllCategories();
+            const legacySlugs = mySupplierCategoryIds.map(id => {
+              const cat = allCategories.find(c => c.id === id);
+              return cat ? cat.slug : null;
+            }).filter(Boolean);
+            
+            if (legacySlugs.length > 0) {
+              const incomingQ = query(
+                collection(db, 'demands'),
+                where('isPublished', '==', true),
+                where('categoryTags', 'array-contains-any', legacySlugs.slice(0, 10)),
+                orderBy('createdAt', 'desc'),
+                limit(50)
+              );
+              snap = await getDocs(incomingQ);
+              logger.info(`Found ${snap.docs.length} published demands with categoryTags match (fallback)`);
+            } else {
+              throw new Error('No legacy slugs available');
+            }
+          } catch (err2) {
+            // All query attempts failed
+            logger.error("All category query attempts failed", err2.message);
+            if (err2.code === 'failed-precondition') {
+              logger.error("Firestore index required. Please:");
+              logger.error("   1. Click the link in the error message above to create the index manually");
+              logger.error("   2. Or run: firebase deploy --only firestore:indexes");
+              logger.error("   3. Wait a few minutes for the index to build, then refresh the page.");
+            }
+            snap = { docs: [] };
+          }
+        }
+        
+        // Filter out own company's demands and log category matching
+        const rows = snap.docs
+          .map(d => {
+            const data = d.data();
+            // Match categories silently (no per-demand logging)
+            return { id: d.id, ...data };
+          })
+          .filter(d => {
+            // Kendi şirketinin taleplerini gösterme (silent filter)
+            if (d.creatorCompanyId && userCompanyId && d.creatorCompanyId === userCompanyId) {
+              return false;
+            }
+            return true;
+          });
+        
+        logger.info(`Processed ${rows.length} incoming demands`, { filtered: snap.docs.length - rows.length });
+        
+        // DEBUG: Show sample demand categories for comparison
+        if (snap.docs.length > 0 && rows.length === 0) {
+          logger.warn("WARNING: Published demands exist but none match user categories!");
+          logger.info("Sample demand categories from database");
+          snap.docs.slice(0, 3).forEach(d => {
+            const data = d.data();
+            const demandCats = data.supplierCategoryKeys || data.categoryTags || [];
+            logger.info(`Demand ${d.id}`, {
+              supplierCategoryKeys: demandCats,
+              hasMatch: demandCats.some(cat => mySupplierCatKeys.includes(cat)),
+              userCompanyId: userCompanyId,
+              creatorCompanyId: data.creatorCompanyId
+            });
+          });
+        }
+        
+        // OPTIMIZED: Load bid counts in batch (single query instead of N queries)
+        // Fetch all bids for all demands at once, then map to demands
+        const demandIds = rows.map(r => r.id);
+        const bidCountsMap = new Map();
+        const ownBidMap = new Map();
+        
+        if (demandIds.length > 0) {
+          try {
+            // Batch query: get all bids for these demands in one query
+            const bidsQuery = query(
+              collection(db, 'bids'),
+              where('demandId', 'in', demandIds.slice(0, 10)) // Firestore 'in' limit is 10
+            );
+            const allBidsSnap = await getDocs(bidsQuery);
+            
+            // Count bids per demand
+            allBidsSnap.docs.forEach(bidDoc => {
+              const bidData = bidDoc.data();
+              const dId = bidData.demandId;
+              bidCountsMap.set(dId, (bidCountsMap.get(dId) || 0) + 1);
+              
+              // Check if user has bid
+              if (bidData.supplierId === u.uid) {
+                ownBidMap.set(dId, true);
+              }
+            });
+            
+            // If more than 10 demands, query remaining in batches
+            if (demandIds.length > 10) {
+              for (let i = 10; i < demandIds.length; i += 10) {
+                const batch = demandIds.slice(i, i + 10);
+                try {
+                  const batchQuery = query(
+                    collection(db, 'bids'),
+                    where('demandId', 'in', batch)
+                  );
+                  const batchSnap = await getDocs(batchQuery);
+                  batchSnap.docs.forEach(bidDoc => {
+                    const bidData = bidDoc.data();
+                    const dId = bidData.demandId;
+                    bidCountsMap.set(dId, (bidCountsMap.get(dId) || 0) + 1);
+                    if (bidData.supplierId === u.uid) {
+                      ownBidMap.set(dId, true);
+                    }
+                  });
+                } catch (e) { logger.warn('Batch bid query error', e); }
+              }
+            }
+          } catch (e) {
+            logger.warn('Bulk bid query failed, using fallback', e);
+          }
+        }
+        
+        // Apply bid counts and own bid flags
+        rows.forEach(r => {
+          r._bidCount = bidCountsMap.get(r.id) || 0;
+          r.hasOwnBid = ownBidMap.has(r.id) || false;
+        });
+        
         await loadFirstItemMeta(rows);
+        
         INCOMING_ALL_ROWS = rows;
-        renderIncomingGroups(INCOMING_ALL_ROWS);
-        await applyIncomingFilters(INCOMING_ALL_ROWS);
+        
+        // Apply incoming status filter if set
+        await applyIncomingFilters();
+        
+        logger.info(`Incoming demands loaded`, { total: rows.length, rendered: INCOMING_ALL_ROWS.length });
       } catch (err){
-        console.error('incoming load error', err);
+        logger.error('incoming load error', err);
         showIndexHint(err);
+      
+        // Show detailed error information
+        const emptyEl = document.querySelector('#incomingEmpty');
+        if (emptyEl) {
+          emptyEl.classList.remove('hidden');
+          emptyEl.innerHTML = `
+            <div style="padding: 20px; background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px;">
+              <h4 style="margin-top: 0; color: #92400e;">Gelen talepler yüklenemedi</h4>
+              <p><strong>Hata:</strong> ${err.message || err}</p>
+              <p>Lütfen aşağıdaki kontrol listesini inceleyin:</p>
+              <ul style="text-align: left;">
+                <li>İnternet bağlantınızı kontrol edin</li>
+                <li>Firebase authentication'ın doğru çalıştığından emin olun</li>
+                <li>Şirket bilgilerinizin doğru ayarlandığından emin olun</li>
+                <li>Tedarikçi kategorilerinizin seçili olduğundan emin olun (Ayarlar → Tedarikçi Kategorileri)</li>
+                <li>Firestore güvenlik kurallarının doğru yapılandırıldığından emin olun</li>
+              </ul>
+              <p><a href="./settings.html" style="color: #3b82f6;">Ayarlar sayfasına git →</a></p>
+            </div>
+          `;
+        }
       }
     }
     
-    // Gelen talepler için filtre uygulama
-    async function applyIncomingFilters(allRows = null) {
-      let rows = allRows || INCOMING_ALL_ROWS || [];
-      // Durum filtresi
-      const status = fIncomingStatus?.value || "";
-      if (status) {
-        rows = rows.filter(row => {
-          if (status === 'pending') return row.recipientStatus === 'pending';
-          if (status === 'viewed') return row.recipientStatus === 'viewed';
-          if (status === 'responded') return row.recipientStatus === 'responded';
-          return true;
-        });
-      }
-      // Talep Tipi filtresi (gelen talepler için)
-      const mode = fBiddingMode?.value || "";
-      if (mode) rows = rows.filter(row => (row.biddingMode || 'secret') === mode);
-      // Render split tables
-      renderIncomingGroups(rows);
-    }
-
-    // Giden talepler için filtre uygulama
-    // Not: Giden talepler sadece published=true olanları gösterdiği için filtreye gerek yok
-    async function applyOutgoingFilters() {
-      // Filtre devre dışı - artık loadOutgoing sadece published talepleri yüklüyor
-      console.log("Giden talepler filtresi devre dışı - sadece yayınlanmış talepler gösteriliyor");
-    }
+    // REFACTORED: Filtreler kaldırıldı - sadece 3 basit sorgu kullanılıyor
 
     // Hata mesajı index için
     function showIndexHint(err) {
@@ -904,43 +1129,101 @@
       }
     }
 
-    // Load outgoing demands (created by user) - Only published demands
+    // REFACTORED: Giden talepler - kullanıcının şirketi yazarı, published
     async function loadOutgoing(u){
       try {
-        // Get published demands created by user
-        const q = query(
-          collection(db,'demands'), 
-          where('createdBy','==', u.uid),
-          where('published','==', true),
-          orderBy('createdAt','desc'), 
-          limit(100)
+        // Get user's company ID
+        const userDoc = await getDoc(doc(db, 'users', u.uid));
+        const userData = userDoc.exists() ? userDoc.data() : {};
+        const userCompanyId = userData.companyId;
+        
+        if (!userCompanyId) {
+          logger.warn("Kullanıcının companyId yok");
+          document.querySelector('#outgoingEmpty').classList.remove('hidden');
+          document.querySelector('#outgoingEmpty').textContent = 'Şirket bilgisi bulunamadı.';
+          return;
+        }
+        
+        // Query: creatorCompanyId == userCompanyId AND isPublished == true
+        // Note: Published demands have status='published' and isPublished=true
+        const outgoingQ = query(
+          collection(db, 'demands'),
+          where('creatorCompanyId', '==', userCompanyId),
+          where('isPublished', '==', true),
+          orderBy('createdAt', 'desc'),
+          limit(50)
         );
-        const snap = await getDocs(q);
-        const rows = snap.docs.map(d=>({ id:d.id, ...d.data() }));
-        console.log(`✅ Loaded ${rows.length} published outgoing demands`);
+        
+        const snap = await getDocs(outgoingQ);
+        const rows = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        
+        // OPTIMIZED: Load bid counts in batch
+        const demandIds = rows.map(r => r.id);
+        const bidCountsMap = new Map();
+        
+        if (demandIds.length > 0) {
+          try {
+            // Batch query bids for all demands
+            for (let i = 0; i < demandIds.length; i += 10) {
+              const batch = demandIds.slice(i, i + 10);
+              const bidsQuery = query(
+                collection(db, 'bids'),
+                where('demandId', 'in', batch)
+              );
+              const bidsSnap = await getDocs(bidsQuery);
+              bidsSnap.docs.forEach(bidDoc => {
+                const dId = bidDoc.data().demandId;
+                bidCountsMap.set(dId, (bidCountsMap.get(dId) || 0) + 1);
+              });
+            }
+          } catch (e) {
+            logger.warn('Outgoing bid count query failed', e);
+          }
+        }
+        
+        // Apply bid counts
+        rows.forEach(r => {
+          r._bidCount = bidCountsMap.get(r.id) || 0;
+        });
+        
+        logger.info(`Loaded ${rows.length} published outgoing demands`);
         await loadFirstItemMeta(rows);
         await render(rows, '#outgoingRows', '#outgoingEmpty');
       } catch (err){
-        console.error('outgoing load error', err);
+        logger.error('outgoing load error', err);
         const emptyEl = document.querySelector('#outgoingEmpty');
         if (emptyEl) {
           if (String(err.message || err).includes('index')) {
             emptyEl.textContent = 'Firestore dizini hazırlanıyor. Konsoldaki "Create index" linkine tıklayıp Ready olunca sayfayı yenileyin.';
           } else {
-            emptyEl.textContent = 'Giden talepler yüklenemedi.';
+            // Show detailed error information
+            emptyEl.innerHTML = `
+              <div style="padding: 20px; background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px;">
+                <h4 style="margin-top: 0; color: #92400e;">Giden talepler yüklenemedi</h4>
+                <p><strong>Hata:</strong> ${err.message || err}</p>
+                <p>Lütfen aşağıdaki kontrol listesini inceleyin:</p>
+                <ul style="text-align: left;">
+                  <li>İnternet bağlantınızı kontrol edin</li>
+                  <li>Firebase authentication'ın doğru çalıştığından emin olun</li>
+                  <li>Şirket bilgilerinizin doğru ayarlandığından emin olun</li>
+                  <li>Firestore güvenlik kurallarının doğru yapılandırıldığından emin olun</li>
+                </ul>
+                <p><a href="./settings.html" style="color: #3b82f6;">Ayarlar sayfasına git →</a></p>
+              </div>
+            `;
           }
           emptyEl.classList.remove('hidden');
         }
       }
     }
 
-    // Load draft demands with cursor-based pagination
+    // REFACTORED: Taslak talepler - kullanıcının şirketi yazarı, draft veya withdrawn
     async function loadDraftPaged(u, { append = false } = {}){
       if (isLoadingDrafts) return;
       
       try {
         isLoadingDrafts = true;
-        console.log("Loading draft demands for user:", u.uid, "append:", append);
+        logger.info("Loading draft demands for user", { uid: u.uid, append });
         
         // İlk yüklemede listeyi sıfırla
         if (!append) {
@@ -949,38 +1232,47 @@
           draftsFinished = false;
         }
         
+        // Get user's company ID
+        const userDoc = await getDoc(doc(db, 'users', u.uid));
+        const userData = userDoc.exists() ? userDoc.data() : {};
+        const userCompanyId = userData.companyId;
+        
+        if (!userCompanyId) {
+          logger.warn("Kullanıcının companyId yok");
+          document.querySelector('#draftEmpty').classList.remove('hidden');
+          document.querySelector('#draftEmpty').textContent = 'Şirket bilgisi bulunamadı.';
+          return;
+        }
+        
         // Build query with cursor
         let q = query(
-          collection(db,'demands'), 
-          where('createdBy','==', u.uid),
-          orderBy('createdAt','desc'), 
+          collection(db, 'demands'),
+          where('creatorCompanyId', '==', userCompanyId),
+          where('status', 'in', ['draft', 'withdrawn']),
+          orderBy('updatedAt', 'desc'),
           limit(DRAFT_PAGE_SIZE)
         );
         
         // Add cursor if we have a last document
         if (lastDraftDoc) {
           q = query(
-            collection(db,'demands'), 
-            where('createdBy','==', u.uid),
-            orderBy('createdAt','desc'),
+            collection(db, 'demands'),
+            where('creatorCompanyId', '==', userCompanyId),
+            where('status', 'in', ['draft', 'withdrawn']),
+            orderBy('updatedAt', 'desc'),
             startAfter(lastDraftDoc),
             limit(DRAFT_PAGE_SIZE)
           );
         }
         
         const snap = await getDocs(q);
-        console.log(`Found ${snap.docs.length} demands`);
+        logger.info(`Found ${snap.docs.length} draft/withdrawn demands`);
         
-        // published === false olanları filtrele
-        const draftRows = snap.docs
-          .filter(d => d.data().published === false)
-          .map(d => {
-            const demandData = { id: d.id, ...d.data() };
-            demandData.statusText = translateStatus(demandData.status || 'draft');
-            return demandData;
-          });
-        
-        console.log(`Filtered to ${draftRows.length} draft demands`);
+        const draftRows = snap.docs.map(d => {
+          const demandData = { id: d.id, ...d.data() };
+          demandData.statusText = translateStatus(demandData.status || 'draft');
+          return demandData;
+        });
         
         // Verileri birleştir
         accumulatedDrafts = [...accumulatedDrafts, ...draftRows];
@@ -1001,15 +1293,13 @@
         // Sayfa bitince "Daha Fazla" butonunu gizle
         const loadMoreBtn = document.getElementById('loadMoreDraftsBtn');
         if (draftsFinished) {
-          // Veri yok, butonu gizle
           if (loadMoreBtn) loadMoreBtn.classList.add('hidden');
         } else {
-          // Veri var, butonu göster
           if (loadMoreBtn) loadMoreBtn.classList.remove('hidden');
         }
         
       } catch (err){
-        console.error('draft load error', err);
+        logger.error('draft load error', err);
         const emptyEl = document.querySelector('#draftEmpty');
         if (emptyEl) {
           if (String(err.message || err).includes('index')) {
@@ -1050,13 +1340,13 @@
           ? doc(db, "companies", companyId, "demands", demandId)
           : doc(db, "demands", demandId);
 
-        // Talep durumunu 'approved' yap ve yayınla
+        // Talep durumunu 'published' yap ve yayınla
         await updateDoc(ref, {
-          status: 'approved',
+          status: 'published',
           published: true,
           isPublished: true,
           statusHistory: arrayUnion({
-            status: 'approved',
+            status: 'published',
             timestamp: Date.now(),
             userId: user.uid,
             note: 'Taslak onaylandı ve yayınlandı'
@@ -1065,17 +1355,17 @@
           approvedAt: serverTimestamp()
         });
         
-        console.log("✅ Draft approved:", ref.path);
+        logger.info("Draft approved", { path: ref.path });
         
         // Tedarikçi eşleştirmesi yap
         await publishDemandAndMatchSuppliers(demandId);
         
-        alert('✅ Talep onaylandı ve tedarikçi firmalara gönderildi!');
+        toast.success(MESSAGES.SUCCESS_DEMAND_APPROVED_SENT);
         loadDraft(user); // Listeyi yenile
         
       } catch (error) {
-        console.error('Talep onaylama hatası (approveDraftDemand):', error);
-        alert('❌ Talep onaylanırken hata oluştu: ' + (error && error.message ? error.message : error));
+        logger.error('Talep onaylama hatası (approveDraftDemand)', error);
+        toast.error(MESSAGES.ERROR_DEMAND_APPROVE + ': ' + (error && error.message ? error.message : error));
       }
     };
 
@@ -1100,7 +1390,7 @@
     if (btnDeleteSelectedDrafts) {
       btnDeleteSelectedDrafts.addEventListener('click', async () => {
         const ids = Array.from(document.querySelectorAll('.draft-select:checked')).map(ch => ch.getAttribute('data-id'));
-        if (!ids.length) { alert('Silmek için en az bir taslak seçin.'); return; }
+        if (!ids.length) { toast.warn(MESSAGES.WARN_DRAFT_SELECT_REQUIRED); return; }
         if (!confirm(`${ids.length} taslak talebi silmek istediğinize emin misiniz?`)) return;
         for (const id of ids) {
           await deleteDraftDemand(id);
@@ -1108,7 +1398,7 @@
       });
     }
 
-    // Taslak talep silme
+    // Taslak talep silme - Detaylı temizlik yapan versiyon (kullanılan)
     window.deleteDraftDemand = async function deleteDraftDemand(demandId) {
       if (!confirm('Bu taslak talebi kalıcı olarak silmek istiyor musunuz? Bu işlem geri alınamaz.')) return;
       try {
@@ -1116,19 +1406,19 @@
         try {
           const itemsSnap = await getDocs(collection(db, 'demands', demandId, 'items'));
           await Promise.all(itemsSnap.docs.map(d => deleteDoc(doc(db, 'demands', demandId, 'items', d.id))));
-        } catch (e) { console.warn('items cleanup warn', e); }
+        } catch (e) { logger.warn('items cleanup warn', e); }
 
         // bids (top-level)
         try {
           const bidsSnap = await getDocs(query(collection(db, 'bids'), where('demandId','==', demandId)));
           await Promise.all(bidsSnap.docs.map(d => deleteDoc(doc(db, 'bids', d.id))));
-        } catch (e) { console.warn('bids cleanup warn', e); }
+        } catch (e) { logger.warn('bids cleanup warn', e); }
 
         // recipients (top-level)
         try {
           const recSnap = await getDocs(query(collection(db, 'demandRecipients'), where('demandId','==', demandId)));
           await Promise.all(recSnap.docs.map(d => deleteDoc(doc(db, 'demandRecipients', d.id))));
-        } catch (e) { console.warn('recipients cleanup warn', e); }
+        } catch (e) { logger.warn('recipients cleanup warn', e); }
 
         // Ana doküman
         await deleteDoc(doc(db, 'demands', demandId));
@@ -1141,35 +1431,18 @@
           const emptyEl = document.querySelector('#draftEmpty');
           if (emptyEl) emptyEl.classList.remove('hidden');
         }
-        alert('🗑️ Taslak talep silindi.');
-      } catch (err) {
-        console.error('deleteDraft error', err);
-        alert('❌ Taslak silinemedi: ' + (err.message || err));
-      }
-    };
-    
-    window.deleteDraftDemand = async function(demandId) {
-      if (!confirm('Bu talebi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')) {
-        return;
-      }
-      
-      try {
-        // Talep ve alt koleksiyonlarını sil
-        await deleteDoc(doc(db, 'demands', demandId));
-        
-        alert('✅ Talep silindi.');
+        toast.success(MESSAGES.SUCCESS_DRAFT_DELETED_ALT);
         loadDraft(user); // Listeyi yenile
-        
-      } catch (error) {
-        console.error('Talep silme hatası:', error);
-        alert('❌ Talep silinirken hata oluştu: ' + error.message);
+      } catch (err) {
+        logger.error('deleteDraft error', err);
+        toast.error(MESSAGES.ERROR_DRAFT_DELETE + ': ' + (err.message || err));
       }
     };
 
     // Tedarikçi eşleştirme fonksiyonu
     async function publishDemandAndMatchSuppliers(demandId) {
       try {
-        console.log("Publishing demand and matching suppliers:", demandId);
+        logger.info("Publishing demand and matching suppliers", { demandId });
         
         // Talep verilerini al
         const demandDoc = await getDoc(doc(db, 'demands', demandId));
@@ -1178,67 +1451,36 @@
         }
         
         const demandData = demandDoc.data();
-        const categories = demandData.categoryTags || [];
+        
+        // CRITICAL: Use categoryIds from new system, normalize if needed
+        let categoryIds = demandData.categoryIds || [];
+        let categoryTags = demandData.categoryTags || [];
+        
+        // If categoryIds is empty but categoryTags exists, normalize
+        if (categoryIds.length === 0 && categoryTags.length > 0) {
+          categoryIds = normalizeToIds(categoryTags);
+        }
+        
         const groups = demandData.groupIds || [];
         
-        console.log('Demand categories:', categories);
-        console.log('Demand groups:', groups);
+        logger.info('Demand category data', { categoryIds, categoryTags, groups });
         
-        // Tedarikçi sorguları
-        const supplierQueries = [];
+        // Use match-service for category-based supplier matching
+        const matchedSuppliers = await matchSuppliers(db, { 
+          categoryIds: categoryIds,
+          legacySlugs: categoryTags
+        });
         
-        // Kategori bazlı tedarikçi sorgusu
-        if (categories.length > 0) {
-          supplierQueries.push(
-            query(
-              collection(db, 'users'),
-              where('isActive', '==', true),
-              where('supplierCategories', 'array-contains-any', categories.slice(0, 10))
-            )
-          );
-        }
-        
-        // Grup bazlı tedarikçi sorgusu
-        if (groups.length > 0) {
-          supplierQueries.push(
-            query(
-              collection(db, 'users'),
-              where('isActive', '==', true),
-              where('groupIds', 'array-contains-any', groups)
-            )
-          );
-        }
-        
-        // Özel talep için seçilen tedarikçiler
-        if (demandData.demandType === 'private' && demandData.selectedSuppliers) {
-          for (const supplierId of demandData.selectedSuppliers) {
-            supplierQueries.push(
-              query(
-                collection(db, 'users'),
-                where('isActive', '==', true),
-                where('__name__', '==', supplierId)
-              )
-            );
-          }
-        }
-        
-        // Tüm sorguları çalıştır ve benzersiz tedarikçileri bul
         const allSuppliers = new Set();
         
-        for (const q of supplierQueries) {
-          try {
-            const snap = await getDocs(q);
-            snap.docs.forEach(doc => {
-              if (doc.id !== demandData.createdBy) { // Kendi kendine gönderme
-                allSuppliers.add(doc.id);
-              }
-            });
-          } catch (queryError) {
-            console.warn('Supplier query failed:', queryError);
+        // Add matched suppliers
+        matchedSuppliers.forEach(supplier => {
+          if (supplier.uid && supplier.uid !== demandData.createdBy) {
+            allSuppliers.add(supplier.uid);
           }
-        }
+        });
         
-        console.log('Found suppliers:', allSuppliers.size);
+        logger.info('Found suppliers', { count: allSuppliers.size });
         
         // demandRecipients kayıtları oluştur
         const recipientPromises = Array.from(allSuppliers).map(supplierId => 
@@ -1247,17 +1489,19 @@
             buyerId: demandData.createdBy,
             supplierId: supplierId,
             matchedAt: serverTimestamp(),
-            status: 'pending',
+            categories: categoryIds,
+            categoryTags: categoryTags,
+            status: 'matched',
             createdAt: serverTimestamp()
           })
         );
         
         await Promise.all(recipientPromises);
         
-        console.log(`✅ Created ${recipientPromises.length} demandRecipients records`);
+        logger.info(`Created ${recipientPromises.length} demandRecipients records`);
         
       } catch (error) {
-        console.error('Error in publishDemandAndMatchSuppliers:', error);
+        logger.error('Error in publishDemandAndMatchSuppliers', error);
         throw error;
       }
     }
@@ -1289,9 +1533,37 @@
     [fStatus, fPriority, fBiddingMode, fGroup].forEach(el => el && el.addEventListener("change", applyFilters));
     
     // Gelen talepler için filtreler
-    fIncomingStatus?.addEventListener("change", async () => await applyIncomingFilters());
+    async function applyIncomingFilters() {
+      if (!INCOMING_ALL_ROWS || !INCOMING_ALL_ROWS.length) {
+        logger.warn("applyIncomingFilters: INCOMING_ALL_ROWS is empty");
+        return;
+      }
+      const statusFilter = fIncomingStatus?.value || "";
+      let filtered = [...INCOMING_ALL_ROWS];
+      
+      if (statusFilter && statusFilter !== "" && statusFilter !== "—Tümü—") {
+        // Status filter is for bid status, not demand status
+        // For now, we filter by whether user has bid or not
+        if (statusFilter === "responded") {
+          // User has responded = has bid
+          filtered = filtered.filter(r => r.hasOwnBid === true);
+        } else if (statusFilter === "pending") {
+          // User hasn't responded yet = no bid
+          filtered = filtered.filter(r => !r.hasOwnBid || r.hasOwnBid === false);
+        }
+        // "viewed" filter would require tracking view status separately
+      }
+      
+      renderIncomingGroups(filtered);
+    }
     
-    // Giden talepler için filtreler
+    // Giden talepler için filtreler (outgoing için)
+    async function applyOutgoingFilters() {
+      // Outgoing filters would go here if needed
+      logger.info("Outgoing filters applied");
+    }
+    
+    fIncomingStatus?.addEventListener("change", async () => await applyIncomingFilters());
     fStatus?.addEventListener("change", async () => await applyOutgoingFilters());
 
     // Initial render
@@ -1437,14 +1709,14 @@
       const catsHtml = cats.slice(0,3).map(c=>`<span class="badge">${c}</span>`).join(" ") + (cats.length>3?` +${cats.length-3}`:""  );
 
       const mode = d.biddingMode || "secret";
-      const modeLabel = ({secret:"Gizli", open:"Çık", hybrid:"Hibrit"})[mode] || "Gizli";
+      const modeLabel = ({secret:"Gizli", open:"Açık", hybrid:"Hibrit"})[mode] || "Gizli";
 
       const isOwner = d.createdBy === uid;
       const created = d.createdAt?.toDate?.()?.toLocaleDateString?.("tr-TR") || "-";
 
       tr.innerHTML = `
         <td>${d.satfk || "-"}</td>
-        <td><a href="./demand-detail.html?id=${d.id}">${d.title || "-"}</a></td>
+        <td><a href="./demand-detail.html?id=${d.id}${readonlyMode ? '&readonly=true' : ''}">${d.title || "-"}</a></td>
         <td>${catsHtml || "-"}</td>
         <td>${d.dueDate || "-"}</td>
         <td>${d.priority || "-"}</td>
@@ -1491,27 +1763,37 @@
             await deleteDoc(doc(db,"demands", id));
             merged = merged.filter(x=>x.id!==id);
             applyFilters();
-            alert("✅ Talep silindi.");
-          }catch(e){ alert("❌ Silinemedi: " + (e.message||e)); }
+            toast.success(MESSAGES.SUCCESS_DEMAND_DELETED);
+          }catch(e){ toast.error(MESSAGES.ERROR_DELETE + ": " + (e.message||e)); }
         };
       });
     }
-    })();
-
-    // Listen for company changes
+    
+    // Listen for company changes - inside async IIFE to access functions
     window.addEventListener('company:changed', async (e) => {
       const { companyId } = e.detail;
-      console.log('🏢 Company changed, reloading data for:', companyId);
+      logger.info('Company changed, reloading data', { companyId });
       
-      // Re-run queries with new company
-      await loadIncoming();
-      await loadOutgoing();
-      await loadDraft();
+      try {
+        const currentUser = user || await requireAuth();
+        await loadIncoming(currentUser);
+        await loadOutgoing(currentUser);
+        await loadDraft(currentUser);
+      } catch (err) {
+        logger.error('Error reloading data after company change', err);
+      }
+    });
+    
+    }
+    
+    // Initialize page
+    initDemandsPage().catch(err => {
+      logger.error('Failed to initialize demands page', err);
     });
   </script>
 
   <!-- Theme Script -->
-  <script src="/assets/js/theme.js" defer></script>
+  <script type="module" src="/assets/js/theme.js" defer></script>
 
   <script type="module" src="/js/ui-standard.js"></script>
 </body>

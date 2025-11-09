@@ -1,0 +1,42 @@
+{
+  "districtId": "KARS__KAGIZMAN",
+  "districtName": "Kağızman",
+  "neighborhoods": [
+    {
+      "id": "ASAGI_KUMBET",
+      "name": "Aşağı Kümbet"
+    },
+    {
+      "id": "ASAGIDERE",
+      "name": "Aşağıdere"
+    },
+    {
+      "id": "BAYAM",
+      "name": "Bayam"
+    },
+    {
+      "id": "HAZNEDAR",
+      "name": "Haznedar"
+    },
+    {
+      "id": "SAHINDERE",
+      "name": "Şahindere"
+    },
+    {
+      "id": "TOPRAKKALE",
+      "name": "Toprakkale"
+    },
+    {
+      "id": "YUKARI_DERE",
+      "name": "Yukarı Dere"
+    },
+    {
+      "id": "YUKARI_KUMBET",
+      "name": "Yukarı Kümbet"
+    },
+    {
+      "id": "ZUVAR",
+      "name": "Zuvar"
+    }
+  ]
+}

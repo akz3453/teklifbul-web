@@ -1,0 +1,30 @@
+{
+  "districtId": "BILECIK__PAZARYERI",
+  "districtName": "Pazaryeri",
+  "neighborhoods": [
+    {
+      "id": "BESIKLI",
+      "name": "Beşikli"
+    },
+    {
+      "id": "CARSI",
+      "name": "Çarşı"
+    },
+    {
+      "id": "DEREBOGAZ",
+      "name": "Dereboğaz"
+    },
+    {
+      "id": "DOGANLAR",
+      "name": "Doğanlar"
+    },
+    {
+      "id": "YENI",
+      "name": "Yeni"
+    },
+    {
+      "id": "YUZBASI",
+      "name": "Yüzbaşı"
+    }
+  ]
+}

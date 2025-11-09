@@ -1,0 +1,274 @@
+{
+  "districtId": "TRABZON__MAÇKA",
+  "districtName": "Maçka",
+  "neighborhoods": [
+    {
+      "id": "ESİROĞLU",
+      "name": "Esiroğlu"
+    },
+    {
+      "id": "AKARSU",
+      "name": "Akarsu"
+    },
+    {
+      "id": "AKMESCİT",
+      "name": "Akmescit"
+    },
+    {
+      "id": "ALATAŞ",
+      "name": "Alataş"
+    },
+    {
+      "id": "ALTINDERE",
+      "name": "Altındere"
+    },
+    {
+      "id": "ANAYURT",
+      "name": "Anayurt"
+    },
+    {
+      "id": "ARDIÇLIYAYLA",
+      "name": "Ardıçlıyayla"
+    },
+    {
+      "id": "BAĞIŞLI",
+      "name": "Bağışlı"
+    },
+    {
+      "id": "BAKIMLI",
+      "name": "Bakımlı"
+    },
+    {
+      "id": "BAKIRCILAR",
+      "name": "Bakırcılar"
+    },
+    {
+      "id": "BAŞAR",
+      "name": "Başar"
+    },
+    {
+      "id": "COŞANDERE",
+      "name": "Coşandere"
+    },
+    {
+      "id": "ÇAMLIDÜZ",
+      "name": "Çamlıdüz"
+    },
+    {
+      "id": "ÇATAK",
+      "name": "Çatak"
+    },
+    {
+      "id": "ÇAYIRLAR",
+      "name": "Çayırlar"
+    },
+    {
+      "id": "ÇEŞMELER",
+      "name": "Çeşmeler"
+    },
+    {
+      "id": "ÇIRALI",
+      "name": "Çıralı"
+    },
+    {
+      "id": "DİKKAYA",
+      "name": "Dikkaya"
+    },
+    {
+      "id": "ERGİNKÖY",
+      "name": "Erginköy"
+    },
+    {
+      "id": "GÜRGENAĞAÇ",
+      "name": "Gürgenağaç"
+    },
+    {
+      "id": "GÜZELCE",
+      "name": "Güzelce"
+    },
+    {
+      "id": "GÜZELYAYLA",
+      "name": "Güzelyayla"
+    },
+    {
+      "id": "HAMSİKÖY",
+      "name": "Hamsiköy"
+    },
+    {
+      "id": "KAPIKÖY",
+      "name": "Kapıköy"
+    },
+    {
+      "id": "KIRANTAŞ",
+      "name": "Kırantaş"
+    },
+    {
+      "id": "KİREMİTLİ",
+      "name": "Kiremitli"
+    },
+    {
+      "id": "KOZAĞAÇ",
+      "name": "Kozağaç"
+    },
+    {
+      "id": "KÖPRÜYANI",
+      "name": "Köprüyanı"
+    },
+    {
+      "id": "KUŞÇU",
+      "name": "Kuşçu"
+    },
+    {
+      "id": "MATARACI",
+      "name": "Mataracı"
+    },
+    {
+      "id": "OCAKLI",
+      "name": "Ocaklı"
+    },
+    {
+      "id": "OĞULAĞAÇ",
+      "name": "Oğulağaç"
+    },
+    {
+      "id": "ORMANİÇİ",
+      "name": "Ormaniçi"
+    },
+    {
+      "id": "ORMANÜSTÜ",
+      "name": "Ormanüstü"
+    },
+    {
+      "id": "ORTAKÖY",
+      "name": "Ortaköy"
+    },
+    {
+      "id": "ÖRNEKALAN",
+      "name": "Örnekalan"
+    },
+    {
+      "id": "SEVİNÇ",
+      "name": "Sevinç"
+    },
+    {
+      "id": "SINDIRAN",
+      "name": "Sındıran"
+    },
+    {
+      "id": "SUKENARI",
+      "name": "Sukenarı"
+    },
+    {
+      "id": "ŞİMŞİRLİ",
+      "name": "Şimşirli"
+    },
+    {
+      "id": "ÜÇGEDİK",
+      "name": "Üçgedik"
+    },
+    {
+      "id": "YAYLABAŞI",
+      "name": "Yaylabaşı"
+    },
+    {
+      "id": "YAZILITAŞ",
+      "name": "Yazılıtaş"
+    },
+    {
+      "id": "YAZLIK",
+      "name": "Yazlık"
+    },
+    {
+      "id": "YEŞİLTEPE_MAHALLESİ",
+      "name": "Yeşiltepe Mahallesi"
+    },
+    {
+      "id": "YUKARIKÖY",
+      "name": "Yukarıköy"
+    },
+    {
+      "id": "YÜZÜNCÜYIL",
+      "name": "Yüzüncüyıl"
+    },
+    {
+      "id": "ZAFERLİ",
+      "name": "Zaferli"
+    },
+    {
+      "id": "ALAÇAM",
+      "name": "Alaçam"
+    },
+    {
+      "id": "ARMAĞAN",
+      "name": "Armağan"
+    },
+    {
+      "id": "BARIŞLI",
+      "name": "Barışlı"
+    },
+    {
+      "id": "GAYRETLİ",
+      "name": "Gayretli"
+    },
+    {
+      "id": "GÜNAY",
+      "name": "Günay"
+    },
+    {
+      "id": "HIZARLI",
+      "name": "Hızarlı"
+    },
+    {
+      "id": "KAYNARCA",
+      "name": "Kaynarca"
+    },
+    {
+      "id": "TEMELLİ",
+      "name": "Temelli"
+    },
+    {
+      "id": "YENİKÖY",
+      "name": "Yeniköy"
+    },
+    {
+      "id": "GÜNEY",
+      "name": "Güney"
+    },
+    {
+      "id": "KONAK",
+      "name": "Konak"
+    },
+    {
+      "id": "MERKEZ",
+      "name": "Merkez"
+    },
+    {
+      "id": "YEŞİLYURT",
+      "name": "Yeşilyurt"
+    },
+    {
+      "id": "REŞADİYE",
+      "name": "Reşadiye"
+    },
+    {
+      "id": "FATİH",
+      "name": "Fatih"
+    },
+    {
+      "id": "BAHÇEKAYA",
+      "name": "Bahçekaya"
+    },
+    {
+      "id": "ÖĞÜTLÜ",
+      "name": "Öğütlü"
+    },
+    {
+      "id": "YENİ_ATASU",
+      "name": "Yeni Atasu"
+    },
+    {
+      "id": "ATASU",
+      "name": "Atasu"
+    }
+  ]
+}

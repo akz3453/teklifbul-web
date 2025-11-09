@@ -1,0 +1,58 @@
+{
+  "districtId": "BARTIN__ULUS",
+  "districtName": "Ulus",
+  "neighborhoods": [
+    {
+      "id": "KARADİKEN",
+      "name": "Karadiken"
+    },
+    {
+      "id": "KADIOĞLU",
+      "name": "Kadıoğlu"
+    },
+    {
+      "id": "ULUPINAR",
+      "name": "Ulupınar"
+    },
+    {
+      "id": "YEŞİLPAZAR",
+      "name": "Yeşilpazar"
+    },
+    {
+      "id": "DERECİK",
+      "name": "Derecik"
+    },
+    {
+      "id": "KUMLUCA",
+      "name": "Kumluca"
+    },
+    {
+      "id": "KAVAKLI_KALDIRIM",
+      "name": "Kavaklı Kaldırım"
+    },
+    {
+      "id": "YENİMAHALLE",
+      "name": "Yenimahalle"
+    },
+    {
+      "id": "KALDIRIM",
+      "name": "Kaldırım"
+    },
+    {
+      "id": "KASIMLAR",
+      "name": "Kasımlar"
+    },
+    {
+      "id": "SAMAT",
+      "name": "Samat"
+    },
+    {
+      "id": "SAZ",
+      "name": "Saz"
+    },
+    {
+      "id": "MEZGELLER",
+      "name": "Mezgeller"
+    }
+  ]
+}

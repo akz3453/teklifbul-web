@@ -1,0 +1,297 @@
+[
+  {
+    "id": 1,
+    "name": "Sac/Metal",
+    "short_desc": "Endüstriyel malzemeler, üretim parçaları ve işleme ekipmanları.",
+    "examples": [
+      "sac",
+      "metal",
+      "çelik işleme",
+      "çelik sac",
+      "alüminyum",
+      "boru"
+    ]
+  },
+  {
+    "id": 2,
+    "name": "Elektrik",
+    "short_desc": "Elektrik malzemeleri, sistemler ve elektrik tesisatı ekipmanları.",
+    "examples": [
+      "elektrik malzemeleri",
+      "kablo",
+      "sigorta",
+      "priz"
+    ]
+  },
+  {
+    "id": 3,
+    "name": "Elektronik",
+    "short_desc": "Elektrik malzemeleri, sistemler ve elektrik tesisatı ekipmanları.",
+    "examples": [
+      "plc",
+      "sensor",
+      "sensör",
+      "kontrol kartı",
+      "PLC"
+    ]
+  },
+  {
+    "id": 4,
+    "name": "Makine-İmalat",
+    "short_desc": "Endüstriyel malzemeler, üretim parçaları ve işleme ekipmanları.",
+    "examples": [
+      "imalat",
+      "cnc",
+      "rulman",
+      "kayış",
+      "dişli"
+    ]
+  },
+  {
+    "id": 5,
+    "name": "Hırdavat",
+    "short_desc": "Endüstriyel malzemeler, üretim parçaları ve işleme ekipmanları.",
+    "examples": [
+      "vida",
+      "somun",
+      "vida",
+      "çivi",
+      "somun"
+    ]
+  },
+  {
+    "id": 6,
+    "name": "Ambalaj",
+    "short_desc": "Genel kullanım malzemeleri ve tüketim ürünleri.",
+    "examples": [
+      "koli",
+      "streç",
+      "karton kutu",
+      "poşet",
+      "streç film"
+    ]
+  },
+  {
+    "id": 7,
+    "name": "Kimyasal",
+    "short_desc": "Endüstriyel malzemeler, üretim parçaları ve işleme ekipmanları.",
+    "examples": [
+      "solvent",
+      "temizlik kimyasalı",
+      "yapıştırıcı",
+      "solvent"
+    ]
+  },
+  {
+    "id": 8,
+    "name": "İnşaat Malzemeleri",
+    "short_desc": "İnşaat malzemeleri ve yapı elemanları.",
+    "examples": [
+      "yapı",
+      "i̇nşaat malzemeleri"
+    ]
+  },
+  {
+    "id": 9,
+    "name": "Mobilya",
+    "short_desc": "Genel kullanım malzemeleri ve tüketim ürünleri.",
+    "examples": [
+      "ofis mobilyası",
+      "masa",
+      "sandalye",
+      "dolap"
+    ]
+  },
+  {
+    "id": 10,
+    "name": "Boya",
+    "short_desc": "Endüstriyel malzemeler, üretim parçaları ve işleme ekipmanları.",
+    "examples": [
+      "endüstriyel boya",
+      "duvar boyası",
+      "astar",
+      "vernik"
+    ]
+  },
+  {
+    "id": 11,
+    "name": "Plastik",
+    "short_desc": "Endüstriyel malzemeler, üretim parçaları ve işleme ekipmanları.",
+    "examples": [
+      "plastik hammadde",
+      "plastik boru",
+      "PVC",
+      "polietilen"
+    ]
+  },
+  {
+    "id": 12,
+    "name": "Otomotiv Yan Sanayi",
+    "short_desc": "Endüstriyel malzemeler, üretim parçaları ve işleme ekipmanları.",
+    "examples": [
+      "otomotiv parça",
+      "filtre",
+      "lastik",
+      "motor yağı"
+    ]
+  },
+  {
+    "id": 13,
+    "name": "İş Güvenliği",
+    "short_desc": "İş güvenliği ekipmanları ve koruyucu malzemeler.",
+    "examples": [
+      "kkd",
+      "baret",
+      "baret",
+      "gözlük",
+      "eldiven"
+    ]
+  },
+  {
+    "id": 14,
+    "name": "Temizlik",
+    "short_desc": "Genel kullanım malzemeleri ve tüketim ürünleri.",
+    "examples": [
+      "temizlik ekipmanı",
+      "süpürge",
+      "paspas",
+      "deterjan"
+    ]
+  },
+  {
+    "id": 15,
+    "name": "Gıda",
+    "short_desc": "Genel kullanım malzemeleri ve tüketim ürünleri.",
+    "examples": [
+      "ikram",
+      "konserve",
+      "içecek",
+      "ambalaj"
+    ]
+  },
+  {
+    "id": 16,
+    "name": "Hizmet",
+    "short_desc": "Teknik hizmetler ve destek servisleri.",
+    "examples": [
+      "bakım",
+      "işçilik",
+      "bakım",
+      "onarım",
+      "danışmanlık"
+    ]
+  },
+  {
+    "id": 17,
+    "name": "Lojistik",
+    "short_desc": "Teknik hizmetler ve destek servisleri.",
+    "examples": [
+      "nakliye",
+      "kargo",
+      "nakliye",
+      "depolama"
+    ]
+  },
+  {
+    "id": 18,
+    "name": "Aydınlatma",
+    "short_desc": "Elektrik malzemeleri, sistemler ve elektrik tesisatı ekipmanları.",
+    "examples": [
+      "armatur",
+      "projektor",
+      "armatur",
+      "projektor",
+      "led"
+    ]
+  },
+  {
+    "id": 19,
+    "name": "Alçak/Orta Gerilim",
+    "short_desc": "Elektrik malzemeleri, sistemler ve elektrik tesisatı ekipmanları.",
+    "examples": [
+      "pano",
+      "şalt",
+      "trafo",
+      "pano",
+      "şalt",
+      "trafo"
+    ]
+  },
+  {
+    "id": 20,
+    "name": "Otomasyon (PLC/SCADA)",
+    "short_desc": "Elektrik malzemeleri, sistemler ve elektrik tesisatı ekipmanları.",
+    "examples": [
+      "plc",
+      "hmi",
+      "sürücü",
+      "PLC",
+      "HMI",
+      "sürücü"
+    ]
+  },
+  {
+    "id": 21,
+    "name": "Kaynak & Sarf",
+    "short_desc": "Endüstriyel malzemeler, üretim parçaları ve işleme ekipmanları.",
+    "examples": [
+      "mig",
+      "tig",
+      "kaynak teli",
+      "MIG",
+      "TIG",
+      "kaynak teli"
+    ]
+  },
+  {
+    "id": 22,
+    "name": "Rulman & Güç Aktarım",
+    "short_desc": "Endüstriyel malzemeler, üretim parçaları ve işleme ekipmanları.",
+    "examples": [
+      "kayış",
+      "kaplin",
+      "redüktör",
+      "kayış",
+      "kaplin",
+      "redüktör"
+    ]
+  },
+  {
+    "id": 23,
+    "name": "HVAC",
+    "short_desc": "Mekanik, elektrik ve tesisat sistemleri.",
+    "examples": [
+      "vrf",
+      "kanal",
+      "fan",
+      "VRF",
+      "kanal",
+      "fan"
+    ]
+  },
+  {
+    "id": 24,
+    "name": "Yangın Güvenliği",
+    "short_desc": "Mekanik, elektrik ve tesisat sistemleri.",
+    "examples": [
+      "sprinkler",
+      "algılama",
+      "baret",
+      "gözlük",
+      "eldiven",
+      "sprinkler"
+    ]
+  },
+  {
+    "id": 25,
+    "name": "Ekipman Kiralama",
+    "short_desc": "Teknik hizmetler ve destek servisleri.",
+    "examples": [
+      "forklift",
+      "vinç",
+      "forklift",
+      "vinç",
+      "jeneratör"
+    ]
+  }
+]

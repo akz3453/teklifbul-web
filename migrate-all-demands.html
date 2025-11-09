@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Talep Migration ve Supplier Eşleştirme</title>
+  <style>
+    body {
+      font-family: system-ui, Arial, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f9fafb;
+    }
+    .container {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h1 { color: #1f2937; margin-top: 0; }
+    .warning {
+      background: #fef3c7;
+      border: 1px solid #f59e0b;
+      border-radius: 8px;
+      padding: 16px;
+      margin: 16px 0;
+    }
+    .info {
+      background: #dbeafe;
+      border: 1px solid #3b82f6;
+      border-radius: 8px;
+      padding: 16px;
+      margin: 16px 0;
+    }
+    button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+      margin-right: 12px;
+      margin-bottom: 12px;
+    }
+    button:hover { background: #2563eb; }
+    button:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+    button.danger {
+      background: #ef4444;
+    }
+    button.danger:hover {
+      background: #dc2626;
+    }
+    #log {
+      background: #1f2937;
+      color: #e5e7eb;
+      padding: 16px;
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      max-height: 600px;
+      overflow-y: auto;
+      margin-top: 16px;
+      white-space: pre-wrap;
+    }
+    .progress {
+      background: #e5e7eb;
+      border-radius: 999px;
+      height: 8px;
+      margin: 16px 0;
+      overflow: hidden;
+    }
+    .progress-bar {
+      background: #3b82f6;
+      height: 100%;
+      transition: width 0.3s;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin: 16px 0;
+    }
+    .stat-card {
+      background: #f3f4f6;
+      padding: 16px;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 32px;
+      font-weight: 700;
+      color: #3b82f6;
+    }
+    .stat-label {
+      font-size: 14px;
+      color: #6b7280;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔄 Talep Migration ve Supplier Eşleştirme</h1>
+    
+    <div class="warning">
+      <strong>⚠️ Dikkat:</strong> Bu işlem:
+      <ul>
+        <li>Tüm taleplerin <code>categoryIds</code> field'larını doldurur</li>
+        <li>Yayınlanmış talepler için supplier eşleştirmesi yapar</li>
+        <li><code>viewerIds</code> ve <code>demandRecipients</code> kayıtları oluşturur</li>
+      </ul>
+    </div>
+    
+    <div class="info">
+      <strong>ℹ️ Nasıl Çalışır:</strong>
+      <ol>
+        <li>Önce tüm talepleri tarar ve eksik <code>categoryIds</code> field'larını doldurur</li>
+        <li>Yayınlanmış talepler için yeni ID-based kategori sistemi ile supplier eşleştirmesi yapar</li>
+        <li>Eşleşen supplier'ları <code>viewerIds</code> field'ına ekler</li>
+        <li>Her eşleşme için <code>demandRecipients</code> kaydı oluşturur</li>
+      </ol>
+    </div>
+    
+    <div style="margin: 24px 0;">
+      <button id="btnDryRun">🔍 Dry Run (Test)</button>
+      <button id="btnRun" class="danger">✅ Migration Çalıştır</button>
+      <button id="btnStop" disabled>⏹️ Durdur</button>
+    </div>
+    
+    <div class="progress" style="display: none;" id="progressContainer">
+      <div class="progress-bar" id="progressBar" style="width: 0%;"></div>
+    </div>
+    
+    <div class="stats" id="stats" style="display: none;">
+      <div class="stat-card">
+        <div class="stat-value" id="statProcessed">0</div>
+        <div class="stat-label">İşlenen</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statMigrated">0</div>
+        <div class="stat-label">Migrate Edilen</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statMatched">0</div>
+        <div class="stat-label">Eşleştirilen</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statErrors">0</div>
+        <div class="stat-label">Hatalar</div>
+      </div>
+    </div>
+    
+    <div id="log"></div>
+  </div>
+
+  <script type="module">
+    import { db } from './firebase.js';
+    import { 
+      collection, 
+      getDocs, 
+      updateDoc, 
+      doc, 
+      writeBatch,
+      addDoc,
+      serverTimestamp,
+      query,
+      where
+    } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+    import { normalizeToIds, getNameById, getAllCategories } from './src/categories/category-service.js';
+    import { matchSuppliers } from './src/matching/match-service.js';
+    
+    const logEl = document.getElementById('log');
+    const progressContainer = document.getElementById('progressContainer');
+    const progressBar = document.getElementById('progressBar');
+    const statsEl = document.getElementById('stats');
+    
+    let isRunning = false;
+    let shouldStop = false;
+    
+    function log(message) {
+      const timestamp = new Date().toLocaleTimeString('tr-TR');
+      logEl.textContent += `[${timestamp}] ${message}\n`;
+      logEl.scrollTop = logEl.scrollHeight;
+      console.log(message);
+    }
+    
+    function updateStats(stats) {
+      document.getElementById('statProcessed').textContent = stats.processed || 0;
+      document.getElementById('statMigrated').textContent = stats.migrated || 0;
+      document.getElementById('statMatched').textContent = stats.matched || 0;
+      document.getElementById('statErrors').textContent = stats.errors || 0;
+    }
+    
+    function updateProgress(current, total) {
+      const percent = total > 0 ? (current / total) * 100 : 0;
+      progressBar.style.width = `${percent}%`;
+    }
+    
+    async function migrateDemandsAndMatchSuppliers(dryRun = false) {
+      if (isRunning) {
+        log('❌ Migration zaten çalışıyor!');
+        return;
+      }
+      
+      isRunning = true;
+      shouldStop = false;
+      
+      const btnDryRun = document.getElementById('btnDryRun');
+      const btnRun = document.getElementById('btnRun');
+      const btnStop = document.getElementById('btnStop');
+      
+      btnDryRun.disabled = true;
+      btnRun.disabled = true;
+      btnStop.disabled = false;
+      progressContainer.style.display = 'block';
+      statsEl.style.display = 'grid';
+      
+      log(`🚀 Migration başlatılıyor... (${dryRun ? 'DRY RUN' : 'COMMIT MODE'})`);
+      
+      try {
+        // Get all demands
+        const demandsRef = collection(db, 'demands');
+        const snapshot = await getDocs(demandsRef);
+        const allDemands = snapshot.docs;
+        
+        log(`📦 Toplam ${allDemands.length} talep bulundu`);
+        
+        let processed = 0;
+        let migrated = 0;
+        let matched = 0;
+        let skipped = 0;
+        let errors = 0;
+        
+        // Process in batches
+        const batchSize = 50;
+        let currentBatch = writeBatch(db);
+        let batchCount = 0;
+        
+        for (const demandDoc of allDemands) {
+          if (shouldStop) {
+            log('⏹️ Migration durduruldu');
+            break;
+          }
+          
+          processed++;
+          const demandData = demandDoc.data();
+          const demandId = demandDoc.id;
+          
+          updateProgress(processed, allDemands.length);
+          
+          try {
+            // Step 1: Migrate categoryIds if missing
+            let categoryIds = demandData.categoryIds || [];
+            let needsCategoryMigration = false;
+            
+            if (!Array.isArray(categoryIds) || categoryIds.length === 0) {
+              const categoryTokens = [];
+              
+              if (Array.isArray(demandData.categoryTags)) {
+                categoryTokens.push(...demandData.categoryTags);
+              }
+              if (Array.isArray(demandData.supplierCategoryKeys)) {
+                categoryTokens.push(...demandData.supplierCategoryKeys);
+              }
+              if (Array.isArray(demandData.categories)) {
+                categoryTokens.push(...demandData.categories);
+              }
+              if (demandData.category && typeof demandData.category === 'string') {
+                categoryTokens.push(demandData.category);
+              }
+              
+              if (categoryTokens.length > 0) {
+                categoryIds = normalizeToIds(categoryTokens);
+                needsCategoryMigration = categoryIds.length > 0;
+              }
+            }
+            
+            // Step 2: Match suppliers for published demands
+            let matchingSupplierIds = [];
+            const isPublished = demandData.isPublished === true || demandData.published === true || 
+                                demandData.status === 'published' || demandData.status === 'approved';
+            
+            if (isPublished && categoryIds.length > 0) {
+              try {
+                const allCategories = getAllCategories();
+                const legacySlugs = categoryIds.map(id => {
+                  const cat = allCategories.find(c => c.id === id);
+                  return cat ? cat.slug : null;
+                }).filter(Boolean);
+                const legacyNames = categoryIds.map(id => getNameById(id)).filter(Boolean);
+                
+                const matchedSuppliers = await matchSuppliers(db, {
+                  categoryIds: categoryIds,
+                  legacySlugs: legacySlugs,
+                  legacyNames: legacyNames
+                });
+                
+                matchingSupplierIds = Array.from(new Set(
+                  matchedSuppliers.map(s => s.uid || s.id).filter(Boolean)
+                ));
+                
+                if (matchingSupplierIds.length > 0) {
+                  matched++;
+                }
+              } catch (matchError) {
+                log(`⚠️ Supplier matching failed for ${demandId}: ${matchError.message}`);
+                errors++;
+              }
+            }
+            
+            // Step 3: Prepare update
+            const updateData = {};
+            
+            if (needsCategoryMigration && categoryIds.length > 0) {
+              updateData.categoryIds = categoryIds;
+              migrated++;
+            }
+            
+            if (isPublished && matchingSupplierIds.length > 0) {
+              const currentViewerIds = Array.isArray(demandData.viewerIds) ? demandData.viewerIds : [];
+              const newViewerIds = Array.from(new Set([
+                ...currentViewerIds,
+                ...(demandData.createdBy ? [demandData.createdBy] : []),
+                ...matchingSupplierIds
+              ]));
+              updateData.viewerIds = newViewerIds;
+            }
+            
+            // Step 4: Apply updates
+            if (Object.keys(updateData).length > 0) {
+              if (dryRun) {
+                log(`📝 ${demandId}: Would update ${Object.keys(updateData).join(', ')}`);
+              } else {
+                const demandRef = doc(db, 'demands', demandId);
+                currentBatch.update(demandRef, updateData);
+                batchCount++;
+                
+                if (batchCount >= batchSize) {
+                  await currentBatch.commit();
+                  log(`💾 Batch committed: ${batchCount} updates`);
+                  currentBatch = writeBatch(db);
+                  batchCount = 0;
+                }
+              }
+            } else {
+              skipped++;
+            }
+            
+            // Step 5: Create demandRecipients (only in commit mode, for published demands)
+            if (!dryRun && isPublished && matchingSupplierIds.length > 0) {
+              // Check existing
+              const existingQuery = query(
+                collection(db, 'demandRecipients'),
+                where('demandId', '==', demandId)
+              );
+              const existingSnap = await getDocs(existingQuery);
+              const existingSupplierIds = new Set(
+                existingSnap.docs.map(d => d.data().supplierId).filter(Boolean)
+              );
+              
+              // Create new recipients
+              for (const supplierId of matchingSupplierIds) {
+                if (!existingSupplierIds.has(supplierId)) {
+                  try {
+                    const allCategories = getAllCategories();
+                    const legacySlugs = categoryIds.map(id => {
+                      const cat = allCategories.find(c => c.id === id);
+                      return cat ? cat.slug : null;
+                    }).filter(Boolean);
+                    
+                    await addDoc(collection(db, 'demandRecipients'), {
+                      demandId: demandId,
+                      supplierId: supplierId,
+                      buyerId: demandData.createdBy || null,
+                      matchedAt: serverTimestamp(),
+                      categories: categoryIds,
+                      categoryTags: legacySlugs,
+                      status: 'matched',
+                      matchedCategories: categoryIds
+                    });
+                  } catch (recipientError) {
+                    log(`⚠️ Could not create recipient for ${demandId} -> ${supplierId}`);
+                  }
+                }
+              }
+            }
+            
+          } catch (error) {
+            log(`❌ Error processing ${demandId}: ${error.message}`);
+            errors++;
+          }
+          
+          // Update stats every 10 items
+          if (processed % 10 === 0) {
+            updateStats({ processed, migrated, matched, errors, skipped });
+          }
+        }
+        
+        // Commit remaining batch
+        if (!dryRun && batchCount > 0) {
+          await currentBatch.commit();
+          log(`💾 Final batch committed: ${batchCount} updates`);
+        }
+        
+        // Final stats
+        updateStats({ processed, migrated, matched, errors, skipped });
+        
+        log('\n✅ Migration tamamlandı!');
+        log(`📊 Özet: ${processed} işlendi, ${migrated} migrate edildi, ${matched} eşleştirildi, ${skipped} atlandı, ${errors} hata`);
+        
+        if (dryRun) {
+          log('\n💡 Bu bir DRY RUN idi. Değişiklikler uygulanmadı.');
+          log('✅ Migration Çalıştır butonuna tıklayarak gerçek migration yapabilirsiniz.');
+        } else {
+          log('\n✅ Tüm değişiklikler Firestore\'a kaydedildi.');
+        }
+        
+      } catch (error) {
+        log(`\n❌ Migration hatası: ${error.message}`);
+        console.error(error);
+      } finally {
+        isRunning = false;
+        btnDryRun.disabled = false;
+        btnRun.disabled = false;
+        btnStop.disabled = true;
+      }
+    }
+    
+    document.getElementById('btnDryRun').addEventListener('click', () => {
+      logEl.textContent = '';
+      migrateDemandsAndMatchSuppliers(true);
+    });
+    
+    document.getElementById('btnRun').addEventListener('click', () => {
+      if (confirm('⚠️ Bu işlem Firestore\'a yazma yapacak. Devam etmek istediğinize emin misiniz?')) {
+        logEl.textContent = '';
+        migrateDemandsAndMatchSuppliers(false);
+      }
+    });
+    
+    document.getElementById('btnStop').addEventListener('click', () => {
+      shouldStop = true;
+      log('⏹️ Durdurma isteği gönderildi...');
+    });
+  </script>
+</body>
+</html>
+

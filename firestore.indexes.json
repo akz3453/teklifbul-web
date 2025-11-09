@@ -5,7 +5,7 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "createdBy",
+          "fieldPath": "isPublished",
           "order": "ASCENDING"
         },
         {
@@ -19,11 +19,11 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "createdBy",
+          "fieldPath": "creatorCompanyId",
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "published",
+          "fieldPath": "isPublished",
           "order": "ASCENDING"
         },
         {
@@ -37,7 +37,29 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "viewerIds",
+          "fieldPath": "creatorCompanyId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "updatedAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "demands",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "isPublished",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "categoryTags",
           "arrayConfig": "CONTAINS"
         },
         {
@@ -55,44 +77,8 @@
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "visibility",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "createdAt",
-          "order": "DESCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "demands",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "categories",
+          "fieldPath": "categoryIds",
           "arrayConfig": "CONTAINS"
-        },
-        {
-          "fieldPath": "isPublished",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "visibility",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "createdAt",
-          "order": "DESCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "bids",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "demandId",
-          "order": "ASCENDING"
         },
         {
           "fieldPath": "createdAt",
@@ -137,7 +123,7 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "buyerId",
+          "fieldPath": "demandId",
           "order": "ASCENDING"
         },
         {
@@ -147,94 +133,122 @@
       ]
     },
     {
-      "collectionGroup": "demandRecipients",
+      "collectionGroup": "notifications",
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "supplierId",
+          "fieldPath": "type",
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "matchedAt",
+          "fieldPath": "read",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
           "order": "DESCENDING"
         }
       ]
     },
     {
-      "collectionGroup": "demandRecipients",
+      "collectionGroup": "notifications",
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "buyerId",
+          "fieldPath": "type",
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "matchedAt",
+          "fieldPath": "companyId",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "referralCompanies",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "referredCompanyId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "companyJoinRequests",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "companyCode",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
           "order": "DESCENDING"
         }
       ]
     },
     {
-      "collectionGroup": "users",
+      "collectionGroup": "category_keywords",
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "isActive",
+          "fieldPath": "category_id",
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "roles.supplier",
+          "fieldPath": "keyword",
           "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "categories",
-          "arrayConfig": "CONTAINS"
         }
       ]
     },
     {
-      "collectionGroup": "users",
+      "collectionGroup": "tax_offices",
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "isActive",
+          "fieldPath": "province_name",
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "roles.supplier",
+          "fieldPath": "office_name",
           "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "groupIds",
-          "arrayConfig": "CONTAINS"
         }
       ]
     },
     {
-      "collectionGroup": "auditLogs",
+      "collectionGroup": "demands",
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "demandId",
+          "fieldPath": "creatorCompanyId",
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "timestamp",
+          "fieldPath": "createdAt",
           "order": "DESCENDING"
         }
       ]
     },
     {
-      "collectionGroup": "auditLogs",
+      "collectionGroup": "inventory",
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "actorUid",
+          "fieldPath": "companyId",
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "timestamp",
-          "order": "DESCENDING"
+          "fieldPath": "materialCode",
+          "order": "ASCENDING"
         }
       ]
     }

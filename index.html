@@ -31,7 +31,13 @@
   <button id="logoutBtn" style="display:none">Çıkış Yap</button>
 
   <script type="module">
-    import { login, loginWithGoogle, logout, authReady, watchAuth } from "./firebase.js";
+    // Teklifbul Rule v1.0 - Login akışı (toast + logger ile)
+    import { login, loginWithGoogle, logout, watchAuth, checkGoogleRedirect, auth } from "./firebase.js";
+    import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+    import { toast } from "/src/shared/ui/toast.js";
+    // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
+    import { MESSAGES } from '/src/shared/constants/messages.js';
+    import { logger } from "/src/shared/log/logger.js";
 
     const emailEl   = document.getElementById("email");
     const passEl    = document.getElementById("password");
@@ -40,27 +46,80 @@
     const logoutBtn = document.getElementById("logoutBtn");
     const statusEl  = document.getElementById("status");
 
-    // Oturum zaten varsa otomatik geç
-    authReady().then(u => { if (u) location.href = "./dashboard.html"; });
+    // Check for Google redirect result on page load
+    checkGoogleRedirect().then(async user => {
+      if (user) {
+        logger.group("Google Redirect Login");
+        logger.info("Google redirect login başarılı", { email: user.email });
+        toast.success(MESSAGES.SUCCESS_LOGIN);
+        logger.end();
+        // onAuthStateChanged yönlendirir
+      }
+    });
 
-    loginBtn.onclick = async () => {
+    // Email/Password login handler
+    async function handleEmailLogin(email, password) {
+      logger.group("Email Login");
       try {
-        if (!emailEl.value || !passEl.value) throw new Error("E-posta ve şifre gerekli.");
-        await login(emailEl.value, passEl.value);
-        location.href = "./dashboard.html";
-      } catch (e) { alert("Giriş hatası: " + (e.message || e)); }
-    };
+        await signInWithEmailAndPassword(auth, email, password);
+        toast.success(MESSAGES.SUCCESS_LOGIN);
+        logger.info("Giriş başarılı", { email });
+        // onAuthStateChanged yönlendirir; burada ekstra push yok
+      } catch (err) {
+        logger.error("Giriş hatası", err);
+        toast.error(MESSAGES.ERROR_LOGIN + ": " + (err?.message || "Bilinmeyen hata"));
+      } finally {
+        logger.end();
+      }
+    }
 
-    googleBtn.onclick = async () => {
-      try { await loginWithGoogle(); location.href = "./dashboard.html"; }
-      catch (e) { alert("Google ile giriş hatası: " + (e.message || e)); }
-    };
+    // Form submit handler
+    loginBtn.addEventListener("click", async (e) => {
+      e.preventDefault();
+      const email = (emailEl.value || "").trim();
+      const password = (passEl.value || "").trim();
+      
+      if (!email || !password) {
+        toast.error(MESSAGES.ERROR_EMAIL_PASSWORD_REQUIRED);
+        return;
+      }
+      
+      await handleEmailLogin(email, password);
+    });
+
+    // Google login handler
+    googleBtn.addEventListener("click", async () => {
+      logger.group("Google Login");
+      try {
+        googleBtn.disabled = true;
+        googleBtn.textContent = "Giriş yapılıyor...";
+        await loginWithGoogle();
+        toast.success(MESSAGES.SUCCESS_LOGIN_GOOGLE);
+        logger.info("Google login başarılı");
+        // onAuthStateChanged yönlendirir
+      } catch (e) {
+        logger.error("Google login hatası", e);
+        toast.error(MESSAGES.ERROR_LOGIN_GOOGLE + ": " + (e.message || "Bilinmeyen hata"));
+        googleBtn.disabled = false;
+        googleBtn.textContent = "Google ile Giriş";
+      } finally {
+        logger.end();
+      }
+    });
 
     logoutBtn.onclick = () => logout();
 
-    watchAuth(u => {
+    // Auth listener with cleanup - Teklifbul Rule v1.0
+    const authUnsubscribe = watchAuth(u => {
       statusEl.textContent = u ? ("Oturum açık: " + (u.email || u.uid)) : "Oturum kapalı.";
       logoutBtn.style.display = u ? "block" : "none";
+    });
+    
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+      if (authUnsubscribe) {
+        authUnsubscribe();
+      }
     });
   </script>
 </body>

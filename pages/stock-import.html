@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>Stok Kartı İçe Aktar</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="/utils.css" />
+  <style>
+    body{font-family:system-ui, Arial; background:#f8fafc; color:#111827; margin:0}
+    .container{max-width:1100px;margin:0 auto;padding:20px}
+    h1{margin:0 0 8px 0}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin:12px 0}
+    .help{margin:8px 0; padding:12px; background:#f0f9ff; border-left:3px solid #0284c7; border-radius:4px}
+    .help h3{margin:0 0 8px 0; font-size:14px; color:#0c4a6e}
+    .help p{margin:4px 0; font-size:12px; color:#075985}
+    table{width:100%;border-collapse:collapse; margin-top:12px}
+    th,td{border-bottom:1px solid #e5e7eb;padding:8px;text-align:left;font-size:13px}
+    th{background:#f9fafb; font-weight:600}
+    .badge{display:inline-block;border-radius:14px;padding:2px 8px;font-size:12px}
+    .b-valid{background:#dcfce7;color:#065f46}
+    .b-invalid{background:#fee2e2;color:#991b1b}
+    .warn{color:#b45309}
+    .err{color:#b91c1c}
+    .muted{color:#6b7280;font-size:12px}
+    .btn{padding:10px 16px;border:0;border-radius:6px;cursor:pointer;font-weight:600}
+    .btn-primary{background:#2563eb;color:#fff}
+    .btn-secondary{background:#6b7280;color:#fff}
+    .btn[disabled]{opacity:.5;cursor:not-allowed}
+    input[type=file]{width:100%}
+  </style>
+</head>
+<body>
+  <!-- Common Header -->
+  <header id="app-header"></header>
+
+  <div class="container">
+    <h1>Stok Kartı İçe Aktar</h1>
+    <p class="muted">Excel dosyanızdan stok kartlarını toplu olarak içe aktarın.</p>
+
+    <div class="card">
+      <h2 style="margin:0 0 12px 0;font-size:18px">Excel Dosyası</h2>
+      <input id="stockFile" type="file" accept=".xls,.xlsx" />
+      
+      <div class="help">
+        <h3>📋 Beklenen Kolonlar:</h3>
+        <p>Stok Kodu | Ürün Adı | Marka | Model | Birim | KDV Oranı | Alım Fiyatı | Satış Fiyatı | Özel Kod 1 | Özel Kod 2 | Özel Kod 3</p>
+        <p style="margin-top:8px"><strong>Not:</strong> İlk satır başlık olmalı. Stok Kodu ve Ürün Adı zorunludur.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin:0 0 12px 0;font-size:18px">Önizleme</h2>
+      <div id="previewInfo" class="muted">Henüz dosya seçilmedi.</div>
+      <div style="overflow:auto">
+        <table id="previewTable" style="display:none">
+          <thead>
+            <tr>
+              <th>SKU</th><th>Ürün Adı</th><th>Marka</th><th>Model</th><th>Birim</th><th>KDV %</th><th>Alım</th><th>Satış</th><th>Durum</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin:0 0 12px 0;font-size:18px">İstatistikler</h2>
+      <div id="statsInfo" class="muted">Henüz dosya yüklenmedi.</div>
+    </div>
+
+    <div style="display:flex; gap:8px; justify-content:flex-end">
+      <button class="btn btn-secondary" id="btnBack" onclick="history.back()">Geri</button>
+      <button class="btn btn-primary" id="btnImport" disabled>İçe Aktar</button>
+    </div>
+  </div>
+
+  <!-- XLSX CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- Firebase -->
+  <script type="module" src="/firebase.js"></script>
+  <!-- Header -->
+  <script type="module">
+    import { initGlobalHeader } from '../assets/js/ui/header.js';
+    initGlobalHeader({ mount: '#app-header', activeRoute: 'inventory' });
+  </script>
+  <!-- Helpers -->
+  <script type="module" src="/scripts/lib/tr-utils.js"></script>
+  <!-- Main -->
+  <script type="module" src="/scripts/stock-import.js"></script>
+</body>
+</html>
+

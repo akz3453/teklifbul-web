@@ -60,6 +60,52 @@
     <!-- Company Info -->
     <div class="card">
       <h2>📋 Firma Bilgileri</h2>
+      <div class="info-box">
+        Bir şirkete katılabilir veya yeni şirket oluşturabilirsiniz. Varsayılan: Yeni şirket oluştur.
+      </div>
+      <div class="row">
+        <div>
+          <label for="companyMode">Şirket İşlemi</label>
+          <select id="companyMode">
+            <option value="create" selected>Yeni Şirket Oluştur</option>
+            <option value="join">Mevcut Şirkete Katıl (Şirket Kodu ile)</option>
+          </select>
+        </div>
+        <div id="joinCompanyWrap" style="display:none">
+          <label for="companyJoinCode">Şirket Kodu</label>
+          <input type="text" id="companyJoinCode" placeholder="Kurucu tarafından paylaşılan kod" />
+          <p class="muted">Kurucu onayladıktan sonra üyeliğiniz aktif olur.</p>
+        </div>
+      </div>
+
+      <div class="row" id="companyRoleRow" style="display:none">
+        <div class="full">
+          <label for="desiredCompanyRole">Şirket Rolü Talebi</label>
+          <select id="desiredCompanyRole">
+            <optgroup label="Alıcı Şirket Rolleri">
+              <option value="buyer:satinalma_yetkilisi" data-role-type="buyer">Satın Alma Yetkilisi</option>
+              <option value="buyer:santiye_yetkilisi" data-role-type="buyer">Şantiye Yetkilisi</option>
+              <option value="buyer:stok_depo" data-role-type="buyer">Stok / Depo Yetkilisi</option>
+              <option value="buyer:muhasebe" data-role-type="buyer">Muhasebe</option>
+              <option value="buyer:alici" data-role-type="buyer">Alıcı</option>
+              <option value="buyer:genel_mudur" data-role-type="buyer">Genel Müdür</option>
+              <option value="buyer:genel_mudur_yardimcisi" data-role-type="buyer">Genel Müdür Yardımcısı</option>
+              <option value="buyer:yonetim_kurulu_baskani" data-role-type="buyer">Yönetim Kurulu Başkanı</option>
+              <option value="buyer:isveren" data-role-type="buyer">İşveren (Şirket Sahibi)</option>
+              <option value="buyer:ceo" data-role-type="buyer">CEO</option>
+            </optgroup>
+            <optgroup label="Tedarikçi Şirket Rolleri">
+              <option value="supplier:satis_personeli" data-role-type="supplier">Satış Personeli</option>
+              <option value="supplier:pazarlama_muduru" data-role-type="supplier">Pazarlama Müdürü</option>
+              <option value="supplier:genel_mudur" data-role-type="supplier">Genel Müdür</option>
+              <option value="supplier:yonetim_kurulu_baskani" data-role-type="supplier">Yönetim Kurulu Başkanı</option>
+              <option value="supplier:ceo" data-role-type="supplier">CEO</option>
+              <option value="supplier:sirket_sahibi" data-role-type="supplier">Şirket Sahibi</option>
+            </optgroup>
+          </select>
+          <p class="muted">Kurucu onayı sonrası rolünüz atanır. Tedarikçi rolleri için "Tedarikçi" seçeneğini işaretleyin.</p>
+        </div>
+      </div>
       
       <div class="row">
         <div>
@@ -90,15 +136,43 @@
           <input type="text" id="mersisNo" placeholder="16 haneli MERSİS numarası" maxlength="16" autocomplete="off" />
         </div>
         <div>
-          <label for="city">Şehir</label>
-          <input type="text" id="city" placeholder="İl" autocomplete="address-level2" />
+          <label for="inv_il">İl</label>
+          <select id="inv_il">
+            <option value="">İl seçin</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="inv_ilce">İlçe</label>
+          <select id="inv_ilce" disabled>
+            <option value="">Önce il seçin</option>
+          </select>
+        </div>
+        <div>
+          <label for="inv_mahalle">Mahalle</label>
+          <select id="inv_mahalle" disabled>
+            <option value="">Önce ilçe seçin</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="postalCode">Posta Kodu</label>
+          <input type="text" id="postalCode" placeholder="Posta kodu" autocomplete="postal-code" />
+        </div>
+        <div>
+          <label for="country">Ülke</label>
+          <input type="text" id="country" value="Türkiye" autocomplete="country" />
         </div>
       </div>
 
       <div class="row">
         <div class="full">
           <label for="address" class="required">Adres</label>
-          <textarea id="address" rows="3" placeholder="Şirket açık adresi" autocomplete="street-address"></textarea>
+          <textarea id="address" rows="3" placeholder="Seçimlere göre otomatik doldurulur" readonly></textarea>
         </div>
       </div>
 
@@ -233,16 +307,81 @@
   <script type="module">
     // ==== Firebase modules ====
     import { requireAuth, db } from "./firebase.js";
+    // Teklifbul Rule v1.0 - Structured Logging
+    import { logger } from './src/shared/log/logger.js';
+    // Teklifbul Rule v1.0 - Toast Notification System
+    import { toast } from './src/shared/ui/toast.js';
+    // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
+    import { MESSAGES } from './src/shared/constants/messages.js';
     import {
-      doc, setDoc, getDoc, serverTimestamp
+      doc, setDoc, getDoc, serverTimestamp, collection, addDoc, query, where, getDocs
     } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
-    import { CATEGORIES } from "./categories.js";
+    // CRITICAL: Import new ID-based category system
+    import { 
+      getAllCategories, 
+      getIdByName, 
+      getNameById,
+      normalizeToIds 
+    } from "./src/categories/category-service.js";
 
     // ==== Populate category datalist ====
+    // Company mode UI toggle
+    const modeSel = document.getElementById('companyMode');
+    const joinWrap = document.getElementById('joinCompanyWrap');
+    const companyRoleRow = document.getElementById('companyRoleRow');
+    const desiredRoleSelect = document.getElementById('desiredCompanyRole');
+    const DEFAULT_BUYER_ROLE_KEY = 'buyer:satinalma_yetkilisi';
+
+    function ensureRoleSelection() {
+      if (!desiredRoleSelect) return;
+      if (!desiredRoleSelect.value || desiredRoleSelect.disabled) {
+        desiredRoleSelect.value = DEFAULT_BUYER_ROLE_KEY;
+      }
+    }
+
+    function getDesiredRoleMeta() {
+      if (!desiredRoleSelect) return null;
+      const key = desiredRoleSelect.value;
+      return ROLE_LOOKUP[key] || null;
+    }
+
+    modeSel.addEventListener('change', () => {
+      const mode = modeSel.value;
+      joinWrap.style.display = mode === 'join' ? '' : 'none';
+      companyRoleRow.style.display = mode === 'join' ? '' : 'none';
+      const companyNameInput = document.getElementById('companyName');
+      if (companyNameInput) {
+        companyNameInput.disabled = (mode === 'join');
+        if (mode === 'join') companyNameInput.value = companyNameInput.value || '';
+      }
+      if (mode === 'create') {
+        if (desiredRoleSelect) desiredRoleSelect.value = DEFAULT_BUYER_ROLE_KEY;
+      } else {
+        ensureRoleSelection();
+      }
+    });
+    ensureRoleSelection();
+
+    function genCompanyCode() {
+      const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let out = '';
+      for (let i=0;i<8;i++) out += alphabet[Math.floor(Math.random()*alphabet.length)];
+      return out;
+    }
+
+    async function findCompanyByCode(code){
+      const qref = query(collection(db, 'companies'), where('code','==', code));
+      const snap = await getDocs(qref);
+      let found = null;
+      snap.forEach(d => { if (!found) found = { id: d.id, ...d.data() }; });
+      return found;
+    }
     const dataList = document.getElementById("catDatalist");
-    CATEGORIES.forEach(c => { 
+    const allCategories = getAllCategories();
+    allCategories.forEach(cat => {
       const o = document.createElement("option"); 
-      o.value = c; 
+      o.value = cat.name; // Display name
+      o.dataset.categoryId = cat.id; // Store ID
       dataList.appendChild(o); 
     });
 
@@ -250,6 +389,178 @@
     const emailChips = new Set();
     const phoneChips = new Set();
     const catChips = new Set();
+
+    const TR_PROVINCES = [
+      "Adana","Adıyaman","Afyonkarahisar","Ağrı","Amasya","Ankara","Antalya","Artvin","Aydın","Balıkesir","Bilecik","Bingöl","Bitlis","Bolu","Burdur","Bursa","Çanakkale","Çankırı","Çorum","Denizli","Diyarbakır","Edirne","Elazığ","Erzincan","Erzurum","Eskişehir","Gaziantep","Giresun","Gümüşhane","Hakkari","Hatay","Isparta","Mersin","İstanbul","İzmir","Kars","Kastamonu","Kayseri","Kırklareli","Kırşehir","Kocaeli","Konya","Kütahya","Malatya","Manisa","Kahramanmaraş","Mardin","Muğla","Muş","Nevşehir","Niğde","Ordu","Rize","Sakarya","Samsun","Siirt","Sinop","Sivas","Tekirdağ","Tokat","Trabzon","Tunceli","Şanlıurfa","Uşak","Van","Yozgat","Zonguldak","Aksaray","Bayburt","Karaman","Kırıkkale","Batman","Şırnak","Bartın","Ardahan","Iğdır","Yalova","Karabük","Kilis","Osmaniye","Düzce"
+    ];
+
+    const ROLE_OPTIONS = {
+      buyer: [
+        { key: 'buyer:satinalma_yetkilisi', value: 'satinalma_yetkilisi', label: 'Satın Alma Yetkilisi', multi: true },
+        { key: 'buyer:santiye_yetkilisi', value: 'santiye_yetkilisi', label: 'Şantiye Yetkilisi', multi: true },
+        { key: 'buyer:stok_depo', value: 'stok_depo', label: 'Stok / Depo Yetkilisi', multi: true },
+        { key: 'buyer:muhasebe', value: 'muhasebe', label: 'Muhasebe', multi: true },
+        { key: 'buyer:alici', value: 'alici', label: 'Alıcı', multi: true },
+        { key: 'buyer:genel_mudur', value: 'genel_mudur', label: 'Genel Müdür', multi: false },
+        { key: 'buyer:genel_mudur_yardimcisi', value: 'genel_mudur_yardimcisi', label: 'Genel Müdür Yardımcısı', multi: false },
+        { key: 'buyer:yonetim_kurulu_baskani', value: 'yonetim_kurulu_baskani', label: 'Yönetim Kurulu Başkanı', multi: false },
+        { key: 'buyer:isveren', value: 'isveren', label: 'İşveren (Şirket Sahibi)', multi: false },
+        { key: 'buyer:ceo', value: 'ceo', label: 'CEO', multi: false }
+      ],
+      supplier: [
+        { key: 'supplier:satis_personeli', value: 'satis_personeli', label: 'Satış Personeli', multi: true },
+        { key: 'supplier:pazarlama_muduru', value: 'pazarlama_muduru', label: 'Pazarlama Müdürü', multi: false },
+        { key: 'supplier:genel_mudur', value: 'genel_mudur', label: 'Genel Müdür', multi: false },
+        { key: 'supplier:yonetim_kurulu_baskani', value: 'yonetim_kurulu_baskani', label: 'Yönetim Kurulu Başkanı', multi: false },
+        { key: 'supplier:ceo', value: 'ceo', label: 'CEO', multi: false },
+        { key: 'supplier:sirket_sahibi', value: 'sirket_sahibi', label: 'Şirket Sahibi', multi: false }
+      ]
+    };
+
+    const ROLE_LOOKUP = {};
+    Object.values(ROLE_OPTIONS).flat().forEach((opt) => {
+      ROLE_LOOKUP[opt.key] = { ...opt, type: opt.key.split(':')[0] };
+    });
+
+    let districtFallbackCache = null;
+    async function loadDistrictFallback() {
+      if (districtFallbackCache) return districtFallbackCache;
+      try {
+        const res = await fetch('https://raw.githubusercontent.com/muhammederdem/il-ilce-json/master/il-ilce.json');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const map = {};
+        data.forEach((rec) => {
+          const province = (rec?.il || '').trim();
+          if (!province) return;
+          const districts = Array.isArray(rec?.ilceleri) ? rec.ilceleri.map((d) => String(d || '').trim()).filter(Boolean) : [];
+          map[province] = districts;
+        });
+        districtFallbackCache = map;
+      } catch (e) {
+        logger.warn('İlçe fallback verisi yüklenemedi', e);
+        districtFallbackCache = {};
+      }
+      return districtFallbackCache;
+    }
+
+    const DUMMY_NEIGHBORHOODS = {
+      "İstanbul": {
+        "Kadıköy": ["Kozyatağı", "Fenerbahçe", "Bostancı"],
+        "Beşiktaş": ["Levent", "Etiler", "Akatlar"]
+      }
+    };
+
+    function resetSelect(selectElement, placeholder) {
+      if (!selectElement) return;
+      selectElement.innerHTML = '';
+      const opt = document.createElement('option');
+      opt.value = '';
+      opt.textContent = placeholder;
+      selectElement.appendChild(opt);
+      selectElement.disabled = true;
+    }
+
+    function fillSelect(selectElement, dataArray, placeholder) {
+      resetSelect(selectElement, placeholder);
+      if (!selectElement || !Array.isArray(dataArray) || !dataArray.length) return;
+      dataArray.forEach((item) => {
+        const value = typeof item === 'string' ? item : item?.name;
+        if (!value) return;
+        const opt = document.createElement('option');
+        opt.value = value;
+        opt.textContent = value;
+        selectElement.appendChild(opt);
+      });
+      selectElement.disabled = false;
+    }
+
+    async function fetchDistricts(province) {
+      if (!province) return [];
+      try {
+        const snap = await getDoc(doc(db, 'trDistricts', province));
+        const data = snap.data();
+        if (data && Array.isArray(data.districts) && data.districts.length) return data.districts;
+      } catch (e) {
+        logger.warn('Firestore ilçe verisi alınamadı', e);
+      }
+      const fallback = await loadDistrictFallback();
+      return fallback[province] || [];
+    }
+
+    async function fetchNeighborhoods(province, district) {
+      if (!province || !district) return [];
+      const map = DUMMY_NEIGHBORHOODS[province];
+      if (map && Array.isArray(map[district])) return map[district];
+      logger.warn('Mahalle verisi bulunamadı, manuel giriş yapabilirsiniz');
+      return [];
+    }
+
+    const ilSelect = document.getElementById('inv_il');
+    const ilceSelect = document.getElementById('inv_ilce');
+    const mahalleSelect = document.getElementById('inv_mahalle');
+    const postalInput = document.getElementById('postalCode');
+    const addressTextarea = document.getElementById('address');
+
+    resetSelect(ilceSelect, 'İlçe seçin');
+    resetSelect(mahalleSelect, 'Mahalle seçin');
+
+    if (ilSelect) {
+      const provincesSorted = [...TR_PROVINCES].sort((a, b) => a.localeCompare(b, 'tr'));
+      provincesSorted.forEach((province) => {
+        const opt = document.createElement('option');
+        opt.value = province;
+        opt.textContent = province;
+        ilSelect.appendChild(opt);
+      });
+    }
+
+    function composeAddress() {
+      const parts = [];
+      if (mahalleSelect && mahalleSelect.value) parts.push(mahalleSelect.value);
+      if (ilceSelect && ilceSelect.value) parts.push(ilceSelect.value);
+      if (ilSelect && ilSelect.value) parts.push(ilSelect.value);
+      if (postalInput && postalInput.value.trim()) parts.push(`PK: ${postalInput.value.trim()}`);
+      const composed = parts.join(' - ');
+      if (addressTextarea) addressTextarea.value = composed;
+    }
+
+    if (ilSelect) {
+      ilSelect.addEventListener('change', async () => {
+        const province = ilSelect.value;
+        resetSelect(ilceSelect, 'İlçe seçin');
+        resetSelect(mahalleSelect, 'Mahalle seçin');
+        if (!province) { composeAddress(); return; }
+        const districts = await fetchDistricts(province);
+        fillSelect(ilceSelect, districts, 'İlçe seçin');
+        composeAddress();
+      });
+    }
+
+    if (ilceSelect) {
+      ilceSelect.addEventListener('change', async () => {
+        const province = ilSelect?.value;
+        const district = ilceSelect.value;
+        resetSelect(mahalleSelect, 'Mahalle seçin');
+        if (!province || !district) { composeAddress(); return; }
+        const neighborhoods = await fetchNeighborhoods(province, district);
+        fillSelect(mahalleSelect, neighborhoods, neighborhoods.length ? 'Mahalle seçin' : 'Veri bulunamadı');
+        composeAddress();
+      });
+    }
+
+    if (mahalleSelect) {
+      mahalleSelect.addEventListener('change', () => {
+        if (mahalleSelect.value) logger.info('Seçilen mahalle', { mahalle: mahalleSelect.value });
+        composeAddress();
+      });
+    }
+
+    postalInput?.addEventListener('input', composeAddress);
+
+    composeAddress();
+
+
 
     function renderChips(wrapId, set) {
       const box = document.getElementById(wrapId);
@@ -274,7 +585,7 @@
           renderChips("emailChips", emailChips);
           e.target.value = "";
         } else if (v) {
-          alert("Geçerli bir e-posta adresi giriniz");
+          toast.error(MESSAGES.ERROR_EMAIL_INVALID);
         }
       }
     });
@@ -307,7 +618,8 @@
 
     // ==== Bulk selection buttons ====
     document.getElementById("selectAllCategories").onclick = () => {
-      CATEGORIES.forEach(cat => catChips.add(cat));
+      const allCategories = getAllCategories();
+      allCategories.forEach(cat => catChips.add(cat.name)); // Store display names
       renderChips("catChips", catChips);
     };
     
@@ -317,9 +629,22 @@
     };
 
     // ==== Supplier role toggle ====
-    document.getElementById("roleSupplier").addEventListener("change", e => {
+    const supplierCheckbox = document.getElementById("roleSupplier");
+    supplierCheckbox.addEventListener("change", e => {
       document.getElementById("supplierNote").style.display = e.target.checked ? "block" : "none";
+      if (!e.target.checked && desiredRoleSelect && ROLE_LOOKUP[desiredRoleSelect.value]?.type === 'supplier') {
+        desiredRoleSelect.value = DEFAULT_BUYER_ROLE_KEY;
+      }
     });
+
+    desiredRoleSelect?.addEventListener('change', () => {
+      const meta = getDesiredRoleMeta();
+      if (meta?.type === 'supplier' && !supplierCheckbox.checked) {
+        supplierCheckbox.checked = true;
+        document.getElementById("supplierNote").style.display = "block";
+      }
+    });
+    
 
     // ==== Get authenticated user and prefill ====
     const user = await requireAuth();
@@ -339,10 +664,27 @@
         document.getElementById("taxNumber").value = data.taxNumber || "";
         document.getElementById("taxOffice").value = data.taxOffice || "";
         document.getElementById("mersisNo").value = data.mersisNo || "";
-        document.getElementById("city").value = data.city || "";
-        document.getElementById("address").value = data.address || "";
         document.getElementById("country").value = data.country || "Türkiye";
         document.getElementById("phone").value = data.contactPhones?.[0] || "";
+
+        const provinceVal = data.province || data.city || '';
+        if (provinceVal && ilSelect) {
+          ilSelect.value = provinceVal;
+          const districts = await fetchDistricts(provinceVal);
+          fillSelect(ilceSelect, districts, 'İlçe seçin');
+          const districtVal = data.district && districts.includes(data.district) ? data.district : '';
+          if (districtVal) {
+            ilceSelect.value = districtVal;
+            const neighborhoods = await fetchNeighborhoods(provinceVal, districtVal);
+            fillSelect(mahalleSelect, neighborhoods, neighborhoods.length ? 'Mahalle seçin' : 'Mahalle (opsiyonel)');
+            if (data.neighborhood && neighborhoods.includes(data.neighborhood)) {
+              mahalleSelect.value = data.neighborhood;
+            }
+          }
+        }
+        if (postalInput) postalInput.value = data.postalCode || '';
+        if (addressTextarea && data.address) addressTextarea.value = data.address;
+        composeAddress();
         
         // Load chips
         (data.contactEmails || []).forEach(v => emailChips.add(v));
@@ -360,10 +702,10 @@
           document.getElementById("supplierNote").style.display = "block";
         }
       }
-      console.log("✅ Profile loaded successfully");
+      logger.info("Profile loaded successfully");
     } catch (e) {
-      console.warn("Profile preload error:", e);
-      console.warn("❌ Error details:", { code: e.code, name: e.name, stack: e.stack });
+      logger.warn("Profile preload error", e);
+      logger.warn("Error details", { code: e.code, name: e.name, stack: e.stack });
     }
 
     // ==== Validation ====
@@ -371,8 +713,11 @@
       const companyName = document.getElementById("companyName").value.trim();
       const taxNumber = document.getElementById("taxNumber").value.trim();
       const address = document.getElementById("address").value.trim();
+      const mode = document.getElementById('companyMode').value;
+      const joinCode = document.getElementById('companyJoinCode').value.trim();
       
-      if (!companyName) return "Firma ünvanı zorunludur.";
+      if (mode === 'create' && !companyName) return "Firma ünvanı zorunludur.";
+      if (mode === 'join' && !joinCode) return "Şirket kodu zorunludur.";
       if (!(taxNumber.length === 10 || taxNumber.length === 11)) {
         return "Vergi No 10 veya 11 hane olmalıdır.";
       }
@@ -391,7 +736,7 @@
     document.getElementById("btnSave").onclick = async () => {
       const err = validate();
       if (err) {
-        alert("❌ " + err);
+        toast.error(err);
         return;
       }
 
@@ -417,27 +762,38 @@
 
         // Prepare payload (compatible with multi-role system)
         const payload = {
-          // Multi-role fields
           roles,
           isPremium: false,
-          
-          // Company info
+
           companyName: document.getElementById("companyName").value.trim(),
           taxNumber: document.getElementById("taxNumber").value.trim(),
           taxOffice: document.getElementById("taxOffice").value.trim() || null,
           mersisNo: document.getElementById("mersisNo").value.trim() || null,
           website: document.getElementById("website").value.trim() || null,
           address: document.getElementById("address").value.trim(),
-          city: document.getElementById("city").value.trim() || null,
+          province: ilSelect?.value || null,
+          district: ilceSelect?.value || null,
+          neighborhood: mahalleSelect?.value || null,
+          postalCode: postalInput?.value.trim() || null,
           country: document.getElementById("country").value.trim() || "Türkiye",
-          
+
           // Contact info
           contactEmails: allEmails.filter(e => e),
           contactPhones: allPhones.filter(p => p),
           
-          // Categories (buyer categories for organizing)
-          buyerCategories: [...catChips],
+          // CRITICAL: Convert category names to IDs using new system
+          buyerCategoryIds: normalizeToIds([...catChips]),
+          // Backward compatibility: legacy fields
+          buyerCategories: [...catChips].map(name => {
+            const id = getIdByName(name);
+            return id ? getNameById(id) : name;
+          }),
+          buyerCategoryKeys: normalizeToIds([...catChips]).map(id => {
+            const cat = allCategories.find(c => c.id === id);
+            return cat ? cat.slug : null;
+          }).filter(Boolean),
           supplierCategories: [], // Will be filled in settings if supplier role active
+          supplierCategoryIds: [] // Will be filled in settings if supplier role active
           
           // KVKK consents
           kvkkConsent: true,
@@ -449,6 +805,57 @@
           updatedAt: serverTimestamp()
         };
 
+        // Company create/join
+        const mode = document.getElementById('companyMode').value;
+        let companyId = null;
+        let companyRole = null;
+        let companyJoinStatus = null;
+
+        if (mode === 'create') {
+          const code = genCompanyCode();
+          const cdoc = await addDoc(collection(db, 'companies'), {
+            name: payload.companyName,
+            taxNumber: payload.taxNumber,
+            createdAt: serverTimestamp(),
+            ownerUid: user.uid,
+            code
+          });
+          companyId = cdoc.id;
+          companyRole = 'isveren';
+          companyJoinStatus = 'approved';
+          payload.companyId = companyId;
+          payload.companyRole = companyRole;
+          payload.companyJoinStatus = companyJoinStatus;
+          payload.companyCode = code;
+          payload.companyRoleType = 'buyer';
+          payload.companyRoleKey = 'buyer:isveren';
+        } else if (mode === 'join') {
+          const codeRaw = (document.getElementById('companyJoinCode').value || '').trim().toUpperCase();
+          if (!codeRaw) throw new Error('Şirket kodu zorunludur.');
+          const company = await findCompanyByCode(codeRaw);
+          if (!company) throw new Error('Geçersiz şirket kodu.');
+          companyId = company.id;
+          const roleMeta = getDesiredRoleMeta();
+          if (!roleMeta) throw new Error('Lütfen geçerli bir rol seçin.');
+          companyJoinStatus = 'pending';
+          payload.companyId = companyId;
+          payload.companyName = company.name || payload.companyName || '';
+          payload.companyCode = company.code || codeRaw;
+          payload.companyRole = null;
+          payload.companyRoleType = null;
+          payload.companyRoleKey = null;
+          payload.companyJoinStatus = companyJoinStatus;
+          payload.requestedCompanyRoleKey = roleMeta.key;
+          payload.requestedCompanyRole = roleMeta.value;
+          payload.requestedRoleType = roleMeta.type;
+          if (roleMeta.type === 'supplier' && !roles.includes('supplier')) {
+            roles.push('supplier');
+          }
+          ['companyName','taxNumber','taxOffice','mersisNo','website'].forEach((field) => {
+            if (!payload[field]) delete payload[field];
+          });
+        }
+
         // Add createdAt only if new user
         const userRef = doc(db, "users", user.uid);
         const existingSnap = await getDoc(userRef);
@@ -459,14 +866,14 @@
         // Save to Firestore
         await setDoc(userRef, payload, { merge: true });
 
-        console.log("✅ User profile saved:", user.uid);
+        logger.info("User profile saved", { uid: user.uid });
         
-        alert("✅ Kayıt başarıyla tamamlandı!");
+        toast.success(MESSAGES.SUCCESS_REGISTER);
         
         // Redirect based on role
         if (roles.includes("supplier")) {
           // If supplier role selected, go to settings to complete supplier info
-          alert("ℹ️ Tedarikçi bilgilerinizi tamamlamak için Ayarlar sayfasına yönlendiriliyorsunuz.");
+          toast.info(MESSAGES.INFO_SUPPLIER_REDIRECT);
           location.href = "./settings.html";
         } else {
           // Go to dashboard
@@ -474,8 +881,8 @@
         }
         
       } catch (e) {
-        console.error("Save error:", e);
-        alert("❌ Kaydedilemedi: " + (e.message || e));
+        logger.error("Save error", e);
+        toast.error(MESSAGES.ERROR_SAVE + ": " + (e.message || e));
         btnSave.disabled = false;
         btnSave.textContent = "Kaydet ve Devam Et";
       }

@@ -11,36 +11,451 @@
     button { cursor: pointer; }
     a { color: #1a56db; text-decoration: none; }
     small { color: #666; }
+    .referral-info {
+      padding: 12px;
+      background: #eff6ff;
+      border-left: 4px solid #3b82f6;
+      border-radius: 6px;
+      margin: 16px 0;
+      font-size: 14px;
+    }
+    .referral-info strong {
+      color: #1e40af;
+    }
   </style>
 </head>
 <body>
   <h1>Kayıt Ol</h1>
 
-  <label for="email">E-posta</label>
-  <input id="email" type="email" placeholder="E-posta" autocomplete="username" />
-  <label for="password">Şifre (min 6 karakter)</label>
-  <input id="password" type="password" placeholder="Şifre (min 6 karakter)" autocomplete="new-password" />
+  <!-- Referans Bilgisi -->
+  <div id="referralInfo" class="referral-info" style="display: none;">
+    <strong>📝 Referans ile Kayıt:</strong>
+    <div id="referralCompanyName" style="margin-top: 6px; color: #1e40af;"></div>
+  </div>
+
+  <label for="displayName">Ad Soyad <span style="color:#ef4444;">*</span></label>
+  <input id="displayName" type="text" placeholder="Ad Soyad" autocomplete="name" required />
+  <label for="email">E-posta <span style="color:#ef4444;">*</span></label>
+  <input id="email" type="email" placeholder="E-posta" autocomplete="username" required />
+  <label for="password">Şifre (min 6 karakter) <span style="color:#ef4444;">*</span></label>
+  <input id="password" type="password" placeholder="Şifre (min 6 karakter)" autocomplete="new-password" required />
+  
+  <!-- Şirket Kayıt Seçimi - Teklifbul Rule v1.0 -->
+  <div style="margin: 16px 0; padding: 12px; background: #f0f9ff; border-radius: 6px; border: 1px solid #3b82f6;">
+    <label style="font-weight: 600; margin-bottom: 8px; display: block;">Şirket İşlemi <span style="color:#ef4444;">*</span></label>
+    <div style="display: flex; gap: 8px; flex-direction: column;">
+      <label style="display: flex; align-items: center; cursor: pointer; padding: 8px; border-radius: 4px; transition: background 0.2s;">
+        <input type="radio" name="companyAction" value="new" checked style="margin-right: 8px;" />
+        <div>
+          <strong>Yeni Şirket Kur</strong>
+          <p style="margin: 4px 0 0 0; font-size: 12px; color: #6b7280;">Sistem otomatik olarak şirket kodu oluşturur</p>
+        </div>
+      </label>
+      <label style="display: flex; align-items: center; cursor: pointer; padding: 8px; border-radius: 4px; transition: background 0.2s;">
+        <input type="radio" name="companyAction" value="join" style="margin-right: 8px;" />
+        <div>
+          <strong>Mevcut Şirkete Katıl</strong>
+          <p style="margin: 4px 0 0 0; font-size: 12px; color: #6b7280;">Şirket kodunu girip rol seçin, şirket yöneticileri onaylayacak</p>
+        </div>
+      </label>
+    </div>
+    
+    <!-- Şirkete Katılma Alanları (gizli) -->
+    <div id="joinCompanyFields" style="display: none; margin-top: 12px; padding: 12px; background: white; border-radius: 6px; border: 1px solid #d1d5db;">
+      <label for="companyJoinCode" style="display: block; margin-bottom: 4px; font-size: 14px; font-weight: 600;">Şirket Kodu <span style="color:#ef4444;">*</span></label>
+      <input type="text" id="companyJoinCode" placeholder="Şirket kodunu girin" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; text-transform: uppercase; box-sizing: border-box;" maxlength="10" />
+      <p style="font-size: 12px; color: #6b7280; margin-top: 4px;">Şirket yöneticilerinden aldığınız kodu girin</p>
+      
+      <label for="companyJoinRole" style="display: block; margin-top: 12px; margin-bottom: 4px; font-size: 14px; font-weight: 600;">Şirket İçindeki Rolünüz <span style="color:#ef4444;">*</span></label>
+      <select id="companyJoinRole" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; box-sizing: border-box;">
+        <option value="">Rol seçin</option>
+        <optgroup label="Alıcı Rolleri">
+          <option value="buyer:satinalma_yetkilisi">Satın Alma Yetkilisi</option>
+          <option value="buyer:santiye_yetkilisi">Şantiye Yetkilisi</option>
+          <option value="buyer:stok_depo">Stok / Depo Yetkilisi</option>
+          <option value="buyer:muhasebe">Muhasebe</option>
+          <option value="buyer:alici">Alıcı</option>
+          <option value="buyer:genel_mudur">Genel Müdür</option>
+          <option value="buyer:genel_mudur_yardimcisi">Genel Müdür Yardımcısı</option>
+          <option value="buyer:yonetim_kurulu_baskani">Yönetim Kurulu Başkanı</option>
+          <option value="buyer:isveren">İşveren (Şirket Sahibi)</option>
+          <option value="buyer:ceo">CEO</option>
+        </optgroup>
+        <optgroup label="Tedarikçi Rolleri">
+          <option value="supplier:satis_personeli">Satış Personeli</option>
+          <option value="supplier:pazarlama_muduru">Pazarlama Müdürü</option>
+          <option value="supplier:genel_mudur">Genel Müdür</option>
+          <option value="supplier:yonetim_kurulu_baskani">Yönetim Kurulu Başkanı</option>
+          <option value="supplier:ceo">CEO</option>
+          <option value="supplier:sirket_sahibi">Şirket Sahibi</option>
+        </optgroup>
+      </select>
+      <p style="font-size: 12px; color: #6b7280; margin-top: 4px;">Şirket yöneticileri bu rolü onaylayacak veya değiştirebilecek</p>
+    </div>
+  </div>
+  
   <button id="signupBtn">Kayıt Ol</button>
 
   <p>Zaten üye misin? <a href="./index.html">Giriş yap</a></p>
   <small>Not: Firebase Console → Authentication → Users ekranında yeni kullanıcıyı görebileceksin.</small>
 
-  <script type="module">
-    import { register } from "./firebase.js";
+    <script type="module">
+    import { register, updateUserProfile } from "./firebase.js";
+    import { db } from "./firebase.js";
+    // Teklifbul Rule v1.0 - Structured Logging
+    import { logger } from './src/shared/log/logger.js';
+    // Teklifbul Rule v1.0 - Toast Notification System
+    import { toast } from './src/shared/ui/toast.js';
+    // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
+    import { MESSAGES } from './src/shared/constants/messages.js';
+    import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
 
+    const displayNameEl = document.getElementById("displayName");
     const emailEl = document.getElementById("email");
     const passEl  = document.getElementById("password");
     const btn     = document.getElementById("signupBtn");
+    const referralInfo = document.getElementById("referralInfo");
+    const referralCompanyName = document.getElementById("referralCompanyName");
+
+    // URL parametresinden referans kodunu al
+    const urlParams = new URLSearchParams(window.location.search);
+    const referralCodeId = urlParams.get('ref');
+
+    // Referans bilgisini yükle ve göster
+    async function loadReferralInfo() {
+      if (!referralCodeId) {
+        referralInfo.style.display = 'none';
+        return;
+      }
+
+      try {
+        // Tüm şirketlerde referans kodunu ara
+        // Collection Group Query kullanılabilir ama şimdilik tüm şirketlerde arama yapalım
+        // (Performans sorunu var ama şimdilik çalışır)
+        const { collection, getDocs, query, where } = await import("https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js");
+        
+        // Referans kodunu bul
+        let foundCode = null;
+        let companyId = null;
+        let companyName = null;
+
+        // OPTIMIZED: Önce şirket kodunu kontrol et (public read izni var)
+        // Sonra referral code'u direkt okumaya çalış (public read izni var)
+        try {
+          // 1. Önce şirket kodunu kontrol et (daha hızlı, tek sorgu)
+          if (referralCodeId.length >= 8) {
+            try {
+              const companyQuery = query(
+                collection(db, 'companies'),
+                where('code', '==', referralCodeId)
+              );
+              const companyMatch = await getDocs(companyQuery);
+              if (!companyMatch.empty) {
+                const matchedCompany = companyMatch.docs[0];
+                companyId = matchedCompany.id;
+                companyName = matchedCompany.data().name;
+                foundCode = { id: referralCodeId, code: referralCodeId, used: false }; // Şirket kodu olarak kabul et
+                // Şirket bulundu, döngüye girmeye gerek yok
+              }
+            } catch (companyQueryError) {
+              logger.warn('Şirket kodu sorgusu hatası', companyQueryError);
+            }
+          }
+          
+          // 2. Eğer şirket kodu ile bulunamadıysa, referral code'u kontrol et
+          // Not: Bu için company ID bilmemiz gerekiyor, bu yüzden backend API kullanmak daha iyi olur
+          // Şimdilik basit bir fallback: Referans kodunun kendisi company ID olabilir
+          if (!foundCode && referralCodeId) {
+            // Referans kodunun direkt bir company ID olup olmadığını kontrol et
+            try {
+              const possibleCompanyRef = doc(db, 'companies', referralCodeId);
+              const possibleCompanySnap = await getDoc(possibleCompanyRef);
+              if (possibleCompanySnap.exists()) {
+                companyId = referralCodeId;
+                companyName = possibleCompanySnap.data().name;
+                foundCode = { id: referralCodeId, code: referralCodeId, used: false };
+              }
+            } catch (directCompanyError) {
+              // Company ID değilse, referral code olarak kontrol etmeye çalış
+              // Bu durumda backend API kullanmak daha iyi olur
+              logger.warn('Direkt company kontrolü başarısız', directCompanyError);
+            }
+          }
+        } catch (e) {
+          logger.warn('Referans kodu arama hatası', e);
+          // Hata olsa bile devam et, referans olmadan da kayıt olunabilir
+        }
+
+        // Şirket adını al
+        if (companyId && !companyName) {
+          const companyDoc = await getDoc(doc(db, 'companies', companyId));
+          if (companyDoc.exists()) {
+            companyName = companyDoc.data().name;
+          }
+        }
+
+        if (foundCode && !foundCode.used) {
+          // Referans kodu geçerli
+          referralInfo.style.display = 'block';
+          referralCompanyName.textContent = companyName || 'Bir şirket';
+          referralCompanyName.textContent += ` tarafından davet edildiniz.`;
+          
+          // Referans kodunu localStorage'a kaydet (kayıt sonrası kullanmak için)
+          localStorage.setItem('pendingReferralCode', referralCodeId);
+          localStorage.setItem('pendingReferralCompanyId', companyId);
+          if (companyName) {
+            localStorage.setItem('pendingReferralCompanyName', companyName);
+          }
+        } else if (foundCode && foundCode.used) {
+          // Referans kodu kullanılmış
+          referralInfo.style.display = 'block';
+          referralInfo.style.background = '#fef2f2';
+          referralInfo.style.borderLeftColor = '#ef4444';
+          referralCompanyName.textContent = '⚠️ Bu referans kodu daha önce kullanılmış.';
+          referralCompanyName.style.color = '#dc2626';
+        }
+      } catch (e) {
+        logger.error('Referans bilgisi yüklenirken hata', e);
+        referralInfo.style.display = 'none';
+      }
+    }
+
+    // Sayfa yüklendiğinde referans bilgisini göster
+    loadReferralInfo();
+    
+    // Şirket işlemi seçimi - Teklifbul Rule v1.0
+    const companyActionRadios = document.querySelectorAll('input[name="companyAction"]');
+    const joinCompanyFields = document.getElementById('joinCompanyFields');
+    const companyJoinCode = document.getElementById('companyJoinCode');
+    const companyJoinRole = document.getElementById('companyJoinRole');
+    
+    companyActionRadios.forEach(radio => {
+      radio.addEventListener('change', () => {
+        if (radio.value === 'join') {
+          joinCompanyFields.style.display = 'block';
+          companyJoinCode.required = true;
+          companyJoinRole.required = true;
+        } else {
+          joinCompanyFields.style.display = 'none';
+          companyJoinCode.required = false;
+          companyJoinRole.required = false;
+          companyJoinCode.value = '';
+          companyJoinRole.value = '';
+        }
+      });
+    });
 
     btn.onclick = async () => {
       try {
-        if (!emailEl.value || !passEl.value) throw new Error("E-posta ve şifre gerekli.");
-        await register(emailEl.value, passEl.value);
-        alert("✅ Kayıt başarılı! Profilinizi oluşturun.");
-        location.href = "./role-select.html";
+        if (!displayNameEl.value || !emailEl.value || !passEl.value) {
+          throw new Error("Ad Soyad, E-posta ve şifre gerekli.");
+        }
+        
+        // Kayıt işlemi
+        const userCredential = await register(emailEl.value, passEl.value);
+        const user = userCredential.user;
+        
+        // Kullanıcı adını güncelle - Teklifbul Rule v1.0
+        await updateUserProfile(user, {
+          displayName: displayNameEl.value.trim()
+        });
+
+        // Referans kodunu işle (varsa) - TEK KULLANIM İÇİN
+        let pendingReferralCode = localStorage.getItem('pendingReferralCode');
+        let pendingReferralCompanyId = localStorage.getItem('pendingReferralCompanyId');
+        const savedCompanyName = localStorage.getItem('pendingReferralCompanyName');
+        
+        if (pendingReferralCode && pendingReferralCompanyId) {
+          try {
+            // Referans kodunu işaretle - TEK KULLANIM İÇİN
+            // Önce kodun hala kullanılabilir olduğunu kontrol et (race condition önleme)
+            const referralCodeRef = doc(db, 'companies', pendingReferralCompanyId, 'referralCodes', pendingReferralCode);
+            const codeCheck = await getDoc(referralCodeRef);
+            
+            if (!codeCheck.exists()) {
+              logger.warn('Referans kodu bulunamadı');
+              // Devam et, referans olmadan kayıt olabilir
+              pendingReferralCode = null;
+              pendingReferralCompanyId = null;
+            } else {
+              const codeData = codeCheck.data();
+              // Eğer kod zaten kullanılmışsa, hata ver
+              if (codeData.used === true) {
+                logger.error('Bu referans kodu zaten kullanılmış');
+                toast.error(MESSAGES.ERROR_REF_CODE_USED);
+                // localStorage'dan temizle
+                localStorage.removeItem('pendingReferralCode');
+                localStorage.removeItem('pendingReferralCompanyId');
+                localStorage.removeItem('pendingReferralCompanyName');
+                // Referans olmadan devam et
+                pendingReferralCode = null;
+                pendingReferralCompanyId = null;
+              } else {
+                // Şirket adını al (eğer kaydedilmediyse)
+                let companyName = savedCompanyName;
+                if (!companyName) {
+                  const companyDoc = await getDoc(doc(db, 'companies', pendingReferralCompanyId));
+                  if (companyDoc.exists()) {
+                    companyName = companyDoc.data().name;
+                  }
+                }
+                
+                // Kodu kullanıldı olarak işaretle (TEK KULLANIM)
+                await updateDoc(referralCodeRef, {
+                  used: true,
+                  usedBy: user.uid,
+                  usedAt: serverTimestamp()
+                });
+
+                // Kullanıcı dokümanına referans bilgisini kaydet
+                const userRef = doc(db, 'users', user.uid);
+                await setDoc(userRef, {
+                  displayName: displayNameEl.value.trim(), // Teklifbul Rule v1.0 - Ad Soyad
+                  referralCode: pendingReferralCode,
+                  referralCompanyId: pendingReferralCompanyId,
+                  referralUsedAt: serverTimestamp(),
+                  createdAt: serverTimestamp()
+                }, { merge: true });
+
+                // Referans şirketin referralCompanies koleksiyonuna ekle
+                const referralCompanyRef = doc(db, 'companies', pendingReferralCompanyId, 'referralCompanies', user.uid);
+                await setDoc(referralCompanyRef, {
+                  userId: user.uid,
+                  userEmail: emailEl.value,
+                  referredCompanyId: pendingReferralCompanyId,
+                  requestingCompanyId: pendingReferralCompanyId, // Kendi kendine referans
+                  requestingCompanyName: companyName || 'Şirket',
+                  status: 'pending',
+                  requestedAt: serverTimestamp()
+                });
+
+                logger.info('Referans kodu kaydedildi', { code: pendingReferralCode });
+                
+                // localStorage'dan temizle
+                localStorage.removeItem('pendingReferralCode');
+                localStorage.removeItem('pendingReferralCompanyId');
+                localStorage.removeItem('pendingReferralCompanyName');
+              }
+            }
+          } catch (refError) {
+            logger.error('Referans kodu kaydedilirken hata', refError);
+            // Hata olsa bile kayıt devam etsin
+            pendingReferralCode = null;
+            pendingReferralCompanyId = null;
+          }
+        }
+
+        // Kullanıcı dokümanına temel bilgileri kaydet (referans yoksa bile)
+        if (!pendingReferralCode) {
+          const userRef = doc(db, 'users', user.uid);
+          await setDoc(userRef, {
+            displayName: displayNameEl.value.trim(), // Teklifbul Rule v1.0 - Ad Soyad
+            email: emailEl.value.trim(),
+            createdAt: serverTimestamp()
+          }, { merge: true });
+        }
+        
+        // Şirkete katılma işlemi - Teklifbul Rule v1.0
+        const companyAction = document.querySelector('input[name="companyAction"]:checked')?.value || 'new';
+        
+        if (companyAction === 'join') {
+          // Mevcut şirkete katılma - direkt bekleme sayfasına yönlendir
+          const joinCode = companyJoinCode.value.trim().toUpperCase();
+          const joinRole = companyJoinRole.value;
+          
+          if (!joinCode || !joinRole) {
+            throw new Error("Şirket kodu ve rol seçimi zorunludur.");
+          }
+          
+          // Şirketi kontrol et
+          const { collection, query, where, getDocs, addDoc } = await import("https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js");
+          const companyQuery = query(
+            collection(db, 'companies'),
+            where('code', '==', joinCode)
+          );
+          const companySnapshot = await getDocs(companyQuery);
+          
+          if (companySnapshot.empty) {
+            throw new Error(`Şirket kodu "${joinCode}" ile eşleşen bir şirket bulunamadı.`);
+          }
+          
+          const companyDoc = companySnapshot.docs[0];
+          const companyId = companyDoc.id;
+          const companyData = companyDoc.data();
+          
+          // Rol tipini belirle (buyer/supplier)
+          const requestedRoleSimple = joinRole.includes('supplier') ? 'supplier' : 'buyer';
+          
+          // Kullanıcı profilini kaydet (pending status)
+          const userRef = doc(db, 'users', user.uid);
+          await setDoc(userRef, {
+            displayName: displayNameEl.value.trim(),
+            email: emailEl.value.trim(),
+            companyCode: joinCode,
+            companyId: companyId,
+            companyJoinStatus: 'pending',
+            requestedCompanyRole: joinRole,
+            roles: [requestedRoleSimple], // Geçici olarak rol ekle
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+          
+          // companyJoinRequests koleksiyonuna istek ekle
+          await addDoc(collection(db, 'companyJoinRequests'), {
+            companyCode: joinCode,
+            companyId: companyId,
+            userId: user.uid,
+            userEmail: emailEl.value.trim(),
+            requestedRole: requestedRoleSimple,
+            requestedCompanyRole: joinRole,
+            status: 'pending',
+            createdAt: serverTimestamp()
+          });
+          
+          // Şirket sahiplerine bildirim gönder
+          const notificationRef = doc(collection(db, 'companies', companyId, 'notifications'));
+          await setDoc(notificationRef, {
+            type: 'pending_member_request',
+            userId: user.uid,
+            userEmail: emailEl.value.trim(),
+            requestedRole: joinRole,
+            message: `${emailEl.value.trim()} şirketinize katılmak için onay bekliyor.`,
+            createdAt: serverTimestamp(),
+            read: false
+          });
+          
+          // pendingMembers koleksiyonuna da ekle (eski sistem uyumluluğu için)
+          const pendingRequestRef = doc(collection(db, 'companies', companyId, 'pendingMembers'));
+          await setDoc(pendingRequestRef, {
+            userId: user.uid,
+            userEmail: emailEl.value.trim(),
+            requestedRole: joinRole,
+            requestedAt: serverTimestamp(),
+            status: 'pending'
+          });
+          
+          // Direkt bekleme sayfasına yönlendir - Teklifbul Rule v1.0
+          // Merkezi mesajlar ile değiştirildi - şirket ismi dinamik olarak yerleştiriliyor
+          toast.success(MESSAGES.SUCCESS_SIGNUP_COMPANY_REQUEST.replace('{name}', companyData.name));
+          location.href = './company-join-waiting.html';
+          return;
+        } else {
+          // Yeni şirket kurulacak - role-select'e yönlendir
+          let redirectParams = new URLSearchParams();
+          if (pendingReferralCode) {
+            redirectParams.set('ref', pendingReferralCode);
+          }
+          
+          toast.success(MESSAGES.SUCCESS_SIGNUP);
+          
+          const redirectUrl = redirectParams.toString() 
+            ? `./role-select.html?${redirectParams.toString()}`
+            : './role-select.html';
+          location.href = redirectUrl;
+        }
       } catch (e) {
-        console.error("Kayıt hatası:", e);
-        alert("❌ Kayıt hatası: " + (e.message || e));
+        logger.error("Kayıt hatası", e);
+        toast.error(MESSAGES.ERROR_SIGNUP + ": " + (e.message || e));
       }
     };
   </script>

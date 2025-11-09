@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>Stok Hareketleri</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="/utils.css" />
+  <style>
+    body{font-family:system-ui, Arial; background:#f8fafc; color:#111827; margin:0}
+    .container{max-width:1100px;margin:0 auto;padding:20px}
+    h1{margin:0 0 8px 0}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin:12px 0}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px; margin-top:8px}
+    label{font-size:12px;color:#374151;font-weight:600;display:block;margin-bottom:6px}
+    input,select,textarea{width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:14px}
+    table{width:100%;border-collapse:collapse; margin-top:12px}
+    th,td{border-bottom:1px solid #e5e7eb;padding:8px;text-align:left;font-size:13px}
+    th{background:#f9fafb}
+    .badge{display:inline-block;border-radius:14px;padding:2px 8px;font-size:12px}
+    .b-IN{background:#dcfce7;color:#065f46}
+    .b-OUT{background:#fee2e2;color:#991b1b}
+    .b-TRANSFER{background:#dbeafe;color:#1e40af}
+    .b-ADJUST{background:#f3e8ff;color:#6b21a8}
+    .muted{color:#6b7280;font-size:12px}
+    .btn{padding:10px 16px;border:0;border-radius:6px;cursor:pointer;font-weight:600}
+    .btn-primary{background:#2563eb;color:#fff}
+    .btn-secondary{background:#6b7280;color:#fff}
+    .btn[disabled]{opacity:.5;cursor:not-allowed}
+    .tabs{display:flex;gap:8px;margin-bottom:16px}
+    .tab{flex:1;padding:12px;border:1px solid #e5e7eb;background:#f9fafb;cursor:pointer;text-align:center;border-radius:6px}
+    .tab.active{background:#2563eb;color:#fff;border-color:#2563eb}
+    .hidden{display:none}
+  </style>
+</head>
+<body>
+  <!-- Common Header -->
+  <header id="app-header"></header>
+
+  <div class="container">
+    <h1>Stok Hareketleri</h1>
+    <p class="muted">Giriş, çıkış, transfer ve düzeltme hareketlerini kaydedin.</p>
+
+    <div class="tabs">
+      <div class="tab active" data-tab="IN">📥 Giriş</div>
+      <div class="tab" data-tab="OUT">📤 Çıkış</div>
+      <div class="tab" data-tab="TRANSFER">🔄 Transfer</div>
+      <div class="tab" data-tab="ADJUST">⚖️ Düzeltme</div>
+    </div>
+
+    <div class="card" id="formCard">
+      <h2 style="margin:0 0 12px 0;font-size:18px" id="formTitle">Giriş Hareketi</h2>
+      
+      <div class="row">
+        <div>
+          <label for="mvStockSKU">Stok Kodu / Arama</label>
+          <input id="mvStockSKU" placeholder="SKU veya ürün adı ara..." />
+          <div id="stockSearchResults" style="display:none; margin-top:8px; background:#f9fafb; padding:8px; border-radius:4px; max-height:200px; overflow-y:auto">
+          </div>
+        </div>
+        <div>
+          <label for="mvLocation">Lokasyon</label>
+          <select id="mvLocation"></select>
+        </div>
+      </div>
+      
+      <div class="row">
+        <div>
+          <label for="mvQty">Miktar</label>
+          <input type="number" step="0.01" id="mvQty" placeholder="0.00" />
+        </div>
+        <div>
+          <label for="mvUnit">Birim</label>
+          <input id="mvUnit" readonly />
+        </div>
+      </div>
+
+      <!-- Giriş formu (visible for IN) -->
+      <div id="inForm" class="hidden">
+        <div class="row">
+          <div>
+            <label for="mvUnitCost">Birim Maliyet</label>
+            <input type="number" step="0.01" id="mvUnitCost" placeholder="0.00" />
+          </div>
+          <div>
+            <label for="mvExtras">İlave Maliyetler (toplam)</label>
+            <input type="number" step="0.01" id="mvExtras" placeholder="0.00" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Çıkış formu (visible for OUT) -->
+      <div id="outForm" class="hidden">
+        <div class="row">
+          <div>
+            <label for="mvRefKind">Referans Türü</label>
+            <select id="mvRefKind">
+              <option value="INVOICE">Fatura/İrsaliye</option>
+              <option value="DELIVERY">Teslimat</option>
+              <option value="MANUAL">Manuel</option>
+            </select>
+          </div>
+          <div>
+            <label for="mvRefId">Referans ID</label>
+            <input id="mvRefId" placeholder="Opsiyon" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Transfer formu (visible for TRANSFER) -->
+      <div id="transferForm" class="hidden">
+        <div>
+          <label for="mvToLocation">Hedef Lokasyon</label>
+          <select id="mvToLocation"></select>
+        </div>
+      </div>
+
+      <div style="margin-top:16px">
+        <button class="btn btn-primary" id="btnSave">Kaydet</button>
+        <button class="btn btn-secondary" id="btnCancel" onclick="document.getElementById('formCard').classList.add('hidden')">İptal</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin:0 0 12px 0;font-size:18px">Hareket Geçmişi</h2>
+      <div style="overflow:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>Tarih</th><th>Tür</th><th>SKU</th><th>Ürün</th><th>Lokasyon</th><th>Miktar</th><th>Birim Maliyet</th><th>Toplam</th>
+            </tr>
+          </thead>
+          <tbody id="historyTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase -->
+  <script type="module" src="/firebase.js"></script>
+  <!-- Header -->
+  <script type="module">
+    import { initGlobalHeader } from '../assets/js/ui/header.js';
+    initGlobalHeader({ mount: '#app-header', activeRoute: 'inventory' });
+  </script>
+  <!-- Helpers -->
+  <script type="module" src="/scripts/lib/tr-utils.js"></script>
+  <script type="module" src="/scripts/inventory-cost.js"></script>
+  <!-- Main -->
+  <script type="module" src="/scripts/stock-movements.js"></script>
+</body>
+</html>
+

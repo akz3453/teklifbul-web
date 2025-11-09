@@ -28,6 +28,10 @@
   <script type="module">
     import { db, auth, requireAuth } from "./firebase.js";
     import { doc, setDoc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+    // Teklifbul Rule v1.0 - Toast Notification System
+    import { toast } from './src/shared/ui/toast.js';
+    // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
+    import { MESSAGES } from './src/shared/constants/messages.js';
 
     await requireAuth();
     const me = auth.currentUser;
@@ -36,7 +40,7 @@
     document.getElementById("btnJoin").onclick = async () => {
       const companyId = document.getElementById("companyId").value.trim();
       const token = document.getElementById("token").value.trim();
-      if (!companyId || !token) return alert("companyId ve davet kodu zorunlu");
+      if (!companyId || !token) return toast.error(MESSAGES.ERROR_COMPANY_TOKEN_REQUIRED);
 
       try {
         // 1) Üyelik dokümanını oluştur (Rules: token aktif olmalı)

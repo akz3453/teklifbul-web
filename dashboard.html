@@ -116,6 +116,21 @@
             <p>Hesap ve firma bilgilerini düzenle</p>
           </div>
         </a>
+        <!-- Diagnostic Tools -->
+        <a href="./debug-info.html" class="nav-card" style="border-color: #ff9800;">
+          <div class="nav-icon">🔧</div>
+          <div class="nav-content">
+            <h4>Sistem Teşhisi</h4>
+            <p>Sistem durumunu kontrol et</p>
+          </div>
+        </a>
+        <a href="./test-data-loading.html" class="nav-card" style="border-color: #ff9800;">
+          <div class="nav-icon">🧪</div>
+          <div class="nav-content">
+            <h4>Veri Testi</h4>
+            <p>Veri yükleme işlemlerini test et</p>
+          </div>
+        </a>
       </div>
     </div>
     
@@ -132,6 +147,15 @@
       <div class="card metric-card clickable-card" id="draft-card" onclick="location.href='./demands.html?filter=draft'">
         <div class="card-title">Taslak Talepler</div>
         <h2 id="metric-draft">0</h2>
+      </div>
+      <!-- FCM Test Card -->
+      <div class="card" id="fcm-test-card" style="border-color: #3b82f6;">
+        <div class="card-title">🔔 Push Bildirimleri</div>
+        <div id="fcm-status" style="margin-top:8px; font-size:13px; color:#6b7280;">Yükleniyor...</div>
+        <div id="fcm-token-info" style="margin-top:8px; font-size:11px; color:#9ca3af; word-break:break-all; display:none;"></div>
+        <button id="test-notification-btn" style="margin-top:12px; padding:8px 16px; background:#3b82f6; color:white; border:none; border-radius:6px; cursor:pointer; font-size:13px; font-weight:600; width:100%;" disabled>
+          📤 Test Bildirimi Gönder
+        </button>
       </div>
       <div class="card metric-card clickable-card" id="incoming-bids-card" onclick="location.href='./bids.html?tab=incoming'">
         <div class="card-title">Gelen Teklifler</div>
@@ -181,28 +205,180 @@
   </main>
 
   <!-- Theme Script -->
-  <script src="/assets/js/theme.js" defer></script>
+  <script type="module" src="/assets/js/theme.js" defer></script>
+
+  <!-- FCM VAPID Key - Teklifbul Rule v1.0 -->
+  <script>
+    // VAPID Public Key - Firebase Console → Project Settings → Cloud Messaging → Web Push certificates
+    // Public Key: BGb_aJH4wkibTze33NjHJVTUUS8PtSIVW76QPsxi2_BNNqf3lezoE_nHjl8FgJS4G2l59LL7Cs1sLDfjRr_qAsM
+    window.FCM_VAPID_KEY = 'BGb_aJH4wkibTze33NjHJVTUUS8PtSIVW76QPsxi2_BNNqf3lezoE_nHjl8FgJS4G2l59LL7Cs1sLDfjRr_qAsM';
+  </script>
 
   <!-- Main Script -->
   <script type="module">
+    // Teklifbul Rule v1.0 - Tek kaynaktan auth guard yönetimi
+    import { initAuthGuard } from './assets/js/auth-guard.js';
     import { initGlobalHeader } from './assets/js/ui/header.js';
     import { db, auth, requireAuth } from "./firebase.js";
+    import { initFCM, getCurrentToken } from "./assets/js/fcm.js";
+    // Teklifbul Rule v1.0 - Structured Logging
+    import { logger } from './src/shared/log/logger.js';
+    // Teklifbul Rule v1.0 - Toast Notification System
+    import { toast } from './src/shared/ui/toast.js';
+    // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
+    import { MESSAGES } from './src/shared/constants/messages.js';
+    
+    // Guard'ı başlat - tüm yönlendirmeler guard üzerinden yapılacak
+    initAuthGuard().catch(err => logger.error('Auth guard init failed', err));
     
     // Initialize global header
     initGlobalHeader({ mount: '#app-header', activeRoute: 'dashboard' });
     
-    const headerUser = await requireAuth();
+    // FCM başlat ve UI güncelle
+    // Teklifbul Rule v1.0 - Push notification setup
+    (async () => {
+      const statusEl = document.getElementById('fcm-status');
+      const tokenInfoEl = document.getElementById('fcm-token-info');
+      const testBtn = document.getElementById('test-notification-btn');
+      
+      // Teklifbul Rule v1.0 - user değişkenini geniş scope'da tut
+      let currentUser = null;
+      
+      try {
+        currentUser = await requireAuth();
+        if (currentUser) {
+          statusEl.textContent = '⏳ FCM başlatılıyor...';
+          
+          const token = await initFCM();
+          if (token) {
+            statusEl.innerHTML = '<span style="color:#10b981;">✅ FCM aktif</span>';
+            tokenInfoEl.textContent = `Token: ${token.substring(0, 30)}...`;
+            tokenInfoEl.style.display = 'block';
+            testBtn.disabled = false;
+            
+            logger.info('FCM başarıyla başlatıldı');
+            
+            // FCM mesajlarını dinle
+            window.addEventListener('fcm-message', (event) => {
+              const payload = event.detail;
+              logger.info('FCM mesajı alındı', payload);
+              
+              // Toast göster (eğer varsa)
+              if (window.showToast) {
+                window.showToast(
+                  payload.notification?.title || payload.data?.title || 'Bildirim',
+                  payload.notification?.body || payload.data?.body || 'Yeni mesaj',
+                  'info'
+                );
+              }
+            });
+          } else {
+            statusEl.innerHTML = '<span style="color:#ef4444;">❌ FCM başlatılamadı</span>';
+            tokenInfoEl.textContent = 'Token alınamadı. Tarayıcı ayarlarından bildirim izni verin.';
+            tokenInfoEl.style.display = 'block';
+          }
+        }
+      } catch (error) {
+        logger.warn('FCM başlatılamadı', error);
+        statusEl.innerHTML = `<span style="color:#ef4444;">❌ Hata: ${error.message}</span>`;
+        tokenInfoEl.textContent = error.message;
+        tokenInfoEl.style.display = 'block';
+      }
+      
+      // Test bildirimi butonu
+      if (testBtn) {
+        testBtn.addEventListener('click', async () => {
+          try {
+            testBtn.disabled = true;
+            testBtn.textContent = '⏳ Gönderiliyor...';
+            
+            const token = getCurrentToken();
+            if (!token) {
+              toast.error(MESSAGES.ERROR_FCM_TOKEN);
+              testBtn.disabled = false;
+              testBtn.textContent = '📤 Test Bildirimi Gönder';
+              return;
+            }
+            
+            // Cloud Function'a test bildirimi isteği gönder
+            const { collection, addDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js');
+            
+            // Teklifbul Rule v1.0 - user değişkenini auth.currentUser'dan al
+            const user = auth.currentUser || currentUser;
+            if (!user) {
+              toast.error(MESSAGES.ERROR_USER_NOT_AUTH);
+              testBtn.disabled = false;
+              testBtn.textContent = '📤 Test Bildirimi Gönder';
+              return;
+            }
+            
+            // Test bildirimi için Firestore'a kayıt oluştur (Cloud Function dinleyecek)
+            await addDoc(collection(db, 'notification_tests'), {
+              userId: user.uid,
+              token: token,
+              type: 'test',
+              title: 'Test Bildirimi',
+              body: 'Bu bir test bildirimidir. FCM çalışıyor! 🎉',
+              createdAt: serverTimestamp(),
+              status: 'pending'
+            });
+            
+            testBtn.textContent = '✅ Gönderildi!';
+            setTimeout(() => {
+              testBtn.disabled = false;
+              testBtn.textContent = '📤 Test Bildirimi Gönder';
+            }, 2000);
+            
+          } catch (error) {
+            logger.error('Test bildirimi hatası', error);
+            toast.error(MESSAGES.ERROR_SEND + ': ' + error.message);
+            testBtn.disabled = false;
+            testBtn.textContent = '📤 Test Bildirimi Gönder';
+          }
+        });
+      }
+    })();
   </script>
 
   <!-- Dashboard Data Script -->
   <script type="module">
     import { db, requireAuth } from "./firebase.js";
+    // Teklifbul Rule v1.0 - Structured Logging
+    import { logger } from './src/shared/log/logger.js';
+    // Teklifbul Rule v1.0 - Toast Notification System
+    import { toast } from './src/shared/ui/toast.js';
+    // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
+    import { MESSAGES } from './src/shared/constants/messages.js';
     import {
-      collection, getDocs, query, where, orderBy, limit
+      collection, getDocs, getDoc, query, where, orderBy, limit, doc
     } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+    // CRITICAL: Import new ID-based category system
+    import { 
+      getAllCategories, 
+      getNameById,
+      normalizeToIds 
+    } from "./src/categories/category-service.js";
 
-    const dashUser = await requireAuth();
-    const uid = dashUser.uid;
+    // Async IIFE - Teklifbul Rule v1.0
+    (async function() {
+      const dashUser = await requireAuth();
+      
+      // Şirket kodlu kayıt durumunu kontrol et - Teklifbul Rule v1.0
+      try {
+        const userDoc = await getDoc(doc(db, 'users', dashUser.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          if (userData.companyJoinStatus === 'pending' || userData.companyJoinStatus === 'rejected') {
+            location.href = "./company-join-waiting.html";
+            return; // Bu return artık async fonksiyon içinde olduğu için geçerli
+          }
+        }
+      } catch (e) {
+        logger.warn('User status check failed', e);
+        // Hata olsa bile devam et, normal kullanıcılar için sorun olmaz
+      }
+      
+      const uid = dashUser.uid;
 
     // Durum çevirisi fonksiyonu
     function translateStatus(status) {
@@ -223,47 +399,215 @@
       return statusMap[status] || status || 'Bilinmeyen';
     }
 
+    // Helper: slug normalize (tr-friendly) - same as demands.html
+    function toSlug(name){
+      if (!name) return '';
+      return String(name)
+        .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+        .replace(/[şŞ]/g,'s').replace(/[ıİ]/g,'i').replace(/[ğĞ]/g,'g')
+        .replace(/[çÇ]/g,'c').replace(/[öÖ]/g,'o').replace(/[üÜ]/g,'u')
+        .toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+    }
+
     try {
-      // Load demands and bids
-      const qSent = query(
-        collection(db, "demands"),
-        where("createdBy", "==", uid)
-      );
-      
-      // Load incoming demands - all published demands (excluding own)
-      let incomingDemands = [];
-      try {
-        const qIncomingDemands = query(
-          collection(db, "demands"),
-          where("isPublished", "==", true),
-          orderBy("createdAt", "desc"),
-          limit(100)
-        );
-        const incomingSnap = await getDocs(qIncomingDemands);
-        incomingDemands = incomingSnap.docs
-          .filter(d => d.data().createdBy !== uid) // Kendi taleplerini filtrele
-          .map(d => ({ id: d.id, ...d.data() }));
-        console.log(`Dashboard: Found ${incomingDemands.length} published demands (excluding own demands)`);
-      } catch (error) {
-        console.error('Error loading incoming demands:', error);
+      // Get user's company ID and supplier categories (same as demands.html)
+      const userDoc = await getDoc(doc(db, 'users', uid));
+      const userData = userDoc.exists() ? userDoc.data() : {};
+      const userCompanyId = userData.companyId;
+      // CRITICAL: Get supplier categories in ID format (new system)
+      // Priority: supplierCategoryIds > supplierCategoryKeys (slugs) > supplierCategories (names)
+      let mySupplierCategoryTokens = [];
+      if (Array.isArray(userData.supplierCategoryIds) && userData.supplierCategoryIds.length > 0) {
+        mySupplierCategoryTokens = userData.supplierCategoryIds;
+      } else if (Array.isArray(userData.supplierCategoryKeys) && userData.supplierCategoryKeys.length > 0) {
+        mySupplierCategoryTokens = userData.supplierCategoryKeys;
+      } else if (Array.isArray(userData.supplierCategories) && userData.supplierCategories.length > 0) {
+        mySupplierCategoryTokens = userData.supplierCategories;
       }
       
-      // Load incoming bids (bids for my demands) - same logic as bids page
+      // Normalize all tokens to IDs
+      const mySupplierCategoryIds = normalizeToIds(mySupplierCategoryTokens).slice(0, 10); // Firestore limit
+      
+      // Reduced logging: Only log summary
+      if (mySupplierCategoryIds.length === 0) {
+        logger.warn("Dashboard: No supplier categories found for user.");
+      }
+      
+      // DEBUG queries removed for performance
+      
+      // Load incoming demands - same logic as demands.html
+      let incomingDemands = [];
+      try {
+        if (mySupplierCategoryIds.length > 0) {
+          // Use category filtering (same as demands.html)
+          // Note: Published demands have status='published' or 'approved' and isPublished=true
+          // CRITICAL: Try categoryIds first (new system), then fallback to legacy fields
+          let incomingSnap;
+          try {
+            // Primary: Use categoryIds (new ID-based system)
+            const qIncomingDemands = query(
+              collection(db, "demands"),
+              where("isPublished", "==", true),
+              where("categoryIds", "array-contains-any", mySupplierCategoryIds),
+              orderBy("createdAt", "desc"),
+              limit(100)
+            );
+            incomingSnap = await getDocs(qIncomingDemands);
+            logger.info(`Dashboard: Found ${incomingSnap.docs.length} demands with categoryIds match`);
+          } catch (err) {
+            // Fallback 1: Try supplierCategoryIds if categoryIds query fails
+            try {
+              const qIncomingDemands = query(
+                collection(db, "demands"),
+                where("isPublished", "==", true),
+                where("supplierCategoryIds", "array-contains-any", mySupplierCategoryIds),
+                orderBy("createdAt", "desc"),
+                limit(100)
+              );
+              incomingSnap = await getDocs(qIncomingDemands);
+              logger.info(`Dashboard: Found ${incomingSnap.docs.length} demands with supplierCategoryIds match`);
+            } catch (err2) {
+              // Fallback 2: Try legacy categoryTags (slugs) if ID queries fail
+              const allCategories = getAllCategories();
+              const legacySlugs = mySupplierCategoryIds.map(id => {
+                const cat = allCategories.find(c => c.id === id);
+                return cat ? cat.slug : null;
+              }).filter(Boolean);
+              
+              if (legacySlugs.length > 0) {
+                logger.warn("ID queries failed, trying legacy categoryTags fallback", err2.message);
+                try {
+                  const qIncomingDemands = query(
+                    collection(db, "demands"),
+                    where("isPublished", "==", true),
+                    where("categoryTags", "array-contains-any", legacySlugs.slice(0, 10)),
+                    orderBy("createdAt", "desc"),
+                    limit(100)
+                  );
+                  incomingSnap = await getDocs(qIncomingDemands);
+                  logger.info(`Dashboard: Found ${incomingSnap.docs.length} demands with categoryTags match (fallback)`);
+                } catch (err3) {
+                  logger.error("Dashboard: All category query attempts failed");
+                  if (err3.code === 'failed-precondition') {
+                    logger.error("Firestore index required. Please:");
+                    logger.error("   1. Click the link in the error message above to create the index manually");
+                    logger.error("   2. Or run: firebase deploy --only firestore:indexes");
+                    logger.error("   3. Wait a few minutes for the index to build, then refresh the page.");
+                  }
+                  incomingSnap = { docs: [] };
+                }
+              } else {
+                logger.error("Dashboard: All category query attempts failed - no legacy slugs available");
+                incomingSnap = { docs: [] };
+              }
+            }
+          }
+          
+          incomingDemands = incomingSnap.docs
+            .filter(d => {
+              const data = d.data();
+              // Kendi şirketinin taleplerini filtrele (silent filter)
+              if (data.creatorCompanyId && userCompanyId && data.creatorCompanyId === userCompanyId) {
+                return false;
+              }
+              return true;
+            })
+            .map(d => ({ id: d.id, ...d.data() }));
+          logger.info(`Dashboard: Found ${incomingDemands.length} incoming demands`, { filtered: incomingSnap.docs.length - incomingDemands.length });
+          
+          // DEBUG: If no matches, check why
+          if (incomingSnap.docs.length > 0 && incomingDemands.length === 0) {
+            logger.warn("WARNING: Published demands exist but none match user categories!");
+            logger.info("Sample demand from query");
+            const sample = incomingSnap.docs[0];
+            const sampleData = sample.data();
+            const demandCats = sampleData.categoryIds || sampleData.supplierCategoryIds || sampleData.categoryTags || [];
+            const demandCategoryIds = normalizeToIds(demandCats);
+            const matchedCats = demandCategoryIds.filter(id => mySupplierCategoryIds.includes(id));
+            logger.info("Sample demand debug", {
+              demandId: sample.id,
+              categoryIds: sampleData.categoryIds,
+              supplierCategoryIds: sampleData.supplierCategoryIds,
+              categoryTags: sampleData.categoryTags,
+              creatorCompanyId: sampleData.creatorCompanyId,
+              userCompanyId: userCompanyId,
+              isOwnCompany: sampleData.creatorCompanyId === userCompanyId,
+              userCategoryIds: mySupplierCategoryIds,
+              demandCategoryIds: demandCategoryIds,
+              matchedCategoryIds: matchedCats,
+              hasMatch: matchedCats.length > 0
+            });
+          }
+        } else {
+          // Fallback: if no supplier categories, show all published (excluding own)
+          // Note: Published demands have status='published' and isPublished=true
+          const qIncomingDemands = query(
+            collection(db, "demands"),
+            where("isPublished", "==", true),
+            orderBy("createdAt", "desc"),
+            limit(100)
+          );
+          const incomingSnap = await getDocs(qIncomingDemands);
+          incomingDemands = incomingSnap.docs
+            .filter(d => {
+              const data = d.data();
+              // Kendi şirketinin taleplerini filtrele
+              if (data.creatorCompanyId && userCompanyId && data.creatorCompanyId === userCompanyId) {
+                return false;
+              }
+              if (data.createdBy === uid) return false;
+              return true;
+            })
+            .map(d => ({ id: d.id, ...d.data() }));
+          // Silent: all published demands shown (no categories filter)
+        }
+      } catch (error) {
+        logger.error('Error loading incoming demands', error);
+        if (error.code === 'failed-precondition') {
+          logger.error("Firestore index required. Please:");
+          logger.error("   1. Click the link in the error message above to create the index manually");
+          logger.error("   2. Or run: firebase deploy --only firestore:indexes");
+          logger.error("   3. Wait a few minutes for the index to build, then refresh the page.");
+        }
+      }
+      
+      // OPTIMIZED: Load incoming bids using batch whereIn (same as bids.html)
       let incomingBids = [];
       try {
         const ds = await getDocs(query(collection(db,'demands'), where('createdBy','==', uid)));
         const demandIds = ds.docs.map(d=>d.id);
         
-        for (const d of ds.docs){
-          const q = query(collection(db,'bids'), where('demandId','==', d.id), orderBy('createdAt','desc'), limit(50));
-          const snap = await getDocs(q);
-          for (const b of snap.docs){
-            const data = { id:b.id, ...b.data() };
-            incomingBids.push(data);
+        if (demandIds.length > 0) {
+          // Batch load bids using whereIn (10 at a time)
+          for (let i = 0; i < demandIds.length; i += 10) {
+            const batchIds = demandIds.slice(i, i + 10);
+            try {
+              const q = query(
+                collection(db,'bids'), 
+                where('demandId','in', batchIds),
+                orderBy('createdAt','desc'),
+                limit(100)
+              );
+              const snap = await getDocs(q);
+              snap.docs.forEach(b => incomingBids.push({ id:b.id, ...b.data() }));
+            } catch (e) {
+              // Fallback: query individually if whereIn+orderBy fails
+              logger.warn('whereIn+orderBy failed, using fallback', e);
+              for (const demandId of batchIds) {
+                const q = query(
+                  collection(db,'bids'), 
+                  where('demandId','==', demandId),
+                  orderBy('createdAt','desc'),
+                  limit(50)
+                );
+                const snap = await getDocs(q);
+                snap.docs.forEach(b => incomingBids.push({ id:b.id, ...b.data() }));
+              }
+            }
           }
         }
       } catch (error) {
-        console.error('Error loading incoming bids:', error);
+        logger.error('Error loading incoming bids', error);
       }
       
       // Load outgoing bids (bids I sent)
@@ -272,19 +616,108 @@
         where("supplierId", "==", uid)
       );
 
-      const [sentSnap, outgoingBidsSnap] = await Promise.all([
-        getDocs(qSent),
+      // Load all user demands (for "Son Taleplerim" table) - creatorCompanyId or createdBy
+      let allUserDemands = [];
+      try {
+        if (userCompanyId) {
+          const qAllDemands = query(
+            collection(db, "demands"),
+            where("creatorCompanyId", "==", userCompanyId),
+            orderBy("createdAt", "desc"),
+            limit(100)
+          );
+          const allDemandsSnap = await getDocs(qAllDemands);
+          allUserDemands = allDemandsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        } else {
+          // Fallback: use createdBy if no companyId
+          const qAllDemands = query(
+            collection(db, "demands"),
+            where("createdBy", "==", uid),
+            orderBy("createdAt", "desc"),
+            limit(100)
+          );
+          const allDemandsSnap = await getDocs(qAllDemands);
+          allUserDemands = allDemandsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        }
+      } catch (error) {
+        logger.error('Error loading all user demands', error);
+      }
+
+      // Load outgoing demands - same logic as demands.html (creatorCompanyId + status published)
+      let outgoingDemands = [];
+      try {
+        if (userCompanyId) {
+          // Note: Published demands have status='approved' and isPublished=true
+          const qOutgoing = query(
+            collection(db, "demands"),
+            where("creatorCompanyId", "==", userCompanyId),
+            where("isPublished", "==", true),
+            orderBy("createdAt", "desc"),
+            limit(100)
+          );
+          const outgoingSnap = await getDocs(qOutgoing);
+          outgoingDemands = outgoingSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+          // Silent: outgoing demands loaded
+        } else {
+          // Fallback: use createdBy if no companyId
+          // Note: Published demands have status='published' and isPublished=true
+          const qOutgoing = query(
+            collection(db, "demands"),
+            where("createdBy", "==", uid),
+            where("isPublished", "==", true),
+            orderBy("createdAt", "desc"),
+            limit(100)
+          );
+          const outgoingSnap = await getDocs(qOutgoing);
+          outgoingDemands = outgoingSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+          // Silent: outgoing demands loaded (createdBy fallback)
+        }
+      } catch (error) {
+        logger.error('Error loading outgoing demands', error);
+      }
+      
+      // Load draft demands - same logic as demands.html (creatorCompanyId + status IN ['draft', 'withdrawn'])
+      let drafts = [];
+      try {
+        if (userCompanyId) {
+          const qDrafts = query(
+            collection(db, "demands"),
+            where("creatorCompanyId", "==", userCompanyId),
+            where("status", "in", ["draft", "withdrawn"]),
+            orderBy("updatedAt", "desc"),
+            limit(100)
+          );
+          const draftsSnap = await getDocs(qDrafts);
+          drafts = draftsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+          // Silent: draft demands loaded
+        } else {
+          // Fallback: use createdBy if no companyId
+          const qDrafts = query(
+            collection(db, "demands"),
+            where("createdBy", "==", uid),
+            where("status", "in", ["draft", "withdrawn"]),
+            orderBy("updatedAt", "desc"),
+            limit(100)
+          );
+          const draftsSnap = await getDocs(qDrafts);
+          drafts = draftsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+          // Silent: draft demands loaded (createdBy fallback)
+        }
+      } catch (error) {
+        logger.error('Error loading draft demands', error);
+      }
+
+      const [outgoingBidsSnap] = await Promise.all([
         getDocs(qOutgoingBids)
       ]);
 
-      const sent = sentSnap.docs.map(d => ({ id: d.id, ...d.data() }));
       const outgoingBids = outgoingBidsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-      
-      const drafts = sent.filter(x => !x.published);
+      // Use allUserDemands for "Son Taleplerim" table
+      const sent = allUserDemands;
 
-      // Update metrics
+      // Update metrics - use outgoingDemands instead of sent for consistency
       document.getElementById("metric-inbox").textContent = String(incomingDemands.length);
-      document.getElementById("metric-sent").textContent = String(sent.length);
+      document.getElementById("metric-sent").textContent = String(outgoingDemands.length);
       document.getElementById("metric-draft").textContent = String(drafts.length);
       document.getElementById("metric-incoming-bids").textContent = String(incomingBids.length);
       document.getElementById("metric-outgoing-bids").textContent = String(outgoingBids.length);
@@ -303,16 +736,32 @@
       if (last5.length === 0) {
         lastBody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#6b7280;padding:20px">Henüz talep yok</td></tr>';
       } else {
-        // Her talep için bid sayısını hesapla
-        for (const x of last5) {
-          let bidCount = 0;
+        // OPTIMIZED: Batch load bid counts for all 5 demands at once
+        const demandIdsForBidCount = last5.map(x => x.id);
+        const bidCountsMap = new Map();
+        
+        if (demandIdsForBidCount.length > 0) {
           try {
-            const bidQuery = query(collection(db, 'bids'), where('demandId', '==', x.id));
+            // Batch query with whereIn (10 max, but we have max 5)
+            const bidQuery = query(
+              collection(db, 'bids'), 
+              where('demandId', 'in', demandIdsForBidCount)
+            );
             const bidSnap = await getDocs(bidQuery);
-            bidCount = bidSnap.docs.length;
+            
+            // Count bids per demand
+            bidSnap.docs.forEach(b => {
+              const demandId = b.data().demandId;
+              bidCountsMap.set(demandId, (bidCountsMap.get(demandId) || 0) + 1);
+            });
           } catch (error) {
-            console.warn(`Bid count error for demand ${x.id}:`, error);
+            logger.warn('Batch bid count error', error);
           }
+        }
+        
+        // Render rows with cached bid counts
+        for (const x of last5) {
+          const bidCount = bidCountsMap.get(x.id) || 0;
           
           const cats = [
             ...(Array.isArray(x.categoryTags) ? x.categoryTags : []),
@@ -344,26 +793,43 @@
         }
       }
     } catch (e) {
-      console.error("Dashboard data load error:", e);
+      logger.error("Dashboard data load error", e);
+      // Show detailed error information to help diagnose the issue
+      const errorMessage = `
+        <div style="text-align: center; padding: 40px; color: #6b7280; background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; margin: 20px;">
+          <h3>Dashboard verileri yüklenemedi</h3>
+          <p>Hata detayı: ${e.message || e}</p>
+          <p>Lütfen aşağıdaki kontrol listesini inceleyin:</p>
+          <ul style="text-align: left; max-width: 500px; margin: 20px auto;">
+            <li>İnternet bağlantınızı kontrol edin</li>
+            <li>Firebase authentication'ın doğru çalıştığından emin olun</li>
+            <li>Şirket bilgilerinizin doğru ayarlandığından emin olun</li>
+            <li>Tedarikçi kategorilerinizin seçili olduğundan emin olun</li>
+            <li>Ayarlar sayfasından profil bilgilerinizi kontrol edin</li>
+          </ul>
+          <p style="font-size: 14px; margin-top: 20px;">
+            <a href="./settings.html" style="color: #3b82f6;">Ayarlar</a> | 
+            <a href="./demands.html" style="color: #3b82f6;">Talepler</a> | 
+            <a href="./bids.html" style="color: #3b82f6;">Teklifler</a>
+          </p>
+        </div>
+      `;
+      
+      // Try to insert the error message in a visible place
+      const mainContent = document.querySelector("main");
+      if (mainContent) {
+        const errorDiv = document.createElement("div");
+        errorDiv.innerHTML = errorMessage;
+        mainContent.insertBefore(errorDiv, mainContent.firstChild);
+      }
+      
       if (e.message && e.message.includes("Missing or insufficient permissions")) {
-        console.warn("⚠️ Permission denied for dashboard data - Firestore rules may need updating");
-        // Show a user-friendly message
-        const dashboardContent = document.querySelector(".dashboard-content");
-        if (dashboardContent) {
-          dashboardContent.innerHTML = `
-            <div style="text-align: center; padding: 40px; color: #6b7280;">
-              <h3>Dashboard verileri yüklenemedi</h3>
-              <p>Firestore güvenlik kuralları güncelleniyor. Lütfen birkaç dakika sonra tekrar deneyin.</p>
-              <p style="font-size: 14px; margin-top: 20px;">
-                <a href="./settings.html" style="color: #3b82f6;">Ayarlar</a> | 
-                <a href="./demands.html" style="color: #3b82f6;">Talepler</a> | 
-                <a href="./bids.html" style="color: #3b82f6;">Teklifler</a>
-              </p>
-            </div>
-          `;
-        }
+        logger.warn("Permission denied for dashboard data - Firestore rules may need updating");
       }
     }
+    
+    // Async IIFE kapatma - Teklifbul Rule v1.0
+    })();
   </script>
 
   <!-- TCMB FX Widget -->
@@ -387,7 +853,7 @@
         document.getElementById("fx-eur").textContent = eurRate;
         document.getElementById("fx-time").textContent = `Tarih: ${asOf}`;
       } catch (e) {
-        console.error("FX load error:", e);
+        logger.error("FX load error", e);
         document.getElementById("fx-usd").textContent = "-";
         document.getElementById("fx-eur").textContent = "-";
         document.getElementById("fx-time").textContent = "Kur bilgisi yüklenemedi";

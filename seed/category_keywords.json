@@ -1,0 +1,627 @@
+[
+  {
+    "category_id": 1,
+    "keyword": "sac",
+    "weight": 1.8
+  },
+  {
+    "category_id": 1,
+    "keyword": "metal",
+    "weight": 1.5
+  },
+  {
+    "category_id": 1,
+    "keyword": "çelik işleme",
+    "weight": 1.5
+  },
+  {
+    "category_id": 1,
+    "keyword": "çelik sac",
+    "weight": 1.5
+  },
+  {
+    "category_id": 1,
+    "keyword": "alüminyum",
+    "weight": 1.2
+  },
+  {
+    "category_id": 1,
+    "keyword": "boru",
+    "weight": 1.2
+  },
+  {
+    "category_id": 1,
+    "keyword": "sac-metal",
+    "weight": 1.2
+  },
+  {
+    "category_id": 2,
+    "keyword": "elektrik malzemeleri",
+    "weight": 1.8
+  },
+  {
+    "category_id": 2,
+    "keyword": "kablo",
+    "weight": 1.5
+  },
+  {
+    "category_id": 2,
+    "keyword": "sigorta",
+    "weight": 1.2
+  },
+  {
+    "category_id": 2,
+    "keyword": "priz",
+    "weight": 1.2
+  },
+  {
+    "category_id": 2,
+    "keyword": "elektrik",
+    "weight": 1.2
+  },
+  {
+    "category_id": 3,
+    "keyword": "plc",
+    "weight": 1.8
+  },
+  {
+    "category_id": 3,
+    "keyword": "sensor",
+    "weight": 1.5
+  },
+  {
+    "category_id": 3,
+    "keyword": "sensör",
+    "weight": 1.5
+  },
+  {
+    "category_id": 3,
+    "keyword": "kontrol kartı",
+    "weight": 1.2
+  },
+  {
+    "category_id": 3,
+    "keyword": "plc",
+    "weight": 1.2
+  },
+  {
+    "category_id": 3,
+    "keyword": "elektronik",
+    "weight": 1.2
+  },
+  {
+    "category_id": 4,
+    "keyword": "imalat",
+    "weight": 1.8
+  },
+  {
+    "category_id": 4,
+    "keyword": "cnc",
+    "weight": 1.5
+  },
+  {
+    "category_id": 4,
+    "keyword": "rulman",
+    "weight": 1.5
+  },
+  {
+    "category_id": 4,
+    "keyword": "kayış",
+    "weight": 1.2
+  },
+  {
+    "category_id": 4,
+    "keyword": "dişli",
+    "weight": 1.2
+  },
+  {
+    "category_id": 4,
+    "keyword": "makine-imalat",
+    "weight": 1.2
+  },
+  {
+    "category_id": 5,
+    "keyword": "vida",
+    "weight": 1.8
+  },
+  {
+    "category_id": 5,
+    "keyword": "somun",
+    "weight": 1.5
+  },
+  {
+    "category_id": 5,
+    "keyword": "çivi",
+    "weight": 1.5
+  },
+  {
+    "category_id": 5,
+    "keyword": "hirdavat",
+    "weight": 1.2
+  },
+  {
+    "category_id": 6,
+    "keyword": "koli",
+    "weight": 1.8
+  },
+  {
+    "category_id": 6,
+    "keyword": "streç",
+    "weight": 1.5
+  },
+  {
+    "category_id": 6,
+    "keyword": "karton kutu",
+    "weight": 1.5
+  },
+  {
+    "category_id": 6,
+    "keyword": "poşet",
+    "weight": 1.2
+  },
+  {
+    "category_id": 6,
+    "keyword": "streç film",
+    "weight": 1.2
+  },
+  {
+    "category_id": 6,
+    "keyword": "ambalaj",
+    "weight": 1.2
+  },
+  {
+    "category_id": 7,
+    "keyword": "solvent",
+    "weight": 1.8
+  },
+  {
+    "category_id": 7,
+    "keyword": "temizlik kimyasalı",
+    "weight": 1.5
+  },
+  {
+    "category_id": 7,
+    "keyword": "yapıştırıcı",
+    "weight": 1.2
+  },
+  {
+    "category_id": 7,
+    "keyword": "kimyasal",
+    "weight": 1.2
+  },
+  {
+    "category_id": 8,
+    "keyword": "yapı",
+    "weight": 1.8
+  },
+  {
+    "category_id": 8,
+    "keyword": "i̇nşaat malzemeleri",
+    "weight": 1.5
+  },
+  {
+    "category_id": 8,
+    "keyword": "insaat-malzemeleri",
+    "weight": 1.2
+  },
+  {
+    "category_id": 9,
+    "keyword": "ofis mobilyası",
+    "weight": 1.8
+  },
+  {
+    "category_id": 9,
+    "keyword": "masa",
+    "weight": 1.5
+  },
+  {
+    "category_id": 9,
+    "keyword": "sandalye",
+    "weight": 1.2
+  },
+  {
+    "category_id": 9,
+    "keyword": "dolap",
+    "weight": 1.2
+  },
+  {
+    "category_id": 9,
+    "keyword": "mobilya",
+    "weight": 1.2
+  },
+  {
+    "category_id": 10,
+    "keyword": "endüstriyel boya",
+    "weight": 1.8
+  },
+  {
+    "category_id": 10,
+    "keyword": "duvar boyası",
+    "weight": 1.5
+  },
+  {
+    "category_id": 10,
+    "keyword": "astar",
+    "weight": 1.2
+  },
+  {
+    "category_id": 10,
+    "keyword": "vernik",
+    "weight": 1.2
+  },
+  {
+    "category_id": 10,
+    "keyword": "boya",
+    "weight": 1.2
+  },
+  {
+    "category_id": 11,
+    "keyword": "plastik hammadde",
+    "weight": 1.8
+  },
+  {
+    "category_id": 11,
+    "keyword": "plastik boru",
+    "weight": 1.5
+  },
+  {
+    "category_id": 11,
+    "keyword": "pvc",
+    "weight": 1.2
+  },
+  {
+    "category_id": 11,
+    "keyword": "polietilen",
+    "weight": 1.2
+  },
+  {
+    "category_id": 11,
+    "keyword": "plastik",
+    "weight": 1.2
+  },
+  {
+    "category_id": 12,
+    "keyword": "otomotiv parça",
+    "weight": 1.8
+  },
+  {
+    "category_id": 12,
+    "keyword": "filtre",
+    "weight": 1.5
+  },
+  {
+    "category_id": 12,
+    "keyword": "lastik",
+    "weight": 1.2
+  },
+  {
+    "category_id": 12,
+    "keyword": "motor yağı",
+    "weight": 1.2
+  },
+  {
+    "category_id": 12,
+    "keyword": "otomotiv-yan-sanayi",
+    "weight": 1.2
+  },
+  {
+    "category_id": 13,
+    "keyword": "kkd",
+    "weight": 1.8
+  },
+  {
+    "category_id": 13,
+    "keyword": "baret",
+    "weight": 1.5
+  },
+  {
+    "category_id": 13,
+    "keyword": "gözlük",
+    "weight": 1.5
+  },
+  {
+    "category_id": 13,
+    "keyword": "eldiven",
+    "weight": 1.2
+  },
+  {
+    "category_id": 13,
+    "keyword": "is-guvenligi",
+    "weight": 1.2
+  },
+  {
+    "category_id": 14,
+    "keyword": "temizlik ekipmanı",
+    "weight": 1.8
+  },
+  {
+    "category_id": 14,
+    "keyword": "süpürge",
+    "weight": 1.5
+  },
+  {
+    "category_id": 14,
+    "keyword": "paspas",
+    "weight": 1.2
+  },
+  {
+    "category_id": 14,
+    "keyword": "deterjan",
+    "weight": 1.2
+  },
+  {
+    "category_id": 14,
+    "keyword": "temizlik",
+    "weight": 1.2
+  },
+  {
+    "category_id": 15,
+    "keyword": "ikram",
+    "weight": 1.8
+  },
+  {
+    "category_id": 15,
+    "keyword": "konserve",
+    "weight": 1.5
+  },
+  {
+    "category_id": 15,
+    "keyword": "içecek",
+    "weight": 1.2
+  },
+  {
+    "category_id": 15,
+    "keyword": "ambalaj",
+    "weight": 1.2
+  },
+  {
+    "category_id": 15,
+    "keyword": "gida",
+    "weight": 1.2
+  },
+  {
+    "category_id": 16,
+    "keyword": "bakım",
+    "weight": 1.8
+  },
+  {
+    "category_id": 16,
+    "keyword": "işçilik",
+    "weight": 1.5
+  },
+  {
+    "category_id": 16,
+    "keyword": "onarım",
+    "weight": 1.5
+  },
+  {
+    "category_id": 16,
+    "keyword": "danışmanlık",
+    "weight": 1.2
+  },
+  {
+    "category_id": 16,
+    "keyword": "hizmet",
+    "weight": 1.2
+  },
+  {
+    "category_id": 17,
+    "keyword": "nakliye",
+    "weight": 1.8
+  },
+  {
+    "category_id": 17,
+    "keyword": "kargo",
+    "weight": 1.5
+  },
+  {
+    "category_id": 17,
+    "keyword": "depolama",
+    "weight": 1.2
+  },
+  {
+    "category_id": 17,
+    "keyword": "lojistik",
+    "weight": 1.2
+  },
+  {
+    "category_id": 18,
+    "keyword": "armatur",
+    "weight": 1.8
+  },
+  {
+    "category_id": 18,
+    "keyword": "projektor",
+    "weight": 1.5
+  },
+  {
+    "category_id": 18,
+    "keyword": "led",
+    "weight": 1.5
+  },
+  {
+    "category_id": 18,
+    "keyword": "aydinlatma",
+    "weight": 1.2
+  },
+  {
+    "category_id": 19,
+    "keyword": "pano",
+    "weight": 1.8
+  },
+  {
+    "category_id": 19,
+    "keyword": "şalt",
+    "weight": 1.5
+  },
+  {
+    "category_id": 19,
+    "keyword": "trafo",
+    "weight": 1.5
+  },
+  {
+    "category_id": 19,
+    "keyword": "alcak-orta-gerilim",
+    "weight": 1.5
+  },
+  {
+    "category_id": 20,
+    "keyword": "plc",
+    "weight": 1.8
+  },
+  {
+    "category_id": 20,
+    "keyword": "hmi",
+    "weight": 1.5
+  },
+  {
+    "category_id": 20,
+    "keyword": "sürücü",
+    "weight": 1.5
+  },
+  {
+    "category_id": 20,
+    "keyword": "plc",
+    "weight": 1.5
+  },
+  {
+    "category_id": 20,
+    "keyword": "hmi",
+    "weight": 1.2
+  },
+  {
+    "category_id": 20,
+    "keyword": "otomasyon-plc-scada",
+    "weight": 1.2
+  },
+  {
+    "category_id": 21,
+    "keyword": "mig",
+    "weight": 1.8
+  },
+  {
+    "category_id": 21,
+    "keyword": "tig",
+    "weight": 1.5
+  },
+  {
+    "category_id": 21,
+    "keyword": "kaynak teli",
+    "weight": 1.5
+  },
+  {
+    "category_id": 21,
+    "keyword": "mig",
+    "weight": 1.5
+  },
+  {
+    "category_id": 21,
+    "keyword": "tig",
+    "weight": 1.2
+  },
+  {
+    "category_id": 21,
+    "keyword": "kaynak-sarf",
+    "weight": 1.2
+  },
+  {
+    "category_id": 22,
+    "keyword": "kayış",
+    "weight": 1.8
+  },
+  {
+    "category_id": 22,
+    "keyword": "kaplin",
+    "weight": 1.5
+  },
+  {
+    "category_id": 22,
+    "keyword": "redüktör",
+    "weight": 1.5
+  },
+  {
+    "category_id": 22,
+    "keyword": "rulman-guc-aktarim",
+    "weight": 1.5
+  },
+  {
+    "category_id": 23,
+    "keyword": "vrf",
+    "weight": 1.8
+  },
+  {
+    "category_id": 23,
+    "keyword": "kanal",
+    "weight": 1.5
+  },
+  {
+    "category_id": 23,
+    "keyword": "fan",
+    "weight": 1.5
+  },
+  {
+    "category_id": 23,
+    "keyword": "vrf",
+    "weight": 1.5
+  },
+  {
+    "category_id": 23,
+    "keyword": "iklimlendirme-havalandirma",
+    "weight": 1.2
+  },
+  {
+    "category_id": 24,
+    "keyword": "sprinkler",
+    "weight": 1.8
+  },
+  {
+    "category_id": 24,
+    "keyword": "algılama",
+    "weight": 1.5
+  },
+  {
+    "category_id": 24,
+    "keyword": "baret",
+    "weight": 1.5
+  },
+  {
+    "category_id": 24,
+    "keyword": "gözlük",
+    "weight": 1.2
+  },
+  {
+    "category_id": 24,
+    "keyword": "eldiven",
+    "weight": 1.2
+  },
+  {
+    "category_id": 24,
+    "keyword": "yangın tüpü",
+    "weight": 1.2
+  },
+  {
+    "category_id": 24,
+    "keyword": "yangin-guvenligi",
+    "weight": 1.2
+  },
+  {
+    "category_id": 25,
+    "keyword": "forklift",
+    "weight": 1.8
+  },
+  {
+    "category_id": 25,
+    "keyword": "vinç",
+    "weight": 1.5
+  },
+  {
+    "category_id": 25,
+    "keyword": "jeneratör",
+    "weight": 1.5
+  },
+  {
+    "category_id": 25,
+    "keyword": "ekipman-kiralama",
+    "weight": 1.2
+  }
+]

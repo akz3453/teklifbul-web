@@ -3,6 +3,9 @@
  * Handles tab switching and active state management
  */
 
+// Teklifbul Rule v1.0 - Structured Logging
+import { logger } from '../../../src/shared/log/logger.js';
+
 /**
  * Tab Manager Class
  */
@@ -19,7 +22,7 @@ export class TabManager {
    */
   init() {
     if (!this.container) {
-      console.warn('Tab container not found:', this.containerSelector);
+      logger.warn('Tab container not found', { containerSelector: this.containerSelector });
       return;
     }
 
@@ -27,7 +30,7 @@ export class TabManager {
     this.tabs = Array.from(this.container.querySelectorAll('[role="tab"]'));
     
     if (this.tabs.length === 0) {
-      console.warn('No tabs found in container');
+      logger.warn('No tabs found in container');
       return;
     }
 
@@ -54,7 +57,7 @@ export class TabManager {
    */
   switchTab(tabElement) {
     if (!this.tabs.includes(tabElement)) {
-      console.warn('Tab element not found in tabs array');
+      logger.warn('Tab element not found in tabs array');
       return;
     }
 
@@ -143,7 +146,7 @@ export class TabManager {
     if (tab) {
       this.switchTab(tab);
     } else {
-      console.warn('Tab not found:', tabId);
+      logger.warn('Tab not found', { tabId });
     }
   }
 
@@ -216,13 +219,13 @@ export class TabManager {
 export function switchTab(tabId, containerSelector = '.tabs') {
   const container = document.querySelector(containerSelector);
   if (!container) {
-    console.warn('Tab container not found:', containerSelector);
+    logger.warn('Tab container not found', { containerSelector });
     return;
   }
 
   const tab = container.querySelector(`#${tabId}`);
   if (!tab) {
-    console.warn('Tab not found:', tabId);
+    logger.warn('Tab not found', { tabId });
     return;
   }
 

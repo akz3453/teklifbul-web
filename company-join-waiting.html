@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Onay Bekleniyor — Teklifbul</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%233b82f6' rx='6'/%3E%3Ctext x='16' y='22' font-family='Arial' font-size='18' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/utils.css" />
+  <style>
+    body {
+      font-family: system-ui, Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      background: white;
+      border-radius: 16px;
+      padding: 40px;
+      max-width: 600px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      text-align: center;
+    }
+    .spinner {
+      border: 4px solid #f3f4f6;
+      border-top: 4px solid #3b82f6;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 24px;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    h1 {
+      color: #1f2937;
+      margin: 0 0 16px 0;
+      font-size: 28px;
+    }
+    .status-message {
+      color: #6b7280;
+      font-size: 16px;
+      line-height: 1.6;
+      margin: 16px 0;
+    }
+    .company-info {
+      background: #f9fafb;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 24px 0;
+      text-align: left;
+    }
+    .company-info h3 {
+      margin: 0 0 12px 0;
+      color: #1f2937;
+      font-size: 18px;
+    }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .info-row:last-child {
+      border-bottom: none;
+    }
+    .info-label {
+      color: #6b7280;
+      font-weight: 500;
+    }
+    .info-value {
+      color: #1f2937;
+      font-weight: 600;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 14px;
+      margin: 16px 0;
+    }
+    .status-pending {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    .status-accepted {
+      background: #d1fae5;
+      color: #065f46;
+    }
+    .status-rejected {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    .btn {
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 16px;
+      cursor: pointer;
+      border: none;
+      margin-top: 24px;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: #3b82f6;
+      color: white;
+    }
+    .btn-primary:hover {
+      background: #2563eb;
+    }
+    .btn-danger {
+      background: #ef4444;
+      color: white;
+    }
+    .btn-danger:hover {
+      background: #dc2626;
+    }
+    .auto-refresh {
+      color: #9ca3af;
+      font-size: 14px;
+      margin-top: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="pendingState">
+      <div class="spinner"></div>
+      <h1>⏳ Onay Bekleniyor</h1>
+      <div class="status-message">
+        Şirket yöneticileri katılım talebinizi inceliyor. Onaylandıktan sonra hesabınız aktif olacaktır.
+      </div>
+      <div id="companyInfoBox" class="company-info">
+        <h3>📋 Talep Bilgileri</h3>
+        <div class="info-row">
+          <span class="info-label">Şirket:</span>
+          <span class="info-value" id="companyName">-</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Talep Edilen Rol:</span>
+          <span class="info-value" id="requestedRole">-</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Talep Tarihi:</span>
+          <span class="info-value" id="requestDate">-</span>
+        </div>
+      </div>
+      <div class="status-badge status-pending">⏳ Beklemede</div>
+      <div class="auto-refresh">Sayfa otomatik olarak yenileniyor...</div>
+      
+      <!-- Çıkış Yap Butonu - Teklifbul Rule v1.0 -->
+      <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
+        <p style="font-size: 14px; color: #6b7280; margin-bottom: 16px; text-align: center;">
+          Farklı bir kullanıcı ile giriş yapmak için çıkış yapabilirsiniz.
+        </p>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;">
+          <button id="logoutBtn" class="btn btn-danger" style="padding: 10px 20px; font-size: 14px; background: #ef4444; color: white;">
+            🚪 Çıkış Yap
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="acceptedState" style="display: none;">
+      <div style="font-size: 64px; margin-bottom: 16px;">✅</div>
+      <h1>🎉 Onaylandı!</h1>
+      <div class="status-message">
+        Katılım talebiniz onaylandı. Hesabınız aktif edildi. Yönlendiriliyorsunuz...
+      </div>
+      <div class="status-badge status-accepted">✅ Onaylandı</div>
+    </div>
+
+    <div id="rejectedState" style="display: none;">
+      <div style="font-size: 64px; margin-bottom: 16px;">❌</div>
+      <h1>İstek Reddedildi</h1>
+      <div class="status-message">
+        Maalesef katılım talebiniz şirket yöneticileri tarafından reddedildi.
+      </div>
+      <div class="status-badge status-rejected">❌ Reddedildi</div>
+      <div style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 24px;">
+        <button class="btn btn-primary" onclick="location.href='./index.html?fromWaiting=true'">Ana Sayfaya Dön</button>
+        <button id="logoutBtnRejected" class="btn btn-danger" style="background: #ef4444; color: white;">
+          🚪 Çıkış Yap
+        </button>
+      </div>
+    </div>
+
+    <div id="errorState" style="display: none;">
+      <div style="font-size: 64px; margin-bottom: 16px;">⚠️</div>
+      <h1>Bir Hata Oluştu</h1>
+      <div class="status-message" id="errorMessage"></div>
+      <div style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 24px;">
+        <button class="btn btn-primary" onclick="location.href='./index.html?fromWaiting=true'">Ana Sayfaya Dön</button>
+        <button id="logoutBtnError" class="btn btn-danger" style="background: #ef4444; color: white;">
+          🚪 Çıkış Yap
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { db, auth, logout } from "./firebase.js";
+    // Teklifbul Rule v1.0 - Structured Logging
+    import { logger } from './src/shared/log/logger.js';
+    // Teklifbul Rule v1.0 - Toast Notification System
+    import { toast } from './src/shared/ui/toast.js';
+    // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
+    import { MESSAGES } from './src/shared/constants/messages.js';
+    import { doc, getDoc, onSnapshot, deleteDoc, query, collection, where, getDocs } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+    import { signOut } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+    import { registerListener, cleanupAllListeners } from "./assets/js/firebase/listener-manager.js";
+    
+    // Çıkış butonu - Teklifbul Rule v1.0
+    async function handleLogout() {
+      try {
+        await signOut(auth);
+        // Çıkış yapıldıktan sonra ana sayfaya yönlendir (fromWaiting parametresi ile)
+        location.href = './index.html?fromWaiting=true';
+      } catch (e) {
+        logger.error('Çıkış hatası', e);
+        toast.error(MESSAGES.ERROR_LOGOUT + ': ' + (e.message || e));
+      }
+    }
+    
+    document.getElementById('logoutBtn')?.addEventListener('click', handleLogout);
+    document.getElementById('logoutBtnRejected')?.addEventListener('click', handleLogout);
+    document.getElementById('logoutBtnError')?.addEventListener('click', handleLogout);
+
+    // Kullanıcı kontrolü - Teklifbul Rule v1.0
+    // Redirect loop önleme: Sadece bir kez kontrol et
+    let authCheckDone = false;
+    let checkInterval = null;
+    let unsubscribe = null;
+    let currentUser = null;
+    
+    // Durum kontrolü fonksiyonu - Teklifbul Rule v1.0
+    async function checkJoinStatus(user) {
+        if (!user) return; // Guard clause
+        
+        try {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          
+          if (!userDoc.exists()) {
+            showError('Kullanıcı kaydı bulunamadı.');
+            return;
+          }
+
+          const userData = userDoc.data();
+          const companyJoinStatus = userData.companyJoinStatus;
+          const companyCode = userData.companyCode;
+          const companyId = userData.companyId;
+          const requestedRole = userData.requestedCompanyRole;
+
+          // Şirket bilgilerini yükle
+          if (companyId) {
+            try {
+              const companyDoc = await getDoc(doc(db, 'companies', companyId));
+              if (companyDoc.exists()) {
+                const companyData = companyDoc.data();
+                document.getElementById('companyName').textContent = companyData.name || '-';
+              }
+            } catch (e) {
+              logger.warn('Şirket bilgisi yüklenemedi', e);
+            }
+          }
+
+          // Rol bilgisini göster
+          if (requestedRole) {
+            const roleLabel = requestedRole.includes('buyer') ? 'Alıcı' : 
+                            requestedRole.includes('supplier') ? 'Tedarikçi' : requestedRole;
+            document.getElementById('requestedRole').textContent = roleLabel;
+          }
+
+          // Talep tarihi
+          if (userData.createdAt) {
+            const date = userData.createdAt.toDate ? userData.createdAt.toDate() : new Date(userData.createdAt);
+            document.getElementById('requestDate').textContent = date.toLocaleDateString('tr-TR', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            });
+          }
+
+          // Durum kontrolü
+          if (companyJoinStatus === 'accepted' || companyJoinStatus === 'approved') {
+            // Onaylandı - normal akışa devam et
+            clearInterval(checkInterval);
+            if (unsubscribe) unsubscribe();
+            showAccepted();
+            
+            // 2 saniye sonra yönlendir
+            setTimeout(() => {
+              location.href = './demands.html';
+            }, 2000);
+            return;
+          }
+
+          if (companyJoinStatus === 'rejected') {
+            // Reddedildi - kaydı sil ve çıkış yap
+            clearInterval(checkInterval);
+            if (unsubscribe) unsubscribe();
+            showRejected();
+            
+            // Kullanıcı kaydını sil
+            try {
+              await deleteDoc(doc(db, 'users', user.uid));
+              
+              // companyJoinRequests'ten de sil
+              if (companyCode) {
+                const requestsQuery = query(
+                  collection(db, 'companyJoinRequests'),
+                  where('userId', '==', user.uid),
+                  where('companyCode', '==', companyCode)
+                );
+                const requestsSnapshot = await getDocs(requestsQuery);
+                requestsSnapshot.forEach(async (requestDoc) => {
+                  await deleteDoc(doc(db, 'companyJoinRequests', requestDoc.id));
+                });
+              }
+              
+              // Çıkış yap
+              await signOut(auth);
+            } catch (e) {
+              logger.error('Kullanıcı kaydı silinirken hata', e);
+            }
+            return;
+          }
+
+          // Beklemede - devam et
+          if (companyJoinStatus === 'pending') {
+            // Zaten pending state gösteriliyor
+            return;
+          }
+
+          // Durum belirsiz - hata göster
+          showError('Kayıt durumu belirlenemedi. Lütfen sistem yöneticisi ile iletişime geçin.');
+        } catch (e) {
+          logger.error('Durum kontrolü hatası', e);
+          showError('Durum kontrol edilirken bir hata oluştu: ' + (e.message || e));
+        }
+    }
+
+    function showAccepted() {
+        document.getElementById('pendingState').style.display = 'none';
+        document.getElementById('rejectedState').style.display = 'none';
+        document.getElementById('errorState').style.display = 'none';
+        document.getElementById('acceptedState').style.display = 'block';
+    }
+
+    function showRejected() {
+        document.getElementById('pendingState').style.display = 'none';
+        document.getElementById('acceptedState').style.display = 'none';
+        document.getElementById('errorState').style.display = 'none';
+        document.getElementById('rejectedState').style.display = 'block';
+    }
+
+    function showError(message) {
+        document.getElementById('pendingState').style.display = 'none';
+        document.getElementById('acceptedState').style.display = 'none';
+        document.getElementById('rejectedState').style.display = 'none';
+        document.getElementById('errorState').style.display = 'block';
+        document.getElementById('errorMessage').textContent = message;
+        
+        if (checkInterval) clearInterval(checkInterval);
+        if (unsubscribe) unsubscribe();
+    }
+    
+    // Auth state listener - Teklifbul Rule v1.0
+    // Redirect loop önleme: Sadece bir kez kontrol et
+    const unsubscribeAuth = auth.onAuthStateChanged(async (user) => {
+      // Kullanıcı yoksa - sadece bir kez yönlendir
+      if (!user) {
+        if (!authCheckDone) {
+          authCheckDone = true;
+          // Cleanup
+          if (checkInterval) clearInterval(checkInterval);
+          if (unsubscribe) unsubscribe();
+          try {
+            unsubscribeAuth();
+          } catch (e) {
+            // Ignore
+          }
+          location.href = './index.html?skipAutoRedirect=true';
+        }
+        return;
+      }
+      
+      // User var - sadece bir kez başlat
+      if (!authCheckDone) {
+        authCheckDone = true;
+        currentUser = user;
+        
+        // İlk kontrol
+        await checkJoinStatus(user);
+
+        // Her 5 saniyede bir kontrol et
+        checkInterval = setInterval(() => checkJoinStatus(user), 5000);
+
+        // Real-time listener (opsiyonel - daha hızlı güncelleme için) - Teklifbul Rule v1.0
+        try {
+          unsubscribe = onSnapshot(doc(db, 'users', user.uid), (snapshot) => {
+            if (snapshot.exists()) {
+              checkJoinStatus(user); // User parametresini geç
+            }
+          });
+        // Register listener for cleanup
+        registerListener('company-join-waiting-user-status', unsubscribe);
+      } catch (e) {
+        logger.warn('Real-time listener başlatılamadı', e);
+      }
+      
+      // Cleanup on page unload
+      window.addEventListener('beforeunload', () => {
+        if (unsubscribe) unsubscribe();
+        if (checkInterval) clearInterval(checkInterval);
+        cleanupAllListeners();
+      });
+    });
+  </script>
+</body>
+</html>
+

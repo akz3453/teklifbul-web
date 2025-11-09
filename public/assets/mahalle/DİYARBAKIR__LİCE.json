@@ -1,0 +1,286 @@
+{
+  "districtId": "DİYARBAKIR__LİCE",
+  "districtName": "Lice",
+  "neighborhoods": [
+    {
+      "id": "ABALI",
+      "name": "Abalı"
+    },
+    {
+      "id": "AKÇABUDAK",
+      "name": "Akçabudak"
+    },
+    {
+      "id": "ARIKLI",
+      "name": "Arıklı"
+    },
+    {
+      "id": "BAHARLAR",
+      "name": "Baharlar"
+    },
+    {
+      "id": "BAYIRLI",
+      "name": "Bayırlı"
+    },
+    {
+      "id": "BİRLİK",
+      "name": "Birlik"
+    },
+    {
+      "id": "BUDAK",
+      "name": "Budak"
+    },
+    {
+      "id": "ÇEPER",
+      "name": "Çeper"
+    },
+    {
+      "id": "ÇIRALI",
+      "name": "Çıralı"
+    },
+    {
+      "id": "DALLICA",
+      "name": "Dallıca"
+    },
+    {
+      "id": "DAMAR",
+      "name": "Damar"
+    },
+    {
+      "id": "DARALAN",
+      "name": "Daralan"
+    },
+    {
+      "id": "DERNEK",
+      "name": "Dernek"
+    },
+    {
+      "id": "DURUKÖY",
+      "name": "Duruköy"
+    },
+    {
+      "id": "ECEMİŞ",
+      "name": "Ecemiş"
+    },
+    {
+      "id": "ERGİNKÖY",
+      "name": "Erginköy"
+    },
+    {
+      "id": "GÜÇLÜ",
+      "name": "Güçlü"
+    },
+    {
+      "id": "GÜLDİKEN",
+      "name": "Güldiken"
+    },
+    {
+      "id": "GÜRBEYLİ",
+      "name": "Gürbeyli"
+    },
+    {
+      "id": "HEDİK",
+      "name": "Hedik"
+    },
+    {
+      "id": "KILIÇLI",
+      "name": "Kılıçlı"
+    },
+    {
+      "id": "KIPÇAK",
+      "name": "Kıpçak"
+    },
+    {
+      "id": "KIRALAN",
+      "name": "Kıralan"
+    },
+    {
+      "id": "KIYIKÖY",
+      "name": "Kıyıköy"
+    },
+    {
+      "id": "KUTLU",
+      "name": "Kutlu"
+    },
+    {
+      "id": "ÖRTÜLÜ",
+      "name": "Örtülü"
+    },
+    {
+      "id": "SAYDAMLI",
+      "name": "Saydamlı"
+    },
+    {
+      "id": "SERİNCE",
+      "name": "Serince"
+    },
+    {
+      "id": "SIĞINAK",
+      "name": "Sığınak"
+    },
+    {
+      "id": "ŞENLİK",
+      "name": "Şenlik"
+    },
+    {
+      "id": "TEPE",
+      "name": "Tepe"
+    },
+    {
+      "id": "TUZLAKÖY",
+      "name": "Tuzlaköy"
+    },
+    {
+      "id": "TÜRELİ",
+      "name": "Türeli"
+    },
+    {
+      "id": "ULUCAK",
+      "name": "Ulucak"
+    },
+    {
+      "id": "ÜÇDAMLAR",
+      "name": "Üçdamlar"
+    },
+    {
+      "id": "YALIMLI",
+      "name": "Yalımlı"
+    },
+    {
+      "id": "YAMAÇLI",
+      "name": "Yamaçlı"
+    },
+    {
+      "id": "YAPRAKKÖY",
+      "name": "Yaprakköy"
+    },
+    {
+      "id": "YOLÇATI",
+      "name": "Yolçatı"
+    },
+    {
+      "id": "YORULMAZ",
+      "name": "Yorulmaz"
+    },
+    {
+      "id": "YÜNLÜCE",
+      "name": "Yünlüce"
+    },
+    {
+      "id": "ZÜMRÜT",
+      "name": "Zümrüt"
+    },
+    {
+      "id": "SAVAT",
+      "name": "Savat"
+    },
+    {
+      "id": "BAĞLAN",
+      "name": "Bağlan"
+    },
+    {
+      "id": "ÇAĞDAŞ",
+      "name": "Çağdaş"
+    },
+    {
+      "id": "ÇAVUNDUR",
+      "name": "Çavundur"
+    },
+    {
+      "id": "DİBEKKÖY",
+      "name": "Dibekköy"
+    },
+    {
+      "id": "DOLUNAY",
+      "name": "Dolunay"
+    },
+    {
+      "id": "ESENLER",
+      "name": "Esenler"
+    },
+    {
+      "id": "GÖKÇE",
+      "name": "Gökçe"
+    },
+    {
+      "id": "KABAKAYA",
+      "name": "Kabakaya"
+    },
+    {
+      "id": "ORTAÇ",
+      "name": "Ortaç"
+    },
+    {
+      "id": "OYUKLU",
+      "name": "Oyuklu"
+    },
+    {
+      "id": "UÇARLI",
+      "name": "Uçarlı"
+    },
+    {
+      "id": "YALAZA",
+      "name": "Yalaza"
+    },
+    {
+      "id": "ZİYARET",
+      "name": "Ziyaret"
+    },
+    {
+      "id": "KUMLUCA",
+      "name": "Kumluca"
+    },
+    {
+      "id": "ŞAAR",
+      "name": "Şaar"
+    },
+    {
+      "id": "ÇARŞI",
+      "name": "Çarşı"
+    },
+    {
+      "id": "KALI",
+      "name": "Kalı"
+    },
+    {
+      "id": "KARAHASAN",
+      "name": "Karahasan"
+    },
+    {
+      "id": "MURADİYE",
+      "name": "Muradiye"
+    },
+    {
+      "id": "KÖRTÜK",
+      "name": "Körtük"
+    },
+    {
+      "id": "CAMİ_KEBİR",
+      "name": "Cami Kebir"
+    },
+    {
+      "id": "DELVAN",
+      "name": "Delvan"
+    },
+    {
+      "id": "KELVAN",
+      "name": "Kelvan"
+    },
+    {
+      "id": "YENİŞEHİR",
+      "name": "Yenişehir"
+    },
+    {
+      "id": "MULLA",
+      "name": "Mulla"
+    },
+    {
+      "id": "MÜMİNAĞA",
+      "name": "Müminağa"
+    },
+    {
+      "id": "YEŞİLBURÇ",
+      "name": "Yeşilburç"
+    }
+  ]
+}

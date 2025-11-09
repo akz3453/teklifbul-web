@@ -1,198 +1,131 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // === ROLE-BASED ACCESS CONTROL HELPERS ===
-    function isSignedIn() {
-      return request.auth != null;
+    // Helper function: Get user document from users collection
+    function getUserDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid));
     }
-
-    function isSelf(uid) {
-      return isSignedIn() && request.auth.uid == uid;
+    
+    // Helper function: Get user's company ID
+    function userCompany() {
+      let userDoc = getUserDoc();
+      return userDoc != null && userDoc.data.companyId != null ? userDoc.data.companyId : null;
     }
-
-    function isOwner(resource) {
-      return isSignedIn() && resource.data.createdBy == request.auth.uid;
+    
+    // Helper function: Check if user has supplier role
+    function isSupplier() {
+      let userDoc = getUserDoc();
+      return userDoc != null && ((userDoc.data.roles != null && userDoc.data.roles.hasAny(['supplier'])) || userDoc.data.role == 'supplier');
     }
-
-    function isAdmin(uid) {
-      // Check if user has admin role
-      return isSignedIn() && 
-        get(/databases/$(database)/documents/users/$(uid)).data.role == 'admin';
+    
+    // Helper function: Get user's supplier category keys (slug format)
+    function userSupplierCats() {
+      let userDoc = getUserDoc();
+      return userDoc != null && userDoc.data.supplierCategoryKeys != null ? userDoc.data.supplierCategoryKeys : (userDoc != null && userDoc.data.supplierCategories != null ? userDoc.data.supplierCategories : (userDoc != null && userDoc.data.categories != null ? userDoc.data.categories : []));
     }
-
-    function isMember(companyId, uid) {
-      // Check if user is a member of the company
-      return isSignedIn() && 
-        exists(/databases/$(database)/documents/companies/$(companyId)/memberships/$(uid));
+    
+    // Users collection: users can read/write their own profile
+    match /users/{userId} {
+      allow read: if request.auth != null && (request.auth.uid == userId || isSupplier());
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
-
-    function isPublic(d) {
-      // Check if demand is published and public
-      return d.isPublished == true && d.visibility == "public";
-    }
-
-    // USERS - Basic user profiles
-    match /users/{uid} {
-      allow read, write: if isSelf(uid);
-    }
-
-    // USER CATEGORY GROUPS - User-owned category groups
-    match /users/{uid}/categoryGroups/{groupId} {
-      allow read, create, update, delete: if isSignedIn() && request.auth.uid == uid;
-    }
-
-    // PROFILES - User profiles (alternative collection)
-    match /profiles/{uid} {
-      allow read, write: if isSelf(uid);
-    }
-
-    // PUBLIC PROFILES - Readable by all authenticated users
-    match /publicProfiles/{uid} {
-      allow read: if isSignedIn();
-      allow write: if isSelf(uid);
-    }
-
-    // DEMANDS - Role-based access control with visibility model
+    
+    // Demands collection
     match /demands/{id} {
-      // Read access rules:
-      // 1. Public demands: any authenticated user can read
-      // 2. Private/company demands: only owner or company members can read
-      allow read: if isSignedIn() && (
-        isPublic(resource.data) ||
-        isOwner(resource) ||
-        (resource.data.companyId is string && isMember(resource.data.companyId, request.auth.uid)) ||
-        isAdmin(request.auth.uid)
+      allow read: if request.auth != null && (
+        resource.data.creatorCompanyId == userCompany()
+        || (resource.data.isPublished == true && resource.data.status == 'published' && isSupplier() && resource.data.supplierCategoryKeys.hasAny(userSupplierCats()))
       );
-
-      // Write permissions: owner or admin only
-      allow create: if isSignedIn();
-      allow update: if (isOwner(resource) || isAdmin(request.auth.uid)) && 
-        // SATFK is immutable after creation
-        (request.resource.data.satfk == resource.data.satfk || resource.data.satfk == null);
-      allow delete: if isOwner(resource) || isAdmin(request.auth.uid);
-    }
-
-    // DEMAND ITEMS - Aligned with parent demand's read rules
-    match /demands/{id}/items/{itemId} {
-      // Read access follows parent demand's rules
-      allow read: if isSignedIn() && (
-        isPublic(get(/databases/$(database)/documents/demands/$(id)).data) ||
-        isOwner(get(/databases/$(database)/documents/demands/$(id))) ||
-        (get(/databases/$(database)/documents/demands/$(id)).data.companyId is string && 
-         isMember(get(/databases/$(database)/documents/demands/$(id)).data.companyId, request.auth.uid)) ||
-        isAdmin(request.auth.uid)
-      );
-
-      // Write permissions: owner or admin only
-      allow create, update, delete: if isSignedIn() && (
-        isOwner(get(/databases/$(database)/documents/demands/$(id))) ||
-        isAdmin(request.auth.uid)
-      );
-    }
-
-    // DEMAND FILES - Aligned with parent demand's read rules
-    match /demands/{id}/files/{fileId} {
-      // Read access follows parent demand's rules
-      allow read: if isSignedIn() && (
-        isPublic(get(/databases/$(database)/documents/demands/$(id)).data) ||
-        isOwner(get(/databases/$(database)/documents/demands/$(id))) ||
-        (get(/databases/$(database)/documents/demands/$(id)).data.companyId is string && 
-         isMember(get(/databases/$(database)/documents/demands/$(id)).data.companyId, request.auth.uid)) ||
-        isAdmin(request.auth.uid)
-      );
-
-      // Write permissions: owner or admin only
-      allow create, update, delete: if isSignedIn() && (
-        isOwner(get(/databases/$(database)/documents/demands/$(id))) ||
-        isAdmin(request.auth.uid)
-      );
-    }
-
-    // BIDS
-    match /bids/{bidId} {
-      allow read: if isSignedIn() && (
-        // Supplier can read their own bids
-        resource.data.supplierId == request.auth.uid ||
-        // Demand owner can read bids for their demands
-        get(/databases/$(database)/documents/demands/$(resource.data.demandId)).data.createdBy == request.auth.uid ||
-        // Users in viewerIds can read bids for published demands
-        (get(/databases/$(database)/documents/demands/$(resource.data.demandId)).data.isPublished == true &&
-         get(/databases/$(database)/documents/demands/$(resource.data.demandId)).data.visibility == "public")
-      );
-      allow create: if isSignedIn() && 
-        request.resource.data.supplierId == request.auth.uid;
-      allow update, delete: if isSignedIn() && 
-        resource.data.supplierId == request.auth.uid;
       
-      // Bid items subcollection
-      match /items/{itemId} {
-        allow read, write: if isSignedIn() && (
-          // Same rules as parent bid
-          get(/databases/$(database)/documents/bids/$(bidId)).data.supplierId == request.auth.uid ||
-          get(/databases/$(database)/documents/demands/$(get(/databases/$(database)/documents/bids/$(bidId)).data.demandId)).data.createdBy == request.auth.uid ||
-          (get(/databases/$(database)/documents/demands/$(get(/databases/$(database)/documents/bids/$(bidId)).data.demandId)).data.isPublished == true &&
-           get(/databases/$(database)/documents/demands/$(get(/databases/$(database)/documents/bids/$(bidId)).data.demandId)).data.visibility == "public")
-        );
+      allow create, update, delete: if request.auth != null && request.resource.data.creatorCompanyId == userCompany();
+    }
+    
+    // Şantiye/Adres defteri: /companies/{companyId}/sites/{siteId}
+    match /companies/{companyId}/sites/{siteId} {
+      allow read, write: if request.auth != null && userCompany() == companyId;
+    }
+    
+    // Stok kartları: /companies/{companyId}/inventory/{sku}
+    match /companies/{companyId}/inventory/{sku} {
+      allow read: if request.auth != null && userCompany() == companyId;
+      allow write: if request.auth != null && userCompany() == companyId;
+    }
+    
+    // Bids collection: Users can read/write their own bids or bids for their company's demands
+    match /bids/{bidId} {
+      allow read: if request.auth != null && (
+        resource.data.supplierId == request.auth.uid
+        || (resource.data.demandId != null && exists(/databases/$(database)/documents/demands/$(resource.data.demandId)) && get(/databases/$(database)/documents/demands/$(resource.data.demandId)).data.creatorCompanyId == userCompany())
+      );
+      allow create: if request.auth != null && request.resource.data.supplierId == request.auth.uid;
+      allow update, delete: if request.auth != null && resource.data.supplierId == request.auth.uid;
+    }
+    
+    // Demand recipients collection
+    match /demandRecipients/{recipientId} {
+      allow read: if request.auth != null && (resource.data.supplierId == request.auth.uid || resource.data.buyerId == request.auth.uid);
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && resource.data.buyerId == request.auth.uid;
+    }
+    
+    // Companies collection - public read for referral codes lookup
+    match /companies/{companyId} {
+      // Public read for basic company info (needed for referral code lookup)
+      allow read: if true; // Anyone can read company info (name, code, etc.)
+      
+      // Write requires authentication
+      allow create, update, delete: if request.auth != null;
+      
+      // Referral Codes subcollection - public read for signup flow
+      match /referralCodes/{codeId} {
+        // Anyone can read referral codes (needed for signup page)
+        allow read: if true;
+        // Only authenticated users can create/update (company owners)
+        allow create, update: if request.auth != null;
+        allow delete: if request.auth != null;
+      }
+      
+      // Referral Companies subcollection - authenticated only
+      match /referralCompanies/{referralId} {
+        allow read: if request.auth != null && userCompany() == companyId;
+        allow create: if request.auth != null;
+        allow update, delete: if request.auth != null && userCompany() == companyId;
+      }
+      
+      // Other company subcollections require authentication
+      match /{subcollection}/{docId} {
+        allow read, write: if request.auth != null && userCompany() == companyId;
       }
     }
-
-    // DEMAND RECIPIENTS - New collection for matching
-    match /demandRecipients/{id} {
-      allow read: if isSignedIn() && (
-        // Supplier can read their own recipients
-        resource.data.supplierId == request.auth.uid ||
-        // Buyer can read recipients for their demands
-        resource.data.buyerId == request.auth.uid
-      );
-      allow create: if isSignedIn();
-      allow update, delete: if isSignedIn() && (
-        resource.data.supplierId == request.auth.uid ||
-        resource.data.buyerId == request.auth.uid
-      );
-    }
-
-    // COMPANIES - Fixed rules for proper company access
-    match /companies/{companyId} {
-      // Users can read companies they are members of or companies they own
-      allow read: if isSignedIn() && (
-        resource.data.ownerId == request.auth.uid ||
-        exists(/databases/$(database)/documents/companies/$(companyId)/memberships/$(request.auth.uid))
-      );
-      
-      // Only owners can create companies
-      allow create: if isSignedIn() && 
-        request.resource.data.ownerId == request.auth.uid;
-      
-      // Only owners can update company details
-      allow update: if isSignedIn() && 
-        resource.data.ownerId == request.auth.uid;
-        
-      // Only owners can delete companies
-      allow delete: if isSignedIn() && 
-        resource.data.ownerId == request.auth.uid;
+    
+    // Categories collection - Firestore migration
+    match /categories/{categoryId} {
+      allow read: if true; // Herkes okuyabilir (public kategori listesi)
+      allow write: if request.auth != null; // Authenticated users can write (admin kontrolü API'de)
     }
     
-    // COMPANY MEMBERSHIPS
-    match /companies/{companyId}/memberships/{membershipId} {
-      // Users can read their own membership
-      allow read: if isSignedIn() && membershipId == request.auth.uid;
-      
-      // Users can create memberships with valid tokens
-      allow create: if isSignedIn();
-      
-      // Users can update their own membership
-      allow update: if isSignedIn() && membershipId == request.auth.uid;
-      
-      // Users can delete their own membership
-      allow delete: if isSignedIn() && membershipId == request.auth.uid;
+    // Category Keywords collection
+    match /category_keywords/{keywordId} {
+      allow read: if true; // Herkes okuyabilir
+      allow write: if request.auth != null; // Authenticated users can write
     }
     
-    // COMPANY INVITES
-    match /companies/{companyId}/invites/{inviteId} {
-      // Only company owners can read, create, update, or delete invites
-      allow read, create, update, delete: if isSignedIn() && 
-        get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid;
+    // Category Feedback collection
+    match /category_feedback/{feedbackId} {
+      allow read: if request.auth != null; // Sadece authenticated users
+      allow create: if request.auth != null; // Herkes feedback gönderebilir
+      allow update, delete: if request.auth != null; // Admin kontrolü API'de
+    }
+    
+    // Tax Offices collection
+    match /tax_offices/{officeId} {
+      allow read: if true; // Herkes okuyabilir (public vergi daireleri listesi)
+      allow write: if request.auth != null; // Authenticated users can write (admin kontrolü API'de)
+    }
+    
+    // Other collections - existing rules (backward compatibility)
+    match /{document=**} {
+      allow read, write: if request.auth != null;
     }
   }
 }

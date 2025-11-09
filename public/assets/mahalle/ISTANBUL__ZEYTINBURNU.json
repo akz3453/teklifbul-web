@@ -1,0 +1,58 @@
+{
+  "districtId": "ISTANBUL__ZEYTINBURNU",
+  "districtName": "Zeytinburnu",
+  "neighborhoods": [
+    {
+      "id": "BESTELSIZ",
+      "name": "Beştelsiz"
+    },
+    {
+      "id": "CIRPICI",
+      "name": "Çırpıcı"
+    },
+    {
+      "id": "GOKALP",
+      "name": "Gökalp"
+    },
+    {
+      "id": "KAZLICESME",
+      "name": "Kazlıçeşme"
+    },
+    {
+      "id": "MALTEPE",
+      "name": "Maltepe"
+    },
+    {
+      "id": "MERKEZEFENDI",
+      "name": "Merkezefendi"
+    },
+    {
+      "id": "NURIPASA",
+      "name": "Nuripaşa"
+    },
+    {
+      "id": "SEYITNIZAM",
+      "name": "Seyitnizam"
+    },
+    {
+      "id": "SUMER",
+      "name": "Sümer"
+    },
+    {
+      "id": "TELSIZ",
+      "name": "Telsiz"
+    },
+    {
+      "id": "VELIEFENDI",
+      "name": "Veliefendi"
+    },
+    {
+      "id": "YENIDOGAN",
+      "name": "Yenidoğan"
+    },
+    {
+      "id": "YESILTEPE",
+      "name": "Yeşiltepe"
+    }
+  ]
+}

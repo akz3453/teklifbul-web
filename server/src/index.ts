@@ -5,6 +5,9 @@ import groups from "./routes/groups";
 import paymentPref from "./routes/payment-preference";
 import escrow from "./routes/escrow";
 import importRouter from "../routes/import";
+import categoriesRouter from "../../src/modules/categories/routes/categories";
+import taxOfficesRouter from "../../src/modules/taxOffices/routes/taxOffices";
+import offersRouter from "./api/offers";
 
 const app = express();
 app.use(cors());
@@ -15,6 +18,9 @@ app.use("/api/groups", groups);
 app.use("/api/payment-preference", paymentPref);
 app.use("/api/escrow", escrow);
 app.use("/api/import", importRouter);
+app.use("/api/offers", offersRouter);
+app.use("/api/categories", categoriesRouter);
+app.use("/api/tax-offices", taxOfficesRouter);
 
 // Health check
 app.get('/api/health', (_req, res) => {

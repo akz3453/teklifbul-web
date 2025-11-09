@@ -1,0 +1,266 @@
+{
+  "districtId": "MALATYA__HEKİMHAN",
+  "districtName": "Hekimhan",
+  "neighborhoods": [
+    {
+      "id": "AKSÜTLÜ",
+      "name": "Aksütlü"
+    },
+    {
+      "id": "AŞAĞISAZLICA",
+      "name": "Aşağısazlıca"
+    },
+    {
+      "id": "BALLIKAYA",
+      "name": "Ballıkaya"
+    },
+    {
+      "id": "BAŞKAVAK",
+      "name": "Başkavak"
+    },
+    {
+      "id": "BEYKENT",
+      "name": "Beykent"
+    },
+    {
+      "id": "BOĞAZGÖREN",
+      "name": "Boğazgören"
+    },
+    {
+      "id": "ÇANAKPINAR",
+      "name": "Çanakpınar"
+    },
+    {
+      "id": "ÇULHALI",
+      "name": "Çulhalı"
+    },
+    {
+      "id": "DEREKÖY",
+      "name": "Dereköy"
+    },
+    {
+      "id": "DEVECİ",
+      "name": "Deveci"
+    },
+    {
+      "id": "DUMLU",
+      "name": "Dumlu"
+    },
+    {
+      "id": "DURSUNLU",
+      "name": "Dursunlu"
+    },
+    {
+      "id": "GÜVENÇ",
+      "name": "Güvenç"
+    },
+    {
+      "id": "HACILAR",
+      "name": "Hacılar"
+    },
+    {
+      "id": "HAYDAROĞLU",
+      "name": "Haydaroğlu"
+    },
+    {
+      "id": "IŞIKLI",
+      "name": "Işıklı"
+    },
+    {
+      "id": "İĞDİR",
+      "name": "İğdir"
+    },
+    {
+      "id": "KARAKÖÇEK",
+      "name": "Karaköçek"
+    },
+    {
+      "id": "KAVACIK",
+      "name": "Kavacık"
+    },
+    {
+      "id": "KOZDERE",
+      "name": "Kozdere"
+    },
+    {
+      "id": "MOLLAİBRAHİM",
+      "name": "Mollaibrahim"
+    },
+    {
+      "id": "SALICIK",
+      "name": "Salıcık"
+    },
+    {
+      "id": "SARIKIZ",
+      "name": "Sarıkız"
+    },
+    {
+      "id": "UĞURLU",
+      "name": "Uğurlu"
+    },
+    {
+      "id": "YAĞCA",
+      "name": "Yağca"
+    },
+    {
+      "id": "YAYLADAMI",
+      "name": "Yayladamı"
+    },
+    {
+      "id": "YEŞİLPINAR",
+      "name": "Yeşilpınar"
+    },
+    {
+      "id": "YUKARISELİMLİ",
+      "name": "Yukarıselimli"
+    },
+    {
+      "id": "AKMAĞARA",
+      "name": "Akmağara"
+    },
+    {
+      "id": "BAHÇEDAMI",
+      "name": "Bahçedamı"
+    },
+    {
+      "id": "BASAK",
+      "name": "Basak"
+    },
+    {
+      "id": "BAŞKINIK",
+      "name": "Başkınık"
+    },
+    {
+      "id": "ÇİMENLİK",
+      "name": "Çimenlik"
+    },
+    {
+      "id": "DAVULGU",
+      "name": "Davulgu"
+    },
+    {
+      "id": "DİKİLİ",
+      "name": "Dikili"
+    },
+    {
+      "id": "KARAPINAR",
+      "name": "Karapınar"
+    },
+    {
+      "id": "KARSLILAR",
+      "name": "Karslılar"
+    },
+    {
+      "id": "KÖYLÜKÖYÜ",
+      "name": "Köylüköyü"
+    },
+    {
+      "id": "SARAYLI",
+      "name": "Saraylı"
+    },
+    {
+      "id": "YUKARI_SAZLICA",
+      "name": "Yukarı Sazlıca"
+    },
+    {
+      "id": "TAŞOLUK",
+      "name": "Taşoluk"
+    },
+    {
+      "id": "YEŞİLKALE",
+      "name": "Yeşilkale"
+    },
+    {
+      "id": "DELİHASANYURDU",
+      "name": "Delihasanyurdu"
+    },
+    {
+      "id": "DİKENLİ",
+      "name": "Dikenli"
+    },
+    {
+      "id": "GÜZELYAYLA",
+      "name": "Güzelyayla"
+    },
+    {
+      "id": "SÖĞÜT",
+      "name": "Söğüt"
+    },
+    {
+      "id": "YEŞİLKÖY",
+      "name": "Yeşilköy"
+    },
+    {
+      "id": "GÜZELYURT",
+      "name": "Güzelyurt"
+    },
+    {
+      "id": "GİRMANA",
+      "name": "Girmana"
+    },
+    {
+      "id": "KOCAÖZÜ",
+      "name": "Kocaözü"
+    },
+    {
+      "id": "HASANÇELEBİ",
+      "name": "Hasançelebi"
+    },
+    {
+      "id": "KURŞUNLU",
+      "name": "Kurşunlu"
+    },
+    {
+      "id": "BAĞYOLU",
+      "name": "Bağyolu"
+    },
+    {
+      "id": "TAŞBAŞI",
+      "name": "Taşbaşı"
+    },
+    {
+      "id": "BUDAKLI",
+      "name": "Budaklı"
+    },
+    {
+      "id": "YENİ",
+      "name": "Yeni"
+    },
+    {
+      "id": "KARŞIYAKA",
+      "name": "Karşıyaka"
+    },
+    {
+      "id": "KARADERE",
+      "name": "Karadere"
+    },
+    {
+      "id": "TURGUT_ÖZAL",
+      "name": "Turgut Özal"
+    },
+    {
+      "id": "BAHÇELİEVLER",
+      "name": "Bahçelievler"
+    },
+    {
+      "id": "FATİH",
+      "name": "Fatih"
+    },
+    {
+      "id": "MİMARSİNAN",
+      "name": "Mimarsinan"
+    },
+    {
+      "id": "Ş_FETHİ_AKYÜZ",
+      "name": "Ş. Fethi Akyüz"
+    },
+    {
+      "id": "KÖPRÜLÜ_MEHMET_PAŞA",
+      "name": "Köprülü Mehmet Paşa"
+    },
+    {
+      "id": "GÜÇLÜ",
+      "name": "Güçlü"
+    }
+  ]
+}

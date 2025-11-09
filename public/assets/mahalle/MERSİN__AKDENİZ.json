@@ -1,0 +1,266 @@
+{
+  "districtId": "MERSİN__AKDENİZ",
+  "districtName": "Akdeniz",
+  "neighborhoods": [
+    {
+      "id": "ADANALIOĞLU",
+      "name": "Adanalıoğlu"
+    },
+    {
+      "id": "ABDULLAHŞAHUTOĞLU",
+      "name": "Abdullahşahutoğlu"
+    },
+    {
+      "id": "DİKİLİTAŞ",
+      "name": "Dikilitaş"
+    },
+    {
+      "id": "KARACAİLYAS",
+      "name": "Karacailyas"
+    },
+    {
+      "id": "KAZANLI",
+      "name": "Kazanlı"
+    },
+    {
+      "id": "BAĞCILAR_İHSANİYE",
+      "name": "Bağcılar-ihsaniye"
+    },
+    {
+      "id": "ANADOLU",
+      "name": "Anadolu"
+    },
+    {
+      "id": "MÜFİDE_İLHAN",
+      "name": "Müfide İlhan"
+    },
+    {
+      "id": "BARIŞ",
+      "name": "Barış"
+    },
+    {
+      "id": "NUSRATİYE",
+      "name": "Nusratiye"
+    },
+    {
+      "id": "ADNAN_MENDERES",
+      "name": "Adnan Menderes"
+    },
+    {
+      "id": "HÜRRİYET",
+      "name": "Hürriyet"
+    },
+    {
+      "id": "KULAK",
+      "name": "Kulak"
+    },
+    {
+      "id": "MİTATPAŞA",
+      "name": "Mitatpaşa"
+    },
+    {
+      "id": "CUMHURİYET",
+      "name": "Cumhuriyet"
+    },
+    {
+      "id": "EVREN",
+      "name": "Evren"
+    },
+    {
+      "id": "ÇİLEK",
+      "name": "Çilek"
+    },
+    {
+      "id": "HAL",
+      "name": "Hal"
+    },
+    {
+      "id": "HAMİDİYE",
+      "name": "Hamidiye"
+    },
+    {
+      "id": "KÖSELERLİ",
+      "name": "Köselerli"
+    },
+    {
+      "id": "NACARLI",
+      "name": "Nacarlı"
+    },
+    {
+      "id": "TURGUT_REİS",
+      "name": "Turgut Reis"
+    },
+    {
+      "id": "KİREMİTHANE",
+      "name": "Kiremithane"
+    },
+    {
+      "id": "KÜLTÜR",
+      "name": "Kültür"
+    },
+    {
+      "id": "MAHMUDİYE",
+      "name": "Mahmudiye"
+    },
+    {
+      "id": "MESUDİYE",
+      "name": "Mesudiye"
+    },
+    {
+      "id": "EMEK",
+      "name": "Emek"
+    },
+    {
+      "id": "EVCİ",
+      "name": "Evci"
+    },
+    {
+      "id": "CAMİŞERİF",
+      "name": "Camişerif"
+    },
+    {
+      "id": "YENİMAHALLE",
+      "name": "Yenimahalle"
+    },
+    {
+      "id": "AŞAĞI_BURHAN",
+      "name": "Aşağı Burhan"
+    },
+    {
+      "id": "SARIİBRAHİMLİ",
+      "name": "Sarıibrahimli"
+    },
+    {
+      "id": "LİMONLU",
+      "name": "Limonlu"
+    },
+    {
+      "id": "ÖZGÜRLÜK",
+      "name": "Özgürlük"
+    },
+    {
+      "id": "BAHŞİŞ",
+      "name": "Bahşiş"
+    },
+    {
+      "id": "BEKİRDE",
+      "name": "Bekirde"
+    },
+    {
+      "id": "İHSANİYE",
+      "name": "İhsaniye"
+    },
+    {
+      "id": "YUKARI_BURHAN",
+      "name": "Yukarı Burhan"
+    },
+    {
+      "id": "DEMİRHİSAR",
+      "name": "Demirhisar"
+    },
+    {
+      "id": "KARADUVAR",
+      "name": "Karaduvar"
+    },
+    {
+      "id": "KÜRKÇÜ",
+      "name": "Kürkçü"
+    },
+    {
+      "id": "ŞAKİRGÜLMEN",
+      "name": "Şakirgülmen"
+    },
+    {
+      "id": "ŞEVKET_SÜMER",
+      "name": "Şevket Sümer"
+    },
+    {
+      "id": "TOROSLAR",
+      "name": "Toroslar"
+    },
+    {
+      "id": "BAHÇE",
+      "name": "Bahçe"
+    },
+    {
+      "id": "CİVANYAYLAĞI",
+      "name": "Civanyaylağı"
+    },
+    {
+      "id": "GAZİ",
+      "name": "Gazi"
+    },
+    {
+      "id": "GÜNEŞ",
+      "name": "Güneş"
+    },
+    {
+      "id": "SİTELER",
+      "name": "Siteler"
+    },
+    {
+      "id": "YEŞİLÇİMEN",
+      "name": "Yeşilçimen"
+    },
+    {
+      "id": "AKDAM",
+      "name": "Akdam"
+    },
+    {
+      "id": "AKDENİZ",
+      "name": "Akdeniz"
+    },
+    {
+      "id": "GÜNDOĞDU",
+      "name": "Gündoğdu"
+    },
+    {
+      "id": "BAĞLARBAŞI",
+      "name": "Bağlarbaşı"
+    },
+    {
+      "id": "ÇANKAYA",
+      "name": "Çankaya"
+    },
+    {
+      "id": "ÇAY",
+      "name": "Çay"
+    },
+    {
+      "id": "ÜÇOCAK",
+      "name": "Üçocak"
+    },
+    {
+      "id": "CAMİLİ",
+      "name": "Camili"
+    },
+    {
+      "id": "ESENLİ",
+      "name": "Esenli"
+    },
+    {
+      "id": "YANPAR",
+      "name": "Yanpar"
+    },
+    {
+      "id": "HEBİLLİ",
+      "name": "Hebilli"
+    },
+    {
+      "id": "İĞDİR",
+      "name": "İğdir"
+    },
+    {
+      "id": "PUĞKARACADAĞ",
+      "name": "Puğkaracadağ"
+    },
+    {
+      "id": "PARMAKKURDU",
+      "name": "Parmakkurdu"
+    },
+    {
+      "id": "YEŞİLOVA",
+      "name": "Yeşilova"
+    }
+  ]
+}

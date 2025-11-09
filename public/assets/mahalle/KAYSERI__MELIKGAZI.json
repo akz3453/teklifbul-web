@@ -1,0 +1,238 @@
+{
+  "districtId": "KAYSERI__MELIKGAZI",
+  "districtName": "Melikgazi",
+  "neighborhoods": [
+    {
+      "id": "19_MAYIS",
+      "name": "19 Mayıs"
+    },
+    {
+      "id": "30_AGUSTOS",
+      "name": "30 Ağustos"
+    },
+    {
+      "id": "AGIRNAS",
+      "name": "Ağırnas"
+    },
+    {
+      "id": "ALPASLAN",
+      "name": "Alpaslan"
+    },
+    {
+      "id": "ALTINOLUK",
+      "name": "Altınoluk"
+    },
+    {
+      "id": "ANAFARTALAR",
+      "name": "Anafartalar"
+    },
+    {
+      "id": "ANBAR",
+      "name": "Anbar"
+    },
+    {
+      "id": "AYDINLIKEVLER",
+      "name": "Aydınlıkevler"
+    },
+    {
+      "id": "BAGPINAR",
+      "name": "Bağpınar"
+    },
+    {
+      "id": "BAHCELIEVLER",
+      "name": "Bahçelievler"
+    },
+    {
+      "id": "BATTALGAZI",
+      "name": "Battalgazi"
+    },
+    {
+      "id": "BECEN",
+      "name": "Becen"
+    },
+    {
+      "id": "BUYUK_BURUNGUZ",
+      "name": "Büyük Bürüngüz"
+    },
+    {
+      "id": "CUMHURIYET",
+      "name": "Cumhuriyet"
+    },
+    {
+      "id": "DANISMENTGAZI",
+      "name": "Danişmentgazi"
+    },
+    {
+      "id": "DEMOKRASI",
+      "name": "Demokrasi"
+    },
+    {
+      "id": "EGRIBUCAK",
+      "name": "Eğribucak"
+    },
+    {
+      "id": "ERENKOY",
+      "name": "Erenköy"
+    },
+    {
+      "id": "ESENTEPE",
+      "name": "Esentepe"
+    },
+    {
+      "id": "ESENYURT",
+      "name": "Esenyurt"
+    },
+    {
+      "id": "FATIH",
+      "name": "Fatih"
+    },
+    {
+      "id": "GERMIR",
+      "name": "Germir"
+    },
+    {
+      "id": "GESI",
+      "name": "Gesi"
+    },
+    {
+      "id": "GESI_FATIH",
+      "name": "Gesi Fatih"
+    },
+    {
+      "id": "GOKKENT",
+      "name": "Gökkent"
+    },
+    {
+      "id": "GULTEPE",
+      "name": "Gültepe"
+    },
+    {
+      "id": "GULUK",
+      "name": "Gülük"
+    },
+    {
+      "id": "GURPINAR",
+      "name": "Gürpınar"
+    },
+    {
+      "id": "GUZELKOY",
+      "name": "Güzelköy"
+    },
+    {
+      "id": "HISARCIK",
+      "name": "Hisarcık"
+    },
+    {
+      "id": "HUNAT",
+      "name": "Hunat"
+    },
+    {
+      "id": "HURRIYET",
+      "name": "Hürriyet"
+    },
+    {
+      "id": "ILDEM_CUMHURIYET",
+      "name": "İldem Cumhuriyet"
+    },
+    {
+      "id": "KAYABAG",
+      "name": "Kayabağ"
+    },
+    {
+      "id": "KAZIMKARABEKIR",
+      "name": "Kazımkarabekir"
+    },
+    {
+      "id": "KEYKUBAT",
+      "name": "Keykubat"
+    },
+    {
+      "id": "KILICASLAN",
+      "name": "Kılıçaslan"
+    },
+    {
+      "id": "KIRANARDI",
+      "name": "Kıranardı"
+    },
+    {
+      "id": "KOCATEPE",
+      "name": "Kocatepe"
+    },
+    {
+      "id": "KOSK",
+      "name": "Köşk"
+    },
+    {
+      "id": "KUCUK_BURUNGUZ",
+      "name": "Küçük Bürüngüz"
+    },
+    {
+      "id": "MIMARSINAN",
+      "name": "Mimarsinan"
+    },
+    {
+      "id": "OSMAN_KAVUNCU",
+      "name": "Osman Kavuncu"
+    },
+    {
+      "id": "OSMANLI",
+      "name": "Osmanlı"
+    },
+    {
+      "id": "SAKARYA",
+      "name": "Sakarya"
+    },
+    {
+      "id": "SARIMSAKLI",
+      "name": "Sarımsaklı"
+    },
+    {
+      "id": "SELCUKLU",
+      "name": "Selçuklu"
+    },
+    {
+      "id": "SELIMIYE",
+      "name": "Selimiye"
+    },
+    {
+      "id": "SUBASI",
+      "name": "Subaşı"
+    },
+    {
+      "id": "SIRINTEPE",
+      "name": "Şirintepe"
+    },
+    {
+      "id": "TACETTINVELI",
+      "name": "Tacettinveli"
+    },
+    {
+      "id": "TAVLUSUN",
+      "name": "Tavlusun"
+    },
+    {
+      "id": "TINAZTEPE",
+      "name": "Tınaztepe"
+    },
+    {
+      "id": "TURAN",
+      "name": "Turan"
+    },
+    {
+      "id": "VEKSE",
+      "name": "Vekse"
+    },
+    {
+      "id": "YENIKOY",
+      "name": "Yeniköy"
+    },
+    {
+      "id": "YESILYURT",
+      "name": "Yeşilyurt"
+    },
+    {
+      "id": "YILDIRIM_BEYAZIT",
+      "name": "Yıldırım Beyazıt"
+    }
+  ]
+}

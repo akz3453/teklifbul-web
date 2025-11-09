@@ -5,6 +5,8 @@
  */
 
 import { db } from '../firebase.js';
+// Teklifbul Rule v1.0 - Structured Logging
+import { logger } from '../../../src/shared/log/logger.js';
 import {
   collection,
   query,
@@ -44,7 +46,7 @@ export async function findMatchingSuppliers(demandData) {
   const demandCategories = demandData.categoryTags || [];
   
   if (demandCategories.length === 0) {
-    console.log("No categories specified for demand, no suppliers matched.");
+    logger.info("No categories specified for demand, no suppliers matched.");
     return [];
   }
   
@@ -61,7 +63,7 @@ export async function findMatchingSuppliers(demandData) {
     matchingSupplierUids.add(doc.id);
   });
   
-  console.log(`Found ${matchingSupplierUids.size} matching suppliers for demand categories: ${demandCategories.join(', ')}`);
+  logger.info(`Found ${matchingSupplierUids.size} matching suppliers for demand categories`, { categories: demandCategories.join(', ') });
   return Array.from(matchingSupplierUids);
 }
 
@@ -80,7 +82,7 @@ export async function getSupplierName(supplierId) {
       return data.displayName || data.email || 'Bilinmeyen Tedarikçi';
     }
   } catch (error) {
-    console.warn('Error fetching supplier name:', error);
+    logger.warn('Error fetching supplier name', error);
   }
   
   return 'Bilinmeyen Tedarikçi';
@@ -100,7 +102,7 @@ export async function getSupplierDetails(supplierId) {
       return { id: supplierDoc.id, ...supplierDoc.data() };
     }
   } catch (error) {
-    console.warn('Error fetching supplier details:', error);
+    logger.warn('Error fetching supplier details', error);
   }
   
   return null;

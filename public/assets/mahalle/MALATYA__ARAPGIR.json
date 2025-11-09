@@ -1,0 +1,258 @@
+{
+  "districtId": "MALATYA__ARAPGIR",
+  "districtName": "Arapgir",
+  "neighborhoods": [
+    {
+      "id": "AKTAS",
+      "name": "Aktaş"
+    },
+    {
+      "id": "ALICLI",
+      "name": "Alıçlı"
+    },
+    {
+      "id": "ASAGICORENGE",
+      "name": "Aşağıçörenge"
+    },
+    {
+      "id": "ASAGIULUPINAR",
+      "name": "Aşağıulupınar"
+    },
+    {
+      "id": "ASAGIYENICE",
+      "name": "Aşağıyenice"
+    },
+    {
+      "id": "BERENGE",
+      "name": "Berenge"
+    },
+    {
+      "id": "BOGAZLI",
+      "name": "Boğazlı"
+    },
+    {
+      "id": "BOSTANCIK",
+      "name": "Bostancık"
+    },
+    {
+      "id": "BUDAK",
+      "name": "Budak"
+    },
+    {
+      "id": "COMERTLI",
+      "name": "Cömertli"
+    },
+    {
+      "id": "CAKIRSU",
+      "name": "Çakırsu"
+    },
+    {
+      "id": "CARSI",
+      "name": "Çarşı"
+    },
+    {
+      "id": "CAYBASI",
+      "name": "Çaybaşı"
+    },
+    {
+      "id": "CIGNIR",
+      "name": "Çiğnir"
+    },
+    {
+      "id": "CIMEN",
+      "name": "Çimen"
+    },
+    {
+      "id": "COBANLI",
+      "name": "Çobanlı"
+    },
+    {
+      "id": "DEREGEZEN",
+      "name": "Deregezen"
+    },
+    {
+      "id": "DUZCE",
+      "name": "Düzce"
+    },
+    {
+      "id": "EGNIR",
+      "name": "Eğnir"
+    },
+    {
+      "id": "ESIKLI",
+      "name": "Esikli"
+    },
+    {
+      "id": "ESKIARAPGIR",
+      "name": "Eskiarapgir"
+    },
+    {
+      "id": "GEBELI",
+      "name": "Gebeli"
+    },
+    {
+      "id": "GOZ",
+      "name": "Göz"
+    },
+    {
+      "id": "GOZELI",
+      "name": "Gözeli"
+    },
+    {
+      "id": "GUNYUZU",
+      "name": "Günyüzü"
+    },
+    {
+      "id": "HEZENEK",
+      "name": "Hezenek"
+    },
+    {
+      "id": "HOCAALI",
+      "name": "Hocaali"
+    },
+    {
+      "id": "KAYAKESEN",
+      "name": "Kayakesen"
+    },
+    {
+      "id": "KAYNAK",
+      "name": "Kaynak"
+    },
+    {
+      "id": "KAZANC",
+      "name": "Kazanç"
+    },
+    {
+      "id": "KILICLI",
+      "name": "Kılıçlı"
+    },
+    {
+      "id": "KONDUCAK",
+      "name": "Konducak"
+    },
+    {
+      "id": "KORU",
+      "name": "Koru"
+    },
+    {
+      "id": "KOSEOGLU",
+      "name": "Köseoğlu"
+    },
+    {
+      "id": "MEHMETAKIF",
+      "name": "Mehmetakif"
+    },
+    {
+      "id": "MESELI",
+      "name": "Meşeli"
+    },
+    {
+      "id": "ONAR",
+      "name": "Onar"
+    },
+    {
+      "id": "ORMANSIRTI",
+      "name": "Ormansırtı"
+    },
+    {
+      "id": "OSMANPASA",
+      "name": "Osmanpaşa"
+    },
+    {
+      "id": "PACALI",
+      "name": "Pacalı"
+    },
+    {
+      "id": "PIRALI",
+      "name": "Pirali"
+    },
+    {
+      "id": "SEKIZSU",
+      "name": "Sekizsu"
+    },
+    {
+      "id": "SELAMLI",
+      "name": "Selamlı"
+    },
+    {
+      "id": "SERGE",
+      "name": "Serge"
+    },
+    {
+      "id": "SINIKLI",
+      "name": "Sinikli"
+    },
+    {
+      "id": "SIPAHIUSAGI",
+      "name": "Sipahiuşağı"
+    },
+    {
+      "id": "SUCEYIN",
+      "name": "Suceyin"
+    },
+    {
+      "id": "SUGECTI",
+      "name": "Sugeçti"
+    },
+    {
+      "id": "SAGILUSAGI",
+      "name": "Şağıluşağı"
+    },
+    {
+      "id": "SIHLAR",
+      "name": "Şıhlar"
+    },
+    {
+      "id": "TARHAN",
+      "name": "Tarhan"
+    },
+    {
+      "id": "TASDELEN",
+      "name": "Taşdelen"
+    },
+    {
+      "id": "TASDIBEK",
+      "name": "Taşdibek"
+    },
+    {
+      "id": "ULACLI",
+      "name": "Ulaçlı"
+    },
+    {
+      "id": "YAYLACIK",
+      "name": "Yaylacık"
+    },
+    {
+      "id": "YAZILI",
+      "name": "Yazılı"
+    },
+    {
+      "id": "YENI",
+      "name": "Yeni"
+    },
+    {
+      "id": "YESILYAYLA",
+      "name": "Yeşilyayla"
+    },
+    {
+      "id": "YUKARICORENGE",
+      "name": "Yukarıçörenge"
+    },
+    {
+      "id": "YUKARIULUPINAR",
+      "name": "Yukarıulupınar"
+    },
+    {
+      "id": "YUKARIYABANLI",
+      "name": "Yukarıyabanlı"
+    },
+    {
+      "id": "YUKARIYENICE",
+      "name": "Yukarıyenice"
+    },
+    {
+      "id": "ZOHRAP",
+      "name": "Zöhrap"
+    }
+  ]
+}

@@ -182,6 +182,8 @@ export async function previewPdf(buf: Buffer) {
   // ---- Kalem çıkarımı
   const items: Item[] = [];
   const warnings: string[] = [];
+  const matrix: string[][] = [];
+  const fieldCandidates: { label: string; value: string }[] = [];
 
   // 1) PN/SN tabanlı kalemler
   for (const line of lines) {
@@ -203,6 +205,12 @@ export async function previewPdf(buf: Buffer) {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     if (headerLike.test(line)) continue;
+    const colonSplit = line.split(/[:=]/);
+    if (colonSplit.length === 2) {
+      const label = colonSplit[0].trim();
+      const value = colonSplit[1].trim();
+      if (label && value) fieldCandidates.push({ label, value });
+    }
     // min 3 hücre bekliyoruz: ad, miktar, birim
     const parts = line
       .split(/,|\t| {2,}/)
@@ -210,6 +218,7 @@ export async function previewPdf(buf: Buffer) {
       .filter(Boolean);
 
     if (parts.length >= 3) {
+      matrix.push(parts);
       const [name, qtyRaw, unit, brand, model, priceRaw, vatRaw] = parts;
       // Eğer bu satır PN/SN içeriyorsa, zaten eklenmiştir.
       if (RX.pnSnLine.test(line)) continue;
@@ -275,6 +284,8 @@ export async function previewPdf(buf: Buffer) {
     confidence,
     demand,
     items: uniqueItems,
+    matrix,
+    fieldCandidates,
     requiredItemFields: ["itemName", "qty", "unit"],
     warnings,
   };

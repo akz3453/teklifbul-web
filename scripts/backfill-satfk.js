@@ -89,25 +89,31 @@ async function backfillSATFK() {
   console.log('🚀 Starting SATFK backfill process...');
   
   try {
-    // Get all demands without SATFK
-    const demandsQuery = db.collection('demands')
-      .where('satfk', '==', null);
-    
+    // Get all demands without SATFK (check for null, undefined, or empty string)
+    // Note: Firestore queries can't check for undefined or empty string, so we'll fetch all and filter
+    const demandsQuery = db.collection('demands');
     const demandsSnap = await demandsQuery.get();
     
-    if (demandsSnap.empty) {
+    // Filter demands without SATFK
+    const demandsWithoutSATFK = demandsSnap.docs.filter(doc => {
+      const data = doc.data();
+      return !data.satfk || data.satfk === '' || data.satfk === null;
+    });
+    
+    if (demandsWithoutSATFK.length === 0) {
       console.log('✅ No demands found without SATFK');
       return;
     }
     
-    console.log(`📊 Found ${demandsSnap.size} demands without SATFK`);
+    console.log(`📊 Found ${demandsWithoutSATFK.size || demandsWithoutSATFK.length} demands without SATFK (out of ${demandsSnap.size} total)`);
+    
+    const demands = demandsWithoutSATFK;
     
     let processed = 0;
     let errors = 0;
     
     // Process demands in batches
     const batchSize = 10;
-    const demands = demandsSnap.docs;
     
     for (let i = 0; i < demands.length; i += batchSize) {
       const batch = demands.slice(i, i + batchSize);

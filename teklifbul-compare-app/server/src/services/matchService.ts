@@ -163,7 +163,7 @@ export class MatchService {
     const rows: ComparisonRow[] = [];
     let bestOverallVendor = '';
     let bestOverallTotal = Infinity;
-    let allVendors = new Set<string>();
+    const allVendors = new Set<string>();
 
     // Process each product group
     for (const [productCode, productOffers] of productGroups) {

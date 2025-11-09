@@ -1,0 +1,266 @@
+{
+  "districtId": "MUGLA__SEYDIKEMER",
+  "districtName": "Seydikemer",
+  "neighborhoods": [
+    {
+      "id": "ALACAT",
+      "name": "Alaçat"
+    },
+    {
+      "id": "ARIFLER",
+      "name": "Arifler"
+    },
+    {
+      "id": "ARSAKOY",
+      "name": "Arsaköy"
+    },
+    {
+      "id": "ATLIDERE",
+      "name": "Atlıdere"
+    },
+    {
+      "id": "BAGLIAGAC",
+      "name": "Bağlıağaç"
+    },
+    {
+      "id": "BAYIRKOY",
+      "name": "Bayırköy"
+    },
+    {
+      "id": "BEKCILER",
+      "name": "Bekçiler"
+    },
+    {
+      "id": "BELEN",
+      "name": "Belen"
+    },
+    {
+      "id": "BOGALAR",
+      "name": "Boğalar"
+    },
+    {
+      "id": "BOGAZICI",
+      "name": "Boğaziçi"
+    },
+    {
+      "id": "CEYLAN",
+      "name": "Ceylan"
+    },
+    {
+      "id": "CUMHURIYET",
+      "name": "Cumhuriyet"
+    },
+    {
+      "id": "CALTILAR",
+      "name": "Çaltılar"
+    },
+    {
+      "id": "CALTIOZU",
+      "name": "Çaltıözü"
+    },
+    {
+      "id": "CAMURKOY",
+      "name": "Çamurköy"
+    },
+    {
+      "id": "CATAK",
+      "name": "Çatak"
+    },
+    {
+      "id": "CAYAN",
+      "name": "Çayan"
+    },
+    {
+      "id": "CAYKENARI",
+      "name": "Çaykenarı"
+    },
+    {
+      "id": "COBANISA",
+      "name": "Çobanisa"
+    },
+    {
+      "id": "COBANLAR",
+      "name": "Çobanlar"
+    },
+    {
+      "id": "COKEK",
+      "name": "Çökek"
+    },
+    {
+      "id": "CUKURINCIR",
+      "name": "Çukurincir"
+    },
+    {
+      "id": "DEMIRLER",
+      "name": "Demirler"
+    },
+    {
+      "id": "DEREKOY",
+      "name": "Dereköy"
+    },
+    {
+      "id": "DODURGA",
+      "name": "Dodurga"
+    },
+    {
+      "id": "DOGANLAR",
+      "name": "Doğanlar"
+    },
+    {
+      "id": "DONT",
+      "name": "Dont"
+    },
+    {
+      "id": "DOGER",
+      "name": "Döğer"
+    },
+    {
+      "id": "ESEN",
+      "name": "Eşen"
+    },
+    {
+      "id": "GERISBURNU",
+      "name": "Gerişburnu"
+    },
+    {
+      "id": "GIRMELER",
+      "name": "Girmeler"
+    },
+    {
+      "id": "GOLBENT",
+      "name": "Gölbent"
+    },
+    {
+      "id": "GUNESLI",
+      "name": "Güneşli"
+    },
+    {
+      "id": "HACIOSMANLAR",
+      "name": "Hacıosmanlar"
+    },
+    {
+      "id": "IZZETTINKOY",
+      "name": "İzzettinköy"
+    },
+    {
+      "id": "KABAAGAC",
+      "name": "Kabaağaç"
+    },
+    {
+      "id": "KADIKOY",
+      "name": "Kadıköy"
+    },
+    {
+      "id": "KARADERE",
+      "name": "Karadere"
+    },
+    {
+      "id": "KARAKOY",
+      "name": "Karaköy"
+    },
+    {
+      "id": "KAYABASI",
+      "name": "Kayabaşı"
+    },
+    {
+      "id": "KAYACIK",
+      "name": "Kayacık"
+    },
+    {
+      "id": "KAYADIBI",
+      "name": "Kayadibi"
+    },
+    {
+      "id": "KINCILAR",
+      "name": "Kıncılar"
+    },
+    {
+      "id": "KINIK",
+      "name": "Kınık"
+    },
+    {
+      "id": "KORUBUKU",
+      "name": "Korubükü"
+    },
+    {
+      "id": "KUMLUOVA",
+      "name": "Kumluova"
+    },
+    {
+      "id": "MENEKSE",
+      "name": "Menekşe"
+    },
+    {
+      "id": "MINARE",
+      "name": "Minare"
+    },
+    {
+      "id": "ORTAKOY",
+      "name": "Ortaköy"
+    },
+    {
+      "id": "OREN",
+      "name": "Ören"
+    },
+    {
+      "id": "PASALI",
+      "name": "Paşalı"
+    },
+    {
+      "id": "SAHILCEYLAN",
+      "name": "Sahilceylan"
+    },
+    {
+      "id": "SARIYER",
+      "name": "Sarıyer"
+    },
+    {
+      "id": "SEKI",
+      "name": "Seki"
+    },
+    {
+      "id": "SEYDILER",
+      "name": "Seydiler"
+    },
+    {
+      "id": "SOGUTLUDERE",
+      "name": "Söğütlüdere"
+    },
+    {
+      "id": "TEMEL",
+      "name": "Temel"
+    },
+    {
+      "id": "UGURLU",
+      "name": "Uğurlu"
+    },
+    {
+      "id": "YAKABAG",
+      "name": "Yakabağ"
+    },
+    {
+      "id": "YAKAKOY",
+      "name": "Yakaköy"
+    },
+    {
+      "id": "YAYLA_ELDIREK",
+      "name": "Yayla Eldirek"
+    },
+    {
+      "id": "YAYLA_GOKBEN",
+      "name": "Yayla Gökben"
+    },
+    {
+      "id": "YAYLA_KARACULHA",
+      "name": "Yayla Karaçulha"
+    },
+    {
+      "id": "YAYLAPATLANGIC",
+      "name": "Yaylapatlangıç"
+    },
+    {
+      "id": "ZORLAR",
+      "name": "Zorlar"
+    }
+  ]
+}

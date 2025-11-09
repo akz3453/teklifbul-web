@@ -1,0 +1,844 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rol ve Yetki Yönetimi - Teklifbul</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%233b82f6' rx='6'/%3E%3Ctext x='16' y='22' font-family='Arial' font-size='18' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/css/ui-standard.css" />
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #f9fafb;
+      padding: 20px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    .header {
+      background: white;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      margin-bottom: 24px;
+    }
+    .header h1 {
+      margin: 0 0 8px 0;
+      font-size: 24px;
+      color: #1f2937;
+    }
+    .header p {
+      margin: 0;
+      color: #6b7280;
+      font-size: 14px;
+    }
+    .role-section {
+      background: white;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      margin-bottom: 24px;
+    }
+    .role-section h2 {
+      margin: 0 0 20px 0;
+      font-size: 20px;
+      color: #1f2937;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #e5e7eb;
+    }
+    .role-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 16px;
+      background: #f9fafb;
+    }
+    .role-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .role-name {
+      font-size: 18px;
+      font-weight: 600;
+      color: #1f2937;
+    }
+    .role-key {
+      font-size: 12px;
+      color: #6b7280;
+      font-family: monospace;
+      background: #e5e7eb;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+    .permissions-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+    .permissions-table th {
+      background: #f3f4f6;
+      padding: 12px;
+      text-align: left;
+      font-weight: 600;
+      color: #374151;
+      font-size: 13px;
+      border-bottom: 2px solid #e5e7eb;
+    }
+    .permissions-table td {
+      padding: 12px;
+      border-bottom: 1px solid #f3f4f6;
+      color: #1f2937;
+    }
+    .permission-status {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .permission-yes {
+      background: #d1fae5;
+      color: #065f46;
+    }
+    .permission-no {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+    .edit-btn {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .edit-btn:hover {
+      background: #2563eb;
+    }
+    .save-btn {
+      background: #10b981;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      margin-right: 8px;
+    }
+    .save-btn:hover {
+      background: #059669;
+    }
+    .cancel-btn {
+      background: #6b7280;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .cancel-btn:hover {
+      background: #4b5563;
+    }
+    .checkbox {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+    .info-box {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 24px;
+    }
+    .info-box p {
+      margin: 0;
+      color: #1e40af;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🔐 Rol ve Yetki Yönetimi</h1>
+    <p>Bu sayfada sistemdeki tüm alıcı ve tedarikçi rolleri ile yetkilerini görüntüleyebilir ve düzenleyebilirsiniz.</p>
+  </div>
+
+  <div class="info-box">
+    <p><strong>💡 Bilgi:</strong> Bu sayfadaki değişiklikler doğrudan <code>settings.html</code> dosyasındaki <code>rolePermissions</code> objesine yansıyacaktır. Değişiklikleri kaydettikten sonra sayfayı yenileyin.</p>
+  </div>
+
+  <!-- Alıcı Rolleri -->
+  <div class="role-section">
+    <h2>📋 Alıcı (Buyer) Rolleri</h2>
+    <div id="buyerRolesContainer"></div>
+  </div>
+
+  <!-- Tedarikçi Rolleri -->
+  <div class="role-section">
+    <h2>📦 Tedarikçi (Supplier) Rolleri</h2>
+    <div id="supplierRolesContainer"></div>
+  </div>
+
+  <script type="module">
+    // Teklifbul Rule v1.0 - Structured Logging
+    import { logger } from './src/shared/log/logger.js';
+    // Teklifbul Rule v1.0 - Toast Notification System
+    import { toast } from './src/shared/ui/toast.js';
+    // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
+    import { MESSAGES } from './src/shared/constants/messages.js';
+    
+    // Rol yetkileri tanımları - Teklifbul Rol & Onay Sistemi
+    // NOT: Bu sayfada yapılan değişiklikler settings.html dosyasındaki rolePermissions objesine manuel olarak uygulanmalıdır
+    const rolePermissions = {
+      // ========== ALICI (BUYER) ROLLERİ ==========
+      // === Satın alma hiyerarşisi (e-imza onay YOK) ===
+      'buyer:satinalma_uzman_yardimcisi': {
+        label: 'Satın Alma Uzman Yardımcısı',
+        permissions: {
+          'Talep Oluşturma': true,
+          'Talep Düzenleme': true,
+          'Talep Silme': true,
+          'Teklif Görüntüleme': true,
+          'Teklif Onaylama': false,
+          'Şirket Bilgileri Düzenleme': true,
+          'Kullanıcı Yönetimi': true,
+          'Tüm Talepleri Görüntüleme': true,
+          'Talep Atama/Delege': true,
+          'Talep Tedarikçiye İletme': true,
+          'Mukayese Görüntüleme': true,
+          'Teklif Onay (İmza)': false,
+          'Islak İmza Yükleme': true,
+          'Onay Politikası Yönetimi': false,
+          'Onay Limiti Yönetimi': false,
+          'Onay Yetkilisi Atama': false
+        }
+      },
+      'buyer:satinalma_uzmani': {
+        label: 'Satın Alma Uzmanı',
+        permissions: {
+          'Talep Oluşturma': true,
+          'Talep Düzenleme': true,
+          'Talep Silme': true,
+          'Teklif Görüntüleme': true,
+          'Teklif Onaylama': false,
+          'Şirket Bilgileri Düzenleme': true,
+          'Kullanıcı Yönetimi': true,
+          'Tüm Talepleri Görüntüleme': true,
+          'Talep Atama/Delege': true,
+          'Talep Tedarikçiye İletme': true,
+          'Mukayese Görüntüleme': true,
+          'Teklif Onay (İmza)': false,
+          'Islak İmza Yükleme': true,
+          'Onay Politikası Yönetimi': false,
+          'Onay Limiti Yönetimi': false,
+          'Onay Yetkilisi Atama': false
+        }
+      },
+      'buyer:satinalma_yetkilisi': {
+        label: 'Satın Alma Yetkilisi',
+        permissions: {
+          'Talep Oluşturma': true,
+          'Talep Düzenleme': true,
+          'Talep Silme': true,
+          'Teklif Görüntüleme': true,
+          'Teklif Onaylama': false,
+          'Şirket Bilgileri Düzenleme': true,
+          'Kullanıcı Yönetimi': true,
+          'Tüm Talepleri Görüntüleme': true,
+          'Talep Atama/Delege': true,
+          'Talep Tedarikçiye İletme': true,
+          'Mukayese Görüntüleme': true,
+          'Teklif Onay (İmza)': false,
+          'Islak İmza Yükleme': true,
+          'Onay Politikası Yönetimi': false,
+          'Onay Limiti Yönetimi': false,
+          'Onay Yetkilisi Atama': false
+        }
+      },
+      'buyer:satinalma_muduru': {
+        label: 'Satın Alma Müdürü',
+        permissions: {
+          'Talep Oluşturma': true,
+          'Talep Düzenleme': true,
+          'Talep Silme': true,
+          'Teklif Görüntüleme': true,
+          'Teklif Onaylama': false,
+          'Şirket Bilgileri Düzenleme': true,
+          'Kullanıcı Yönetimi': true,
+          'Tüm Talepleri Görüntüleme': true,
+          'Talep Atama/Delege': true,
+          'Talep Tedarikçiye İletme': true,
+          'Mukayese Görüntüleme': true,
+          'Teklif Onay (İmza)': false,
+          'Islak İmza Yükleme': true,
+          'Onay Politikası Yönetimi': false,
+          'Onay Limiti Yönetimi': false,
+          'Onay Yetkilisi Atama': false
+        }
+      },
+      // === Üst yönetim (e-imza onay VAR) ===
+      'buyer:genel_mudur': {
+        label: 'Genel Müdür',
+        permissions: {
+          'Talep Oluşturma': true,
+          'Talep Düzenleme': true,
+          'Talep Silme': true,
+          'Teklif Görüntüleme': true,
+          'Teklif Onaylama': true,
+          'Şirket Bilgileri Düzenleme': true,
+          'Kullanıcı Yönetimi': true,
+          'Tüm Talepleri Görüntüleme': true,
+          'Talep Atama/Delege': true,
+          'Talep Tedarikçiye İletme': true,
+          'Mukayese Görüntüleme': true,
+          'Teklif Onay (İmza)': true,
+          'Islak İmza Yükleme': true,
+          'Onay Politikası Yönetimi': true,
+          'Onay Limiti Yönetimi': true,
+          'Onay Yetkilisi Atama': true
+        }
+      },
+      'buyer:genel_mudur_yardimcisi': {
+        label: 'Genel Müdür Yardımcısı',
+        permissions: {
+          'Talep Oluşturma': true,
+          'Talep Düzenleme': true,
+          'Talep Silme': true,
+          'Teklif Görüntüleme': true,
+          'Teklif Onaylama': true,
+          'Şirket Bilgileri Düzenleme': true,
+          'Kullanıcı Yönetimi': false,
+          'Tüm Talepleri Görüntüleme': true,
+          'Talep Atama/Delege': true,
+          'Talep Tedarikçiye İletme': true,
+          'Mukayese Görüntüleme': true,
+          'Teklif Onay (İmza)': true,
+          'Islak İmza Yükleme': true,
+          'Onay Politikası Yönetimi': false,
+          'Onay Limiti Yönetimi': false,
+          'Onay Yetkilisi Atama': false
+        }
+      },
+      'buyer:ceo': {
+        label: 'CEO',
+        permissions: {
+          'Talep Oluşturma': true,
+          'Talep Düzenleme': true,
+          'Talep Silme': true,
+          'Teklif Görüntüleme': true,
+          'Teklif Onaylama': true,
+          'Şirket Bilgileri Düzenleme': true,
+          'Kullanıcı Yönetimi': true,
+          'Tüm Talepleri Görüntüleme': true,
+          'Talep Atama/Delege': true,
+          'Talep Tedarikçiye İletme': true,
+          'Mukayese Görüntüleme': true,
+          'Teklif Onay (İmza)': true,
+          'Islak İmza Yükleme': true,
+          'Onay Politikası Yönetimi': true,
+          'Onay Limiti Yönetimi': true,
+          'Onay Yetkilisi Atama': true
+        }
+      },
+      'buyer:isveren': {
+        label: 'İşveren (Şirket Sahibi)',
+        permissions: {
+          'Talep Oluşturma': true,
+          'Talep Düzenleme': true,
+          'Talep Silme': true,
+          'Teklif Görüntüleme': true,
+          'Teklif Onaylama': true,
+          'Şirket Bilgileri Düzenleme': true,
+          'Kullanıcı Yönetimi': true,
+          'Tüm Talepleri Görüntüleme': true,
+          'Talep Atama/Delege': true,
+          'Talep Tedarikçiye İletme': true,
+          'Mukayese Görüntüleme': true,
+          'Teklif Onay (İmza)': true,
+          'Islak İmza Yükleme': true,
+          'Onay Politikası Yönetimi': true,
+          'Onay Limiti Yönetimi': true,
+          'Onay Yetkilisi Atama': true
+        }
+      },
+      'buyer:yonetim_kurulu_baskani': {
+        label: 'Yönetim Kurulu Başkanı',
+        permissions: {
+          'Talep Oluşturma': true,
+          'Talep Düzenleme': true,
+          'Talep Silme': true,
+          'Teklif Görüntüleme': true,
+          'Teklif Onaylama': true,
+          'Şirket Bilgileri Düzenleme': true,
+          'Kullanıcı Yönetimi': true,
+          'Tüm Talepleri Görüntüleme': true,
+          'Talep Atama/Delege': true,
+          'Talep Tedarikçiye İletme': true,
+          'Mukayese Görüntüleme': true,
+          'Teklif Onay (İmza)': true,
+          'Islak İmza Yükleme': true,
+          'Onay Politikası Yönetimi': true,
+          'Onay Limiti Yönetimi': true,
+          'Onay Yetkilisi Atama': true
+        }
+      },
+      'buyer:yonetim_kurulu_uyesi': {
+        label: 'Yönetim Kurulu Üyesi',
+        permissions: {
+          'Talep Oluşturma': true,
+          'Talep Düzenleme': true,
+          'Talep Silme': true,
+          'Teklif Görüntüleme': true,
+          'Teklif Onaylama': true,
+          'Şirket Bilgileri Düzenleme': true,
+          'Kullanıcı Yönetimi': false,
+          'Tüm Talepleri Görüntüleme': true,
+          'Talep Atama/Delege': true,
+          'Talep Tedarikçiye İletme': true,
+          'Mukayese Görüntüleme': true,
+          'Teklif Onay (İmza)': true,
+          'Islak İmza Yükleme': true,
+          'Onay Politikası Yönetimi': true,
+          'Onay Limiti Yönetimi': true,
+          'Onay Yetkilisi Atama': true
+        }
+      },
+      'buyer:proje_yoneticisi': {
+        label: 'Proje Yöneticisi',
+        permissions: {
+          'Talep Oluşturma': true,
+          'Talep Düzenleme': true,
+          'Talep Silme': false,
+          'Teklif Görüntüleme': true,
+          'Teklif Onaylama': false,
+          'Şirket Bilgileri Düzenleme': false,
+          'Kullanıcı Yönetimi': false
+        }
+      },
+      'buyer:santiye_yetkilisi': {
+        label: 'Şantiye Yetkilisi',
+        permissions: {
+          'Talep Oluşturma': true,
+          'Talep Düzenleme': true,
+          'Talep Silme': false,
+          'Teklif Görüntüleme': true,
+          'Teklif Onaylama': false,
+          'Şirket Bilgileri Düzenleme': false,
+          'Kullanıcı Yönetimi': false
+        }
+      },
+      'buyer:stok_depo': {
+        label: 'Stok / Depo Yetkilisi',
+        permissions: {
+          'Talep Oluşturma': true,
+          'Talep Düzenleme': true,
+          'Talep Silme': false,
+          'Teklif Görüntüleme': false,
+          'Teklif Onaylama': false,
+          'Şirket Bilgileri Düzenleme': false,
+          'Kullanıcı Yönetimi': false
+        }
+      },
+      'buyer:muhasebe': {
+        label: 'Muhasebe',
+        permissions: {
+          'Talep Oluşturma': false,
+          'Talep Düzenleme': false,
+          'Talep Silme': false,
+          'Teklif Görüntüleme': true,
+          'Teklif Onaylama': false,
+          'Şirket Bilgileri Düzenleme': false,
+          'Kullanıcı Yönetimi': false
+        }
+      },
+      'buyer:alici': {
+        label: 'Alıcı',
+        permissions: {
+          'Talep Oluşturma': true,
+          'Talep Düzenleme': true,
+          'Talep Silme': false,
+          'Teklif Görüntüleme': true,
+          'Teklif Onaylama': false,
+          'Şirket Bilgileri Düzenleme': false,
+          'Kullanıcı Yönetimi': false
+        }
+      },
+      'buyer:genel_mudur_yardimcisi': {
+        label: 'Genel Müdür Yardımcısı',
+        permissions: {
+          'Talep Oluşturma': true,
+          'Talep Düzenleme': true,
+          'Talep Silme': true,
+          'Teklif Görüntüleme': true,
+          'Teklif Onaylama': true,
+          'Şirket Bilgileri Düzenleme': true,
+          'Kullanıcı Yönetimi': false
+        }
+      },
+      'buyer:yonetim_kurulu_baskani': {
+        label: 'Yönetim Kurulu Başkanı',
+        permissions: {
+          'Talep Oluşturma': true,
+          'Talep Düzenleme': true,
+          'Talep Silme': true,
+          'Teklif Görüntüleme': true,
+          'Teklif Onaylama': true,
+          'Şirket Bilgileri Düzenleme': true,
+          'Kullanıcı Yönetimi': true
+        }
+      },
+      'buyer:isveren': {
+        label: 'İşveren (Şirket Sahibi)',
+        permissions: {
+          'Talep Oluşturma': true,
+          'Talep Düzenleme': true,
+          'Talep Silme': true,
+          'Teklif Görüntüleme': true,
+          'Teklif Onaylama': true,
+          'Şirket Bilgileri Düzenleme': true,
+          'Kullanıcı Yönetimi': true
+        }
+      },
+      'buyer:ceo': {
+        label: 'CEO',
+        permissions: {
+          'Talep Oluşturma': true,
+          'Talep Düzenleme': true,
+          'Talep Silme': true,
+          'Teklif Görüntüleme': true,
+          'Teklif Onaylama': true,
+          'Şirket Bilgileri Düzenleme': true,
+          'Kullanıcı Yönetimi': true
+        }
+      },
+      
+      // ========== TEDARİKÇİ (SUPPLIER) ROLLERİ ==========
+      'supplier:satici': {
+        label: 'Satıcı',
+        permissions: {
+          'Teklif Verme': true,
+          'Teklif Düzenleme': true,
+          'Teklif Silme': false,
+          'Talep Görüntüleme': true,
+          'Talep Detay Görüntüleme': true,
+          'Şirket Bilgileri Düzenleme': false,
+          'Kullanıcı Yönetimi': false
+        }
+      },
+      'supplier:satis_muduru': {
+        label: 'Satış Müdürü',
+        permissions: {
+          'Teklif Verme': true,
+          'Teklif Düzenleme': true,
+          'Teklif Silme': true,
+          'Talep Görüntüleme': true,
+          'Talep Detay Görüntüleme': true,
+          'Şirket Bilgileri Düzenleme': false,
+          'Kullanıcı Yönetimi': false
+        }
+      },
+      'supplier:satis_yoneticisi': {
+        label: 'Satış Yöneticisi',
+        permissions: {
+          'Teklif Verme': true,
+          'Teklif Düzenleme': true,
+          'Teklif Silme': true,
+          'Talep Görüntüleme': true,
+          'Talep Detay Görüntüleme': true,
+          'Şirket Bilgileri Düzenleme': true,
+          'Kullanıcı Yönetimi': false
+        }
+      },
+      'supplier:genel_mudur': {
+        label: 'Genel Müdür',
+        permissions: {
+          'Teklif Verme': true,
+          'Teklif Düzenleme': true,
+          'Teklif Silme': true,
+          'Talep Görüntüleme': true,
+          'Talep Detay Görüntüleme': true,
+          'Şirket Bilgileri Düzenleme': true,
+          'Kullanıcı Yönetimi': true
+        }
+      },
+      'supplier:satis_personeli': {
+        label: 'Satış Personeli',
+        permissions: {
+          'Teklif Verme': true,
+          'Teklif Düzenleme': true,
+          'Teklif Silme': false,
+          'Talep Görüntüleme': true,
+          'Talep Detay Görüntüleme': true,
+          'Şirket Bilgileri Düzenleme': false,
+          'Kullanıcı Yönetimi': false
+        }
+      },
+      'supplier:pazarlama_muduru': {
+        label: 'Pazarlama Müdürü',
+        permissions: {
+          'Teklif Verme': true,
+          'Teklif Düzenleme': true,
+          'Teklif Silme': true,
+          'Talep Görüntüleme': true,
+          'Talep Detay Görüntüleme': true,
+          'Şirket Bilgileri Düzenleme': false,
+          'Kullanıcı Yönetimi': false
+        }
+      },
+      'supplier:yonetim_kurulu_baskani': {
+        label: 'Yönetim Kurulu Başkanı',
+        permissions: {
+          'Teklif Verme': true,
+          'Teklif Düzenleme': true,
+          'Teklif Silme': true,
+          'Talep Görüntüleme': true,
+          'Talep Detay Görüntüleme': true,
+          'Şirket Bilgileri Düzenleme': true,
+          'Kullanıcı Yönetimi': true
+        }
+      },
+      'supplier:ceo': {
+        label: 'CEO',
+        permissions: {
+          'Teklif Verme': true,
+          'Teklif Düzenleme': true,
+          'Teklif Silme': true,
+          'Talep Görüntüleme': true,
+          'Talep Detay Görüntüleme': true,
+          'Şirket Bilgileri Düzenleme': true,
+          'Kullanıcı Yönetimi': true
+        }
+      },
+      'supplier:sirket_sahibi': {
+        label: 'Şirket Sahibi',
+        permissions: {
+          'Teklif Verme': true,
+          'Teklif Düzenleme': true,
+          'Teklif Silme': true,
+          'Talep Görüntüleme': true,
+          'Talep Detay Görüntüleme': true,
+          'Şirket Bilgileri Düzenleme': true,
+          'Kullanıcı Yönetimi': true
+        }
+      }
+    };
+
+    // Tüm izin tipleri (buyer ve supplier için birleşik liste) - Teklifbul Rule v1.0
+    const allPermissionTypes = [
+      // Buyer permissions
+      'Talep Oluşturma',
+      'Talep Düzenleme',
+      'Talep Silme',
+      'Teklif Görüntüleme',
+      'Teklif Onaylama',
+      // Supplier permissions
+      'Teklif Verme',
+      'Teklif Düzenleme',
+      'Teklif Silme',
+      'Talep Görüntüleme',
+      'Talep Detay Görüntüleme',
+      // Common permissions
+      'Şirket Bilgileri Düzenleme',
+      'Kullanıcı Yönetimi'
+    ];
+    
+    // Buyer için geçerli izin tipleri
+    const buyerPermissionTypes = [
+      'Talep Oluşturma',
+      'Talep Düzenleme',
+      'Talep Silme',
+      'Teklif Görüntüleme',
+      'Teklif Onaylama',
+      'Şirket Bilgileri Düzenleme',
+      'Kullanıcı Yönetimi'
+    ];
+    
+    // Supplier için geçerli izin tipleri
+    const supplierPermissionTypes = [
+      'Teklif Verme',
+      'Teklif Düzenleme',
+      'Teklif Silme',
+      'Talep Görüntüleme',
+      'Talep Detay Görüntüleme',
+      'Şirket Bilgileri Düzenleme',
+      'Kullanıcı Yönetimi'
+    ];
+
+    let editingRole = null;
+    let originalPermissions = null;
+
+    // Rol kartı oluştur - Teklifbul Rule v1.0
+    function createRoleCard(roleKey, roleData, isBuyer) {
+      const container = isBuyer ? document.getElementById('buyerRolesContainer') : document.getElementById('supplierRolesContainer');
+      const card = document.createElement('div');
+      card.className = 'role-card';
+      card.id = `roleCard_${roleKey.replace(/:/g, '_')}`;
+
+      const permissionsHtml = Object.entries(roleData.permissions).map(([perm, hasAccess]) => `
+        <tr>
+          <td>${perm}</td>
+          <td style="text-align:center;">
+            <span class="permission-status ${hasAccess ? 'permission-yes' : 'permission-no'}">
+              ${hasAccess ? '✅ Var' : '❌ Yok'}
+            </span>
+          </td>
+        </tr>
+      `).join('');
+
+      card.innerHTML = `
+        <div class="role-header">
+          <div>
+            <div class="role-name">${roleData.label}</div>
+            <div class="role-key">${roleKey}</div>
+          </div>
+          <button class="edit-btn" onclick="editRole('${roleKey}')">✏️ Düzenle</button>
+        </div>
+        <table class="permissions-table">
+          <thead>
+            <tr>
+              <th>Yetki</th>
+              <th style="text-align:center; width:120px;">Durum</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${permissionsHtml}
+          </tbody>
+        </table>
+      `;
+
+      container.appendChild(card);
+    }
+
+    // Düzenleme modu - Teklifbul Rule v1.0
+    window.editRole = function(roleKey) {
+      if (editingRole && editingRole !== roleKey) {
+        if (!confirm('Başka bir rolü düzenliyorsunuz. Değişiklikleri kaydetmeden devam edilsin mi?')) {
+          return;
+        }
+        cancelEdit();
+      }
+
+      editingRole = roleKey;
+      const roleData = rolePermissions[roleKey];
+      originalPermissions = JSON.parse(JSON.stringify(roleData.permissions));
+
+      const card = document.getElementById(`roleCard_${roleKey.replace(/:/g, '_')}`);
+      const permissions = roleData.permissions;
+
+      // Bu rol için geçerli olan izin tipleri - Teklifbul Rule v1.0
+      const relevantPermissions = roleKey.includes('buyer') 
+        ? buyerPermissionTypes 
+        : supplierPermissionTypes;
+
+      const editPermissionsHtml = relevantPermissions.map(perm => {
+        const currentValue = permissions[perm] !== undefined ? permissions[perm] : false;
+        return `
+          <tr>
+            <td>${perm}</td>
+            <td style="text-align:center;">
+              <input type="checkbox" class="checkbox" data-perm="${perm}" ${currentValue ? 'checked' : ''}>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      card.innerHTML = `
+        <div class="role-header">
+          <div>
+            <div class="role-name">${roleData.label}</div>
+            <div class="role-key">${roleKey}</div>
+          </div>
+          <div>
+            <button class="save-btn" onclick="saveRole('${roleKey}')">💾 Kaydet</button>
+            <button class="cancel-btn" onclick="cancelEdit()">❌ İptal</button>
+          </div>
+        </div>
+        <table class="permissions-table">
+          <thead>
+            <tr>
+              <th>Yetki</th>
+              <th style="text-align:center; width:120px;">Durum</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${editPermissionsHtml}
+          </tbody>
+        </table>
+      `;
+    };
+
+    // Kaydet - Teklifbul Rule v1.0
+    window.saveRole = function(roleKey) {
+      const card = document.getElementById(`roleCard_${roleKey.replace(/:/g, '_')}`);
+      const checkboxes = card.querySelectorAll('.checkbox');
+      const updatedPermissions = {};
+
+      checkboxes.forEach(checkbox => {
+        const perm = checkbox.getAttribute('data-perm');
+        updatedPermissions[perm] = checkbox.checked;
+      });
+
+      // Orijinal permissions'ı koru (bu rol için geçerli olmayan izinler)
+      const roleData = rolePermissions[roleKey];
+      Object.keys(roleData.permissions).forEach(perm => {
+        if (!updatedPermissions.hasOwnProperty(perm)) {
+          updatedPermissions[perm] = roleData.permissions[perm];
+        }
+      });
+
+      // Güncelle
+      rolePermissions[roleKey].permissions = updatedPermissions;
+
+      // Konsola yazdır (settings.html'e kopyalanacak)
+      logger.info(`\n// ${rolePermissions[roleKey].label} - ${roleKey}`);
+      logger.info(`'${roleKey}': {`);
+      Object.entries(updatedPermissions).forEach(([perm, hasAccess]) => {
+        logger.info(`  '${perm}': ${hasAccess},`);
+      });
+      logger.info('},');
+
+      // Kartı yeniden oluştur
+      createRoleCard(roleKey, rolePermissions[roleKey], roleKey.includes('buyer'));
+      editingRole = null;
+      originalPermissions = null;
+
+      toast.success(MESSAGES.SUCCESS_ROLE_PERMISSIONS_UPDATED);
+    };
+
+    // İptal - Teklifbul Rule v1.0
+    window.cancelEdit = function() {
+      if (!editingRole) return;
+
+      const roleKey = editingRole;
+      const roleData = rolePermissions[roleKey];
+      
+      // Orijinal permissions'ı geri yükle
+      roleData.permissions = originalPermissions;
+
+      // Kartı yeniden oluştur
+      const card = document.getElementById(`roleCard_${roleKey.replace(/:/g, '_')}`);
+      card.remove();
+      createRoleCard(roleKey, roleData, roleKey.includes('buyer'));
+
+      editingRole = null;
+      originalPermissions = null;
+    };
+
+    // Sayfa yüklendiğinde tüm rolleri göster - Teklifbul Rule v1.0
+    document.addEventListener('DOMContentLoaded', () => {
+      Object.entries(rolePermissions).forEach(([roleKey, roleData]) => {
+        const isBuyer = roleKey.includes('buyer');
+        createRoleCard(roleKey, roleData, isBuyer);
+      });
+    });
+  </script>
+</body>
+</html>
+

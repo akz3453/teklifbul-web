@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>Toplu Fiyat Güncelleme</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="/utils.css" />
+  <style>
+    body{font-family:system-ui, Arial; background:#f8fafc; color:#111827; margin:0}
+    .container{max-width:1100px;margin:0 auto;padding:20px}
+    h1{margin:0 0 8px 0}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin:12px 0}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px; margin-top:8px}
+    label{font-size:12px;color:#374151;font-weight:600;display:block;margin-bottom:6px}
+    input,select{width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:14px}
+    table{width:100%;border-collapse:collapse; margin-top:12px}
+    th,td{border-bottom:1px solid #e5e7eb;padding:8px;text-align:left;font-size:13px}
+    th{background:#f9fafb}
+    .muted{color:#6b7280;font-size:12px}
+    .btn{padding:10px 16px;border:0;border-radius:6px;cursor:pointer;font-weight:600}
+    .btn-primary{background:#2563eb;color:#fff}
+    .btn-secondary{background:#6b7280;color:#fff}
+    .btn[disabled]{opacity:.5;cursor:not-allowed}
+  </style>
+</head>
+<body>
+  <!-- Common Header -->
+  <header id="app-header"></header>
+
+  <div class="container">
+    <h1>Toplu Fiyat Güncelleme</h1>
+    <p class="muted">Stok ürünlerinin fiyatlarını toplu olarak güncelleyin.</p>
+
+    <div class="card">
+      <h2 style="margin:0 0 12px 0;font-size:18px">Filtreler</h2>
+      <div class="row">
+        <div>
+          <label for="filterCode">Özel Kod 1</label>
+          <input id="filterCode" placeholder="Filtrele (opsiyon)" />
+        </div>
+        <div>
+          <label for="filterBrand">Marka</label>
+          <input id="filterBrand" placeholder="Filtrele (opsiyon)" />
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label for="filterUnit">Birim</label>
+          <select id="filterUnit">
+            <option value="">Tümü</option>
+            <option value="ADT">ADT</option>
+            <option value="KG">KG</option>
+            <option value="TON">TON</option>
+            <option value="LT">LT</option>
+          </select>
+        </div>
+        <div>
+          <button class="btn btn-primary" id="btnLoad" style="margin-top:25px">Yükle ve İndir</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin:0 0 12px 0;font-size:18px">Fiyat Güncelleme</h2>
+      <div id="updateInfo" class="muted">Henüz stok yüklenmedi.</div>
+      <div style="overflow:auto">
+        <table id="updateTable" style="display:none">
+          <thead>
+            <tr>
+              <th>SKU</th><th>Ürün</th><th>Birim</th><th>Eski Alım</th><th>Yeni Alım</th><th>Eski Satış</th><th>Yeni Satış</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div style="display:flex; gap:8px; justify-content:flex-end">
+      <button class="btn btn-secondary" id="btnBack" onclick="history.back()">Geri</button>
+      <button class="btn btn-primary" id="btnApply" disabled>Güncelle</button>
+    </div>
+  </div>
+
+  <!-- XLSX CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- Firebase -->
+  <script type="module" src="/firebase.js"></script>
+  <!-- Header -->
+  <script type="module">
+    import { initGlobalHeader } from '../assets/js/ui/header.js';
+    initGlobalHeader({ mount: '#app-header', activeRoute: 'inventory' });
+  </script>
+  <!-- Main -->
+  <script type="module" src="/scripts/price-update.js"></script>
+</body>
+</html>
+

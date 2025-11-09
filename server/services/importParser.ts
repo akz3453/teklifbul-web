@@ -127,7 +127,7 @@ function isRowMeaningful(i:any){
 
 export async function previewXlsx(buf: Buffer){
   const wb = new ExcelJS.Workbook();
-  await wb.xlsx.load(buf);
+  await wb.xlsx.load(buf as any);
 
   const names = wb.worksheets.map(s=>s.name.toLowerCase());
   const ws0 = wb.worksheets[0];
@@ -155,6 +155,18 @@ export async function previewXlsx(buf: Buffer){
     currency
   };
   const demand = demandSchema.parse({ ...demandRaw });
+
+  // Prepare field candidates before pushing into it
+  const fieldCandidates: { label: string; value: string }[] = [];
+  // Collect high-level field candidates from the first sheet (label/value pairs)
+  for (let r = 1; r <= Math.min(40, ws0.rowCount); r++) {
+    const row = ws0.getRow(r);
+    const label = String(readCell(row.getCell(1).value) || "").trim();
+    const value = String(readCell(row.getCell(2).value) || "").trim();
+    if (label && value) {
+      fieldCandidates.push({ label, value });
+    }
+  }
 
   if (!wsItems || wsItems.rowCount === 0) throw new Error('Kalem sayfası bulunamadı veya boş');
 
@@ -241,6 +253,7 @@ export async function previewXlsx(buf: Buffer){
     headerRow, headers, colIdx, confidence,
     demand, items,
     matrix,
+    fieldCandidates,
     requiredItemFields: REQUIRED_ITEM,
     warnings
   };

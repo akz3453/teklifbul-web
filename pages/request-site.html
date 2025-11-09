@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>Şantiye Malzeme Talep Formu (ŞMTF)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="/utils.css" />
+  <style>
+    body{font-family:system-ui, Arial; background:#f8fafc; color:#111827; margin:0}
+    .container{max-width:1100px;margin:0 auto;padding:20px}
+    h1{margin:0 0 8px 0}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin:12px 0}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px; margin-top:8px}
+    label{font-size:12px;color:#374151;font-weight:600;display:block;margin-bottom:6px}
+    input,select,textarea{width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:14px}
+    table{width:100%;border-collapse:collapse; margin-top:12px}
+    th,td{border-bottom:1px solid #e5e7eb;padding:8px;text-align:left;font-size:13px}
+    th{background:#f9fafb}
+    .badge{display:inline-block;border-radius:14px;padding:2px 8px;font-size:12px}
+    .b-found{background:#dcfce7;color:#065f46}
+    .b-multi{background:#fef9c3;color:#854d0e}
+    .b-new{background:#f3e8ff;color:#6b21a8}
+    .muted{color:#6b7280;font-size:12px}
+    .btn{padding:10px 16px;border:0;border-radius:6px;cursor:pointer;font-weight:600}
+    .btn-primary{background:#2563eb;color:#fff}
+    .btn-secondary{background:#6b7280;color:#fff}
+    .btn-small{padding:6px 12px;font-size:12px}
+    .btn[disabled]{opacity:.5;cursor:not-allowed}
+    .search-result{background:#f9fafb;padding:8px;border-radius:4px;max-height:150px;overflow-y:auto;display:none}
+    .search-result div{padding:4px 8px;cursor:pointer;border-bottom:1px solid #e5e7eb}
+    .search-result div:hover{background:#e5e7eb}
+    .address-modal{display:none !important}
+    .address-modal[style*="flex"]{display:flex !important}
+  </style>
+</head>
+<body>
+  <!-- Common Header -->
+  <header id="app-header"></header>
+
+  <div class="container">
+    <h1>Şantiye Malzeme Talep Formu (ŞMTF)</h1>
+    <p class="muted">Şantiyeye malzeme talebi oluşturun.</p>
+
+    <div class="card">
+      <h2 style="margin:0 0 12px 0;font-size:18px">Talep Bilgileri</h2>
+      <div class="row">
+        <div>
+          <label for="reqTitle">Başlık <span style="color:#dc2626">*</span></label>
+          <input id="reqTitle" placeholder="Örn. Rize Şantiye Çimento Talebi" />
+        </div>
+        <div>
+          <label for="reqLocation">Şantiye/Depo <span style="color:#dc2626">*</span></label>
+          <div style="position:relative">
+            <input type="text" id="reqLocation" placeholder="Şantiye ara veya seçin..." autocomplete="off" />
+            <div id="locationDropdown" class="search-result" style="position:absolute;top:100%;left:0;right:0;z-index:100;max-height:200px;overflow-y:auto;display:none;background:#fff;border:1px solid #d1d5db;border-radius:4px;box-shadow:0 4px 6px rgba(0,0,0,0.1)"></div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label for="reqDelivery">
+            Teslimat Adresi <span style="color:#dc2626">*</span>
+            <button type="button" id="btnSelectAddress" class="btn btn-small btn-secondary" style="margin-left:8px;padding:4px 8px;font-size:11px" disabled>İlave Adres Seç</button>
+          </label>
+          <textarea id="reqDelivery" rows="3" placeholder="Şantiye seçildiğinde otomatik doldurulacak" readonly style="background:#f9fafb"></textarea>
+        </div>
+        <div>
+          <label for="reqDescription">Açıklama / Yol Tarifi</label>
+          <textarea id="reqDescription" rows="2" placeholder="Ek bilgi"></textarea>
+        </div>
+      </div>
+      <div style="margin-top:8px">
+        <label><input type="checkbox" id="reqFreightIncluded" /> Nakliye Dahil</label>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin:0 0 12px 0;font-size:18px">Malzeme Satırları</h2>
+      <button class="btn btn-primary btn-small" id="btnAddLine">+ Satır Ekle</button>
+      
+      <table id="linesTable" style="margin-top:12px">
+        <thead>
+          <tr>
+            <th style="width:120px">SKU</th>
+            <th style="width:200px">Ürün Adı <span style="color:#dc2626">*</span></th>
+            <th style="width:120px">Marka/Model</th>
+            <th style="width:100px">Miktar <span style="color:#dc2626">*</span></th>
+            <th style="width:80px">Birim <span style="color:#dc2626">*</span></th>
+            <th style="width:120px">Teslim Tarihi</th>
+            <th style="width:100px">Durum</th>
+            <th style="width:80px">İşlem</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div style="display:flex; gap:8px; justify-content:flex-end">
+      <button class="btn btn-secondary" id="btnBack" onclick="history.back()">Geri</button>
+      <button class="btn btn-secondary" id="btnSaveDraft" disabled>Taslak Kaydet</button>
+      <button class="btn btn-primary" id="btnSend" disabled>Gönder</button>
+      <button class="btn btn-secondary" id="btnExportPDF" disabled>PDF İndir</button>
+      <button class="btn btn-secondary" id="btnExportExcel" disabled>Excel İndir</button>
+    </div>
+  </div>
+
+  <!-- İlave Adres Seçim Modal -->
+  <div id="addressModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center" class="address-modal">
+    <div style="background:#fff;border-radius:8px;padding:24px;max-width:500px;max-height:80vh;overflow-y:auto;width:90%">
+      <h3 style="margin:0 0 16px 0">İlave Adres Seç</h3>
+      <div id="addressList"></div>
+      <div style="margin-top:16px;display:flex;gap:8px;justify-content:flex-end">
+        <button type="button" class="btn btn-secondary" id="btnCancelAddress">İptal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PDF & Excel Libraries -->
+  <script type="module">
+    import '../assets/vendor/jspdf.umd.min.js';
+    import '../assets/vendor/xlsx.full.min.js';
+  </script>
+
+  <!-- Firebase -->
+  <script type="module" src="/firebase.js"></script>
+  <!-- Header -->
+  <script type="module">
+    import { initGlobalHeader } from '../assets/js/ui/header.js';
+    initGlobalHeader({ mount: '#app-header', activeRoute: 'inventory' });
+  </script>
+  <!-- Helpers -->
+  <script type="module" src="/scripts/lib/tr-utils.js"></script>
+  <!-- Main -->
+  <script type="module" src="/scripts/request-site.js"></script>
+</body>
+</html>
+

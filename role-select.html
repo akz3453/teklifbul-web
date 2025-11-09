@@ -26,9 +26,33 @@
     .checkbox-group input[type="checkbox"] { margin-top: 3px; }
     .checkbox-group label { margin: 0; font-weight: 400; }
     .required { color: #ef4444; }
-    .kvkk-text { font-size: 12px; color: #6b7280; padding: 12px; background: #f3f4f6; border-radius: 6px; margin: 12px 0; line-height: 1.6; }
-    .kvkk-text a { color: #3b82f6; text-decoration: none; }
-    .kvkk-text a:hover { text-decoration: underline; }
+    .kvkk-text { 
+      font-size: 13px; 
+      color: #374151; 
+      padding: 16px; 
+      background: #f9fafb; 
+      border: 1px solid #e5e7eb;
+      border-radius: 8px; 
+      margin: 16px 0; 
+      line-height: 1.7; 
+      text-align: left;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .kvkk-text strong {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 8px;
+    }
+    .kvkk-text a { 
+      color: #3b82f6; 
+      text-decoration: none; 
+      font-weight: 500;
+    }
+    .kvkk-text a:hover { 
+      text-decoration: underline; 
+    }
     .btn-primary { background: #3b82f6; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; }
     .btn-primary:hover { background: #2563eb; }
     .btn-primary:disabled { background: #9ca3af; cursor: not-allowed; }
@@ -41,18 +65,131 @@
   <p style="color:#6b7280; margin-bottom:24px;">Teklifbul'da nasıl devam edeceksiniz?</p>
   
   <div class="role-buttons">
-    <button class="role-btn" id="buyerBtn">
+    <button class="role-btn" id="buyerBtn" type="button">
       <h3 style="margin:0 0 8px 0;">🛒 Alıcı</h3>
       <p style="margin:0; font-size:13px; color:#6b7280;">Talep oluştur ve teklif al</p>
+      <span id="buyerCheck" style="display:none; color:#3b82f6; font-weight:bold;">✓ Seçildi</span>
     </button>
-    <button class="role-btn" id="supplierBtn">
-      <h3 style="margin:0 0 8px 0;">โรงงาน Tedarikçi</h3>
+    <button class="role-btn" id="supplierBtn" type="button">
+      <h3 style="margin:0 0 8px 0;">Tedarikçi</h3>
       <p style="margin:0; font-size:13px; color:#6b7280;">Taleplere teklif ver</p>
+      <span id="supplierCheck" style="display:none; color:#3b82f6; font-weight:bold;">✓ Seçildi</span>
     </button>
   </div>
+  <p style="font-size:12px; color:#6b7280; margin-top:8px; text-align:center;">
+    💡 Hem alıcı hem tedarikçi olabilirsiniz. Her iki rol için de şirket içindeki rolünüzü seçmeniz gerekecek.
+  </p>
   
   <div id="formSection" class="form-section">
     <h2 style="margin-top:0;">Şirket Bilgileri</h2>
+    
+    <!-- Company Setup Mode Selection -->
+    <div class="form-group" style="background:#f0f9ff; padding:16px; border-radius:8px; border:2px solid #3b82f6; margin-bottom:24px;">
+      <label style="font-weight:600; margin-bottom:12px; display:block;">Şirket Kurulum Modu <span class="required">*</span></label>
+      <div style="display:flex; gap:12px; flex-wrap:wrap;">
+        <label style="flex:1; min-width:200px; padding:12px; border:2px solid #3b82f6; border-radius:6px; cursor:pointer; background:white; transition:all 0.2s;">
+          <input type="radio" name="companyMode" value="new" checked style="margin-right:8px;" />
+          <strong>Yeni Şirket Oluştur</strong>
+          <p style="margin:4px 0 0 0; font-size:12px; color:#6b7280;">Sistem otomatik olarak şirket kodu oluşturur</p>
+        </label>
+        <label style="flex:1; min-width:200px; padding:12px; border:2px solid #d1d5db; border-radius:6px; cursor:pointer; background:white; transition:all 0.2s;">
+          <input type="radio" name="companyMode" value="join" style="margin-right:8px;" />
+          <strong>Mevcut Şirkete Katıl</strong>
+          <p style="margin:4px 0 0 0; font-size:12px; color:#6b7280;">Şirket kodunu girip onay bekleyin</p>
+        </label>
+      </div>
+      
+      <!-- Join Company Fields (hidden by default) -->
+      <div id="joinCompanySection" style="display:none; margin-top:16px; padding:12px; background:white; border-radius:6px; border:1px solid #d1d5db;">
+        <div class="form-group" style="margin-bottom:12px;">
+          <label for="companyCode">Şirket Kodu <span class="required">*</span></label>
+          <input type="text" id="companyCode" placeholder="Şirket kodunu girin" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:6px; font-size:14px; text-transform:uppercase;" maxlength="8" />
+          <p style="font-size:12px; color:#6b7280; margin-top:4px;">Mevcut şirketin kodunu girin. Onay için şirket yöneticilerine bildirim gönderilecek.</p>
+        </div>
+        <div class="form-group">
+          <label for="joinRoleSelect">Şirket İçindeki Rolünüz <span class="required">*</span></label>
+          <select id="joinRoleSelect" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:6px; font-size:14px;">
+            <option value="">Rol seçin</option>
+            <optgroup label="Alıcı Rolleri">
+              <option value="buyer:satinalma_yetkilisi">Satın Alma Yetkilisi</option>
+              <option value="buyer:santiye_yetkilisi">Şantiye Yetkilisi</option>
+              <option value="buyer:stok_depo">Stok / Depo Yetkilisi</option>
+              <option value="buyer:muhasebe">Muhasebe</option>
+              <option value="buyer:alici">Alıcı</option>
+              <option value="buyer:genel_mudur">Genel Müdür</option>
+              <option value="buyer:genel_mudur_yardimcisi">Genel Müdür Yardımcısı</option>
+              <option value="buyer:yonetim_kurulu_baskani">Yönetim Kurulu Başkanı</option>
+              <option value="buyer:isveren">İşveren (Şirket Sahibi)</option>
+              <option value="buyer:ceo">CEO</option>
+            </optgroup>
+            <optgroup label="Tedarikçi Rolleri">
+              <option value="supplier:satis_personeli">Satış Personeli</option>
+              <option value="supplier:pazarlama_muduru">Pazarlama Müdürü</option>
+              <option value="supplier:genel_mudur">Genel Müdür</option>
+              <option value="supplier:yonetim_kurulu_baskani">Yönetim Kurulu Başkanı</option>
+              <option value="supplier:ceo">CEO</option>
+              <option value="supplier:sirket_sahibi">Şirket Sahibi</option>
+            </optgroup>
+          </select>
+        </div>
+      </div>
+      
+      <!-- New Company Auto Code Display -->
+      <div id="newCompanyCodeSection" style="margin-top:16px; padding:12px; background:#dbeafe; border-radius:6px;">
+        <p style="margin:0; font-size:14px; font-weight:600; color:#1e40af;">
+          📝 Oluşturulacak Şirket Kodu: <span id="generatedCompanyCode" style="font-family:monospace; font-size:16px; color:#1e3a8a;">-</span>
+        </p>
+        <p style="margin:4px 0 0 0; font-size:12px; color:#1e40af;">Bu kod otomatik oluşturulacak ve kayıt sonrası size bildirilecek.</p>
+      </div>
+      
+      <!-- New Company Role Selection -->
+      <div id="newCompanyRoleSection" style="margin-top:16px; padding:12px; background:white; border-radius:6px; border:1px solid #d1d5db;">
+        <!-- Buyer Role Selection (if buyer is selected) -->
+        <div id="newCompanyBuyerRoleSection" style="display:none; margin-bottom:16px; padding-bottom:16px; border-bottom:1px solid #e5e7eb;">
+          <div class="form-group">
+            <label for="newCompanyBuyerRoleSelect">Alıcı Rolünüz - Şirket İçindeki Rolünüz <span class="required">*</span></label>
+            <select id="newCompanyBuyerRoleSelect" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:6px; font-size:14px;">
+              <option value="">Rol seçin</option>
+              <option value="buyer:satinalma_yetkilisi">Satın Alma Yetkilisi</option>
+              <option value="buyer:santiye_yetkilisi">Şantiye Yetkilisi</option>
+              <option value="buyer:stok_depo">Stok / Depo Yetkilisi</option>
+              <option value="buyer:muhasebe">Muhasebe</option>
+              <option value="buyer:alici">Alıcı</option>
+              <option value="buyer:genel_mudur">Genel Müdür</option>
+              <option value="buyer:genel_mudur_yardimcisi">Genel Müdür Yardımcısı</option>
+              <option value="buyer:yonetim_kurulu_baskani">Yönetim Kurulu Başkanı</option>
+              <option value="buyer:isveren" selected>İşveren (Şirket Sahibi)</option>
+              <option value="buyer:ceo">CEO</option>
+            </select>
+          </div>
+        </div>
+        
+        <!-- Supplier Role Selection (if supplier is selected) -->
+        <div id="newCompanySupplierRoleSection" style="display:none;">
+          <div class="form-group">
+            <label for="newCompanySupplierRoleSelect">Tedarikçi Rolünüz - Şirket İçindeki Rolünüz <span class="required">*</span></label>
+            <select id="newCompanySupplierRoleSelect" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:6px; font-size:14px;">
+              <option value="">Rol seçin</option>
+              <option value="supplier:satis_personeli">Satış Personeli</option>
+              <option value="supplier:pazarlama_muduru">Pazarlama Müdürü</option>
+              <option value="supplier:genel_mudur">Genel Müdür</option>
+              <option value="supplier:yonetim_kurulu_baskani">Yönetim Kurulu Başkanı</option>
+              <option value="supplier:ceo">CEO</option>
+              <option value="supplier:sirket_sahibi" selected>Şirket Sahibi</option>
+            </select>
+          </div>
+        </div>
+        
+        <div style="margin-top:12px; padding:12px; background:#f0f9ff; border-radius:6px;">
+          <p style="font-size:12px; color:#1e40af; margin:0; line-height:1.6;">
+            💡 <strong>Rol Yetkileri:</strong><br>
+            <strong>İç Talep:</strong> Şantiye Yetkilisi, Stok/Depo, Genel Müdür, Genel Müdür Yardımcısı, Yönetim Kurulu Başkanı, İşveren, CEO<br>
+            <strong>Dış Talep:</strong> Satın Alma Yetkilisi<br>
+            <strong>TAM YETKİ:</strong> İşveren (kurucu), Genel Müdür (Alıcı), Satın Alma Yetkilisi, Genel Müdür/Pazarlama Müdürü (Tedarikçi), Satış Personeli
+          </p>
+        </div>
+      </div>
+    </div>
     
     <!-- Company Info -->
     <div class="form-group">
@@ -70,10 +207,7 @@
       <input type="text" id="mersisNo" placeholder="0123456789012345" autocomplete="off" />
     </div>
     
-    <div class="form-group">
-      <label for="address">Adres</label>
-      <textarea id="address" placeholder="Şirket adresi" autocomplete="street-address" rows="2"></textarea>
-    </div>
+    <!-- Ana adres kaldırıldı - Sadece fatura adresi kullanılıyor - Teklifbul Rule v1.0 -->
     
     <div class="form-group">
       <label for="website">Web Sitesi</label>
@@ -90,14 +224,156 @@
       <div class="chip-input" id="emailChipInput">
         <input type="email" id="emailInput" placeholder="E-posta ekle ve Enter'a basın" autocomplete="email" />
       </div>
+      <p style="font-size:12px; color:#6b7280; margin-top:4px;">Birden fazla e-posta ekleyebilirsiniz</p>
+    </div>
+    
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:16px;">
+      <div class="form-group" style="margin-bottom:0;">
+        <label for="companyPhone">Şirket Sabit Telefon</label>
+        <input type="text" id="companyPhone" placeholder="Örn: 0 (212) 555 00 00" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:6px; font-size:14px;" />
+      </div>
+      <div class="form-group" style="margin-bottom:0;">
+        <label for="mobilePhone">Cep Telefonu</label>
+        <input type="text" id="mobilePhone" placeholder="Örn: 0 (5XX) 555 00 00" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:6px; font-size:14px;" />
+      </div>
+    </div>
+    
+    <div class="form-group" style="margin-bottom:16px;">
+      <label for="whatsappPhone">WhatsApp Hattı</label>
+      <input type="text" id="whatsappPhone" placeholder="Varsa özel WhatsApp hattı" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:6px; font-size:14px;" />
     </div>
     
     <div class="form-group">
-      <label for="phoneInput">Telefon / WhatsApp</label>
+      <label for="phoneInput">Diğer Telefonlar</label>
       <div class="chip-input" id="phoneChipInput">
-        <input type="tel" id="phoneInput" placeholder="+90 5xx xxx xx xx ekle ve Enter'a basın" autocomplete="tel" />
+        <input type="tel" id="phoneInput" placeholder="Diğer numaraları ekle ve Enter'a basın" autocomplete="tel" />
+      </div>
+      <p style="font-size:12px; color:#6b7280; margin-top:4px;">Ek numaraları serbestçe ekleyebilirsiniz</p>
+    </div>
+    
+    <hr style="margin: 24px 0; border: none; border-top: 1px solid #e5e7eb;" />
+    
+    <!-- Fatura Adresi -->
+    <h3>Fatura Adresi <span class="required">*</span></h3>
+    <p style="font-size:13px; color:#6b7280; margin-bottom:12px;">Bu adres tedarikçi firmaların fatura kesmesi için kullanılacak</p>
+    
+    <div class="form-group">
+      <label for="invoiceAddress">Fatura Adresi <span class="required">*</span></label>
+      <textarea id="invoiceAddress" placeholder="Fatura adresi otomatik olarak oluşturulacak" rows="3" readonly style="background:#f3f4f6;" required></textarea>
+      <p style="font-size:12px; color:#6b7280; margin-top:4px;">Aşağıdaki alanları doldurarak fatura adresinizi oluşturun</p>
+    </div>
+    
+    <!-- Structured Invoice Address Parts -->
+    <div style="background:#f9fafb; padding:16px; border-radius:6px; margin-bottom:16px;">
+      <div class="form-group" style="margin-bottom:12px;">
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+          <div>
+            <label for="inv_ulke">Ülke</label>
+            <select id="inv_ulke" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:6px; font-size:14px;">
+              <option value="Türkiye" selected>Türkiye</option>
+              <option value="Almanya">Almanya</option>
+              <option value="Amerika Birleşik Devletleri">Amerika Birleşik Devletleri</option>
+              <option value="Birleşik Krallık">Birleşik Krallık</option>
+              <option value="Fransa">Fransa</option>
+              <option value="Hollanda">Hollanda</option>
+              <option value="İspanya">İspanya</option>
+              <option value="İtalya">İtalya</option>
+              <option value="Diğer">Diğer</option>
+            </select>
+          </div>
+          <div>
+            <label for="inv_il">İl</label>
+            <select id="inv_il" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:6px; font-size:14px;">
+              <option value="">İl seçin</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      
+      <div class="form-group" style="margin-bottom:12px;">
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+          <div>
+            <label for="inv_ilce">İlçe</label>
+            <select id="inv_ilce" disabled style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:6px; font-size:14px;">
+              <option value="">Önce il seçin</option>
+            </select>
+          </div>
+          <div>
+            <label for="inv_mahalle">Mahalle</label>
+            <select id="inv_mahalle" disabled style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:6px; font-size:14px;">
+              <option value="">Önce ilçe seçin</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      
+      <div class="form-group" style="margin-bottom:12px;">
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+          <div>
+            <label for="inv_cadde">Cadde</label>
+            <input type="text" id="inv_cadde" placeholder="Cadde" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:6px; font-size:14px;">
+          </div>
+          <div>
+            <label for="inv_sokak">Sokak</label>
+            <select id="inv_sokak" disabled style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:6px; font-size:14px; display:block;">
+              <option value="">(Opsiyonel) Mahalle seçin</option>
+            </select>
+            <input type="text" id="inv_sokak_manual" placeholder="Sokak (elle yazın)" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:6px; font-size:14px; margin-top:6px; display:none;">
+          </div>
+        </div>
+      </div>
+      
+      <div class="form-group" style="margin-bottom:12px;">
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+          <div>
+            <label for="inv_kapi">Kapı No</label>
+            <input type="text" id="inv_kapi" placeholder="Kapı No" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:6px; font-size:14px;">
+          </div>
+          <div>
+            <label for="inv_daire">Daire</label>
+            <input type="text" id="inv_daire" placeholder="Daire (varsa)" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:6px; font-size:14px;">
+          </div>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+          <div>
+            <label for="inv_postakodu">Posta Kodu</label>
+            <input type="text" id="inv_postakodu" placeholder="Posta Kodu" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:6px; font-size:14px;">
+          </div>
+          <div></div>
+        </div>
       </div>
     </div>
+    
+    <div class="form-group">
+      <label for="taxOffice">Vergi Dairesi</label>
+      <div style="display: flex; gap: 8px; margin-bottom: 8px; align-items:center; flex-wrap: wrap;">
+        <select id="taxOfficeSelect" style="flex: 1 1 auto; min-width: 220px; padding:10px; border:1px solid #d1d5db; border-radius:6px; font-size:14px;">
+          <option value="">Vergi dairesi seçin</option>
+          <option value="__MANUAL__">Elle yaz</option>
+        </select>
+        <button type="button" id="refreshTaxOfficesBtn" style="flex:0 0 auto; padding: 8px 12px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; white-space: nowrap;">
+          🔄 Yenile
+        </button>
+      </div>
+      <input type="text" id="taxOffice" placeholder="Vergi dairesi adı (seçim yapın veya elle yazın)" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:6px; font-size:14px;" />
+    </div>
+    
+    <hr style="margin: 24px 0; border: none; border-top: 1px solid #e5e7eb;" />
+    
+    <!-- Bank Accounts -->
+    <h3>Banka Hesapları</h3>
+    <p style="font-size:13px; color:#6b7280; margin-bottom:12px;">Ödeme alacağınız banka hesaplarınızı ekleyin</p>
+    
+    <div id="bankAccountsList" style="margin-bottom:16px;">
+      <!-- Bank accounts will be added here dynamically -->
+    </div>
+    
+    <button type="button" id="addBankAccountBtn" style="padding:8px 16px; background:#3b82f6; color:white; border:none; border-radius:6px; cursor:pointer; font-size:14px; margin-bottom:16px;">
+      ➕ Hesap Ekle
+    </button>
     
     <hr style="margin: 24px 0; border: none; border-top: 1px solid #e5e7eb;" />
     
@@ -123,7 +399,7 @@
       
       <!-- Supplier Categories -->
       <div id="supplierCategoriesSection" style="display:none;">
-        <h4 style="margin:16px 0 8px 0; color:#dc2626;">โรงงาน Tedarikçi Kategorileri</h4>
+        <h4 style="margin:16px 0 8px 0; color:#dc2626;">Tedarikçi Kategorileri</h4>
         <p style="font-size:13px; color:#6b7280; margin-bottom:12px;">Hangi alanlarda teklif vereceksiniz?</p>
         
         <div style="margin-bottom:16px;">
@@ -179,9 +455,21 @@
 
   <script type="module">
     import { auth, db, app } from "./firebase.js";
-    import { CATEGORIES } from "./categories.js";
+    // Teklifbul Rule v1.0 - Structured Logging
+    import { logger } from './src/shared/log/logger.js';
+    // Teklifbul Rule v1.0 - Toast Notification System
+    import { toast } from './src/shared/ui/toast.js';
+    // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
+    import { MESSAGES } from './src/shared/constants/messages.js';
+    // CRITICAL: Import new ID-based category system
+    import { 
+      getAllCategories, 
+      getIdByName, 
+      getNameById,
+      normalizeToIds 
+    } from "./src/categories/category-service.js";
     import {
-      doc, getDoc, setDoc, serverTimestamp
+      doc, getDoc, setDoc, updateDoc, addDoc, serverTimestamp, collection, query, where, getDocs
     } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
     import {
       getStorage, ref, uploadBytes
@@ -189,6 +477,573 @@
 
     const storage = getStorage(app);
     let selectedRole = null;
+    let bankAccounts = []; // Bank account storage
+    let generatedCompanyCode = null; // Generated company code
+    
+    // === Tax Office Management ===
+    // Teklifbul Rule v1.0 - Vergi dairesi sistemi (settings.html'den entegre edildi)
+    const LOCAL_TAX_OFFICES = [
+      // İstanbul
+      "Beykoz Vergi Dairesi","Ümraniye Vergi Dairesi","Üsküdar Vergi Dairesi",
+      "Kadıköy Vergi Dairesi","Maltepe Vergi Dairesi","Kartal Vergi Dairesi",
+      "Beşiktaş Vergi Dairesi","Şişli Vergi Dairesi","Beyoğlu Vergi Dairesi",
+      "Bakırköy Vergi Dairesi","Pendik Vergi Dairesi","Ataşehir Vergi Dairesi",
+      // Ankara
+      "Çankaya Vergi Dairesi","Keçiören Vergi Dairesi","Yenimahalle Vergi Dairesi",
+      "Mamak Vergi Dairesi","Sincan Vergi Dairesi",
+      // İzmir
+      "Konak Vergi Dairesi","Bornova Vergi Dairesi","Karşıyaka Vergi Dairesi",
+      // Genel
+      "Kurumlar Vergi Dairesi","Büyük Mükellefler Vergi Dairesi"
+    ];
+
+    // Teklifbul Rule v1.0 - Yeni API tabanlı vergi dairesi sistemi
+    async function fetchTaxOfficesFromAPI(province = null, district = null) {
+      try {
+        if (!province) {
+          // İl listesi al
+          const res = await fetch('/api/tax-offices/provinces');
+          if (res.ok) {
+            const provinces = await res.json();
+            return { type: 'provinces', data: provinces };
+          }
+          throw new Error('Provinces API failed');
+        }
+        
+        // İl bazlı vergi daireleri
+        // İl adını normalize et (büyük harf, Türkçe karakter korunur)
+        const normalizedProvince = province.toUpperCase().trim();
+        const url = district 
+          ? `/api/tax-offices?province=${encodeURIComponent(normalizedProvince)}&district=${encodeURIComponent(district)}`
+          : `/api/tax-offices?province=${encodeURIComponent(normalizedProvince)}`;
+        const res = await fetch(url);
+        
+        if (res.ok) {
+          const offices = await res.json();
+          if (Array.isArray(offices) && offices.length > 0) {
+            return { type: 'offices', data: offices };
+          }
+          // Boş array dönerse fallback'e geç
+          logger.warn('API returned empty array, using Firestore fallback');
+          return await fetchTaxOfficesFromFirestore();
+        }
+        
+        // 503 hatası (PostgreSQL yok) - Firestore fallback
+        if (res.status === 503) {
+          logger.warn('API unavailable (503), using Firestore fallback');
+          return await fetchTaxOfficesFromFirestore();
+        }
+        
+        // 500 hatası - Database hatası olabilir, fallback kullan
+        if (res.status === 500) {
+          logger.warn('API server error (500), using Firestore fallback');
+          return await fetchTaxOfficesFromFirestore();
+        }
+        
+        throw new Error(`Tax offices API failed: ${res.status}`);
+      } catch (e) {
+        logger.error("Tax offices API fetch failed", e);
+        // Fallback: Firestore
+        return await fetchTaxOfficesFromFirestore();
+      }
+    }
+    
+    async function fetchTaxOfficesFromFirestore() {
+      try {
+        console.debug("🔄 Vergi dairesi listesi Firestore'dan yükleniyor...");
+        const snap = await getDocs(collection(db, "taxOffices"));
+        const list = [];
+        snap.forEach(d => {
+          const name = d.data()?.name;
+          if (name) list.push(name);
+        });
+        return list.filter(Boolean);
+      } catch (e) {
+        logger.error("Tax offices Firestore fetch failed", e);
+        return LOCAL_TAX_OFFICES; // Son çare: yerel liste
+      }
+    }
+
+    function populateTaxOfficeSelect(list) {
+      const sel = document.getElementById("taxOfficeSelect");
+      if (!sel) return;
+
+      sel.innerHTML = "";
+      const opts = [
+        { v: "", t: "Vergi Dairesi Seçin" },
+        ...list.map(n => ({ v: n, t: n })),
+        { v: "__MANUAL__", t: "Elle yaz" }
+      ];
+
+      for (const o of opts) {
+        const op = document.createElement('option');
+        op.value = o.v;
+        op.textContent = o.t;
+        sel.appendChild(op);
+      }
+    }
+
+    async function buildTaxOfficeSelect() {
+      // İl seçimi varsa il bazlı yükle
+      const invoiceIl = document.getElementById('inv_il')?.value || document.getElementById('invoiceIl')?.value;
+      
+      if (invoiceIl) {
+        const result = await fetchTaxOfficesFromAPI(invoiceIl);
+        if (result && result.type === 'offices') {
+          const officeList = result.data.map((o) => o.office_name || o.name || '').filter(Boolean);
+          if (officeList.length > 0) {
+            populateTaxOfficeSelect(officeList);
+            return;
+          }
+        }
+      }
+      
+      // Fallback: Firestore veya yerel liste
+      let list = await fetchTaxOfficesFromFirestore();
+      if (!list || list.length === 0) {
+        console.debug("ℹ️ API ve Firestore'dan veri alınamadı, yerel liste kullanılıyor (normal durum)");
+        list = LOCAL_TAX_OFFICES;
+      }
+      populateTaxOfficeSelect(list);
+    }
+    
+    // Tax office select change handler
+    function setupTaxOfficeSelect() {
+      const taxOfficeSelect = document.getElementById("taxOfficeSelect");
+      const taxOfficeInput = document.getElementById("taxOffice");
+      const refreshBtn = document.getElementById("refreshTaxOfficesBtn");
+      
+      if (!taxOfficeSelect || !taxOfficeInput) return;
+      
+      // Select değiştiğinde
+      taxOfficeSelect.addEventListener('change', () => {
+        const selected = taxOfficeSelect.value;
+        if (selected && selected !== "" && selected !== "__MANUAL__") {
+          taxOfficeInput.value = selected;
+          taxOfficeInput.readOnly = true;
+          taxOfficeInput.style.background = "#f3f4f6";
+        } else if (selected === "__MANUAL__") {
+          taxOfficeInput.value = "";
+          taxOfficeInput.readOnly = false;
+          taxOfficeInput.style.background = "white";
+          taxOfficeInput.focus();
+        } else {
+          taxOfficeInput.value = "";
+          taxOfficeInput.readOnly = false;
+          taxOfficeInput.style.background = "white";
+        }
+      });
+      
+      // Manuel giriş yapıldığında select'i sıfırla
+      taxOfficeInput.addEventListener('input', () => {
+        if (!taxOfficeInput.readOnly && taxOfficeInput.value) {
+          // Kullanıcı manuel giriş yapıyorsa, select'i "Elle yaz" olarak ayarla
+          if (taxOfficeSelect.value !== "__MANUAL__") {
+            taxOfficeSelect.value = "__MANUAL__";
+          }
+        }
+      });
+      
+      // Yenile butonu - Optimize edildi (cache ve timeout ile)
+      if (refreshBtn) {
+        refreshBtn.addEventListener('click', async () => {
+          refreshBtn.disabled = true;
+          refreshBtn.textContent = "⏳ Yükleniyor...";
+          
+          // İl seçilmişse sadece o ile ait olanları yükle (daha hızlı)
+          const invoiceIl = document.getElementById('inv_il')?.value;
+          if (invoiceIl) {
+            const result = await fetchTaxOfficesFromAPI(invoiceIl);
+            if (result && result.type === 'offices') {
+              const officeList = result.data.map((o) => o.office_name || o.name || '').filter(Boolean);
+              if (officeList.length > 0) {
+                populateTaxOfficeSelect(officeList);
+                refreshBtn.disabled = false;
+                refreshBtn.textContent = "🔄 Yenile";
+                return;
+              }
+            }
+          }
+          
+          // Fallback: Tüm listeyi yükle
+          await buildTaxOfficeSelect();
+          refreshBtn.disabled = false;
+          refreshBtn.textContent = "🔄 Yenile";
+        });
+      }
+      
+      // Teklifbul Rule v1.0 - İl seçimi değiştiğinde vergi dairelerini yeniden yükle
+      // Debounce ile optimize edildi (300ms bekle, çok hızlı değişiklikleri önle)
+      const invoiceIlSelect = document.getElementById('inv_il');
+      if (invoiceIlSelect) {
+        let taxOfficeLoadTimeout = null;
+        invoiceIlSelect.addEventListener('change', async () => {
+          const ilValue = invoiceIlSelect.value;
+          
+          // Önceki timeout'u iptal et
+          if (taxOfficeLoadTimeout) {
+            clearTimeout(taxOfficeLoadTimeout);
+          }
+          
+          if (!ilValue) {
+            // İl seçimi kaldırıldı, fallback listeye geç
+            await buildTaxOfficeSelect();
+            return;
+          }
+          
+          // Yükleniyor göstergesi
+          if (taxOfficeSelect) {
+            taxOfficeSelect.disabled = true;
+            taxOfficeSelect.innerHTML = '<option value="">⏳ Yükleniyor...</option>';
+          }
+          
+          // 300ms bekle (debounce)
+          taxOfficeLoadTimeout = setTimeout(async () => {
+            try {
+              const result = await fetchTaxOfficesFromAPI(ilValue);
+              if (result && result.type === 'offices') {
+                const officeList = result.data.map((o) => o.office_name || o.name || '').filter(Boolean);
+                if (officeList.length > 0) {
+                  populateTaxOfficeSelect(officeList);
+                  // İl değişti, seçimi sıfırla
+                  if (taxOfficeInput) taxOfficeInput.value = '';
+                  if (taxOfficeSelect) taxOfficeSelect.value = '';
+                } else {
+                  // Boş liste - Firestore fallback
+                  await buildTaxOfficeSelect();
+                }
+              } else {
+                // Firestore fallback
+                await buildTaxOfficeSelect();
+              }
+            } catch (e) {
+              logger.warn('Vergi dairesi yükleme hatası', e);
+              await buildTaxOfficeSelect();
+            } finally {
+              if (taxOfficeSelect) taxOfficeSelect.disabled = false;
+            }
+          }, 300);
+        });
+      }
+    }
+    
+    // Sayfa yüklendiğinde vergi dairesi listesini yükle
+    buildTaxOfficeSelect().then(() => {
+      setupTaxOfficeSelect();
+    });
+    
+    // === Company Code Generation ===
+    // Teklifbul Rule v1.0 - Şirket kodu otomatik oluşturma
+    function generateCompanyCode() {
+      const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // I, O, Q, 0, 1 hariç
+      let code = '';
+      for (let i = 0; i < 8; i++) {
+        code += alphabet[Math.floor(Math.random() * alphabet.length)];
+      }
+      return code;
+    }
+    
+    // Generate code on page load if new company mode
+    generatedCompanyCode = generateCompanyCode();
+    const codeDisplay = document.getElementById('generatedCompanyCode');
+    if (codeDisplay) codeDisplay.textContent = generatedCompanyCode;
+    
+    // === Company Mode Toggle ===
+    // Helper function to toggle company mode sections
+    function toggleCompanyMode(mode) {
+      const joinSection = document.getElementById('joinCompanySection');
+      const newSection = document.getElementById('newCompanyCodeSection');
+      const newRoleSection = document.getElementById('newCompanyRoleSection');
+      
+      if (mode === 'join') {
+        joinSection.style.display = 'block';
+        newSection.style.display = 'none';
+        if (newRoleSection) newRoleSection.style.display = 'none';
+        // Hide new company required fields (only hide if joining existing company)
+        const companyNameGroup = document.getElementById('companyName')?.closest('.form-group');
+        const taxNumberGroup = document.getElementById('taxNumber')?.closest('.form-group');
+        if (companyNameGroup) companyNameGroup.style.display = 'none';
+        if (taxNumberGroup) taxNumberGroup.style.display = 'none';
+      } else {
+        joinSection.style.display = 'none';
+        newSection.style.display = 'block';
+        if (newRoleSection) newRoleSection.style.display = 'block';
+        const companyNameGroup = document.getElementById('companyName')?.closest('.form-group');
+        const taxNumberGroup = document.getElementById('taxNumber')?.closest('.form-group');
+        if (companyNameGroup) companyNameGroup.style.display = 'block';
+        if (taxNumberGroup) taxNumberGroup.style.display = 'block';
+      }
+    }
+    
+    // Set initial state based on checked radio button
+    const initialMode = document.querySelector('input[name="companyMode"]:checked')?.value || 'new';
+    toggleCompanyMode(initialMode);
+    
+    // Listen for changes
+    document.querySelectorAll('input[name="companyMode"]').forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        toggleCompanyMode(e.target.value);
+      });
+    });
+    
+    // === Address System Helper Functions ===
+    // Teklifbul Rule v1.0 - Address system integration from settings.html
+    const TR_PROVINCES = [
+      "Adana","Adıyaman","Afyonkarahisar","Ağrı","Amasya","Ankara","Antalya","Artvin","Aydın","Balıkesir","Bilecik","Bingöl","Bitlis","Bolu","Burdur","Bursa","Çanakkale","Çankırı","Çorum","Denizli","Diyarbakır","Edirne","Elazığ","Erzincan","Erzurum","Eskişehir","Gaziantep","Giresun","Gümüşhane","Hakkari","Hatay","Isparta","Mersin","İstanbul","İzmir","Kars","Kastamonu","Kayseri","Kırklareli","Kırşehir","Kocaeli","Konya","Kütahya","Malatya","Manisa","Kahramanmaraş","Mardin","Muğla","Muş","Nevşehir","Niğde","Ordu","Rize","Sakarya","Samsun","Siirt","Sinop","Sivas","Tekirdağ","Tokat","Trabzon","Tunceli","Şanlıurfa","Uşak","Van","Yozgat","Zonguldak","Aksaray","Bayburt","Karaman","Kırıkkale","Batman","Şırnak","Bartın","Ardahan","Iğdır","Yalova","Karabük","Kilis","Osmaniye","Düzce"
+    ];
+    
+    async function __fetchJSON(url){
+      try {
+        const r = await fetch(url, { headers: { 'accept': 'application/json' } });
+        if (!r.ok) {
+          // 404 hatası normal bir durum (sokak listesi dosyası yoksa)
+          // Özel hata kodu ile fırlat, üst seviyede handle edilecek
+          if (r.status === 404) {
+            const notFoundError = new Error(`FILE_NOT_FOUND`);
+            notFoundError.name = 'FileNotFoundError'; // Konsol loglamayı engellemek için
+            throw notFoundError;
+          }
+          throw new Error(`HTTP ${r.status} for ${url}`);
+        }
+        return await r.json();
+      } catch (e) {
+        // Network hataları veya 404 durumunda özel hata kodu
+        if (e.name === 'TypeError' && e.message.includes('fetch')) {
+          // Network hatası
+          const networkError = new Error(`NETWORK_ERROR`);
+          networkError.name = 'NetworkError';
+          throw networkError;
+        }
+        // Diğer hataları olduğu gibi fırlat
+        throw e;
+      }
+    }
+    
+    function __trNorm(s){ return (s ?? '').toString().trim().toLocaleLowerCase('tr').replace(/\s+/g,' '); }
+    
+    function __findByNameOrCode(list, val){
+      if (val == null) return null;
+      if (!isNaN(Number(val))) {
+        const code = Number(val);
+        return list.find(x => Number(x.id ?? x.code ?? x.plaka_kodu) === code) || null;
+      }
+      const needle = __trNorm(val);
+      return list.find(x => __trNorm(x.name ?? x.il ?? x.text) === needle) || null;
+    }
+    
+    function fillSelectLocal(sel, items, placeholder){
+      if (!sel) return;
+      sel.innerHTML = '';
+      const opt0 = document.createElement('option'); opt0.value=''; opt0.textContent = placeholder; sel.appendChild(opt0);
+      (items||[]).sort((a,b)=> (a.name||'').localeCompare(b.name||'', 'tr')).forEach(it=>{
+        const o = document.createElement('option');
+        o.value = String(it.id ?? it.code ?? it.value ?? it.name ?? '');
+        o.textContent = it.name ?? it.label ?? String(it);
+        if (it.id ?? it.code) o.dataset.code = String(it.id ?? it.code);
+        sel.appendChild(o);
+      });
+      sel.disabled = (sel.options.length <= 1);
+    }
+    
+    function getSelText(sel){ return sel?.options?.[sel.selectedIndex]?.text || sel?.value || ''; }
+    
+    async function __loadProvinceDistrictData(){
+      const sources = [
+        '/public/assets/tr-il-ilce.json',
+        './assets/tr-il-ilce.json',
+        '/assets/tr-il-ilce.json',
+        'https://raw.githubusercontent.com/muhammederdem/il-ilce-json/main/il-ilce.json',
+        'https://cdn.jsdelivr.net/gh/muhammederdem/il-ilce-json@main/il-ilce.json'
+      ];
+      for (const u of sources){
+        try { return await __fetchJSON(u); }
+        catch(e){ logger.info('İl-ilçe datası bu kaynaktan okunamadı', { url: u }); }
+      }
+      // Fallback: TR_PROVINCES as plain list
+      return TR_PROVINCES.map(name => ({ il: name, ilceleri: [] }));
+    }
+    
+    function __mapDistricts(p){
+      const raw = p?.districts ?? p?.ilceleri ?? [];
+      return raw.map(d => ({ id: d.id ?? d.code ?? d.ilce_kodu ?? d, name: d.name ?? d.ilce ?? String(d) }));
+    }
+    
+    function slugTR(s){
+      const map = { 'ı':'i','İ':'i','ş':'s','Ş':'s','ğ':'g','Ğ':'g','ü':'u','Ü':'u','ö':'o','Ö':'o','ç':'c','Ç':'c' };
+      s = String(s ?? '').trim();
+      s = s.replace(/[ıİşŞğĞüÜöÖçÇ]/g, ch => map[ch]);
+      s = s.replace(/\s+/g, '_').replace(/[^\w]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g,'');
+      return s.toUpperCase();
+    }
+    
+    function districtId(il, ilce){
+      return slugTR(il) + '__' + slugTR(ilce);
+    }
+    
+    function cleanIlceValue(val) {
+      if (typeof val !== 'string') return val;
+      if (val.includes('__')) return val.split('__').pop();
+      if (val.includes('_')) return val.split('_').pop();
+      return val;
+    }
+    
+    function pickTextOrValue(sel){
+      if (!sel) return '';
+      if (sel && sel.options && typeof sel.selectedIndex === 'number') {
+        return sel.options[sel.selectedIndex]?.text || sel.value || '';
+      }
+      if (typeof sel === 'string') return sel;
+      return String(sel || '');
+    }
+    
+    async function __loadNeighborhoods(selectedIlSel, selectedIlceSel){
+      const il   = pickTextOrValue(selectedIlSel);
+      let ilce = pickTextOrValue(selectedIlceSel);
+      ilce = cleanIlceValue(ilce);
+      if (!il || !ilce) return { neighborhoods: [] };
+      const dId = districtId(il, ilce);
+      const urls = [ `/assets/mahalle/${dId}.json` ];
+      for (const u of urls){
+        try { return await __fetchJSON(u); } catch { /* sessizce boş dön */ }
+      }
+      // API fallback (TürkiyeAPI)
+      try {
+        const api = await fetch(`https://api.turkiyeapi.dev/v1/neighborhoods?district=${encodeURIComponent(ilce)}`, { headers: { 'accept':'application/json' } });
+        if (api.ok) {
+          const { data } = await api.json();
+          const neighborhoods = (Array.isArray(data)? data:[]).map(n => ({ id: slugTR(n.name), name: n.name }));
+          if (neighborhoods.length) {
+            return { districtId: dId, districtName: ilce, neighborhoods };
+          }
+        }
+      } catch {}
+      return { neighborhoods: [] };
+    }
+    
+    async function __loadStreets(selectedIlSel, selectedIlceSel, neighborhoodId){
+      const il   = pickTextOrValue(selectedIlSel);
+      let ilce = pickTextOrValue(selectedIlceSel);
+      ilce = cleanIlceValue(ilce);
+      if (!il || !ilce || !neighborhoodId) return { streets: [] };
+      const dId = districtId(il, ilce);
+      const nId = slugTR(neighborhoodId);
+      const urls = [ `/assets/sokak/${dId}_mah-${nId}.json` ];
+      for (const u of urls){
+        try { 
+          return await __fetchJSON(u); 
+        } catch (e) { 
+          // Tüm hataları sessizce handle et - konsola hiçbir şey yazma
+          // 404, network veya diğer hatalar için sessizce boş array dön
+          return { streets: [] };
+        }
+      }
+      return { streets: [] };
+    }
+    
+    // Ana adres kaldırıldı - Sadece fatura adresi kullanılıyor - Teklifbul Rule v1.0
+    
+    // Invoice Address composition function
+    function composeInvoiceAddress(){
+      const invoiceTa = document.getElementById('invoiceAddress');
+      if (!invoiceTa) return;
+      
+      const ulke = document.getElementById('inv_ulke')?.value || '';
+      const il = getSelText(document.getElementById('inv_il'));
+      const ilce = getSelText(document.getElementById('inv_ilce'));
+      const mah = getSelText(document.getElementById('inv_mahalle'));
+      const cad = document.getElementById('inv_cadde')?.value?.trim() || '';
+      const sokSel = document.getElementById('inv_sokak');
+      const sokManual = document.getElementById('inv_sokak_manual');
+      const sok = (sokSel && sokSel.style.display !== 'none' ? getSelText(sokSel) : '') || (sokManual?.value?.trim() || '');
+      const kap = document.getElementById('inv_kapi')?.value?.trim() || '';
+      const dai = document.getElementById('inv_daire')?.value?.trim() || '';
+      const pk = document.getElementById('inv_postakodu')?.value?.trim() || '';
+      
+      const parts = [
+        mah ? `${mah} Mahalle` : null,
+        cad ? `${cad} Cadde` : null,
+        sok ? `${sok} Sokak` : null,
+        kap ? `Kapı No: ${kap}` : null,
+        dai ? `Daire: ${dai}` : null,
+        ilce ? `İlçe: ${ilce}` : null,
+        il ? `İl: ${il}` : null,
+        pk ? `Posta Kodu: ${pk}` : null,
+        ulke ? `${ulke}` : null,
+      ].filter(Boolean);
+      
+      invoiceTa.value = parts.join(' - ');
+    }
+    
+    // === Bank Accounts Management ===
+    // Teklifbul Rule v1.0 - Banka hesapları yönetimi
+    function addBankAccountRow(index = bankAccounts.length) {
+      const container = document.getElementById('bankAccountsList');
+      if (!container) return;
+      
+      const row = document.createElement('div');
+      row.style.cssText = 'display:grid; grid-template-columns: 2fr 3fr 2fr 1fr auto; gap:8px; align-items:end; margin-bottom:12px; padding:12px; background:#f9fafb; border-radius:6px;';
+      row.innerHTML = `
+        <div>
+          <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Banka Adı</label>
+          <input type="text" class="bank-name" placeholder="Banka adı" style="width:100%; padding:8px; border:1px solid #d1d5db; border-radius:4px; font-size:13px;" />
+        </div>
+        <div>
+          <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">IBAN</label>
+          <input type="text" class="bank-iban" placeholder="TR00 0000 0000 0000 0000 0000 00" style="width:100%; padding:8px; border:1px solid #d1d5db; border-radius:4px; font-size:13px; font-family:monospace;" maxlength="34" />
+        </div>
+        <div>
+          <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Hesap Adı</label>
+          <input type="text" class="bank-account-name" placeholder="Hesap sahibi adı" style="width:100%; padding:8px; border:1px solid #d1d5db; border-radius:4px; font-size:13px;" value="${document.getElementById('companyName')?.value || ''}" />
+        </div>
+        <div>
+          <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Para Birimi</label>
+          <select class="bank-currency" style="width:100%; padding:8px; border:1px solid #d1d5db; border-radius:4px; font-size:13px;">
+            <option value="TRY">TRY</option>
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+            <option value="GBP">GBP</option>
+          </select>
+        </div>
+        <div>
+          <button type="button" class="remove-bank" style="padding:8px 12px; background:#ef4444; color:white; border:none; border-radius:4px; cursor:pointer; font-size:12px;">✕</button>
+        </div>
+      `;
+      
+      row.querySelector('.remove-bank').addEventListener('click', () => {
+        row.remove();
+        bankAccounts = bankAccounts.filter((_, i) => i !== index);
+      });
+      
+      container.appendChild(row);
+      bankAccounts.push({ index, row });
+    }
+    
+    document.getElementById('addBankAccountBtn')?.addEventListener('click', () => {
+      addBankAccountRow();
+      // Yeni eklenen hesap adı alanına şirket adını otomatik doldur - Teklifbul Rule v1.0
+      const companyName = document.getElementById('companyName')?.value?.trim();
+      if (companyName) {
+        const lastRow = bankAccounts[bankAccounts.length - 1];
+        if (lastRow && lastRow.row) {
+          const accountNameInput = lastRow.row.querySelector('.bank-account-name');
+          if (accountNameInput && !accountNameInput.value) {
+            accountNameInput.value = companyName;
+          }
+        }
+      }
+    });
+    
+    // Şirket adı değiştiğinde mevcut banka hesap adı alanlarını güncelle (isteğe bağlı)
+    document.getElementById('companyName')?.addEventListener('input', (e) => {
+      const companyName = e.target.value.trim();
+      if (companyName) {
+        document.querySelectorAll('.bank-account-name').forEach(input => {
+          if (!input.value) {
+            input.value = companyName;
+          }
+        });
+      }
+    });
     
     // Elements
     const buyerBtn = document.getElementById("buyerBtn");
@@ -213,45 +1068,115 @@
       return name.toLowerCase().trim().replace(/\s+/g, '-');
     }
     
-    // Populate category datalists
+    // Populate category datalists with new ID-based system
     const buyerDataList = document.getElementById("buyerCategoryList");
     const supplierDataList = document.getElementById("supplierCategoryList");
-    CATEGORIES.forEach(c => { 
+    const allCategories = getAllCategories();
+    allCategories.forEach(cat => {
+      const categoryName = cat.name; // Display name
+      
       const buyerOption = document.createElement("option"); 
-      buyerOption.value = c; 
+      buyerOption.value = categoryName; 
+      buyerOption.dataset.categoryId = cat.id; // Store ID for later
       buyerDataList.appendChild(buyerOption);
       
       const supplierOption = document.createElement("option"); 
-      supplierOption.value = c; 
+      supplierOption.value = categoryName; 
+      supplierOption.dataset.categoryId = cat.id; // Store ID for later
       supplierDataList.appendChild(supplierOption);
     });
     
-    // Role selection
+    // Multi-role selection system - Teklifbul Rule v1.0
+    let selectedRoles = new Set(); // Array yerine Set kullanıyoruz
+    
     buyerBtn.onclick = () => {
-      selectedRole = "buyer";
-      buyerBtn.classList.add("selected");
-      supplierBtn.classList.remove("selected");
-      formSection.classList.add("visible");
-      categoriesSection.style.display = "block";
-      buyerCategoriesSection.style.display = "block";
-      supplierCategoriesSection.style.display = "none";
-      emailRequired.style.display = "none";
+      if (selectedRoles.has("buyer")) {
+        selectedRoles.delete("buyer");
+        buyerBtn.classList.remove("selected");
+        document.getElementById("buyerCheck").style.display = "none";
+        buyerCategoriesSection.style.display = "none";
+      } else {
+        selectedRoles.add("buyer");
+        buyerBtn.classList.add("selected");
+        document.getElementById("buyerCheck").style.display = "inline";
+        buyerCategoriesSection.style.display = "block";
+      }
+      
+      // Form'u göster
+      if (selectedRoles.size > 0) {
+        formSection.classList.add("visible");
+        categoriesSection.style.display = "block";
+        if (selectedRoles.has("buyer")) {
+          buyerCategoriesSection.style.display = "block";
+        }
+        if (selectedRoles.has("supplier")) {
+          supplierCategoriesSection.style.display = "block";
+          emailRequired.style.display = "inline";
+        } else {
+          emailRequired.style.display = "none";
+        }
+        updateRoleSelectionUI();
+      } else {
+        formSection.classList.remove("visible");
+      }
     };
     
     supplierBtn.onclick = () => {
-      selectedRole = "supplier";
-      supplierBtn.classList.add("selected");
-      buyerBtn.classList.remove("selected");
-      formSection.classList.add("visible");
-      categoriesSection.style.display = "block";
-      buyerCategoriesSection.style.display = "none";
-      supplierCategoriesSection.style.display = "block";
-      emailRequired.style.display = "inline";
+      if (selectedRoles.has("supplier")) {
+        selectedRoles.delete("supplier");
+        supplierBtn.classList.remove("selected");
+        document.getElementById("supplierCheck").style.display = "none";
+        supplierCategoriesSection.style.display = "none";
+        emailRequired.style.display = "none";
+      } else {
+        selectedRoles.add("supplier");
+        supplierBtn.classList.add("selected");
+        document.getElementById("supplierCheck").style.display = "inline";
+        supplierCategoriesSection.style.display = "block";
+        emailRequired.style.display = "inline";
+      }
+      
+      // Form'u göster
+      if (selectedRoles.size > 0) {
+        formSection.classList.add("visible");
+        categoriesSection.style.display = "block";
+        if (selectedRoles.has("buyer")) {
+          buyerCategoriesSection.style.display = "block";
+        }
+        if (selectedRoles.has("supplier")) {
+          supplierCategoriesSection.style.display = "block";
+        }
+        updateRoleSelectionUI();
+      } else {
+        formSection.classList.remove("visible");
+      }
     };
+    
+    // Update role selection UI based on selected roles
+    function updateRoleSelectionUI() {
+      const buyerRoleSection = document.getElementById("newCompanyBuyerRoleSection");
+      const supplierRoleSection = document.getElementById("newCompanySupplierRoleSection");
+      const newCompanyRoleSection = document.getElementById("newCompanyRoleSection");
+      
+      if (buyerRoleSection) {
+        buyerRoleSection.style.display = selectedRoles.has("buyer") ? "block" : "none";
+      }
+      if (supplierRoleSection) {
+        supplierRoleSection.style.display = selectedRoles.has("supplier") ? "block" : "none";
+      }
+      if (newCompanyRoleSection && selectedRoles.size > 0) {
+        // Company mode toggle içinde gösterilmesi için parent'a bak
+        const companyMode = document.querySelector('input[name="companyMode"]:checked')?.value || 'new';
+        if (companyMode === 'new') {
+          newCompanyRoleSection.style.display = 'block';
+        }
+      }
+    }
     
     // Email chip input
     const emailInput = document.getElementById("emailInput");
     const emailChipInput = document.getElementById("emailChipInput");
+    let primaryEmail = null; // Kayıt olurken kullanılan email (silinemez) - Teklifbul Rule v1.0
     
     function renderEmailChips() {
       const existing = emailChipInput.querySelectorAll(".badge");
@@ -260,8 +1185,22 @@
       [...emailChips].forEach(v => {
         const span = document.createElement("span");
         span.className = "badge";
-        span.textContent = v + " ✕";
-        span.onclick = () => { emailChips.delete(v); renderEmailChips(); };
+        // Kayıt email'i ise silinemez işareti
+        if (primaryEmail && v.toLowerCase() === primaryEmail.toLowerCase()) {
+          span.textContent = v + " (Kayıt email'i)";
+          span.style.cursor = 'not-allowed';
+          span.style.opacity = '0.8';
+          span.title = 'Bu email kayıt olurken kullanılan email\'dir ve silinemez';
+        } else {
+          span.textContent = v + " ✕";
+          span.onclick = () => { 
+            // Primary email silinemez
+            if (!primaryEmail || v.toLowerCase() !== primaryEmail.toLowerCase()) {
+              emailChips.delete(v); 
+              renderEmailChips(); 
+            }
+          };
+        }
         emailChipInput.insertBefore(span, emailInput);
       });
     }
@@ -275,7 +1214,7 @@
           renderEmailChips();
           e.target.value = "";
         } else if (v) {
-          alert("❌ Geçerli bir e-posta adresi giriniz.");
+          toast.error(MESSAGES.ERROR_EMAIL_INVALID);
         }
       }
     });
@@ -369,7 +1308,8 @@
     
     // Bulk selection buttons
     document.getElementById("selectAllBuyer").onclick = () => {
-      CATEGORIES.forEach(cat => buyerCatChips.add(cat));
+      const allCategories = getAllCategories();
+      allCategories.forEach(cat => buyerCatChips.add(cat.name)); // Store display names
       renderBuyerCatChips();
     };
     
@@ -379,7 +1319,8 @@
     };
     
     document.getElementById("selectAllSupplier").onclick = () => {
-      CATEGORIES.forEach(cat => supplierCatChips.add(cat));
+      const allCategories = getAllCategories();
+      allCategories.forEach(cat => supplierCatChips.add(cat.name)); // Store display names
       renderSupplierCatChips();
     };
     
@@ -398,7 +1339,7 @@
       const file = e.target.files[0];
       if (file) {
         if (file.size > 10 * 1024 * 1024) {
-          alert("❌ Dosya boyutu 10 MB'ı geçemez.");
+          toast.error(MESSAGES.ERROR_FILE_SIZE_10MB);
           e.target.value = "";
           return;
         }
@@ -406,61 +1347,817 @@
       }
     });
     
+    // === Initialize Address System ===
+    // Teklifbul Rule v1.0 - Address system initialization
+    (async function initAddressSystem(){
+      const ulkeSel = document.getElementById('addr_ulke');
+      const ilSel = document.getElementById('addr_il');
+      const ilceSel = document.getElementById('addr_ilce');
+      const mahSel = document.getElementById('addr_mahalle');
+      const sokSel = document.getElementById('addr_sokak');
+      const sokManual = document.getElementById('addr_sokak_manual');
+      const caddeInp = document.getElementById('addr_cadde');
+      const kapiInp = document.getElementById('addr_kapi');
+      const daireInp = document.getElementById('addr_daire');
+      const postaInp = document.getElementById('addr_postakodu');
+      
+      if (!ilSel || !ilceSel) return;
+      
+      try {
+        const raw = await __loadProvinceDistrictData();
+        const provinces = (Array.isArray(raw)? raw : raw?.data || []).map(p=>({ id: p.id ?? p.code ?? p.plaka_kodu ?? p.il, name: p.name ?? p.il ?? String(p), raw:p }))
+          .sort((a,b)=> a.name.localeCompare(b.name,'tr'));
+        fillSelectLocal(ilSel, provinces, 'İl seçiniz');
+        
+        // İl değiştiğinde ilçeleri yükle
+        ilSel?.addEventListener('change', async ()=>{
+          const chosen = __findByNameOrCode(provinces, ilSel.value);
+          if (!chosen || !chosen.raw) {
+            fillSelectLocal(ilceSel, [], 'İlçe seçiniz');
+            ilceSel.disabled = true;
+            fillSelectLocal(mahSel, [], 'Mahalle seçiniz'); 
+            mahSel.disabled = true;
+            fillSelectLocal(sokSel, [], 'Sokak/Cadde seçiniz'); 
+            sokSel.disabled = true;
+            if (sokManual) {
+              sokManual.style.display = 'none';
+              sokManual.value = '';
+            }
+            composeAddress();
+            return;
+          }
+          
+          const dlist = __mapDistricts(chosen.raw);
+          fillSelectLocal(ilceSel, dlist, 'İlçe seçiniz');
+          ilceSel.disabled = dlist.length === 0;
+          
+          // İl değiştiğinde mahalle ve sokakları temizle
+          fillSelectLocal(mahSel, [], 'Mahalle seçiniz'); 
+          mahSel.disabled = true;
+          fillSelectLocal(sokSel, [], 'Sokak/Cadde seçiniz'); 
+          sokSel.disabled = true;
+          if (sokManual) {
+            sokManual.style.display = 'none';
+            sokManual.value = '';
+          }
+          
+          composeAddress();
+        });
+        
+        ilceSel?.addEventListener('change', async ()=>{
+          composeAddress();
+          const districtId = ilceSel.value;
+          const districtName = getSelText(ilceSel);
+          
+          if (!districtId || !ilSel.value){ 
+            fillSelectLocal(mahSel, [], 'Mahalle seçiniz'); 
+            mahSel.disabled = true; 
+            fillSelectLocal(sokSel, [], 'Sokak/Cadde seçiniz'); 
+            sokSel.disabled = true;
+            if (sokManual) {
+              sokManual.style.display = 'none';
+              sokManual.value = '';
+            }
+            return; 
+          }
+          
+          mahSel.disabled = true; 
+          mahSel.innerHTML = '<option value="">Yükleniyor...</option>';
+          
+          try {
+            const data = await __loadNeighborhoods(ilSel.value, ilceSel.value);
+            const neighborhoods = (data?.neighborhoods||[]).map(n=>({id:n.id ?? n.code ?? n.name, name:n.name}));
+            fillSelectLocal(mahSel, neighborhoods, 'Mahalle seçiniz');
+            mahSel.disabled = neighborhoods.length === 0;
+            
+            // Sokak dropdown'unu temizle
+            fillSelectLocal(sokSel, [], 'Sokak/Cadde seçiniz'); 
+            sokSel.disabled = true;
+            if (sokSel) sokSel.style.display = '';
+            if (sokManual) {
+              sokManual.style.display = 'none';
+              sokManual.value = '';
+            }
+            
+            composeAddress();
+          } catch (err) { 
+            logger.error('Mahalle yükleme hatası', err);
+            fillSelectLocal(mahSel, [], 'Mahalleler yok'); 
+            mahSel.disabled = true;
+          }
+        });
+        
+        mahSel?.addEventListener('change', async ()=>{
+          composeAddress();
+          const districtId = ilceSel.value; const neighborhoodId = mahSel.value;
+          const districtName = getSelText(ilceSel); const neighborhoodName = getSelText(mahSel);
+          fillSelectLocal(sokSel, [], 'Sokak/Cadde seçiniz'); 
+          if(!districtId||!neighborhoodId){ 
+            sokSel.disabled=true; 
+            return; 
+          }
+          sokSel.disabled = true; 
+          sokSel.innerHTML = '<option value="">Yükleniyor...</option>';
+          try {
+            const data = await __loadStreets(ilSel.value, ilceSel.value, neighborhoodId);
+            const streets = (data?.streets||[]).map(s=>({id:s.id ?? s.code ?? s.name, name:s.name}));
+            fillSelectLocal(sokSel, streets, 'Sokak/Cadde seçiniz');
+            if (streets.length > 0){ 
+              sokSel.style.display=''; 
+              if (sokManual){ 
+                sokManual.style.display='none'; 
+                sokManual.value=''; 
+              } 
+            }
+            else { 
+              sokSel.style.display='none'; 
+              if (sokManual){ 
+                sokManual.style.display=''; 
+              } 
+            }
+            sokSel.disabled = streets.length === 0;
+            composeAddress();
+          } catch { 
+            fillSelectLocal(sokSel, [], 'Sokaklar yok'); 
+            sokSel.disabled = true;
+            if (sokManual) {
+              sokManual.style.display = '';
+            }
+          }
+        });
+        
+        // Tüm adres alanlarında değişiklik olduğunda adresi birleştir
+        [ulkeSel, ilSel, ilceSel, mahSel, sokSel, sokManual, caddeInp, kapiInp, daireInp, postaInp].forEach(el=>{
+          el?.addEventListener('input', composeAddress);
+          el?.addEventListener('change', composeAddress);
+        });
+        
+        composeAddress();
+      } catch (err) {
+        logger.warn('Adres sistemi başlatılamadı', err);
+      }
+    })();
+    
+    // === Initialize Invoice Address System ===
+    // Teklifbul Rule v1.0 - Fatura adresi sistemi başlatma
+    (async function initInvoiceAddressSystem(){
+      const invUlkeSel = document.getElementById('inv_ulke');
+      const invIlSel = document.getElementById('inv_il');
+      const invIlceSel = document.getElementById('inv_ilce');
+      const invMahSel = document.getElementById('inv_mahalle');
+      const invSokSel = document.getElementById('inv_sokak');
+      const invSokManual = document.getElementById('inv_sokak_manual');
+      const invCaddeInp = document.getElementById('inv_cadde');
+      const invKapiInp = document.getElementById('inv_kapi');
+      const invDaireInp = document.getElementById('inv_daire');
+      const invPostaInp = document.getElementById('inv_postakodu');
+      
+      if (!invIlSel || !invIlceSel) return;
+      
+      try {
+        const raw = await __loadProvinceDistrictData();
+        const provinces = (Array.isArray(raw)? raw : raw?.data || []).map(p=>({ id: p.id ?? p.code ?? p.plaka_kodu ?? p.il, name: p.name ?? p.il ?? String(p), raw:p }))
+          .sort((a,b)=> a.name.localeCompare(b.name,'tr'));
+        fillSelectLocal(invIlSel, provinces, 'İl seçiniz');
+        
+        // İl değiştiğinde ilçeleri yükle
+        invIlSel?.addEventListener('change', async ()=>{
+          const chosen = __findByNameOrCode(provinces, invIlSel.value);
+          if (!chosen || !chosen.raw) {
+            fillSelectLocal(invIlceSel, [], 'İlçe seçiniz');
+            invIlceSel.disabled = true;
+            fillSelectLocal(invMahSel, [], 'Mahalle seçiniz'); 
+            invMahSel.disabled = true;
+            fillSelectLocal(invSokSel, [], 'Sokak/Cadde seçiniz'); 
+            invSokSel.disabled = true;
+            if (invSokManual) {
+              invSokManual.style.display = 'none';
+              invSokManual.value = '';
+            }
+            composeInvoiceAddress();
+            return;
+          }
+          
+          const dlist = __mapDistricts(chosen.raw);
+          fillSelectLocal(invIlceSel, dlist, 'İlçe seçiniz');
+          invIlceSel.disabled = dlist.length === 0;
+          
+          fillSelectLocal(invMahSel, [], 'Mahalle seçiniz'); 
+          invMahSel.disabled = true;
+          fillSelectLocal(invSokSel, [], 'Sokak/Cadde seçiniz'); 
+          invSokSel.disabled = true;
+          if (invSokManual) {
+            invSokManual.style.display = 'none';
+            invSokManual.value = '';
+          }
+          
+          composeInvoiceAddress();
+        });
+        
+        invIlceSel?.addEventListener('change', async ()=>{
+          composeInvoiceAddress();
+          const districtId = invIlceSel.value;
+          
+          if (!districtId || !invIlSel.value){ 
+            fillSelectLocal(invMahSel, [], 'Mahalle seçiniz'); 
+            invMahSel.disabled = true; 
+            fillSelectLocal(invSokSel, [], 'Sokak/Cadde seçiniz'); 
+            invSokSel.disabled = true;
+            if (invSokManual) {
+              invSokManual.style.display = 'none';
+              invSokManual.value = '';
+            }
+            return; 
+          }
+          
+          invMahSel.disabled = true; 
+          invMahSel.innerHTML = '<option value="">Yükleniyor...</option>';
+          
+          try {
+            const data = await __loadNeighborhoods(invIlSel.value, invIlceSel.value);
+            const neighborhoods = (data?.neighborhoods||[]).map(n=>({id:n.id ?? n.code ?? n.name, name:n.name}));
+            fillSelectLocal(invMahSel, neighborhoods, 'Mahalle seçiniz');
+            invMahSel.disabled = neighborhoods.length === 0;
+            
+            fillSelectLocal(invSokSel, [], 'Sokak/Cadde seçiniz'); 
+            invSokSel.disabled = true;
+            if (invSokSel) invSokSel.style.display = '';
+            if (invSokManual) {
+              invSokManual.style.display = 'none';
+              invSokManual.value = '';
+            }
+            
+            composeInvoiceAddress();
+          } catch (err) { 
+            logger.error('Mahalle yükleme hatası', err);
+            fillSelectLocal(invMahSel, [], 'Mahalleler yok'); 
+            invMahSel.disabled = true;
+          }
+        });
+        
+        invMahSel?.addEventListener('change', async ()=>{
+          composeInvoiceAddress();
+          const provinceName = invIlSel.options[invIlSel.selectedIndex]?.text || '';
+          const districtName = invIlceSel.options[invIlceSel.selectedIndex]?.text || '';
+          const districtId = invIlceSel.value; 
+          const neighborhoodId = invMahSel.value;
+          const neighborhoodName = invMahSel.options[invMahSel.selectedIndex]?.text || '';
+          
+          fillSelectLocal(invSokSel, [], 'Sokak/Cadde seçiniz'); 
+          if(!districtName || !neighborhoodName){ 
+            invSokSel.disabled=true; 
+            if (invSokManual) invSokManual.style.display='none';
+            return; 
+          }
+          
+          invSokSel.disabled = true; 
+          invSokSel.innerHTML = '<option value="">Yükleniyor...</option>';
+          invSokSel.style.display = '';
+          if (invSokManual) {
+            invSokManual.style.display = 'none';
+            invSokManual.value = '';
+            invSokManual.required = false;
+          }
+          
+          try {
+            // ID tabanlı sokak yükleme - Teklifbul Rule v1.0
+            const { loadStreets } = await import('/assets/js/address-service.js');
+            const streets = await loadStreets({
+              provinceName,
+              districtName,
+              neighborhoodName,
+              neighborhoodIdFromState: neighborhoodId ? Number(neighborhoodId) : undefined,
+              districtIdFromState: districtId ? Number(districtId) : undefined
+            });
+            
+            if (streets.length > 0){ 
+              fillSelectLocal(invSokSel, streets, 'Sokak/Cadde seçiniz');
+              invSokSel.style.display=''; 
+              invSokSel.disabled = false;
+              if (invSokManual){ 
+                invSokManual.style.display='none'; 
+                invSokManual.value=''; 
+                invSokManual.required = false;
+              } 
+            }
+            else { 
+              // Free-text fallback - Teklifbul Rule v1.0
+              logger.info('[addr] streets empty → free-text', { provinceName, districtName, neighborhoodName });
+              invSokSel.style.display='none'; 
+              invSokSel.disabled = true;
+              if (invSokManual){ 
+                invSokManual.style.display=''; 
+                invSokManual.required = true;
+                invSokManual.placeholder = 'Sokak (elle yazın)';
+              } 
+            }
+            composeInvoiceAddress();
+          } catch { 
+            fillSelectLocal(invSokSel, [], 'Sokaklar yok'); 
+            invSokSel.disabled = true;
+            if (invSokManual) {
+              invSokManual.style.display = '';
+            }
+          }
+        });
+        
+        // Tüm fatura adres alanlarında değişiklik olduğunda adresi birleştir
+        [invUlkeSel, invIlSel, invIlceSel, invMahSel, invSokSel, invSokManual, invCaddeInp, invKapiInp, invDaireInp, invPostaInp].forEach(el=>{
+          el?.addEventListener('input', composeInvoiceAddress);
+          el?.addEventListener('change', composeInvoiceAddress);
+        });
+        
+        composeInvoiceAddress();
+      } catch (err) {
+        logger.warn('Fatura adresi sistemi başlatılamadı', err);
+      }
+    })();
+    
     // Save profile
     saveBtn.onclick = async () => {
-      if (!selectedRole) {
-        alert("❌ Lütfen bir rol seçiniz.");
+      // Teklifbul Rule v1.0 - Multi-role sistemi kontrolü
+      if (selectedRoles.size === 0) {
+        toast.error(MESSAGES.ERROR_ROLE_REQUIRED);
         return;
+      }
+      
+      // Teklifbul Rule v1.0 - Şirket kurulum modu kontrolü
+      const companyMode = document.querySelector('input[name="companyMode"]:checked')?.value || 'new';
+      const companyCodeInput = document.getElementById('companyCode')?.value.trim().toUpperCase();
+      const joinRoleSelect = document.getElementById('joinRoleSelect')?.value;
+      
+      // Mevcut şirkete katılma durumu kontrolü
+      if (companyMode === 'join') {
+        if (!companyCodeInput || !joinRoleSelect) {
+          toast.error(MESSAGES.ERROR_COMPANY_CODE_ROLE_REQUIRED);
+          return;
+        }
       }
       
       const companyName = document.getElementById("companyName").value.trim();
       const taxNumber = document.getElementById("taxNumber").value.trim();
+      const taxNumberTrimmed = taxNumber.trim(); // Teklifbul Rule v1.0 - Vergi numarası trim edilmiş hali
       const mersisNo = document.getElementById("mersisNo").value.trim();
-      const address = document.getElementById("address").value.trim();
+      // Ana adres kaldırıldı - Sadece fatura adresi kullanılıyor - Teklifbul Rule v1.0
       const website = document.getElementById("website").value.trim();
       const kvkkConsent = document.getElementById("kvkkConsent").checked;
       const marketingConsent = document.getElementById("marketingConsent").checked;
       
-      // Validation
-      if (!companyName || !taxNumber) {
-        alert("❌ Şirket adı ve vergi no zorunludur.");
+      // Get additional contact info - Teklifbul Rule v1.0
+      const companyPhone = document.getElementById("companyPhone")?.value.trim() || null;
+      const mobilePhone = document.getElementById("mobilePhone")?.value.trim() || null;
+      const whatsappPhone = document.getElementById("whatsappPhone")?.value.trim() || null;
+      
+      // Get invoice address - Teklifbul Rule v1.0
+      const invoiceAddress = document.getElementById("invoiceAddress")?.value.trim() || '';
+      const taxOffice = document.getElementById("taxOffice")?.value.trim() || null;
+      
+      // Get structured invoice address parts - Teklifbul Rule v1.0
+      const invUlke = document.getElementById("inv_ulke")?.value?.trim() || 'Türkiye';
+      const invIl = getSelText(document.getElementById("inv_il")) || null;
+      const invIlce = getSelText(document.getElementById("inv_ilce")) || null;
+      const invMahalle = getSelText(document.getElementById("inv_mahalle")) || null;
+      const invCadde = document.getElementById("inv_cadde")?.value?.trim() || null;
+      const invSokakSel = document.getElementById("inv_sokak");
+      const invSokakManual = document.getElementById("inv_sokak_manual");
+      const invSokak = (invSokakSel && invSokakSel.style.display !== 'none' ? getSelText(invSokakSel) : '') || (invSokakManual?.value?.trim() || null);
+      const invKapi = document.getElementById("inv_kapi")?.value?.trim() || null;
+      const invDaire = document.getElementById("inv_daire")?.value?.trim() || null;
+      const invPostaKodu = document.getElementById("inv_postakodu")?.value?.trim() || null;
+      
+      const invoiceAddressParts = {
+        ulke: invUlke || 'Türkiye',
+        il: invIl,
+        ilce: invIlce,
+        mahalle: invMahalle,
+        cadde: invCadde,
+        sokak: invSokak,
+        kapi: invKapi,
+        daire: invDaire,
+        postaKodu: invPostaKodu
+      };
+      
+      // Get bank accounts - Teklifbul Rule v1.0
+      const bankAccountsData = [];
+      document.querySelectorAll('#bankAccountsList > div').forEach(row => {
+        const bankName = row.querySelector('.bank-name')?.value.trim();
+        const iban = row.querySelector('.bank-iban')?.value.trim().replace(/\s/g, '');
+        const accountName = row.querySelector('.bank-account-name')?.value.trim();
+        const currency = row.querySelector('.bank-currency')?.value || 'TRY';
+        
+        if (bankName && iban && accountName) {
+          bankAccountsData.push({
+            bankName,
+            iban: iban.toUpperCase(),
+            accountName,
+            currency
+          });
+        }
+      });
+      
+      // Ana adres kaldırıldı - Sadece fatura adresi kullanılıyor - Teklifbul Rule v1.0
+      
+      // Validation - Teklifbul Rule v1.0
+      if (selectedRoles.size === 0) {
+        toast.error(MESSAGES.ERROR_ROLE_SELECT_REQUIRED);
         return;
       }
       
-      if (selectedRole === "supplier") {
-        if (supplierCatChips.size === 0) {
-          alert("❌ Tedarikçi için en az 1 kategori seçmelisiniz.");
+      if (companyMode === 'new') {
+        if (!companyName || !taxNumber) {
+          toast.error(MESSAGES.ERROR_COMPANY_NAME_TAX_REQUIRED);
           return;
         }
-        if (emailChips.size === 0) {
-          alert("❌ Tedarikçi için en az 1 e-posta adresi girmelisiniz.");
+        
+        // Yeni şirket oluştururken seçilen her rol için rol seçimi zorunlu
+        if (selectedRoles.has("buyer")) {
+          const buyerRoleSelect = document.getElementById('newCompanyBuyerRoleSelect');
+          const selectedBuyerRole = buyerRoleSelect?.value || '';
+          if (!selectedBuyerRole) {
+            toast.error(MESSAGES.ERROR_BUYER_ROLE_REQUIRED);
+            return;
+          }
+        }
+        
+        if (selectedRoles.has("supplier")) {
+          const supplierRoleSelect = document.getElementById('newCompanySupplierRoleSelect');
+          const selectedSupplierRole = supplierRoleSelect?.value || '';
+          if (!selectedSupplierRole) {
+            toast.error(MESSAGES.ERROR_SUPPLIER_ROLE_REQUIRED);
+            return;
+          }
+        }
+      }
+      
+      if (companyMode === 'join') {
+        const joinRoleSelect = document.getElementById('joinRoleSelect');
+        const selectedJoinRole = joinRoleSelect?.value || '';
+        if (!selectedJoinRole) {
+          toast.error(MESSAGES.ERROR_COMPANY_ROLE_REQUIRED);
           return;
         }
       }
       
-      if (selectedRole === "buyer") {
+      // Fatura adresi zorunlu (adres kısmında sadece fatura adresi yeterli)
+      if (!invoiceAddress || invoiceAddress.trim() === '') {
+        toast.error(MESSAGES.ERROR_INVOICE_ADDRESS_REQUIRED);
+        return;
+      }
+      
+      if (selectedRoles.has("supplier")) {
+        if (supplierCatChips.size === 0) {
+          toast.error(MESSAGES.ERROR_SUPPLIER_CATEGORY_REQUIRED);
+          return;
+        }
+        if (emailChips.size === 0) {
+          toast.error(MESSAGES.ERROR_SUPPLIER_EMAIL_REQUIRED);
+          return;
+        }
+      }
+      
+      if (selectedRoles.has("buyer")) {
         if (buyerCatChips.size === 0) {
-          alert("❌ Alıcı için en az 1 kategori seçmelisiniz.");
+          toast.error(MESSAGES.ERROR_BUYER_CATEGORY_REQUIRED);
           return;
         }
       }
       
       if (!kvkkConsent) {
-        alert("❌ KVKK Açık Rıza onayı zorunludur.");
+        toast.error(MESSAGES.ERROR_KVKK_CONSENT_REQUIRED);
         return;
       }
       
       try {
         saveBtn.disabled = true;
-        saveBtn.textContent = "Kaydediliyor...";
+        saveBtn.textContent = "Kontrol ediliyor...";
         
         const user = auth.currentUser;
         if (!user) {
-          alert("❌ Oturum bulunamadı.");
+          toast.error(MESSAGES.ERROR_SESSION);
           location.href = "./index.html";
           return;
         }
         
+        // Teklifbul Rule v1.0 - Vergi numarası benzersizlik kontrolü
+        // Şirket ID'si vergi numarasına göre oluşturulacak: tax-{taxNumber}
+        // taxNumberTrimmed zaten yukarida tanimlandi
+        const proposedCompanyId = `tax-${taxNumberTrimmed}`;
+        
+        // Şirket ID'sinin (vergi numarası) zaten kullanılıp kullanılmadığını kontrol et
+        // Bu kontrol hem ID hem de taxNumber field'ını kontrol eder
+        const existingCompanyById = await getDoc(doc(db, "companies", proposedCompanyId));
+        
+        if (existingCompanyById.exists()) {
+          // Vergi numarası zaten ID olarak kullanılıyor
+          const existingCompanyData = existingCompanyById.data();
+          const existingCompanyName = existingCompanyData.name || "Bilinmeyen Şirket";
+          saveBtn.disabled = false;
+          saveBtn.textContent = "Kaydet ve Devam Et";
+          toast.error(MESSAGES.ERROR_TAXNUMBER_IN_USE + ': ' + taxNumberTrimmed + (existingCompanyName ? ' - ' + existingCompanyName : ''));
+          return;
+        }
+        
+        // Ek güvenlik: taxNumber field'ında da kontrol et (geriye dönük uyumluluk için)
+        const taxNumberQuery = query(
+          collection(db, "companies"),
+          where("taxNumber", "==", taxNumberTrimmed)
+        );
+        const taxNumberSnapshot = await getDocs(taxNumberQuery);
+        
+        if (!taxNumberSnapshot.empty) {
+          // Vergi numarası başka bir şirkette kullanılıyor (eski sistem)
+          const existingCompany = taxNumberSnapshot.docs[0].data();
+          const existingCompanyName = existingCompany.name || "Bilinmeyen Şirket";
+          saveBtn.disabled = false;
+          saveBtn.textContent = "Kaydet ve Devam Et";
+          toast.error(MESSAGES.ERROR_TAXNUMBER_IN_USE + ': ' + taxNumberTrimmed + (existingCompanyName ? ' - ' + existingCompanyName : ''));
+          return;
+        }
+        
+        // Teklifbul Rule v1.0 - E-posta benzersizlik kontrolü
+        // Bir e-posta adresi sadece bir şirkete ait olabilir
+        // NOT: Kendi email'imizi kontrol etme (yeni şirket oluşturuyoruz)
+        const emailArray = [...emailChips].map(e => e.trim().toLowerCase());
+        if (emailArray.length > 0) {
+          for (const email of emailArray) {
+            if (!email) continue;
+            
+            // Kendi email'imizi kontrol etme (primaryEmail kendimiziz)
+            if (primaryEmail && email.toLowerCase() === primaryEmail.toLowerCase()) {
+              continue; // Kendi email'imizi kontrol etme
+            }
+            
+            const emailQuery = query(
+              collection(db, "users"),
+              where("contactEmails", "array-contains", email)
+            );
+            const emailSnapshot = await getDocs(emailQuery);
+            
+            if (!emailSnapshot.empty) {
+              // E-posta zaten başka bir şirkette kullanılıyor
+              const existingUser = emailSnapshot.docs[0];
+              const existingUserData = existingUser.data();
+              const existingCompanyName = existingUserData.companyName || "Bilinmeyen Şirket";
+              // Kendi kendimizi kontrol etme
+              if (existingUser.id !== user.uid) {
+                saveBtn.disabled = false;
+                saveBtn.textContent = "Kaydet ve Devam Et";
+                toast.error(MESSAGES.ERROR_EMAIL_IN_USE + ': ' + email + (existingCompanyName ? ' - ' + existingCompanyName : ''));
+                return;
+              }
+            }
+          }
+        }
+        
+        // Teklifbul Rule v1.0 - Telefon numarası benzersizlik kontrolü
+        // Bir telefon numarası sadece bir şirkete ait olabilir
+        const phoneArray = [...phoneChips].map(p => p.trim());
+        if (phoneArray.length > 0) {
+          for (const phone of phoneArray) {
+            if (!phone) continue;
+            const phoneQuery = query(
+              collection(db, "users"),
+              where("contactPhones", "array-contains", phone)
+            );
+            const phoneSnapshot = await getDocs(phoneQuery);
+            
+            if (!phoneSnapshot.empty) {
+              // Telefon zaten kullanılıyor
+              const existingUser = phoneSnapshot.docs[0].data();
+              const existingCompanyName = existingUser.companyName || "Bilinmeyen Şirket";
+              saveBtn.disabled = false;
+              saveBtn.textContent = "Kaydet ve Devam Et";
+              toast.error(MESSAGES.ERROR_PHONE_IN_USE + ': ' + phone + (existingCompanyName ? ' - ' + existingCompanyName : ''));
+              return;
+            }
+          }
+        }
+        
+        saveBtn.textContent = "Kaydediliyor...";
+        
+        // Teklifbul Rule v1.0 - Mevcut şirkete katılma durumu
+        if (companyMode === 'join') {
+          // Şirket kodunu kontrol et
+          const companyQuery = query(
+            collection(db, "companies"),
+            where("code", "==", companyCodeInput)
+          );
+          const companySnapshot = await getDocs(companyQuery);
+          
+          if (companySnapshot.empty) {
+            saveBtn.disabled = false;
+            saveBtn.textContent = "Kaydet ve Devam Et";
+            toast.error(MESSAGES.ERROR_COMPANY_NOT_FOUND + (companyCodeInput ? ' ("' + companyCodeInput + '")' : ''));
+            return;
+          }
+          
+          // Mevcut şirkete katılırken de e-posta ve telefon kontrolü yapılmalı
+          // NOT: Kendi email'imizi kontrol etme (şirkete katılıyoruz, kendi email'imizi kullanabiliriz)
+          const emailArray = [...emailChips].map(e => e.trim().toLowerCase());
+          if (emailArray.length > 0) {
+            for (const email of emailArray) {
+              if (!email) continue;
+              
+              // Kendi email'imizi kontrol etme
+              if (primaryEmail && email.toLowerCase() === primaryEmail.toLowerCase()) {
+                continue; // Kendi email'imizi kontrol etme
+              }
+              
+              const emailQuery = query(
+                collection(db, "users"),
+                where("contactEmails", "array-contains", email)
+              );
+              const emailSnapshot = await getDocs(emailQuery);
+              
+              if (!emailSnapshot.empty) {
+                const existingUser = emailSnapshot.docs[0];
+                const existingUserData = existingUser.data();
+                const existingCompanyName = existingUserData.companyName || "Bilinmeyen Şirket";
+                // Kendi kendimizi kontrol etme
+                if (existingUser.id !== user.uid) {
+                  saveBtn.disabled = false;
+                  saveBtn.textContent = "Kaydet ve Devam Et";
+                  toast.error(MESSAGES.ERROR_EMAIL_IN_USE + ': ' + email + (existingCompanyName ? ' - ' + existingCompanyName : ''));
+                  return;
+                }
+              }
+            }
+          }
+          
+          const phoneArray = [...phoneChips].map(p => p.trim());
+          const companyPhone = document.getElementById("companyPhone")?.value.trim();
+          const mobilePhone = document.getElementById("mobilePhone")?.value.trim();
+          const whatsappPhone = document.getElementById("whatsappPhone")?.value.trim();
+          const allPhoneNumbers = [...phoneArray];
+          if (companyPhone) allPhoneNumbers.push(companyPhone);
+          if (mobilePhone) allPhoneNumbers.push(mobilePhone);
+          if (whatsappPhone) allPhoneNumbers.push(whatsappPhone);
+          
+          if (allPhoneNumbers.length > 0) {
+            for (const phone of allPhoneNumbers) {
+              if (!phone) continue;
+              const phoneQuery = query(
+                collection(db, "users"),
+                where("contactPhones", "array-contains", phone)
+              );
+              const phoneSnapshot = await getDocs(phoneQuery);
+              
+              if (!phoneSnapshot.empty) {
+                const existingUser = phoneSnapshot.docs[0].data();
+                const existingCompanyName = existingUser.companyName || "Bilinmeyen Şirket";
+                saveBtn.disabled = false;
+                saveBtn.textContent = "Kaydet ve Devam Et";
+                toast.error(MESSAGES.ERROR_PHONE_IN_USE + ': ' + phone + (existingCompanyName ? ' - ' + existingCompanyName : ''));
+                return;
+              }
+            }
+          }
+          
+          const existingCompany = companySnapshot.docs[0];
+          const companyId = existingCompany.id;
+          const companyData = existingCompany.data();
+          
+          // Onay bekleyen kullanıcılar koleksiyonuna ekle - Teklifbul Rule v1.0
+          const pendingRequestRef = doc(collection(db, "companies", companyId, "pendingMembers"));
+          await setDoc(pendingRequestRef, {
+            userId: user.uid,
+            userEmail: user.email || null,
+            requestedRole: joinRoleSelect,
+            requestedAt: serverTimestamp(),
+            status: 'pending'
+          });
+          
+          // Yeni sistem: companyJoinRequests koleksiyonuna da kayıt ekle - Teklifbul Rule v1.0
+          const requestedRoleSimple = joinRoleSelect.includes('supplier') ? 'supplier' : 'buyer';
+          await addDoc(collection(db, 'companyJoinRequests'), {
+            companyCode: companyCodeInput,
+            companyId: companyId,
+            userId: user.uid,
+            userEmail: user.email || null,
+            requestedRole: requestedRoleSimple,
+            requestedCompanyRole: joinRoleSelect, // Teklifbul Rule v1.0 - Detaylı rol bilgisi
+            status: 'pending',
+            createdAt: serverTimestamp()
+          });
+          
+          // Upload tax certificate if provided
+          let taxCertPath = null;
+          const file = taxCertFile.files[0];
+          if (file) {
+            const path = `suppliers/${user.uid}/${Date.now()}-${file.name}`;
+            const storageRef = ref(storage, path);
+            await uploadBytes(storageRef, file);
+            taxCertPath = path;
+          }
+          
+          // Kullanıcı profilini kaydet (onay beklerken bile temel bilgiler kaydedilir)
+          // Get invoice address
+          const invoiceAddress = document.getElementById("invoiceAddress")?.value.trim() || '';
+          const taxOffice = document.getElementById("taxOffice")?.value.trim() || null;
+          
+          // Get structured invoice address parts
+          const invUlke = document.getElementById("inv_ulke")?.value?.trim() || 'Türkiye';
+          const invIl = getSelText(document.getElementById("inv_il")) || null;
+          const invIlce = getSelText(document.getElementById("inv_ilce")) || null;
+          const invMahalle = getSelText(document.getElementById("inv_mahalle")) || null;
+          const invCadde = document.getElementById("inv_cadde")?.value?.trim() || null;
+          const invSokakSel = document.getElementById("inv_sokak");
+          const invSokakManual = document.getElementById("inv_sokak_manual");
+          const invSokak = (invSokakSel && invSokakSel.style.display !== 'none' ? getSelText(invSokakSel) : '') || (invSokakManual?.value?.trim() || null);
+          const invKapi = document.getElementById("inv_kapi")?.value?.trim() || null;
+          const invDaire = document.getElementById("inv_daire")?.value?.trim() || null;
+          const invPostaKodu = document.getElementById("inv_postakodu")?.value?.trim() || null;
+          
+          const invoiceAddressParts = {
+            ulke: invUlke || 'Türkiye',
+            il: invIl,
+            ilce: invIlce,
+            mahalle: invMahalle,
+            cadde: invCadde,
+            sokak: invSokak,
+            kapi: invKapi,
+            daire: invDaire,
+            postaKodu: invPostaKodu
+          };
+          
+          // Get bank accounts
+          const bankAccountsData = [];
+          document.querySelectorAll('#bankAccountsList > div').forEach(row => {
+            const bankName = row.querySelector('.bank-name')?.value.trim();
+            const iban = row.querySelector('.bank-iban')?.value.trim().replace(/\s/g, '');
+            const accountName = row.querySelector('.bank-account-name')?.value.trim();
+            const currency = row.querySelector('.bank-currency')?.value || 'TRY';
+            
+            if (bankName && iban && accountName) {
+              bankAccountsData.push({
+                bankName,
+                iban: iban.toUpperCase(),
+                accountName,
+                currency
+              });
+            }
+          });
+          
+          // Save user profile (pending status)
+          const rolesArray = Array.from(selectedRoles);
+          const primaryRole = selectedRoles.has("buyer") ? "buyer" : "supplier";
+          
+          await setDoc(doc(db, "users", user.uid), {
+            role: primaryRole, // Backward compatibility
+            roles: rolesArray, // Multi-role support - Teklifbul Rule v1.0
+            companyName: companyData.name,
+            companyCode: companyCodeInput,
+            companyId: companyId,
+            companyJoinStatus: 'pending', // Teklifbul Rule v1.0 - Onay bekliyor
+            requestedCompanyRole: joinRoleSelect, // Teklifbul Rule v1.0
+            contactEmails: [...emailChips],
+            contactPhones: allPhoneNumbers, // Teklifbul Rule v1.0 - Yukarıda tanımlı
+            companyPhone: companyPhone || null,
+            mobilePhone: mobilePhone || null,
+            whatsappPhone: whatsappPhone || null,
+            invoiceAddress: invoiceAddress || null,
+            invoiceAddressParts: invoiceAddressParts, // Teklifbul Rule v1.0 - Yukarıda tanımlı
+            taxOffice: taxOffice || null,
+            bankAccounts: bankAccountsData, // Teklifbul Rule v1.0 - Yukarıda tanımlı
+            buyerCategoryIds: normalizeToIds([...buyerCatChips]),
+            supplierCategoryIds: normalizeToIds([...supplierCatChips]),
+            buyerCategories: [...buyerCatChips].map(name => {
+              const id = getIdByName(name);
+              return id ? getNameById(id) : name;
+            }),
+            supplierCategories: [...supplierCatChips].map(name => {
+              const id = getIdByName(name);
+              return id ? getNameById(id) : name;
+            }),
+            taxCertificatePath: taxCertPath,
+            kvkkConsent: true,
+            marketingConsent,
+            consentAt: serverTimestamp(),
+            email: user.email || null,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+          
+          // Şirket sahiplerine bildirim gönder (companies/{id}/notifications alt koleksiyonu)
+          const notificationRef = doc(collection(db, "companies", companyId, "notifications"));
+          await setDoc(notificationRef, {
+            type: 'pending_member_request',
+            userId: user.uid,
+            userEmail: user.email || null,
+            requestedRole: joinRoleSelect,
+            message: `${user.email || 'Yeni kullanıcı'} şirketinize katılmak için onay bekliyor.`,
+            createdAt: serverTimestamp(),
+            read: false
+          });
+          
+          // Kullanıcıyı bekleme sayfasına yönlendir - Teklifbul Rule v1.0
+          saveBtn.disabled = false;
+          saveBtn.textContent = "Kaydet ve Devam Et";
+          location.href = "./company-join-waiting.html";
+          return;
+        }
+        
+        // Yeni şirket oluşturma durumu
         let taxCertPath = null;
         
         // Upload tax certificate if provided
@@ -472,35 +2169,208 @@
           taxCertPath = path;
         }
         
-        // Create company document
-        const companyId = "solo-" + user.uid;
+        // Teklifbul Rule v1.0 - Şirket ID'si vergi numarasına göre oluşturulur
+        // Vergi numarası benzersiz olduğu için ID olarak kullanılır (harf hatası riskini önler)
+        // taxNumberTrimmed zaten yukarida tanimlandi
+        const companyId = `tax-${taxNumberTrimmed}`; // Vergi numarasını ID olarak kullan
+        
+        // Şirket ID'sinin zaten kullanılıp kullanılmadığını kontrol et
+        const existingCompanyCheck = await getDoc(doc(db, "companies", companyId));
+        if (existingCompanyCheck.exists()) {
+          saveBtn.disabled = false;
+          saveBtn.textContent = "Kaydet ve Devam Et";
+          toast.error(MESSAGES.ERROR_TAXNUMBER_IN_USE + ': ' + taxNumberTrimmed);
+          return;
+        }
+        
+        // Teklifbul Rule v1.0 - Benzersiz şirket kodu kontrolü
+        let finalCompanyCode = generatedCompanyCode;
+        let attempts = 0;
+        while (attempts < 10) {
+          const codeCheckQuery = query(
+            collection(db, "companies"),
+            where("code", "==", finalCompanyCode)
+          );
+          const codeCheckSnapshot = await getDocs(codeCheckQuery);
+          
+          if (codeCheckSnapshot.empty) {
+            break; // Kod benzersiz
+          }
+          
+          // Kod kullanılıyor, yeni kod oluştur
+          finalCompanyCode = generateCompanyCode();
+          attempts++;
+        }
+        
+        if (attempts >= 10) {
+          throw new Error("Benzersiz şirket kodu oluşturulamadı. Lütfen tekrar deneyin.");
+        }
+        
         const companyData = {
           name: companyName,
           taxNumber: taxNumber,
+          code: finalCompanyCode, // Teklifbul Rule v1.0 - Otomatik oluşturulan şirket kodu
           mersisNo: mersisNo || null,
-          address: address || null,
+          // Ana adres kaldırıldı - Sadece fatura adresi kullanılıyor - Teklifbul Rule v1.0
+          invoiceAddress: invoiceAddress || null,
+          invoiceAddressParts: invoiceAddressParts, // Teklifbul Rule v1.0 - Structured address parts
           website: website || null,
           ownerId: user.uid,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         };
         
+        // Referans kodu kontrolü - Teklifbul Rule v1.0
+        let referralCodeId = null;
+        let referralCompanyId = null;
+        const urlParams = new URLSearchParams(window.location.search);
+        const refCode = urlParams.get('ref');
+        
+        if (refCode) {
+          // Referans kodunu kontrol et ve işaretle
+          try {
+            const refCodeQuery = query(
+              collection(db, "companies"),
+              where("code", "==", refCode)
+            );
+            const refCodeSnapshot = await getDocs(refCodeQuery);
+            
+            if (!refCodeSnapshot.empty) {
+              // Şirket kodu ile referans bulundu
+              const refCompany = refCodeSnapshot.docs[0];
+              referralCompanyId = refCompany.id;
+              referralCodeId = refCode;
+            } else {
+              // Referans kod koleksiyonunda ara
+              const allCompanies = await getDocs(collection(db, "companies"));
+              for (const companyDoc of allCompanies.docs) {
+                const refCodesCollection = collection(db, "companies", companyDoc.id, "referralCodes");
+                const refCodeDoc = doc(refCodesCollection, refCode);
+                const refCodeData = await getDoc(refCodeDoc);
+                
+                if (refCodeData.exists()) {
+                  const codeData = refCodeData.data();
+                  // TEK KULLANIM KONTROLÜ - Eğer kod zaten kullanılmışsa, referans kullanma
+                  if (!codeData.used) {
+                    referralCodeId = refCode;
+                    referralCompanyId = companyDoc.id;
+                    
+                    // Kodu kullanıldı olarak işaretle (TEK KULLANIM - role-select'te profil oluşturulurken)
+                    // Not: signup.html'de zaten işaretlenmiş olabilir, ama yine de kontrol et
+                    await updateDoc(refCodeDoc, {
+                      used: true,
+                      usedBy: user.uid,
+                      usedAt: serverTimestamp()
+                    });
+                    break;
+                  } else {
+                    // Kod zaten kullanılmış - referans olmadan devam et
+                    logger.warn('Referans kodu zaten kullanılmış', { refCode });
+                    referralCodeId = null;
+                    referralCompanyId = null;
+                  }
+                }
+              }
+            }
+          } catch (refError) {
+            logger.warn("Referans kodu kontrolü başarısız", refError);
+          }
+        }
+        
         // Save company to Firestore
         await setDoc(doc(db, "companies", companyId), companyData);
         
+        // Collect all phone numbers - Teklifbul Rule v1.0
+        const allPhones = [...phoneChips];
+        if (companyPhone) allPhones.push(companyPhone);
+        if (mobilePhone) allPhones.push(mobilePhone);
+        if (whatsappPhone) allPhones.push(whatsappPhone);
+        
+        // Get selected company roles for new company - Teklifbul Rule v1.0
+        // Çoklu rol desteği: Her rol için ayrı şirket rolü seçimi
+        const rolesArray = Array.from(selectedRoles);
+        let buyerCompanyRole = null;
+        let buyerCompanyRoleType = null;
+        let buyerCompanyRoleKey = null;
+        let supplierCompanyRole = null;
+        let supplierCompanyRoleType = null;
+        let supplierCompanyRoleKey = null;
+        
+        if (selectedRoles.has("buyer")) {
+          const buyerRoleSelect = document.getElementById('newCompanyBuyerRoleSelect');
+          const selectedBuyerRoleKey = buyerRoleSelect?.value || 'buyer:isveren';
+          [buyerCompanyRoleType, buyerCompanyRole] = selectedBuyerRoleKey.split(':');
+          buyerCompanyRoleKey = selectedBuyerRoleKey;
+        }
+        
+        if (selectedRoles.has("supplier")) {
+          const supplierRoleSelect = document.getElementById('newCompanySupplierRoleSelect');
+          const selectedSupplierRoleKey = supplierRoleSelect?.value || 'supplier:sirket_sahibi';
+          [supplierCompanyRoleType, supplierCompanyRole] = selectedSupplierRoleKey.split(':');
+          supplierCompanyRoleKey = selectedSupplierRoleKey;
+        }
+        
+        // Primary role: buyer varsa buyer, yoksa supplier
+        const primaryRole = selectedRoles.has("buyer") ? "buyer" : "supplier";
+        
+        // Company role: Öncelik buyer rolüne, yoksa supplier rolüne
+        const companyRole = buyerCompanyRole || supplierCompanyRole;
+        const companyRoleType = buyerCompanyRoleType || supplierCompanyRoleType;
+        const companyRoleKey = buyerCompanyRoleKey || supplierCompanyRoleKey;
+        
         // Save user profile with company reference
         await setDoc(doc(db, "users", user.uid), {
-          role: selectedRole,
-          roles: [selectedRole], // Add roles array for multi-role support
+          role: primaryRole, // Backward compatibility
+          roles: rolesArray, // Multi-role support - Teklifbul Rule v1.0
           companyName,
+          companyCode: finalCompanyCode, // Teklifbul Rule v1.0 - Şirket kodu kullanıcıya da kaydedilir
+          companyId: companyId, // Teklifbul Rule v1.0 - Şirket ID'si
+          companyRole: companyRole, // Teklifbul Rule v1.0 - Şirket içindeki rol (ör: isveren, satinalma_yetkilisi)
+          companyRoleType: companyRoleType, // Teklifbul Rule v1.0 - Rol tipi (buyer veya supplier)
+          companyRoleKey: companyRoleKey, // Teklifbul Rule v1.0 - Tam rol anahtarı (buyer:isveren)
+          // Multi-role company roles - Teklifbul Rule v1.0
+          buyerCompanyRole: buyerCompanyRole,
+          buyerCompanyRoleType: buyerCompanyRoleType,
+          buyerCompanyRoleKey: buyerCompanyRoleKey,
+          supplierCompanyRole: supplierCompanyRole,
+          supplierCompanyRoleType: supplierCompanyRoleType,
+          supplierCompanyRoleKey: supplierCompanyRoleKey,
+          companyJoinStatus: 'approved', // Teklifbul Rule v1.0 - Yeni şirket oluştururken otomatik onaylı
           taxNumber,
           mersisNo: mersisNo || null,
-          address: address || null,
+          // Ana adres kaldırıldı - Sadece fatura adresi kullanılıyor - Teklifbul Rule v1.0
           website: website || null,
           contactEmails: [...emailChips],
-          contactPhones: [...phoneChips],
-          buyerCategories: [...buyerCatChips].map(toSlug), // Convert to slug format
-          supplierCategories: [...supplierCatChips].map(toSlug), // Convert to slug format
+          contactPhones: allPhones, // Teklifbul Rule v1.0 - Tüm telefon numaraları
+          companyPhone: companyPhone || null, // Teklifbul Rule v1.0
+          mobilePhone: mobilePhone || null, // Teklifbul Rule v1.0
+          whatsappPhone: whatsappPhone || null, // Teklifbul Rule v1.0
+          invoiceAddress: invoiceAddress || null, // Teklifbul Rule v1.0 - Fatura adresi
+          invoiceAddressParts: invoiceAddressParts, // Teklifbul Rule v1.0 - Yapılandırılmış fatura adresi
+          taxOffice: taxOffice || null, // Teklifbul Rule v1.0 - Vergi dairesi
+          bankAccounts: bankAccountsData, // Teklifbul Rule v1.0 - Banka hesapları
+          // CRITICAL: Convert category names to IDs using new system
+          buyerCategoryIds: normalizeToIds([...buyerCatChips]),
+          supplierCategoryIds: normalizeToIds([...supplierCatChips]),
+          // Backward compatibility: legacy fields
+          buyerCategories: [...buyerCatChips].map(name => {
+            const id = getIdByName(name);
+            return id ? getNameById(id) : name;
+          }),
+          buyerCategoryKeys: [...buyerCatChips].map(name => {
+            const id = getIdByName(name);
+            const cat = allCategories.find(c => c.id === id);
+            return cat ? cat.slug : null;
+          }).filter(Boolean),
+          supplierCategories: [...supplierCatChips].map(name => {
+            const id = getIdByName(name);
+            return id ? getNameById(id) : name;
+          }),
+          supplierCategoryKeys: [...supplierCatChips].map(name => {
+            const id = getIdByName(name);
+            const cat = allCategories.find(c => c.id === id);
+            return cat ? cat.slug : null;
+          }).filter(Boolean),
           taxCertificatePath: taxCertPath,
           kvkkConsent: true,
           marketingConsent,
@@ -508,19 +2378,150 @@
           email: user.email || null,
           companies: [companyId], // Add company reference to user
           activeCompanyId: companyId, // Set active company
+          // Referans bilgisi - Teklifbul Rule v1.0
+          referredBy: referralCompanyId || null,
+          referredByCode: referralCodeId || null,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         }, { merge: true });
         
-        alert("✅ Profil ve şirket kaydedildi!");
+        // Referans veren şirkete kaydet - Teklifbul Rule v1.0
+        if (referralCompanyId) {
+          try {
+            const referredCompaniesRef = collection(db, 'companies', referralCompanyId, 'referredCompanies');
+            await addDoc(referredCompaniesRef, {
+              referredCompanyId: companyId,
+              referredCompanyCode: finalCompanyCode,
+              referredCompanyName: companyName,
+              referredBy: user.uid,
+              referredAt: serverTimestamp()
+            });
+            
+            // Şirket verisine de referans sayısını ekle
+            const referralCompanyRef = doc(db, 'companies', referralCompanyId);
+            const referralCompanyDoc = await getDoc(referralCompanyRef);
+            if (referralCompanyDoc.exists()) {
+              const currentData = referralCompanyDoc.data();
+              const referralCount = (currentData.referralCount || 0) + 1;
+              await updateDoc(referralCompanyRef, {
+                referralCount: referralCount,
+                updatedAt: serverTimestamp()
+              });
+            }
+          } catch (refSaveError) {
+            logger.warn("Referans bilgisi kaydedilemedi", refSaveError);
+          }
+        }
+        
+        const referralMsg = referralCodeId 
+          ? `\n\n🎁 Referans Kodu: ${referralCodeId}\nBu kod ile kayıt oldunuz. Referans veren şirket bilgileriniz kaydedildi.`
+          : '';
+        
+        // Merkezi mesaj sistemine alındı - dinamik kod ve referral mesajı replace ile ekleniyor
+        toast.success(
+          MESSAGES.SUCCESS_PROFILE_COMPANY_SAVED
+            .replace('{code}', finalCompanyCode)
+            .replace('{referral}', referralMsg)
+        );
         location.href = "./demands.html";
       } catch (e) {
-        console.error(e);
-        alert("❌ Hata: " + (e.message || e));
+        logger.error("Profile save error", e);
+        toast.error(MESSAGES.ERROR_GENERAL + ": " + (e.message || e));
         saveBtn.disabled = false;
         saveBtn.textContent = "Kaydet ve Devam Et";
       }
     };
+    
+    // Şirket koduna göre şirket bilgilerini yükle ve formu doldur - Teklifbul Rule v1.0
+    async function loadCompanyInfoByCode(companyCode) {
+      if (!companyCode || companyCode.length < 6) return;
+      
+      try {
+        const companyQuery = query(
+          collection(db, "companies"),
+          where("code", "==", companyCode.toUpperCase())
+        );
+        const companySnapshot = await getDocs(companyQuery);
+        
+        if (companySnapshot.empty) {
+          logger.warn('Şirket kodu ile eşleşen şirket bulunamadı');
+          return;
+        }
+        
+        const companyDoc = companySnapshot.docs[0];
+        const companyData = companyDoc.data();
+        
+        // Form alanlarını doldur (sadece boş alanlar)
+        if (companyData.name && !document.getElementById("companyName")?.value) {
+          document.getElementById("companyName").value = companyData.name;
+        }
+        if (companyData.taxNumber && !document.getElementById("taxNumber")?.value) {
+          document.getElementById("taxNumber").value = companyData.taxNumber;
+        }
+        if (companyData.taxOffice && !document.getElementById("taxOffice")?.value) {
+          document.getElementById("taxOffice").value = companyData.taxOffice;
+        }
+        if (companyData.mersisNo && !document.getElementById("mersisNo")?.value) {
+          document.getElementById("mersisNo").value = companyData.mersisNo;
+        }
+        if (companyData.invoiceAddress && !document.getElementById("invoiceAddress")?.value) {
+          document.getElementById("invoiceAddress").value = companyData.invoiceAddress;
+        }
+        if (companyData.googleBusinessUrl && !document.getElementById("googleBusinessUrl")?.value) {
+          document.getElementById("googleBusinessUrl").value = companyData.googleBusinessUrl;
+        }
+        
+        // Yapılandırılmış adres bilgilerini doldur
+        if (companyData.invoiceAddressParts) {
+          const parts = companyData.invoiceAddressParts;
+          if (parts.ulke && document.getElementById("inv_ulke")) {
+            document.getElementById("inv_ulke").value = parts.ulke;
+          }
+          if (parts.il && document.getElementById("inv_il")) {
+            // İl seçimi için özel işlem gerekebilir
+            const ilSelect = document.getElementById("inv_il");
+            if (ilSelect) {
+              const options = Array.from(ilSelect.options);
+              const matchingOption = options.find(opt => opt.textContent.trim() === parts.il);
+              if (matchingOption) {
+                ilSelect.value = matchingOption.value;
+                ilSelect.dispatchEvent(new Event('change')); // İlçe listesini güncelle
+              }
+            }
+          }
+        }
+        
+        // Banka bilgileri (varsa)
+        if (companyData.bankAccounts && Array.isArray(companyData.bankAccounts) && companyData.bankAccounts.length > 0) {
+          // Banka bilgileri formu varsa doldur
+          const firstBank = companyData.bankAccounts[0];
+          if (firstBank.bankName && document.getElementById("bankName")) {
+            document.getElementById("bankName").value = firstBank.bankName;
+          }
+          if (firstBank.accountNumber && document.getElementById("accountNumber")) {
+            document.getElementById("accountNumber").value = firstBank.accountNumber;
+          }
+          if (firstBank.iban && document.getElementById("iban")) {
+            document.getElementById("iban").value = firstBank.iban;
+          }
+        }
+        
+        // Kategoriler (varsa)
+        if (companyData.categories && Array.isArray(companyData.categories) && companyData.categories.length > 0) {
+          // Kategorileri chip olarak ekle
+          companyData.categories.forEach(cat => {
+            if (cat && !buyerCatChips.has(cat)) {
+              buyerCatChips.add(cat);
+            }
+          });
+          renderBuyerChips();
+        }
+        
+        logger.info('Şirket bilgileri otomatik dolduruldu', { companyName: companyData.name });
+      } catch (e) {
+        logger.warn('Şirket bilgileri yüklenirken hata', e);
+      }
+    }
     
     // Check if user already has a profile
     auth.onAuthStateChanged(async user => {
@@ -529,15 +2530,97 @@
         return;
       }
       
+      // Teklifbul Rule v1.0 - Kullanıcının email adresini otomatik olarak doldur
+      if (user.email && emailInput) {
+        // Kayıt olurken kullanılan email'i primary email olarak işaretle (silinemez)
+        primaryEmail = user.email.toLowerCase();
+        // Eğer email chips boşsa, kullanıcının email'ini ekle
+        if (emailChips.size === 0 || !emailChips.has(user.email)) {
+          emailChips.add(user.email);
+          renderEmailChips();
+        }
+      }
+      
+      // Signup.html'den gelen şirkete katılma parametrelerini kontrol et - Teklifbul Rule v1.0
+      const urlParams = new URLSearchParams(window.location.search);
+      const joinCompany = urlParams.get('joinCompany');
+      const companyCodeFromSignup = urlParams.get('companyCode');
+      const requestedRoleFromSignup = urlParams.get('requestedRole');
+      
+      if (joinCompany === 'true' && companyCodeFromSignup && requestedRoleFromSignup) {
+        // Şirkete katılma modunu aktif et
+        const companyModeJoin = document.querySelector('input[name="companyMode"][value="join"]');
+        const companyModeNew = document.querySelector('input[name="companyMode"][value="new"]');
+        const joinCompanySection = document.getElementById('joinCompanySection');
+        const companyCodeInput = document.getElementById('companyCode');
+        const joinRoleSelect = document.getElementById('joinRoleSelect');
+        
+        if (companyModeJoin && companyModeNew) {
+          // Join modunu seç
+          companyModeNew.checked = false;
+          companyModeJoin.checked = true;
+          
+          // Join section'ı göster
+          if (joinCompanySection) {
+            joinCompanySection.style.display = 'block';
+          }
+          
+          // Şirket kodunu ve rolü doldur
+          if (companyCodeInput) {
+            companyCodeInput.value = companyCodeFromSignup;
+            // Şirket bilgilerini otomatik doldur - Teklifbul Rule v1.0
+            await loadCompanyInfoByCode(companyCodeFromSignup);
+          }
+          if (joinRoleSelect) {
+            joinRoleSelect.value = requestedRoleFromSignup;
+          }
+          
+          // Radio button değişikliğini tetikle (görsel güncelleme için)
+          companyModeJoin.dispatchEvent(new Event('change'));
+          
+          logger.info('Şirkete katılma modu aktif edildi', {
+            companyCode: companyCodeFromSignup,
+            requestedRole: requestedRoleFromSignup
+          });
+        }
+      }
+      
+      // Şirket kodu input'una event listener ekle - Teklifbul Rule v1.0
+      const companyCodeInputField = document.getElementById('companyCode');
+      if (companyCodeInputField) {
+        // Debounce ile şirket bilgilerini yükle
+        let loadTimeout = null;
+        companyCodeInputField.addEventListener('input', async (e) => {
+          const code = e.target.value.trim().toUpperCase();
+          if (code.length >= 6) { // Minimum 6 karakter
+            clearTimeout(loadTimeout);
+            loadTimeout = setTimeout(async () => {
+              await loadCompanyInfoByCode(code);
+            }, 500); // 500ms debounce
+          }
+        });
+      }
+      
       try {
         const snap = await getDoc(doc(db, "users", user.uid));
-        if (snap.exists() && snap.data().role) {
-          location.href = "./demands.html";
+        if (snap.exists()) {
+          const userData = snap.data();
+          
+          // Şirket kodlu kayıt durumunda bekleme sayfasına yönlendir - Teklifbul Rule v1.0
+          if (userData.companyJoinStatus === 'pending' || userData.companyJoinStatus === 'rejected') {
+            location.href = "./company-join-waiting.html";
+            return;
+          }
+          
+          // Normal kayıt tamamlanmışsa
+          if (userData.role || userData.roles) {
+            location.href = "./demands.html";
+          }
         }
-        console.log("✅ User profile check completed");
+        logger.info("User profile check completed");
       } catch (e) {
-        console.warn("User profile check error:", e);
-        console.warn("❌ Error details:", { code: e.code, name: e.name, stack: e.stack });
+        logger.warn("User profile check error", e);
+        logger.warn("Error details", { code: e.code, name: e.name, stack: e.stack });
       }
     });
   </script>

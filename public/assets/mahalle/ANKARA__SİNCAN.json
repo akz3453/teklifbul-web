@@ -1,0 +1,234 @@
+{
+  "districtId": "ANKARA__SİNCAN",
+  "districtName": "Sincan",
+  "neighborhoods": [
+    {
+      "id": "HÜRRİYET",
+      "name": "Hürriyet"
+    },
+    {
+      "id": "BACI",
+      "name": "Bacı"
+    },
+    {
+      "id": "BEYOBASI",
+      "name": "Beyobası"
+    },
+    {
+      "id": "GİRMEÇ",
+      "name": "Girmeç"
+    },
+    {
+      "id": "ATATÜRK",
+      "name": "Atatürk"
+    },
+    {
+      "id": "FEVZİ_ÇAKMAK",
+      "name": "Fevzi Çakmak"
+    },
+    {
+      "id": "HİSARLIKAYA",
+      "name": "Hisarlıkaya"
+    },
+    {
+      "id": "ALCI",
+      "name": "Alcı"
+    },
+    {
+      "id": "CUMHURİYET",
+      "name": "Cumhuriyet"
+    },
+    {
+      "id": "AKÇAÖREN",
+      "name": "Akçaören"
+    },
+    {
+      "id": "YENİHİSAR",
+      "name": "Yenihisar"
+    },
+    {
+      "id": "ADALET",
+      "name": "Adalet"
+    },
+    {
+      "id": "ALAGÖZ",
+      "name": "Alagöz"
+    },
+    {
+      "id": "AHİ_EVRAN",
+      "name": "Ahi Evran"
+    },
+    {
+      "id": "ANDİÇEN",
+      "name": "Andiçen"
+    },
+    {
+      "id": "ERTUĞRULGAZİ",
+      "name": "Ertuğrulgazi"
+    },
+    {
+      "id": "MALAZGİRT",
+      "name": "Malazgirt"
+    },
+    {
+      "id": "OSMANLI",
+      "name": "Osmanlı"
+    },
+    {
+      "id": "SELÇUKLU",
+      "name": "Selçuklu"
+    },
+    {
+      "id": "TÖREKENT",
+      "name": "Törekent"
+    },
+    {
+      "id": "MEVLANA",
+      "name": "Mevlana"
+    },
+    {
+      "id": "GÖKÇEK",
+      "name": "Gökçek"
+    },
+    {
+      "id": "AKŞEMSETTİN",
+      "name": "Akşemsettin"
+    },
+    {
+      "id": "YUNUS_EMRE",
+      "name": "Yunus Emre"
+    },
+    {
+      "id": "MÜLK",
+      "name": "Mülk"
+    },
+    {
+      "id": "MENDERES",
+      "name": "Menderes"
+    },
+    {
+      "id": "YENİKAYI",
+      "name": "Yenikayı"
+    },
+    {
+      "id": "GAZİ",
+      "name": "Gazi"
+    },
+    {
+      "id": "29_EKİM",
+      "name": "29 Ekim"
+    },
+    {
+      "id": "İNCİRLİK",
+      "name": "İncirlik"
+    },
+    {
+      "id": "MALIKÖY",
+      "name": "Malıköy"
+    },
+    {
+      "id": "ÇOĞLU",
+      "name": "Çoğlu"
+    },
+    {
+      "id": "ERKEKSU",
+      "name": "Erkeksu"
+    },
+    {
+      "id": "İSTİKLAL",
+      "name": "İstiklal"
+    },
+    {
+      "id": "ÜCRET",
+      "name": "Ücret"
+    },
+    {
+      "id": "KESİKTAŞ",
+      "name": "Kesiktaş"
+    },
+    {
+      "id": "TÜRKOBASI",
+      "name": "Türkobası"
+    },
+    {
+      "id": "İLYAKUT",
+      "name": "İlyakut"
+    },
+    {
+      "id": "ÇOKÖREN",
+      "name": "Çokören"
+    },
+    {
+      "id": "ANAYURT",
+      "name": "Anayurt"
+    },
+    {
+      "id": "OSMANİYE",
+      "name": "Osmaniye"
+    },
+    {
+      "id": "POLATLAR",
+      "name": "Polatlar"
+    },
+    {
+      "id": "SARAYCIK",
+      "name": "Saraycık"
+    },
+    {
+      "id": "TATLAR",
+      "name": "Tatlar"
+    },
+    {
+      "id": "YENİÇİMŞİT",
+      "name": "Yeniçimşit"
+    },
+    {
+      "id": "YENİPEÇENEK",
+      "name": "Yenipeçenek"
+    },
+    {
+      "id": "MUSTAFA_KEMAL",
+      "name": "Mustafa Kemal"
+    },
+    {
+      "id": "FATİH",
+      "name": "Fatih"
+    },
+    {
+      "id": "GAZİ_OSMANPAŞA",
+      "name": "Gazi Osmanpaşa"
+    },
+    {
+      "id": "İSTASYON",
+      "name": "İstasyon"
+    },
+    {
+      "id": "MARAŞAL_ÇAKMAK",
+      "name": "Maraşal Çakmak"
+    },
+    {
+      "id": "TANDOĞAN",
+      "name": "Tandoğan"
+    },
+    {
+      "id": "PINARBAŞI",
+      "name": "Pınarbaşı"
+    },
+    {
+      "id": "PLEVNE",
+      "name": "Plevne"
+    },
+    {
+      "id": "ULUBATLI_HASAN",
+      "name": "Ulubatlı Hasan"
+    },
+    {
+      "id": "ÇİÇEKTEPE",
+      "name": "Çiçektepe"
+    },
+    {
+      "id": "ESENLER",
+      "name": "Esenler"
+    }
+  ]
+}

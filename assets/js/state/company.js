@@ -50,13 +50,13 @@ export async function getActiveCompanyId() {
         return first.id;
       }
     } catch (e) {
-      console.warn('Membership query failed:', e);
+      logger.warn('Membership query failed', e);
     }
 
     return null;
     
   } catch (error) {
-    console.error('Error getting active company ID:', error);
+    logger.error('Error getting active company ID', error);
     return null;
   }
 }
@@ -74,7 +74,7 @@ export function setActiveCompanyId(companyId) {
     detail: { companyId }
   }));
   
-  console.log(`🏢 Active company changed to: ${companyId}`);
+  logger.info('Active company changed', { companyId });
 }
 
 /**
@@ -94,7 +94,7 @@ export async function loadUserCompanies(uid) {
     const userData = userDoc.data();
     const companyIds = userData.companies || [];
     
-    console.log('🔍 User data from Firestore:', {
+    logger.info('User data from Firestore', {
       uid,
       companies: companyIds,
       defaultCompanyId: userData.defaultCompanyId,
@@ -104,7 +104,7 @@ export async function loadUserCompanies(uid) {
     if (companyIds.length === 0) {
       // If no companies array, try to use defaultCompanyId
       if (userData.defaultCompanyId) {
-        console.log('🔍 No companies array, using defaultCompanyId:', userData.defaultCompanyId);
+        logger.info('No companies array, using defaultCompanyId', { defaultCompanyId: userData.defaultCompanyId });
         companyIds.push(userData.defaultCompanyId);
       } else {
         userCompanies = [];
@@ -125,7 +125,7 @@ export async function loadUserCompanies(uid) {
         } else {
           // If company document doesn't exist, try to use user's companyName
           if (userData.companyName) {
-            console.log('🔍 Company document not found, using user companyName:', userData.companyName);
+            logger.info('Company document not found, using user companyName', { companyName: userData.companyName });
             companies.push({
               id: companyId,
               name: userData.companyName
@@ -133,7 +133,7 @@ export async function loadUserCompanies(uid) {
           }
         }
       } catch (error) {
-        console.warn(`Failed to load company ${companyId}:`, error);
+        logger.warn(`Failed to load company ${companyId}`, error);
         // Fallback to user's companyName
         if (userData.companyName) {
           companies.push({
@@ -145,11 +145,11 @@ export async function loadUserCompanies(uid) {
     }
 
     userCompanies = companies;
-    console.log('🏢 Loaded user companies:', userCompanies);
+    logger.info('Loaded user companies', { companies: userCompanies });
     return userCompanies;
     
   } catch (error) {
-    console.error('Error loading user companies:', error);
+    logger.error('Error loading user companies', error);
     userCompanies = [];
     return userCompanies;
   }
@@ -190,7 +190,7 @@ export async function getActiveCompany() {
     return null;
     
   } catch (error) {
-    console.error('Error getting active company:', error);
+    logger.error('Error getting active company', error);
     return null;
   }
 }

@@ -1,0 +1,30 @@
+{
+  "districtId": "ISPARTA__MERKEZ",
+  "districtName": "Merkez",
+  "neighborhoods": [
+    {
+      "id": "OKUL",
+      "name": "Okul"
+    },
+    {
+      "id": "YENİCAMİ",
+      "name": "Yenicami"
+    },
+    {
+      "id": "KEMAL",
+      "name": "Kemal"
+    },
+    {
+      "id": "FATİH",
+      "name": "Fatih"
+    },
+    {
+      "id": "YUKARI",
+      "name": "Yukarı"
+    },
+    {
+      "id": "AŞAĞI",
+      "name": "Aşağı"
+    }
+  ]
+}

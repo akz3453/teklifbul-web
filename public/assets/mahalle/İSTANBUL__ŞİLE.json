@@ -1,0 +1,254 @@
+{
+  "districtId": "İSTANBUL__ŞİLE",
+  "districtName": "Şile",
+  "neighborhoods": [
+    {
+      "id": "AĞVA_MERKEZ",
+      "name": "Ağva Merkez"
+    },
+    {
+      "id": "KERVANSARAY",
+      "name": "Kervansaray"
+    },
+    {
+      "id": "SAHİLKÖY",
+      "name": "Sahilköy"
+    },
+    {
+      "id": "ULUPELİT",
+      "name": "Ulupelit"
+    },
+    {
+      "id": "GEREDELİ",
+      "name": "Geredeli"
+    },
+    {
+      "id": "OSMANKÖY",
+      "name": "Osmanköy"
+    },
+    {
+      "id": "ESENCELİ",
+      "name": "Esenceli"
+    },
+    {
+      "id": "GÖKMAŞLI",
+      "name": "Gökmaşlı"
+    },
+    {
+      "id": "AĞAÇDERE",
+      "name": "Ağaçdere"
+    },
+    {
+      "id": "SORTULLU",
+      "name": "Sortullu"
+    },
+    {
+      "id": "KADIKÖY",
+      "name": "Kadıköy"
+    },
+    {
+      "id": "YAYLALI",
+      "name": "Yaylalı"
+    },
+    {
+      "id": "KÖMÜRLÜK",
+      "name": "Kömürlük"
+    },
+    {
+      "id": "KURNA",
+      "name": "Kurna"
+    },
+    {
+      "id": "ÜVEZLİ",
+      "name": "Üvezli"
+    },
+    {
+      "id": "ÇATAKLI",
+      "name": "Çataklı"
+    },
+    {
+      "id": "İSAKÖY",
+      "name": "İsaköy"
+    },
+    {
+      "id": "TEKE",
+      "name": "Teke"
+    },
+    {
+      "id": "YAZIMANAYIR",
+      "name": "Yazımanayır"
+    },
+    {
+      "id": "ORUÇOĞLU",
+      "name": "Oruçoğlu"
+    },
+    {
+      "id": "HACILLI",
+      "name": "Hacıllı"
+    },
+    {
+      "id": "ALACALI",
+      "name": "Alacalı"
+    },
+    {
+      "id": "KALEM",
+      "name": "Kalem"
+    },
+    {
+      "id": "ŞUAYİPLİ",
+      "name": "Şuayipli"
+    },
+    {
+      "id": "HASANLI",
+      "name": "Hasanlı"
+    },
+    {
+      "id": "YAKA",
+      "name": "Yaka"
+    },
+    {
+      "id": "DOĞANCILI",
+      "name": "Doğancılı"
+    },
+    {
+      "id": "SOFULAR",
+      "name": "Sofular"
+    },
+    {
+      "id": "KURFALLI",
+      "name": "Kurfallı"
+    },
+    {
+      "id": "YEŞİLVADİ",
+      "name": "Yeşilvadi"
+    },
+    {
+      "id": "BIÇKIDERE",
+      "name": "Bıçkıdere"
+    },
+    {
+      "id": "SOĞULLU",
+      "name": "Soğullu"
+    },
+    {
+      "id": "ÇENGİLLİ",
+      "name": "Çengilli"
+    },
+    {
+      "id": "ÇELEBİ",
+      "name": "Çelebi"
+    },
+    {
+      "id": "KARAKİRAZ",
+      "name": "Karakiraz"
+    },
+    {
+      "id": "GÖÇE",
+      "name": "Göçe"
+    },
+    {
+      "id": "BUCAKLI",
+      "name": "Bucaklı"
+    },
+    {
+      "id": "DEĞİRMENÇAYIRI",
+      "name": "Değirmençayırı"
+    },
+    {
+      "id": "AVCIKORU",
+      "name": "Avcıkoru"
+    },
+    {
+      "id": "GÖKSU",
+      "name": "Göksu"
+    },
+    {
+      "id": "BALİBEY",
+      "name": "Balibey"
+    },
+    {
+      "id": "ÇAVUŞ",
+      "name": "Çavuş"
+    },
+    {
+      "id": "HACI_KASIM",
+      "name": "Hacı Kasım"
+    },
+    {
+      "id": "KUMBABA",
+      "name": "Kumbaba"
+    },
+    {
+      "id": "AHMETLİ",
+      "name": "Ahmetli"
+    },
+    {
+      "id": "AKÇAKESE",
+      "name": "Akçakese"
+    },
+    {
+      "id": "BOZGOCA",
+      "name": "Bozgoca"
+    },
+    {
+      "id": "ÇAYIRBAŞI",
+      "name": "Çayırbaşı"
+    },
+    {
+      "id": "DARLIK",
+      "name": "Darlık"
+    },
+    {
+      "id": "ERENLER",
+      "name": "Erenler"
+    },
+    {
+      "id": "İMRENDERE",
+      "name": "İmrendere"
+    },
+    {
+      "id": "İMRENLİ",
+      "name": "İmrenli"
+    },
+    {
+      "id": "KABAKOZ",
+      "name": "Kabakoz"
+    },
+    {
+      "id": "KARABEYLİ",
+      "name": "Karabeyli"
+    },
+    {
+      "id": "KARACAKÖY",
+      "name": "Karacaköy"
+    },
+    {
+      "id": "KARAMANDERE",
+      "name": "Karamandere"
+    },
+    {
+      "id": "KIZILCA",
+      "name": "Kızılca"
+    },
+    {
+      "id": "KORUCU",
+      "name": "Korucu"
+    },
+    {
+      "id": "MEŞRUTİYET",
+      "name": "Meşrutiyet"
+    },
+    {
+      "id": "OVACIK",
+      "name": "Ovacık"
+    },
+    {
+      "id": "SATMAZLI",
+      "name": "Satmazlı"
+    },
+    {
+      "id": "YENİKÖY",
+      "name": "Yeniköy"
+    }
+  ]
+}

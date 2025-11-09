@@ -1,0 +1,230 @@
+{
+  "districtId": "ANKARA__BALA",
+  "districtName": "Bala",
+  "neighborhoods": [
+    {
+      "id": "AHMETÇAYIRI",
+      "name": "Ahmetçayırı"
+    },
+    {
+      "id": "BÜYÜKBAYAT",
+      "name": "Büyükbayat"
+    },
+    {
+      "id": "AFŞAR_DADALOĞLU",
+      "name": "Afşar Dadaloğlu"
+    },
+    {
+      "id": "HAMİDİYE",
+      "name": "Hamidiye"
+    },
+    {
+      "id": "YÖRELİ",
+      "name": "Yöreli"
+    },
+    {
+      "id": "ERDEMLİ",
+      "name": "Erdemli"
+    },
+    {
+      "id": "KIZILIRMAK",
+      "name": "Kızılırmak"
+    },
+    {
+      "id": "G_O_PAŞA",
+      "name": "G.o.paşa"
+    },
+    {
+      "id": "ABAZLI",
+      "name": "Abazlı"
+    },
+    {
+      "id": "GÖZTEPE",
+      "name": "Göztepe"
+    },
+    {
+      "id": "İSMETPAŞA",
+      "name": "İsmetpaşa"
+    },
+    {
+      "id": "KARTALTEPE",
+      "name": "Kartaltepe"
+    },
+    {
+      "id": "KERİŞLİ",
+      "name": "Kerişli"
+    },
+    {
+      "id": "KÖSELİ",
+      "name": "Köseli"
+    },
+    {
+      "id": "ŞENTEPE",
+      "name": "Şentepe"
+    },
+    {
+      "id": "TOLKÖY",
+      "name": "Tolköy"
+    },
+    {
+      "id": "BEYNAM",
+      "name": "Beynam"
+    },
+    {
+      "id": "AŞAĞIHACIBEKİR",
+      "name": "Aşağıhacıbekir"
+    },
+    {
+      "id": "AŞIKOĞLU",
+      "name": "Aşıkoğlu"
+    },
+    {
+      "id": "AYDOĞAN",
+      "name": "Aydoğan"
+    },
+    {
+      "id": "BAHÇEKARADALAK",
+      "name": "Bahçekaradalak"
+    },
+    {
+      "id": "BEKTAŞLI",
+      "name": "Bektaşlı"
+    },
+    {
+      "id": "BELÇARŞAK",
+      "name": "Belçarşak"
+    },
+    {
+      "id": "BÜYÜKBIYIK",
+      "name": "Büyükbıyık"
+    },
+    {
+      "id": "BÜYÜKBOYALIK",
+      "name": "Büyükboyalık"
+    },
+    {
+      "id": "BÜYÜKCAMİLİ",
+      "name": "Büyükcamili"
+    },
+    {
+      "id": "ÇATALÇEŞME",
+      "name": "Çatalçeşme"
+    },
+    {
+      "id": "ÇATALÖREN",
+      "name": "Çatalören"
+    },
+    {
+      "id": "ÇİĞDEMLİ",
+      "name": "Çiğdemli"
+    },
+    {
+      "id": "DAVDANLI",
+      "name": "Davdanlı"
+    },
+    {
+      "id": "DEREKIŞLA",
+      "name": "Derekışla"
+    },
+    {
+      "id": "EĞRİBASAN",
+      "name": "Eğribasan"
+    },
+    {
+      "id": "ERGİN",
+      "name": "Ergin"
+    },
+    {
+      "id": "GÜLBAĞI",
+      "name": "Gülbağı"
+    },
+    {
+      "id": "HANBURUN",
+      "name": "Hanburun"
+    },
+    {
+      "id": "KARAHAMZALI",
+      "name": "Karahamzalı"
+    },
+    {
+      "id": "KOÇYAYLA",
+      "name": "Koçyayla"
+    },
+    {
+      "id": "KÜÇÜKBAYAT",
+      "name": "Küçükbayat"
+    },
+    {
+      "id": "KÜÇÜKBIYIK",
+      "name": "Küçükbıyık"
+    },
+    {
+      "id": "KÜÇÜKBOYALIK",
+      "name": "Küçükboyalık"
+    },
+    {
+      "id": "KÜÇÜKCAMİLİ",
+      "name": "Küçükcamili"
+    },
+    {
+      "id": "SARIHÜYÜK",
+      "name": "Sarıhüyük"
+    },
+    {
+      "id": "SIRAPINAR",
+      "name": "Sırapınar"
+    },
+    {
+      "id": "SOFULAR",
+      "name": "Sofular"
+    },
+    {
+      "id": "SUYUGÜZEL",
+      "name": "Suyugüzel"
+    },
+    {
+      "id": "TATARHÜYÜK",
+      "name": "Tatarhüyük"
+    },
+    {
+      "id": "TEPEKÖY",
+      "name": "Tepeköy"
+    },
+    {
+      "id": "ÜÇEM",
+      "name": "Üçem"
+    },
+    {
+      "id": "YAYLALIÖZÜ",
+      "name": "Yaylalıözü"
+    },
+    {
+      "id": "YENİKÖY",
+      "name": "Yeniköy"
+    },
+    {
+      "id": "YENİYAPANÇARŞAK",
+      "name": "Yeniyapançarşak"
+    },
+    {
+      "id": "YENİYAPANŞEYHLİ",
+      "name": "Yeniyapanşeyhli"
+    },
+    {
+      "id": "YUKARIHACIBEKİR",
+      "name": "Yukarıhacıbekir"
+    },
+    {
+      "id": "AFŞAR_DEDEBEY",
+      "name": "Afşar Dedebey"
+    },
+    {
+      "id": "AKKOYUNLU",
+      "name": "Akkoyunlu"
+    },
+    {
+      "id": "ŞEHRİBAN",
+      "name": "Şehriban"
+    }
+  ]
+}

@@ -1,0 +1,250 @@
+{
+  "districtId": "SAMSUN__ILKADIM",
+  "districtName": "İlkadım",
+  "neighborhoods": [
+    {
+      "id": "19_MAYIS",
+      "name": "19 Mayıs"
+    },
+    {
+      "id": "ADALET",
+      "name": "Adalet"
+    },
+    {
+      "id": "AHULU",
+      "name": "Ahulu"
+    },
+    {
+      "id": "AKGOL",
+      "name": "Akgöl"
+    },
+    {
+      "id": "ANADOLU",
+      "name": "Anadolu"
+    },
+    {
+      "id": "ASAGIAVDAN",
+      "name": "Aşağıavdan"
+    },
+    {
+      "id": "ATAKOY",
+      "name": "Ataköy"
+    },
+    {
+      "id": "AVDAN",
+      "name": "Avdan"
+    },
+    {
+      "id": "BAHCELIEVLER",
+      "name": "Bahçelievler"
+    },
+    {
+      "id": "BARUTHANE",
+      "name": "Baruthane"
+    },
+    {
+      "id": "BILMECE",
+      "name": "Bilmece"
+    },
+    {
+      "id": "CEDIT",
+      "name": "Cedit"
+    },
+    {
+      "id": "CANAKCI",
+      "name": "Çanakçı"
+    },
+    {
+      "id": "CANDIR",
+      "name": "Çandır"
+    },
+    {
+      "id": "CATALARMUT",
+      "name": "Çatalarmut"
+    },
+    {
+      "id": "CAY",
+      "name": "Çay"
+    },
+    {
+      "id": "CELIKALAN",
+      "name": "Çelikalan"
+    },
+    {
+      "id": "CIFTLIK",
+      "name": "Çiftlik"
+    },
+    {
+      "id": "CIVRIL",
+      "name": "Çivril"
+    },
+    {
+      "id": "DEREBAHCE",
+      "name": "Derebahçe"
+    },
+    {
+      "id": "DERECIK",
+      "name": "Derecik"
+    },
+    {
+      "id": "FATIH",
+      "name": "Fatih"
+    },
+    {
+      "id": "FEVZI_CAKMAK",
+      "name": "Fevzi Çakmak"
+    },
+    {
+      "id": "GURGENDAG",
+      "name": "Gürgendağ"
+    },
+    {
+      "id": "GUZELDERE",
+      "name": "Güzeldere"
+    },
+    {
+      "id": "HANCERLI",
+      "name": "Hançerli"
+    },
+    {
+      "id": "HASTANE",
+      "name": "Hastane"
+    },
+    {
+      "id": "HURRIYET",
+      "name": "Hürriyet"
+    },
+    {
+      "id": "ILYASKOY",
+      "name": "İlyasköy"
+    },
+    {
+      "id": "ISTASYON",
+      "name": "İstasyon"
+    },
+    {
+      "id": "KADAMUT",
+      "name": "Kadamut"
+    },
+    {
+      "id": "KADIKOY",
+      "name": "Kadıköy"
+    },
+    {
+      "id": "KADIFEKALE",
+      "name": "Kadifekale"
+    },
+    {
+      "id": "KALE",
+      "name": "Kale"
+    },
+    {
+      "id": "KALKANCI",
+      "name": "Kalkancı"
+    },
+    {
+      "id": "KAPAKLI",
+      "name": "Kapaklı"
+    },
+    {
+      "id": "KARADENIZ",
+      "name": "Karadeniz"
+    },
+    {
+      "id": "KARASAMSUN",
+      "name": "Karasamsun"
+    },
+    {
+      "id": "KAVACIK",
+      "name": "Kavacık"
+    },
+    {
+      "id": "KAZIM_KARABEKIR",
+      "name": "Kazım Karabekir"
+    },
+    {
+      "id": "KILICDEDE",
+      "name": "Kılıçdede"
+    },
+    {
+      "id": "KIRAN",
+      "name": "Kıran"
+    },
+    {
+      "id": "KISLA",
+      "name": "Kışla"
+    },
+    {
+      "id": "KOKCUOGLU",
+      "name": "Kökçüoğlu"
+    },
+    {
+      "id": "KUSCULU",
+      "name": "Kusçulu"
+    },
+    {
+      "id": "LIMAN",
+      "name": "Liman"
+    },
+    {
+      "id": "PAZAR",
+      "name": "Pazar"
+    },
+    {
+      "id": "RASATHANE",
+      "name": "Rasathane"
+    },
+    {
+      "id": "RESADIYE",
+      "name": "Reşadiye"
+    },
+    {
+      "id": "SAITBEY",
+      "name": "Saitbey"
+    },
+    {
+      "id": "SELAHIYE",
+      "name": "Selahiye"
+    },
+    {
+      "id": "TEPECIK",
+      "name": "Tepecik"
+    },
+    {
+      "id": "TOYBELEN",
+      "name": "Toybelen"
+    },
+    {
+      "id": "ULUGAZI",
+      "name": "Ulugazi"
+    },
+    {
+      "id": "UNKAPANI",
+      "name": "Unkapanı"
+    },
+    {
+      "id": "UZGUR",
+      "name": "Uzgur"
+    },
+    {
+      "id": "YASARDOGU",
+      "name": "Yaşardoğu"
+    },
+    {
+      "id": "YENIDOGAN",
+      "name": "Yenidoğan"
+    },
+    {
+      "id": "YESILTEPE",
+      "name": "Yeşiltepe"
+    },
+    {
+      "id": "ZAFER",
+      "name": "Zafer"
+    },
+    {
+      "id": "ZEYTINLIK",
+      "name": "Zeytinlik"
+    }
+  ]
+}

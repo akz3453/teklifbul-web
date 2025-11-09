@@ -1,0 +1,278 @@
+{
+  "districtId": "ANTALYA__KEPEZ",
+  "districtName": "Kepez",
+  "neighborhoods": [
+    {
+      "id": "VARSAK_ESENTEPE",
+      "name": "Varsak Esentepe"
+    },
+    {
+      "id": "VARSAK_KARŞIYAKA",
+      "name": "Varsak Karşıyaka"
+    },
+    {
+      "id": "VARSAK_MENDERES",
+      "name": "Varsak Menderes"
+    },
+    {
+      "id": "YENİEMEK",
+      "name": "Yeniemek"
+    },
+    {
+      "id": "YENİMAHALLE",
+      "name": "Yenimahalle"
+    },
+    {
+      "id": "YÜKSELİŞ",
+      "name": "Yükseliş"
+    },
+    {
+      "id": "DÜDENBAŞI",
+      "name": "Düdenbaşı"
+    },
+    {
+      "id": "FATİH",
+      "name": "Fatih"
+    },
+    {
+      "id": "KARŞIYAKA",
+      "name": "Karşıyaka"
+    },
+    {
+      "id": "KUZEYYAKA",
+      "name": "Kuzeyyaka"
+    },
+    {
+      "id": "TEOMANPAŞA",
+      "name": "Teomanpaşa"
+    },
+    {
+      "id": "YEŞİLTEPE",
+      "name": "Yeşiltepe"
+    },
+    {
+      "id": "GÖÇERLER",
+      "name": "Göçerler"
+    },
+    {
+      "id": "HABİBLER",
+      "name": "Habibler"
+    },
+    {
+      "id": "KÜLTÜR",
+      "name": "Kültür"
+    },
+    {
+      "id": "GÖKSU",
+      "name": "Göksu"
+    },
+    {
+      "id": "GÜNEŞ",
+      "name": "Güneş"
+    },
+    {
+      "id": "KEPEZ",
+      "name": "Kepez"
+    },
+    {
+      "id": "EMEK",
+      "name": "Emek"
+    },
+    {
+      "id": "ERENKÖY",
+      "name": "Erenköy"
+    },
+    {
+      "id": "ESENTEPE",
+      "name": "Esentepe"
+    },
+    {
+      "id": "ŞELALE",
+      "name": "Şelale"
+    },
+    {
+      "id": "GAZİLER",
+      "name": "Gaziler"
+    },
+    {
+      "id": "DUACI",
+      "name": "Duacı"
+    },
+    {
+      "id": "ÇAMLICA",
+      "name": "Çamlıca"
+    },
+    {
+      "id": "KIZILLI",
+      "name": "Kızıllı"
+    },
+    {
+      "id": "KİRİŞÇİLER",
+      "name": "Kirişçiler"
+    },
+    {
+      "id": "ODABAŞI",
+      "name": "Odabaşı"
+    },
+    {
+      "id": "AKTOPRAK",
+      "name": "Aktoprak"
+    },
+    {
+      "id": "AYDOĞMUŞ",
+      "name": "Aydoğmuş"
+    },
+    {
+      "id": "ALTIAYAK",
+      "name": "Altıayak"
+    },
+    {
+      "id": "AYANOĞLU",
+      "name": "Ayanoğlu"
+    },
+    {
+      "id": "BARIŞ",
+      "name": "Barış"
+    },
+    {
+      "id": "BEŞKONAKLILAR",
+      "name": "Beşkonaklılar"
+    },
+    {
+      "id": "DURALİLER",
+      "name": "Duraliler"
+    },
+    {
+      "id": "SANTRAL",
+      "name": "Santral"
+    },
+    {
+      "id": "ULUS",
+      "name": "Ulus"
+    },
+    {
+      "id": "DEMİREL",
+      "name": "Demirel"
+    },
+    {
+      "id": "MEHMET_AKİF_ERSOY",
+      "name": "Mehmet Akif Ersoy"
+    },
+    {
+      "id": "AHATLI",
+      "name": "Ahatlı"
+    },
+    {
+      "id": "BAŞKÖY",
+      "name": "Başköy"
+    },
+    {
+      "id": "GÜLVEREN",
+      "name": "Gülveren"
+    },
+    {
+      "id": "ZEYTİNLİK",
+      "name": "Zeytinlik"
+    },
+    {
+      "id": "AVNİ_TOLUNAY",
+      "name": "Avni Tolunay"
+    },
+    {
+      "id": "BARAJ",
+      "name": "Baraj"
+    },
+    {
+      "id": "ÇANKAYA",
+      "name": "Çankaya"
+    },
+    {
+      "id": "KANAL",
+      "name": "Kanal"
+    },
+    {
+      "id": "ÖZGÜRLÜK",
+      "name": "Özgürlük"
+    },
+    {
+      "id": "ALTINOVA_ORTA",
+      "name": "Altınova Orta"
+    },
+    {
+      "id": "ÇAMLIBEL",
+      "name": "Çamlıbel"
+    },
+    {
+      "id": "FEVZİ_ÇAKMAK",
+      "name": "Fevzi Çakmak"
+    },
+    {
+      "id": "SÜTÇÜLER",
+      "name": "Sütçüler"
+    },
+    {
+      "id": "ALTINOVA_SİNAN",
+      "name": "Altınova Sinan"
+    },
+    {
+      "id": "YEŞİLYURT",
+      "name": "Yeşilyurt"
+    },
+    {
+      "id": "ATATÜRK",
+      "name": "Atatürk"
+    },
+    {
+      "id": "GÜNDOĞDU",
+      "name": "Gündoğdu"
+    },
+    {
+      "id": "KÜTÜKÇÜ",
+      "name": "Kütükçü"
+    },
+    {
+      "id": "ŞAFAK",
+      "name": "Şafak"
+    },
+    {
+      "id": "ZAFER",
+      "name": "Zafer"
+    },
+    {
+      "id": "FABRİKALAR",
+      "name": "Fabrikalar"
+    },
+    {
+      "id": "HÜSNÜKARAKAŞ",
+      "name": "Hüsnükarakaş"
+    },
+    {
+      "id": "YAVUZ_SELİM",
+      "name": "Yavuz Selim"
+    },
+    {
+      "id": "ALTINOVA_DÜDEN",
+      "name": "Altınova Düden"
+    },
+    {
+      "id": "GAZİ",
+      "name": "Gazi"
+    },
+    {
+      "id": "ÜNSAL",
+      "name": "Ünsal"
+    },
+    {
+      "id": "KAZIMKARABEKİR",
+      "name": "Kazımkarabekir"
+    },
+    {
+      "id": "MENDERES",
+      "name": "Menderes"
+    },
+    {
+      "id": "YENİDOĞAN",
+      "name": "Yenidoğan"
+    }
+  ]
+}

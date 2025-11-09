@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kategori-Tedarikçi Test Sayfası</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f5f5f5;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    h1 {
+      color: #1f2937;
+      margin-bottom: 10px;
+      font-size: 28px;
+    }
+    
+    .subtitle {
+      color: #6b7280;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+    
+    .controls {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #374151;
+    }
+    
+    select, input, button {
+      padding: 10px 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 14px;
+      background: white;
+    }
+    
+    select:focus, input:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    
+    button:hover {
+      background: #2563eb;
+      transform: translateY(-1px);
+    }
+    
+    button:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 30px;
+    }
+    
+    .stat-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+    }
+    
+    .stat-card.success {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    }
+    
+    .stat-card.warning {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    }
+    
+    .stat-card.info {
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    }
+    
+    .stat-value {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+    
+    .stat-label {
+      font-size: 13px;
+      opacity: 0.9;
+    }
+    
+    .category-section {
+      margin-bottom: 40px;
+    }
+    
+    .category-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px;
+      background: #f9fafb;
+      border-left: 4px solid #3b82f6;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .category-header:hover {
+      background: #f3f4f6;
+    }
+    
+    .category-header.expanded {
+      background: #eff6ff;
+      border-left-color: #2563eb;
+    }
+    
+    .category-title {
+      flex: 1;
+      font-size: 18px;
+      font-weight: 600;
+      color: #1f2937;
+    }
+    
+    .category-count {
+      background: #3b82f6;
+      color: white;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    
+    .category-toggle {
+      font-size: 20px;
+      color: #6b7280;
+      transition: transform 0.2s;
+    }
+    
+    .category-header.expanded .category-toggle {
+      transform: rotate(90deg);
+    }
+    
+    .suppliers-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+    
+    .supplier-card {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 20px;
+      transition: all 0.2s;
+    }
+    
+    .supplier-card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      transform: translateY(-2px);
+    }
+    
+    .supplier-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 8px;
+    }
+    
+    .supplier-email {
+      font-size: 13px;
+      color: #6b7280;
+      margin-bottom: 12px;
+    }
+    
+    .supplier-categories {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    
+    .category-badge {
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    
+    .badge-id {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+    
+    .badge-slug {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    
+    .badge-name {
+      background: #d1fae5;
+      color: #065f46;
+    }
+    
+    .supplier-format {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #e5e7eb;
+    }
+    
+    .format-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+    }
+    
+    .format-label {
+      font-weight: 600;
+      color: #6b7280;
+      min-width: 140px;
+    }
+    
+    .format-value {
+      color: #1f2937;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+    }
+    
+    .format-empty {
+      color: #9ca3af;
+      font-style: italic;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #6b7280;
+    }
+    
+    .spinner {
+      border: 3px solid #f3f4f6;
+      border-top: 3px solid #3b82f6;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .error {
+      background: #fee2e2;
+      color: #991b1b;
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    
+    .search-box {
+      flex: 1;
+      min-width: 200px;
+    }
+    
+    .filter-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    
+    .filter-tag {
+      background: #eff6ff;
+      color: #1e40af;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .filter-tag .remove {
+      cursor: pointer;
+      font-weight: bold;
+      opacity: 0.7;
+    }
+    
+    .filter-tag .remove:hover {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔍 Kategori-Tedarikçi Test Sayfası</h1>
+    <p class="subtitle">Tedarikçi ve alıcı firmaların kategorilerini görüntüleyin ve eşleştirmeyi test edin</p>
+    
+    <div class="controls">
+      <div class="control-group search-box">
+        <label>Firma Ara (İsim, Email)</label>
+        <input type="text" id="searchInput" placeholder="Firma adı veya email ile ara...">
+      </div>
+      <div class="control-group">
+        <label>Rol Filtresi</label>
+        <select id="roleFilter">
+          <option value="all">Tüm Firmalar</option>
+          <option value="supplier">Sadece Tedarikçiler</option>
+          <option value="buyer">Sadece Alıcılar</option>
+          <option value="both">Her İkisi</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Format Filtresi</label>
+        <select id="formatFilter">
+          <option value="all">Tüm Formatlar</option>
+          <option value="ids">ID Formatı (supplierCategoryIds)</option>
+          <option value="slugs">Slug Formatı (supplierCategoryKeys)</option>
+          <option value="names">İsim Formatı (supplierCategories)</option>
+          <option value="missing">Kategori Eksik</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label style="visibility: hidden;">Action</label>
+        <button id="refreshBtn">🔄 Yenile</button>
+      </div>
+    </div>
+    
+    <div id="statsContainer" class="stats"></div>
+    
+    <div id="loadingIndicator" class="loading">
+      <div class="spinner"></div>
+      <p>Firmalar yükleniyor...</p>
+    </div>
+    
+    <div id="errorContainer"></div>
+    
+    <div id="categoriesContainer"></div>
+  </div>
+
+  <script type="module">
+    import { db } from "./firebase.js";
+    import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+    import { getAllCategories, getNameById, getIdByName, normalizeToIds } from "./src/categories/category-service.js";
+    import { matchSuppliers } from "./src/matching/match-service.js";
+    import { slugifyTr } from "./utils/slugify-tr.js";
+    
+    let allUsers = [];
+    let filteredUsers = [];
+    let expandedCategories = new Set();
+    
+    // UI Elements
+    const searchInput = document.getElementById('searchInput');
+    const roleFilter = document.getElementById('roleFilter');
+    const formatFilter = document.getElementById('formatFilter');
+    const refreshBtn = document.getElementById('refreshBtn');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const errorContainer = document.getElementById('errorContainer');
+    const statsContainer = document.getElementById('statsContainer');
+    const categoriesContainer = document.getElementById('categoriesContainer');
+    
+    // Load users from Firestore
+    async function loadUsers() {
+      try {
+        loadingIndicator.style.display = 'block';
+        errorContainer.innerHTML = '';
+        categoriesContainer.innerHTML = '';
+        statsContainer.innerHTML = '';
+        
+        // Fetch all users
+        const usersRef = collection(db, 'users');
+        const snapshot = await getDocs(usersRef);
+        
+        allUsers = [];
+        snapshot.forEach(doc => {
+          const userData = doc.data();
+          if (userData && (userData.roles?.includes('supplier') || userData.roles?.includes('buyer'))) {
+            allUsers.push({
+              id: doc.id,
+              ...userData
+            });
+          }
+        });
+        
+        console.log(`✅ Loaded ${allUsers.length} users`);
+        renderStats();
+        applyFilters();
+        
+      } catch (error) {
+        console.error('❌ Error loading users:', error);
+        errorContainer.innerHTML = `<div class="error">Hata: ${error.message}</div>`;
+      } finally {
+        loadingIndicator.style.display = 'none';
+      }
+    }
+    
+    // Render statistics
+    function renderStats() {
+      const suppliers = allUsers.filter(u => u.roles?.includes('supplier'));
+      const buyers = allUsers.filter(u => u.roles?.includes('buyer'));
+      const both = allUsers.filter(u => u.roles?.includes('supplier') && u.roles?.includes('buyer'));
+      
+      const withIds = allUsers.filter(u => Array.isArray(u.supplierCategoryIds) && u.supplierCategoryIds.length > 0);
+      const withSlugs = allUsers.filter(u => Array.isArray(u.supplierCategoryKeys) && u.supplierCategoryKeys.length > 0);
+      const withNames = allUsers.filter(u => Array.isArray(u.supplierCategories) && u.supplierCategories.length > 0);
+      const missingCategories = allUsers.filter(u => {
+        const hasIds = Array.isArray(u.supplierCategoryIds) && u.supplierCategoryIds.length > 0;
+        const hasSlugs = Array.isArray(u.supplierCategoryKeys) && u.supplierCategoryKeys.length > 0;
+        const hasNames = Array.isArray(u.supplierCategories) && u.supplierCategories.length > 0;
+        return !hasIds && !hasSlugs && !hasNames;
+      });
+      
+      statsContainer.innerHTML = `
+        <div class="stat-card info">
+          <div class="stat-value">${allUsers.length}</div>
+          <div class="stat-label">Toplam Firma</div>
+        </div>
+        <div class="stat-card success">
+          <div class="stat-value">${suppliers.length}</div>
+          <div class="stat-label">Tedarikçi</div>
+        </div>
+        <div class="stat-card success">
+          <div class="stat-value">${buyers.length}</div>
+          <div class="stat-label">Alıcı</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${both.length}</div>
+          <div class="stat-label">Her İkisi</div>
+        </div>
+        <div class="stat-card warning">
+          <div class="stat-value">${withIds.length}</div>
+          <div class="stat-label">ID Formatında</div>
+        </div>
+        <div class="stat-card warning">
+          <div class="stat-value">${withSlugs.length}</div>
+          <div class="stat-label">Slug Formatında</div>
+        </div>
+        <div class="stat-card warning">
+          <div class="stat-value">${withNames.length}</div>
+          <div class="stat-label">İsim Formatında</div>
+        </div>
+        <div class="stat-card" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
+          <div class="stat-value">${missingCategories.length}</div>
+          <div class="stat-label">Kategori Eksik</div>
+        </div>
+      `;
+    }
+    
+    // Apply filters
+    function applyFilters() {
+      let filtered = [...allUsers];
+      
+      // Role filter
+      const role = roleFilter.value;
+      if (role === 'supplier') {
+        filtered = filtered.filter(u => u.roles?.includes('supplier'));
+      } else if (role === 'buyer') {
+        filtered = filtered.filter(u => u.roles?.includes('buyer'));
+      } else if (role === 'both') {
+        filtered = filtered.filter(u => u.roles?.includes('supplier') && u.roles?.includes('buyer'));
+      }
+      
+      // Format filter
+      const format = formatFilter.value;
+      if (format === 'ids') {
+        filtered = filtered.filter(u => Array.isArray(u.supplierCategoryIds) && u.supplierCategoryIds.length > 0);
+      } else if (format === 'slugs') {
+        filtered = filtered.filter(u => Array.isArray(u.supplierCategoryKeys) && u.supplierCategoryKeys.length > 0);
+      } else if (format === 'names') {
+        filtered = filtered.filter(u => Array.isArray(u.supplierCategories) && u.supplierCategories.length > 0);
+      } else if (format === 'missing') {
+        filtered = filtered.filter(u => {
+          const hasIds = Array.isArray(u.supplierCategoryIds) && u.supplierCategoryIds.length > 0;
+          const hasSlugs = Array.isArray(u.supplierCategoryKeys) && u.supplierCategoryKeys.length > 0;
+          const hasNames = Array.isArray(u.supplierCategories) && u.supplierCategories.length > 0;
+          return !hasIds && !hasSlugs && !hasNames;
+        });
+      }
+      
+      // Search filter
+      const searchTerm = searchInput.value.toLowerCase().trim();
+      if (searchTerm) {
+        filtered = filtered.filter(u => {
+          const name = (u.companyName || u.displayName || '').toLowerCase();
+          const email = (u.email || '').toLowerCase();
+          return name.includes(searchTerm) || email.includes(searchTerm);
+        });
+      }
+      
+      filteredUsers = filtered;
+      renderCategories();
+    }
+    
+      // Render categories with suppliers
+    async function renderCategories() {
+      // Load all categories from new system
+      const allCategories = await getAllCategories();
+      
+      // Group users by categories
+      const categoryMap = new Map();
+      
+      allCategories.forEach(cat => {
+        categoryMap.set(cat.id, {
+          category: cat,
+          users: []
+        });
+      });
+      
+      filteredUsers.forEach(user => {
+        const userCategories = new Set();
+        
+        // Normalize all category formats to IDs
+        const categoryTokens = [];
+        if (Array.isArray(user.supplierCategoryIds)) categoryTokens.push(...user.supplierCategoryIds);
+        if (Array.isArray(user.supplierCategoryKeys)) categoryTokens.push(...user.supplierCategoryKeys);
+        if (Array.isArray(user.supplierCategories)) categoryTokens.push(...user.supplierCategories);
+        
+        // Use normalizeToIds to convert all formats to IDs
+        const normalizedIds = normalizeToIds(categoryTokens);
+        
+        normalizedIds.forEach(id => {
+          if (categoryMap.has(id)) {
+            userCategories.add(id);
+          }
+        });
+        
+        // Add user to categories
+        userCategories.forEach(catId => {
+          if (!categoryMap.get(catId).users.find(u => u.id === user.id)) {
+            categoryMap.get(catId).users.push(user);
+          }
+        });
+      });
+      
+      // Render categories
+      categoriesContainer.innerHTML = '';
+      allCategories.forEach(cat => {
+        const data = categoryMap.get(cat.id);
+        const users = data.users;
+        const isExpanded = expandedCategories.has(cat.id);
+        
+        const categoryEl = document.createElement('div');
+        categoryEl.className = 'category-section';
+        categoryEl.innerHTML = `
+          <div class="category-header ${isExpanded ? 'expanded' : ''}" data-category-id="${cat.id}">
+            <span class="category-toggle">▶</span>
+            <span class="category-title">${cat.name}</span>
+            <span class="category-count">${users.length} firma</span>
+          </div>
+          <div class="suppliers-grid" style="display: ${isExpanded ? 'grid' : 'none'}">
+            ${users.length === 0 
+              ? '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #9ca3af;">Bu kategoride firma bulunmamaktadır.</div>'
+              : users.map(user => renderUserCard(user)).join('')
+            }
+          </div>
+        `;
+        
+        categoriesContainer.appendChild(categoryEl);
+        
+        // Add click handler
+        const header = categoryEl.querySelector('.category-header');
+        header.addEventListener('click', () => {
+          const catId = header.dataset.categoryId;
+          if (expandedCategories.has(catId)) {
+            expandedCategories.delete(catId);
+          } else {
+            expandedCategories.add(catId);
+          }
+          renderCategories();
+        });
+      });
+    }
+    
+    // Render user card
+    function renderUserCard(user) {
+      const companyName = user.companyName || user.displayName || 'İsimsiz Firma';
+      const email = user.email || 'Email yok';
+      const roles = [];
+      if (user.roles?.includes('supplier')) roles.push('Tedarikçi');
+      if (user.roles?.includes('buyer')) roles.push('Alıcı');
+      
+      const ids = Array.isArray(user.supplierCategoryIds) ? user.supplierCategoryIds : [];
+      const slugs = Array.isArray(user.supplierCategoryKeys) ? user.supplierCategoryKeys : [];
+      const names = Array.isArray(user.supplierCategories) ? user.supplierCategories : [];
+      
+      // Convert to display names using new system
+      const categoryBadges = [];
+      const allCategoryIds = new Set();
+      
+      // Normalize all formats to IDs
+      const categoryTokens = [...ids, ...slugs, ...names];
+      const normalizedIds = normalizeToIds(categoryTokens);
+      
+      normalizedIds.forEach(id => {
+        allCategoryIds.add(id);
+      });
+      
+      // Get display names for all IDs
+      allCategoryIds.forEach(id => {
+        const name = getNameById(id);
+        if (name && !categoryBadges.find(b => b.text === name)) {
+          categoryBadges.push({ text: name, type: 'id' });
+        }
+      });
+      
+      return `
+        <div class="supplier-card">
+          <div class="supplier-name">${companyName}</div>
+          <div class="supplier-email">${email}</div>
+          <div style="margin-bottom: 12px;">
+            <strong>Roller:</strong> ${roles.join(', ') || 'Yok'}
+          </div>
+          <div class="supplier-categories">
+            ${categoryBadges.map(badge => 
+              `<span class="category-badge badge-${badge.type}">${badge.text}</span>`
+            ).join('')}
+          </div>
+          <div class="supplier-format">
+            <div class="format-item">
+              <span class="format-label">supplierCategoryIds:</span>
+              <span class="format-value ${ids.length === 0 ? 'format-empty' : ''}">
+                ${ids.length > 0 ? JSON.stringify(ids) : 'Yok'}
+              </span>
+            </div>
+            <div class="format-item">
+              <span class="format-label">supplierCategoryKeys:</span>
+              <span class="format-value ${slugs.length === 0 ? 'format-empty' : ''}">
+                ${slugs.length > 0 ? JSON.stringify(slugs) : 'Yok'}
+              </span>
+            </div>
+            <div class="format-item">
+              <span class="format-label">supplierCategories:</span>
+              <span class="format-value ${names.length === 0 ? 'format-empty' : ''}">
+                ${names.length > 0 ? JSON.stringify(names) : 'Yok'}
+              </span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
+    // Helper: Convert slug to category ID (using new system)
+    async function slugToCategoryId(slug) {
+      if (!slug) return null;
+      
+      const allCategories = await getAllCategories();
+      const id = getIdByName(slug) || (allCategories.find(c => c.slug === slug)?.id);
+      return id || null;
+    }
+    
+    // Event listeners
+    searchInput.addEventListener('input', applyFilters);
+    roleFilter.addEventListener('change', applyFilters);
+    formatFilter.addEventListener('change', applyFilters);
+    refreshBtn.addEventListener('click', loadUsers);
+    
+    // Initial load
+    loadUsers();
+  </script>
+</body>
+</html>
+

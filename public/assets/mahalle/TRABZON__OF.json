@@ -1,0 +1,278 @@
+{
+  "districtId": "TRABZON__OF",
+  "districtName": "Of",
+  "neighborhoods": [
+    {
+      "id": "ÇAMLITEPE",
+      "name": "Çamlıtepe"
+    },
+    {
+      "id": "İRFANLI",
+      "name": "İrfanlı"
+    },
+    {
+      "id": "YENİMAHALLE",
+      "name": "Yenimahalle"
+    },
+    {
+      "id": "SULAKLI",
+      "name": "Sulaklı"
+    },
+    {
+      "id": "CUMHURİYET",
+      "name": "Cumhuriyet"
+    },
+    {
+      "id": "KABAN",
+      "name": "Kaban"
+    },
+    {
+      "id": "SOĞUKPINAR",
+      "name": "Soğukpınar"
+    },
+    {
+      "id": "ÇAMLI",
+      "name": "Çamlı"
+    },
+    {
+      "id": "YUKARIKIŞLACIK",
+      "name": "Yukarıkışlacık"
+    },
+    {
+      "id": "ERENKÖY",
+      "name": "Erenköy"
+    },
+    {
+      "id": "AĞAÇBAŞI",
+      "name": "Ağaçbaşı"
+    },
+    {
+      "id": "AĞAÇSEVEN",
+      "name": "Ağaçseven"
+    },
+    {
+      "id": "AŞAĞIKIŞLACIK",
+      "name": "Aşağıkışlacık"
+    },
+    {
+      "id": "BARIŞ",
+      "name": "Barış"
+    },
+    {
+      "id": "BAŞKÖY",
+      "name": "Başköy"
+    },
+    {
+      "id": "BAYIRCA",
+      "name": "Bayırca"
+    },
+    {
+      "id": "BİRLİK",
+      "name": "Birlik"
+    },
+    {
+      "id": "ÇALTILI",
+      "name": "Çaltılı"
+    },
+    {
+      "id": "ÇATALDERE",
+      "name": "Çataldere"
+    },
+    {
+      "id": "ÇATALSÖĞÜT",
+      "name": "Çatalsöğüt"
+    },
+    {
+      "id": "ÇUKUROVA",
+      "name": "Çukurova"
+    },
+    {
+      "id": "DAĞALAN",
+      "name": "Dağalan"
+    },
+    {
+      "id": "DARILI",
+      "name": "Darılı"
+    },
+    {
+      "id": "DEREKÖY",
+      "name": "Dereköy"
+    },
+    {
+      "id": "DOĞANÇAY",
+      "name": "Doğançay"
+    },
+    {
+      "id": "DUMLUSU",
+      "name": "Dumlusu"
+    },
+    {
+      "id": "ESENKÖY",
+      "name": "Esenköy"
+    },
+    {
+      "id": "FINDIKOBA",
+      "name": "Fındıkoba"
+    },
+    {
+      "id": "GÖKÇEOBA",
+      "name": "Gökçeoba"
+    },
+    {
+      "id": "GÜMÜŞÖREN",
+      "name": "Gümüşören"
+    },
+    {
+      "id": "GÜRESEN",
+      "name": "Güresen"
+    },
+    {
+      "id": "İKİDERE",
+      "name": "İkidere"
+    },
+    {
+      "id": "KARABUDAK",
+      "name": "Karabudak"
+    },
+    {
+      "id": "KAVAKPINAR",
+      "name": "Kavakpınar"
+    },
+    {
+      "id": "KAZANÇLI",
+      "name": "Kazançlı"
+    },
+    {
+      "id": "KELER",
+      "name": "Keler"
+    },
+    {
+      "id": "KIYIBOYU",
+      "name": "Kıyıboyu"
+    },
+    {
+      "id": "KİRAZKÖY",
+      "name": "Kirazköy"
+    },
+    {
+      "id": "KİREÇLİ",
+      "name": "Kireçli"
+    },
+    {
+      "id": "KORKUT",
+      "name": "Korkut"
+    },
+    {
+      "id": "KORUCUK",
+      "name": "Korucuk"
+    },
+    {
+      "id": "KUMLUDERE",
+      "name": "Kumludere"
+    },
+    {
+      "id": "OVACIK",
+      "name": "Ovacık"
+    },
+    {
+      "id": "ÖRTÜLÜ",
+      "name": "Örtülü"
+    },
+    {
+      "id": "PINARALTI",
+      "name": "Pınaraltı"
+    },
+    {
+      "id": "SARAÇLI",
+      "name": "Saraçlı"
+    },
+    {
+      "id": "SARAYKÖY",
+      "name": "Sarayköy"
+    },
+    {
+      "id": "SARIBEY",
+      "name": "Sarıbey"
+    },
+    {
+      "id": "SARIKAYA",
+      "name": "Sarıkaya"
+    },
+    {
+      "id": "SEFAKÖY",
+      "name": "Sefaköy"
+    },
+    {
+      "id": "SERİNCE",
+      "name": "Serince"
+    },
+    {
+      "id": "SIRAAĞAÇ",
+      "name": "Sıraağaç"
+    },
+    {
+      "id": "SİVRİCE",
+      "name": "Sivrice"
+    },
+    {
+      "id": "SÖĞÜTLÜ",
+      "name": "Söğütlü"
+    },
+    {
+      "id": "SUGELDİ",
+      "name": "Sugeldi"
+    },
+    {
+      "id": "TAVŞANLI",
+      "name": "Tavşanlı"
+    },
+    {
+      "id": "TEKOBA",
+      "name": "Tekoba"
+    },
+    {
+      "id": "ULUAĞAÇ",
+      "name": "Uluağaç"
+    },
+    {
+      "id": "YANIKTAŞ",
+      "name": "Yanıktaş"
+    },
+    {
+      "id": "YAZLIK",
+      "name": "Yazlık"
+    },
+    {
+      "id": "YEMİŞALAN",
+      "name": "Yemişalan"
+    },
+    {
+      "id": "BÖLÜMLÜ",
+      "name": "Bölümlü"
+    },
+    {
+      "id": "CUMAPAZARI",
+      "name": "Cumapazarı"
+    },
+    {
+      "id": "GÜRPINAR",
+      "name": "Gürpınar"
+    },
+    {
+      "id": "UĞURLU",
+      "name": "Uğurlu"
+    },
+    {
+      "id": "BALLICA",
+      "name": "Ballıca"
+    },
+    {
+      "id": "ESKİPAZAR",
+      "name": "Eskipazar"
+    },
+    {
+      "id": "KIYICIK",
+      "name": "Kıyıcık"
+    }
+  ]
+}

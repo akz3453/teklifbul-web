@@ -1,0 +1,254 @@
+{
+  "districtId": "ADANA__KARAISALI",
+  "districtName": "Karaisalı",
+  "neighborhoods": [
+    {
+      "id": "AKCALI",
+      "name": "Akçalı"
+    },
+    {
+      "id": "AKTAS",
+      "name": "Aktaş"
+    },
+    {
+      "id": "ALTINOVA",
+      "name": "Altınova"
+    },
+    {
+      "id": "ASAGIBELEMEDIK",
+      "name": "Aşağıbelemedik"
+    },
+    {
+      "id": "ASAGIYORUKLER",
+      "name": "Aşağıyörükler"
+    },
+    {
+      "id": "AYAKKIF",
+      "name": "Ayakkıf"
+    },
+    {
+      "id": "BARAKDAGI",
+      "name": "Barakdağı"
+    },
+    {
+      "id": "BASKIF",
+      "name": "Başkıf"
+    },
+    {
+      "id": "BEKIRLI",
+      "name": "Bekirli"
+    },
+    {
+      "id": "BEYDEMIR",
+      "name": "Beydemir"
+    },
+    {
+      "id": "BOLACALI",
+      "name": "Bolacalı"
+    },
+    {
+      "id": "BUCAK",
+      "name": "Bucak"
+    },
+    {
+      "id": "CAKALLI",
+      "name": "Çakallı"
+    },
+    {
+      "id": "CATALAN",
+      "name": "Çatalan"
+    },
+    {
+      "id": "CECELI",
+      "name": "Çeceli"
+    },
+    {
+      "id": "CEVLIK",
+      "name": "Çevlik"
+    },
+    {
+      "id": "COCUKLAR",
+      "name": "Çocuklar"
+    },
+    {
+      "id": "CORLU",
+      "name": "Çorlu"
+    },
+    {
+      "id": "CUKUR",
+      "name": "Çukur"
+    },
+    {
+      "id": "DEMIRCIT",
+      "name": "Demirçit"
+    },
+    {
+      "id": "DOSEKEVI",
+      "name": "Döşekevi"
+    },
+    {
+      "id": "DURAK",
+      "name": "Durak"
+    },
+    {
+      "id": "EGLENCE",
+      "name": "Eğlence"
+    },
+    {
+      "id": "EMELCIK",
+      "name": "Emelcik"
+    },
+    {
+      "id": "ETEKLI",
+      "name": "Etekli"
+    },
+    {
+      "id": "FETTAHLI",
+      "name": "Fettahlı"
+    },
+    {
+      "id": "FILIKLI",
+      "name": "Filikli"
+    },
+    {
+      "id": "GILDIRLI",
+      "name": "Gildirli"
+    },
+    {
+      "id": "GOKHASANLI",
+      "name": "Gökhasanlı"
+    },
+    {
+      "id": "GULUSLU",
+      "name": "Gülüşlü"
+    },
+    {
+      "id": "GUVENC",
+      "name": "Güvenç"
+    },
+    {
+      "id": "HACIKIRI",
+      "name": "Hacıkırı"
+    },
+    {
+      "id": "HACILI",
+      "name": "Hacılı"
+    },
+    {
+      "id": "HACIMUSALI",
+      "name": "Hacımusalı"
+    },
+    {
+      "id": "KALEDAGI",
+      "name": "Kaledağı"
+    },
+    {
+      "id": "KAPIKAYA",
+      "name": "Kapıkaya"
+    },
+    {
+      "id": "KARAHASANLI",
+      "name": "Karahasanlı"
+    },
+    {
+      "id": "KARAKILIC",
+      "name": "Karakılıç"
+    },
+    {
+      "id": "KARAKUYU",
+      "name": "Karakuyu"
+    },
+    {
+      "id": "KARAPINAR",
+      "name": "Karapınar"
+    },
+    {
+      "id": "KIRIKLI",
+      "name": "Kırıklı"
+    },
+    {
+      "id": "KOCAVELILER",
+      "name": "Kocaveliler"
+    },
+    {
+      "id": "KORUKLU",
+      "name": "Körüklü"
+    },
+    {
+      "id": "KUSCUSOFULU",
+      "name": "Kuşcusofulu"
+    },
+    {
+      "id": "KUYUCU",
+      "name": "Kuyucu"
+    },
+    {
+      "id": "KUZGUN",
+      "name": "Kuzgun"
+    },
+    {
+      "id": "MARASLI",
+      "name": "Maraşlı"
+    },
+    {
+      "id": "MERKEZBOZTAHTA",
+      "name": "Merkezboztahta"
+    },
+    {
+      "id": "MURTCUKURU",
+      "name": "Murtçukuru"
+    },
+    {
+      "id": "NERGIZLIK",
+      "name": "Nergizlik"
+    },
+    {
+      "id": "NUHLU",
+      "name": "Nuhlu"
+    },
+    {
+      "id": "OMERLI",
+      "name": "Ömerli"
+    },
+    {
+      "id": "SADIKALI",
+      "name": "Sadıkali"
+    },
+    {
+      "id": "SARIMEHMETLI",
+      "name": "Sarımehmetli"
+    },
+    {
+      "id": "SAYPINAR",
+      "name": "Saypınar"
+    },
+    {
+      "id": "SELAMPINAR",
+      "name": "Selampınar"
+    },
+    {
+      "id": "TATIK",
+      "name": "Tatık"
+    },
+    {
+      "id": "TOPAKTAS",
+      "name": "Topaktaş"
+    },
+    {
+      "id": "TOPKARALI",
+      "name": "Topkaralı"
+    },
+    {
+      "id": "TORUNSOLAKLI",
+      "name": "Torunsolaklı"
+    },
+    {
+      "id": "TUMENLI",
+      "name": "Tümenli"
+    },
+    {
+      "id": "YAZIBASI",
+      "name": "Yazıbaşı"
+    }
+  ]
+}

@@ -1,0 +1,294 @@
+{
+  "districtId": "AYDIN__ÇİNE",
+  "districtName": "Çine",
+  "neighborhoods": [
+    {
+      "id": "KİRAZDERESİ",
+      "name": "Kirazderesi"
+    },
+    {
+      "id": "CUMHURİYET",
+      "name": "Cumhuriyet"
+    },
+    {
+      "id": "HAMİTABAT",
+      "name": "Hamitabat"
+    },
+    {
+      "id": "SARIOĞLU",
+      "name": "Sarıoğlu"
+    },
+    {
+      "id": "SOĞANCILAR",
+      "name": "Soğancılar"
+    },
+    {
+      "id": "ŞEVKETİYE",
+      "name": "Şevketiye"
+    },
+    {
+      "id": "YENİ",
+      "name": "Yeni"
+    },
+    {
+      "id": "AKÇAOVA",
+      "name": "Akçaova"
+    },
+    {
+      "id": "AKDAM",
+      "name": "Akdam"
+    },
+    {
+      "id": "ALABAYIR",
+      "name": "Alabayır"
+    },
+    {
+      "id": "ALTINOVA",
+      "name": "Altınova"
+    },
+    {
+      "id": "BAĞLARBAŞI",
+      "name": "Bağlarbaşı"
+    },
+    {
+      "id": "BAHÇEARASI",
+      "name": "Bahçearası"
+    },
+    {
+      "id": "BEDİRLER",
+      "name": "Bedirler"
+    },
+    {
+      "id": "BEREKET",
+      "name": "Bereket"
+    },
+    {
+      "id": "BÖLÜNTÜ",
+      "name": "Bölüntü"
+    },
+    {
+      "id": "BUCAKKÖY",
+      "name": "Bucakköy"
+    },
+    {
+      "id": "CAMIZAĞILI",
+      "name": "Camızağılı"
+    },
+    {
+      "id": "CUMALI",
+      "name": "Cumalı"
+    },
+    {
+      "id": "ÇALTI",
+      "name": "Çaltı"
+    },
+    {
+      "id": "ÇATAK",
+      "name": "Çatak"
+    },
+    {
+      "id": "ÇÖĞÜRLÜK",
+      "name": "Çöğürlük"
+    },
+    {
+      "id": "DERELİ",
+      "name": "Dereli"
+    },
+    {
+      "id": "DOĞANYURT",
+      "name": "Doğanyurt"
+    },
+    {
+      "id": "DORUMLAR",
+      "name": "Dorumlar"
+    },
+    {
+      "id": "DUTLUOLUK",
+      "name": "Dutluoluk"
+    },
+    {
+      "id": "ELDERESİ",
+      "name": "Elderesi"
+    },
+    {
+      "id": "ESENTEPE",
+      "name": "Esentepe"
+    },
+    {
+      "id": "ESKİÇİNE",
+      "name": "Eskiçine"
+    },
+    {
+      "id": "EVCİLER",
+      "name": "Evciler"
+    },
+    {
+      "id": "GÖKYAKA",
+      "name": "Gökyaka"
+    },
+    {
+      "id": "HACIPAŞALAR",
+      "name": "Hacıpaşalar"
+    },
+    {
+      "id": "HALLAÇLAR",
+      "name": "Hallaçlar"
+    },
+    {
+      "id": "İBRAHİMKAVAĞI",
+      "name": "İbrahimkavağı"
+    },
+    {
+      "id": "KABATAŞ",
+      "name": "Kabataş"
+    },
+    {
+      "id": "KAHRAMAN",
+      "name": "Kahraman"
+    },
+    {
+      "id": "KARAHAYIT",
+      "name": "Karahayıt"
+    },
+    {
+      "id": "KARAKOLLAR",
+      "name": "Karakollar"
+    },
+    {
+      "id": "KARANFİLLER",
+      "name": "Karanfiller"
+    },
+    {
+      "id": "KARGI",
+      "name": "Kargı"
+    },
+    {
+      "id": "KASAR",
+      "name": "Kasar"
+    },
+    {
+      "id": "KAVŞIT",
+      "name": "Kavşıt"
+    },
+    {
+      "id": "KIRKIŞIK",
+      "name": "Kırkışık"
+    },
+    {
+      "id": "KIRKSAKALLAR",
+      "name": "Kırksakallar"
+    },
+    {
+      "id": "KIZILGÜNEY",
+      "name": "Kızılgüney"
+    },
+    {
+      "id": "KURUKÖY",
+      "name": "Kuruköy"
+    },
+    {
+      "id": "MUTAFLAR",
+      "name": "Mutaflar"
+    },
+    {
+      "id": "OVACIK",
+      "name": "Ovacık"
+    },
+    {
+      "id": "ÖZEREN",
+      "name": "Özeren"
+    },
+    {
+      "id": "SARAÇLAR",
+      "name": "Saraçlar"
+    },
+    {
+      "id": "SARNIÇKÖY",
+      "name": "Sarnıçköy"
+    },
+    {
+      "id": "SOĞUKOLUK",
+      "name": "Soğukoluk"
+    },
+    {
+      "id": "SUBAŞI",
+      "name": "Subaşı"
+    },
+    {
+      "id": "TAŞOLUK",
+      "name": "Taşoluk"
+    },
+    {
+      "id": "TATARMEMİŞLER",
+      "name": "Tatarmemişler"
+    },
+    {
+      "id": "TEPEKÖY",
+      "name": "Tepeköy"
+    },
+    {
+      "id": "TOPÇAM",
+      "name": "Topçam"
+    },
+    {
+      "id": "ÜNLÜCE",
+      "name": "Ünlüce"
+    },
+    {
+      "id": "YAĞCILAR",
+      "name": "Yağcılar"
+    },
+    {
+      "id": "YENİKÖY",
+      "name": "Yeniköy"
+    },
+    {
+      "id": "YOLBOYU",
+      "name": "Yolboyu"
+    },
+    {
+      "id": "YÜRÜKLER",
+      "name": "Yürükler"
+    },
+    {
+      "id": "ALTINABAT",
+      "name": "Altınabat"
+    },
+    {
+      "id": "HASANLAR",
+      "name": "Hasanlar"
+    },
+    {
+      "id": "KABALAR",
+      "name": "Kabalar"
+    },
+    {
+      "id": "KADILAR",
+      "name": "Kadılar"
+    },
+    {
+      "id": "SAĞLIK",
+      "name": "Sağlık"
+    },
+    {
+      "id": "SARIKÖY",
+      "name": "Sarıköy"
+    },
+    {
+      "id": "SEFERLER",
+      "name": "Seferler"
+    },
+    {
+      "id": "SÖĞÜTCÜK",
+      "name": "Söğütcük"
+    },
+    {
+      "id": "UMUR",
+      "name": "Umur"
+    },
+    {
+      "id": "YEŞİLKÖY",
+      "name": "Yeşilköy"
+    }
+  ]
+}

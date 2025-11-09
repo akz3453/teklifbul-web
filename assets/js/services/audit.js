@@ -4,6 +4,8 @@
  */
 
 import { db } from '../firebase.js';
+// Teklifbul Rule v1.0 - Structured Logging
+import { logger } from '../../../src/shared/log/logger.js';
 import {
   collection,
   query,
@@ -155,7 +157,7 @@ export async function getAuditStats(demandId = null) {
     
     return stats;
   } catch (error) {
-    console.error('Error getting audit stats:', error);
+    logger.error('Error getting audit stats', error);
     return {
       totalLogs: 0,
       publishCount: 0,

@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <title>Init Stock Data</title>
+  <style>
+    body{font-family:system-ui;max-width:800px;margin:50px auto;padding:20px;background:#f8fafc}
+    h1{color:#1f2937}
+    button{padding:15px 30px;font-size:16px;cursor:pointer;background:#3b82f6;color:white;border:none;border-radius:6px;font-weight:600}
+    button:hover{background:#2563eb}
+    button:disabled{background:#9ca3af;cursor:not-allowed}
+    #status{margin-top:20px;padding:20px;background:white;border-radius:8px;min-height:100px;border:1px solid #e5e7eb}
+  </style>
+</head>
+<body>
+  <h1>📦 Initialize Stock Data</h1>
+  <p>Bu sayfa örnek lokasyon ve stok verilerini Firestore'a yükler.</p>
+  
+  <button id="btnInit">Initialize Sample Data</button>
+  <div id="status" style="margin-top:20px;padding:20px;background:white;border-radius:8px;min-height:100px;border:1px solid #e5e7eb">
+    Henüz başlatılmadı. Üstteki butona tıklayın.
+  </div>
+
+  <script type="module">
+    import { auth, requireAuth, db } from '/firebase.js';
+    import { collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+
+    const sampleLocations = [
+      { name: 'Ankara Merkez Depo', type: 'DEPOT', addressSummary: 'Ankara', province: 'Ankara', district: 'Çankaya', neighborhood: 'Çukurambar' },
+      { name: 'İstanbul Depo', type: 'DEPOT', addressSummary: 'İstanbul', province: 'İstanbul', district: 'Kartal', neighborhood: '' },
+      { name: 'Rize Şantiye', type: 'SITE', addressSummary: 'Rize', province: 'Rize', district: 'Merkez', neighborhood: '' },
+      { name: 'Trabzon Şantiye', type: 'SITE', addressSummary: 'Trabzon', province: 'Trabzon', district: 'Merkez', neighborhood: '' },
+    ];
+
+    const sampleStocks = [
+      { sku: 'CIMENTO-001', name: 'ÇIMENTO 32 KG', brand: 'Akçansa', model: '', unit: 'ADT', vatRate: 20, lastPurchasePrice: 45, avgCost: 0, salePrice: 55 },
+      { sku: 'DEMIR-001', name: 'DEMIR 12 MM', brand: 'İçdaş', model: '', unit: 'KG', vatRate: 20, lastPurchasePrice: 8, avgCost: 0, salePrice: 10 },
+      { sku: 'CIMENTO-002', name: 'ÇIMENTO 50 KG', brand: 'Akçansa', model: '', unit: 'ADT', vatRate: 20, lastPurchasePrice: 70, avgCost: 0, salePrice: 85 },
+      { sku: 'KUM-001', name: 'YAPMA KUM', brand: '', model: '', unit: 'M3', vatRate: 20, lastPurchasePrice: 150, avgCost: 0, salePrice: 180 },
+    ];
+
+    async function initData() {
+      const statusDiv = document.getElementById('status');
+      const btn = document.getElementById('btnInit');
+      
+      btn.disabled = true;
+      statusDiv.innerHTML = '🔧 Initializing stock data...<br>';
+      
+      try {
+        await requireAuth();
+        statusDiv.innerHTML += '✅ Authenticated<br>';
+      } catch (error) {
+        statusDiv.innerHTML += `❌ Authentication failed: ${error.message}<br>`;
+        btn.disabled = false;
+        return;
+      }
+
+      // Add locations
+      statusDiv.innerHTML += '<br><strong>📍 Adding locations...</strong><br>';
+      for (const loc of sampleLocations) {
+        try {
+          await addDoc(collection(db, 'stock_locations'), {
+            ...loc,
+            createdAt: serverTimestamp()
+          });
+          statusDiv.innerHTML += `✅ ${loc.name}<br>`;
+        } catch (error) {
+          statusDiv.innerHTML += `❌ ${loc.name}: ${error.message}<br>`;
+        }
+      }
+
+      // Add stocks
+      statusDiv.innerHTML += '<br><strong>📦 Adding stocks...</strong><br>';
+      for (const stock of sampleStocks) {
+        try {
+          const nameNorm = stock.name.toLowerCase()
+            .replace(/ı/g, 'i').replace(/İ/g, 'i')
+            .replace(/ş/g, 's').replace(/Ş/g, 's')
+            .replace(/ğ/g, 'g').replace(/Ğ/g, 'g')
+            .replace(/ü/g, 'u').replace(/Ü/g, 'u')
+            .replace(/ö/g, 'o').replace(/Ö/g, 'o')
+            .replace(/ç/g, 'c').replace(/Ç/g, 'c');
+          
+          const searchKeywords = [];
+          const words = nameNorm.split(/\s+/).filter(Boolean);
+          words.forEach(w => {
+            for (let i = 1; i <= Math.min(8, w.length); i++) {
+              searchKeywords.push(w.slice(0, i));
+            }
+          });
+
+          await addDoc(collection(db, 'stocks'), {
+            ...stock,
+            customCodes: { code1: '', code2: '', code3: '' },
+            name_norm: nameNorm,
+            search_keywords: searchKeywords,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+          });
+          statusDiv.innerHTML += `✅ ${stock.sku} - ${stock.name}<br>`;
+        } catch (error) {
+          statusDiv.innerHTML += `❌ ${stock.sku}: ${error.message}<br>`;
+        }
+      }
+
+      statusDiv.innerHTML += '<br><strong style="color:#059669;">🎉 Initialization complete!</strong><br>';
+      statusDiv.innerHTML += '<br>Şimdi <a href="/inventory-index.html">Ana Sayfaya</a> gidebilirsiniz.';
+      
+    }
+
+    document.getElementById('btnInit').onclick = initData;
+  </script>
+</body>
+</html>
+

@@ -1,0 +1,318 @@
+{
+  "districtId": "ESKISEHIR__SIVRIHISAR",
+  "districtName": "Sivrihisar",
+  "neighborhoods": [
+    {
+      "id": "AHILER",
+      "name": "Ahiler"
+    },
+    {
+      "id": "AKTAS",
+      "name": "Aktaş"
+    },
+    {
+      "id": "ASAGIKEPEN",
+      "name": "Aşağıkepen"
+    },
+    {
+      "id": "AYDINLI",
+      "name": "Aydınlı"
+    },
+    {
+      "id": "BABADAT",
+      "name": "Babadat"
+    },
+    {
+      "id": "BAHCECIK",
+      "name": "Bahçecik"
+    },
+    {
+      "id": "BALLIHISAR",
+      "name": "Ballıhisar"
+    },
+    {
+      "id": "BENLIKUYU",
+      "name": "Benlikuyu"
+    },
+    {
+      "id": "BENLIYAVER",
+      "name": "Benliyaver"
+    },
+    {
+      "id": "BEYYAZI",
+      "name": "Beyyazı"
+    },
+    {
+      "id": "BICER",
+      "name": "Biçer"
+    },
+    {
+      "id": "BOGURTLEN",
+      "name": "Böğürtlen"
+    },
+    {
+      "id": "BUHARA",
+      "name": "Buhara"
+    },
+    {
+      "id": "BUZLUCA",
+      "name": "Buzluca"
+    },
+    {
+      "id": "CAMIKEBIR",
+      "name": "Camikebir"
+    },
+    {
+      "id": "CUMHURIYET",
+      "name": "Cumhuriyet"
+    },
+    {
+      "id": "CANDIR",
+      "name": "Çandır"
+    },
+    {
+      "id": "CAYKOZ",
+      "name": "Çaykoz"
+    },
+    {
+      "id": "DEMIRCI",
+      "name": "Demirci"
+    },
+    {
+      "id": "DEMIRCIKOY",
+      "name": "Demirciköy"
+    },
+    {
+      "id": "DINEK",
+      "name": "Dinek"
+    },
+    {
+      "id": "DUMLUCA",
+      "name": "Dumluca"
+    },
+    {
+      "id": "DUMREK",
+      "name": "Dümrek"
+    },
+    {
+      "id": "ELCIK",
+      "name": "Elcik"
+    },
+    {
+      "id": "ELMALI",
+      "name": "Elmalı"
+    },
+    {
+      "id": "ERTUGRULKOY",
+      "name": "Ertuğrulköy"
+    },
+    {
+      "id": "GEDIK",
+      "name": "Gedik"
+    },
+    {
+      "id": "GERENLI",
+      "name": "Gerenli"
+    },
+    {
+      "id": "GOKTEPE",
+      "name": "Göktepe"
+    },
+    {
+      "id": "GULCAYIR",
+      "name": "Gülçayır"
+    },
+    {
+      "id": "GUVEMLI",
+      "name": "Güvemli"
+    },
+    {
+      "id": "HAMAMKARAHISAR",
+      "name": "Hamamkarahisar"
+    },
+    {
+      "id": "HIZIRBEY",
+      "name": "Hızırbey"
+    },
+    {
+      "id": "HUDAVENDIGAR",
+      "name": "Hüdavendigar"
+    },
+    {
+      "id": "IBIKSEYDI",
+      "name": "İbikseydi"
+    },
+    {
+      "id": "IGDECIK",
+      "name": "İğdecik"
+    },
+    {
+      "id": "ILOREN",
+      "name": "İlören"
+    },
+    {
+      "id": "ILYASPASA",
+      "name": "İlyaspaşa"
+    },
+    {
+      "id": "ISTIKLALBAGI",
+      "name": "İstiklalbağı"
+    },
+    {
+      "id": "KADINCIK",
+      "name": "Kadıncık"
+    },
+    {
+      "id": "KALDIRIMKOY",
+      "name": "Kaldırımköy"
+    },
+    {
+      "id": "KARABASLI",
+      "name": "Karabaşlı"
+    },
+    {
+      "id": "KARABURHAN",
+      "name": "Karaburhan"
+    },
+    {
+      "id": "KARACAKAYA",
+      "name": "Karacakaya"
+    },
+    {
+      "id": "KARACALAR",
+      "name": "Karacalar"
+    },
+    {
+      "id": "KARACAOREN",
+      "name": "Karacaören"
+    },
+    {
+      "id": "KARACAORENYAYLASI",
+      "name": "Karacaörenyaylası"
+    },
+    {
+      "id": "KARADAT",
+      "name": "Karadat"
+    },
+    {
+      "id": "KARAKAYA",
+      "name": "Karakaya"
+    },
+    {
+      "id": "KARKIN",
+      "name": "Karkın"
+    },
+    {
+      "id": "KAYMAZ",
+      "name": "Kaymaz"
+    },
+    {
+      "id": "KERTEK",
+      "name": "Kertek"
+    },
+    {
+      "id": "KILIC",
+      "name": "Kılıç"
+    },
+    {
+      "id": "KINIK",
+      "name": "Kınık"
+    },
+    {
+      "id": "KOCAS",
+      "name": "Koçaş"
+    },
+    {
+      "id": "KOLTAN",
+      "name": "Koltan"
+    },
+    {
+      "id": "KUBBELI",
+      "name": "Kubbeli"
+    },
+    {
+      "id": "KURSUNLU",
+      "name": "Kurşunlu"
+    },
+    {
+      "id": "KURTSEYH",
+      "name": "Kurtşeyh"
+    },
+    {
+      "id": "MEMIK",
+      "name": "Memik"
+    },
+    {
+      "id": "MULKKOY",
+      "name": "Mülkköy"
+    },
+    {
+      "id": "NASRETTIN_HOCA",
+      "name": "Nasrettin Hoca"
+    },
+    {
+      "id": "OGLAKCI",
+      "name": "Oğlakçı"
+    },
+    {
+      "id": "ORTAKLAR",
+      "name": "Ortaklar"
+    },
+    {
+      "id": "PASAKADIN",
+      "name": "Paşakadın"
+    },
+    {
+      "id": "SADIKBAGI",
+      "name": "Sadıkbağı"
+    },
+    {
+      "id": "SARIKAVAK",
+      "name": "Sarıkavak"
+    },
+    {
+      "id": "SELIMIYE",
+      "name": "Selimiye"
+    },
+    {
+      "id": "SIGIRCIK",
+      "name": "Sığırcık"
+    },
+    {
+      "id": "TEKOREN",
+      "name": "Tekören"
+    },
+    {
+      "id": "YAVEROREN",
+      "name": "Yaverören"
+    },
+    {
+      "id": "YENICE",
+      "name": "Yenice"
+    },
+    {
+      "id": "YENIDOGAN",
+      "name": "Yenidoğan"
+    },
+    {
+      "id": "YENIKOY",
+      "name": "Yeniköy"
+    },
+    {
+      "id": "YESILKOY",
+      "name": "Yeşilköy"
+    },
+    {
+      "id": "YUKARIKEPEN",
+      "name": "Yukarıkepen"
+    },
+    {
+      "id": "YUNUSEMRE",
+      "name": "Yunusemre"
+    },
+    {
+      "id": "ZEYKOYU",
+      "name": "Zeyköyü"
+    }
+  ]
+}

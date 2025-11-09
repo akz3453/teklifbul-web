@@ -1,0 +1,286 @@
+{
+  "districtId": "SANLIURFA__HILVAN",
+  "districtName": "Hilvan",
+  "neighborhoods": [
+    {
+      "id": "AGILMUS",
+      "name": "Ağılmus"
+    },
+    {
+      "id": "AGVEREN",
+      "name": "Ağveren"
+    },
+    {
+      "id": "AKCAKEBIR",
+      "name": "Akçakebir"
+    },
+    {
+      "id": "AKCAOREN",
+      "name": "Akçaören"
+    },
+    {
+      "id": "ALPI",
+      "name": "Alpı"
+    },
+    {
+      "id": "ARABUK",
+      "name": "Arabuk"
+    },
+    {
+      "id": "ARICA",
+      "name": "Arıca"
+    },
+    {
+      "id": "ARINIK",
+      "name": "Arınık"
+    },
+    {
+      "id": "ARPALI",
+      "name": "Arpalı"
+    },
+    {
+      "id": "ASLANLI",
+      "name": "Aslanlı"
+    },
+    {
+      "id": "ASAGICATAK",
+      "name": "Aşağıçatak"
+    },
+    {
+      "id": "ASAGIEKECE",
+      "name": "Aşağıekece"
+    },
+    {
+      "id": "ASAGIKAMIS",
+      "name": "Aşağıkamış"
+    },
+    {
+      "id": "ASAGIKULUNCE",
+      "name": "Aşağıkülünçe"
+    },
+    {
+      "id": "AYDINLI",
+      "name": "Aydınlı"
+    },
+    {
+      "id": "BAGLAR",
+      "name": "Bağlar"
+    },
+    {
+      "id": "BAHCECIK",
+      "name": "Bahçecik"
+    },
+    {
+      "id": "BAHCELIEVLER",
+      "name": "Bahçelievler"
+    },
+    {
+      "id": "BALKI",
+      "name": "Balkı"
+    },
+    {
+      "id": "BARGAC",
+      "name": "Barğaç"
+    },
+    {
+      "id": "BOLUKBASI",
+      "name": "Bölükbaşı"
+    },
+    {
+      "id": "BUGUR",
+      "name": "Buğur"
+    },
+    {
+      "id": "CAGILLI",
+      "name": "Çağıllı"
+    },
+    {
+      "id": "CAKMAK",
+      "name": "Çakmak"
+    },
+    {
+      "id": "CAT",
+      "name": "Çat"
+    },
+    {
+      "id": "CIMDELI",
+      "name": "Çimdeli"
+    },
+    {
+      "id": "DOGRULAR",
+      "name": "Doğrular"
+    },
+    {
+      "id": "FAIK",
+      "name": "Faik"
+    },
+    {
+      "id": "GELENEK",
+      "name": "Gelenek"
+    },
+    {
+      "id": "GOKTEPE",
+      "name": "Göktepe"
+    },
+    {
+      "id": "GOLCUK",
+      "name": "Gölcük"
+    },
+    {
+      "id": "GOLEBAKAN",
+      "name": "Gölebakan"
+    },
+    {
+      "id": "GULALDI",
+      "name": "Gülaldı"
+    },
+    {
+      "id": "GULUSAGI",
+      "name": "Güluşağı"
+    },
+    {
+      "id": "GURGUR",
+      "name": "Gürgür"
+    },
+    {
+      "id": "HANMAGARA",
+      "name": "Hanmağara"
+    },
+    {
+      "id": "HAYRAT",
+      "name": "Hayrat"
+    },
+    {
+      "id": "HOSIN",
+      "name": "Hoşin"
+    },
+    {
+      "id": "INCIRLI",
+      "name": "İncirli"
+    },
+    {
+      "id": "KADIKENT",
+      "name": "Kadıkent"
+    },
+    {
+      "id": "KARABURC",
+      "name": "Karaburç"
+    },
+    {
+      "id": "KARACURUN",
+      "name": "Karacurun"
+    },
+    {
+      "id": "KARAKUCAK",
+      "name": "Karakucak"
+    },
+    {
+      "id": "KARAPINAR",
+      "name": "Karapınar"
+    },
+    {
+      "id": "KAVALIK",
+      "name": "Kavalık"
+    },
+    {
+      "id": "KEPIRHISAR",
+      "name": "Kepirhisar"
+    },
+    {
+      "id": "KEPIRKUCAK",
+      "name": "Kepirkucak"
+    },
+    {
+      "id": "KIRBASI",
+      "name": "Kırbaşı"
+    },
+    {
+      "id": "KORGUN",
+      "name": "Korgun"
+    },
+    {
+      "id": "KOVANCI",
+      "name": "Kovancı"
+    },
+    {
+      "id": "KUSKUNLU",
+      "name": "Kuskunlu"
+    },
+    {
+      "id": "KUCUKGOLCUK",
+      "name": "Küçükgölcük"
+    },
+    {
+      "id": "MALOREN",
+      "name": "Malören"
+    },
+    {
+      "id": "MANTARLI",
+      "name": "Mantarlı"
+    },
+    {
+      "id": "ORGIZ",
+      "name": "Orgız"
+    },
+    {
+      "id": "OVACIK",
+      "name": "Ovacık"
+    },
+    {
+      "id": "OYMAAGAC",
+      "name": "Oymaağaç"
+    },
+    {
+      "id": "OMERLI",
+      "name": "Ömerli"
+    },
+    {
+      "id": "OZBAS",
+      "name": "Özbaş"
+    },
+    {
+      "id": "OZVEREN",
+      "name": "Özveren"
+    },
+    {
+      "id": "SALUCA",
+      "name": "Saluca"
+    },
+    {
+      "id": "SOGUTLU",
+      "name": "Söğütlü"
+    },
+    {
+      "id": "SUCUHAN",
+      "name": "Sucuhan"
+    },
+    {
+      "id": "USTAHASAN",
+      "name": "Ustahasan"
+    },
+    {
+      "id": "UZUNCUK",
+      "name": "Uzuncuk"
+    },
+    {
+      "id": "UCUZLER",
+      "name": "Üçüzler"
+    },
+    {
+      "id": "YAKINYURT",
+      "name": "Yakınyurt"
+    },
+    {
+      "id": "YENI",
+      "name": "Yeni"
+    },
+    {
+      "id": "YESERDI",
+      "name": "Yeşerdi"
+    },
+    {
+      "id": "YUVACALI",
+      "name": "Yuvacalı"
+    }
+  ]
+}

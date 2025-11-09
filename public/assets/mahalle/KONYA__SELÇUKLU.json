@@ -1,0 +1,294 @@
+{
+  "districtId": "KONYA__SELÇUKLU",
+  "districtName": "Selçuklu",
+  "neighborhoods": [
+    {
+      "id": "BAĞRIKURT",
+      "name": "Bağrıkurt"
+    },
+    {
+      "id": "BİÇER",
+      "name": "Biçer"
+    },
+    {
+      "id": "ÇALDERE",
+      "name": "Çaldere"
+    },
+    {
+      "id": "ÇALTI",
+      "name": "Çaltı"
+    },
+    {
+      "id": "ÇANDIR",
+      "name": "Çandır"
+    },
+    {
+      "id": "EĞRİBAYAT",
+      "name": "Eğribayat"
+    },
+    {
+      "id": "GÜVENÇ",
+      "name": "Güvenç"
+    },
+    {
+      "id": "KALEKÖY",
+      "name": "Kaleköy"
+    },
+    {
+      "id": "KARAÖMERLER",
+      "name": "Karaömerler"
+    },
+    {
+      "id": "KERVAN",
+      "name": "Kervan"
+    },
+    {
+      "id": "KINIK",
+      "name": "Kınık"
+    },
+    {
+      "id": "KIZILCAKUYU",
+      "name": "Kızılcakuyu"
+    },
+    {
+      "id": "MEYDANKÖY",
+      "name": "Meydanköy"
+    },
+    {
+      "id": "SARICALAR",
+      "name": "Sarıcalar"
+    },
+    {
+      "id": "YAZIBELEN",
+      "name": "Yazıbelen"
+    },
+    {
+      "id": "AKPINAR",
+      "name": "Akpınar"
+    },
+    {
+      "id": "DAĞDERE",
+      "name": "Dağdere"
+    },
+    {
+      "id": "KÜÇÜKMUHSİNE",
+      "name": "Küçükmuhsine"
+    },
+    {
+      "id": "SELAHATTİN",
+      "name": "Selahattin"
+    },
+    {
+      "id": "ULUMUHSİNE",
+      "name": "Ulumuhsine"
+    },
+    {
+      "id": "HOCACİHAN",
+      "name": "Hocacihan"
+    },
+    {
+      "id": "HANAYBAŞI",
+      "name": "Hanaybaşı"
+    },
+    {
+      "id": "HOROZLUHAN",
+      "name": "Horozluhan"
+    },
+    {
+      "id": "HÜSAMETTİNÇELEBİ",
+      "name": "Hüsamettinçelebi"
+    },
+    {
+      "id": "IŞIKLAR",
+      "name": "Işıklar"
+    },
+    {
+      "id": "KILINÇASLAN",
+      "name": "Kılınçaslan"
+    },
+    {
+      "id": "MALAZGİRT",
+      "name": "Malazgirt"
+    },
+    {
+      "id": "MEHMET_AKİF",
+      "name": "Mehmet Akif"
+    },
+    {
+      "id": "MUSALLA_BAĞLARI",
+      "name": "Musalla Bağları"
+    },
+    {
+      "id": "NİŞANTAŞ",
+      "name": "Nişantaş"
+    },
+    {
+      "id": "AKADEMİ",
+      "name": "Akademi"
+    },
+    {
+      "id": "BİNKONUTLAR",
+      "name": "Binkonutlar"
+    },
+    {
+      "id": "SAKARYA",
+      "name": "Sakarya"
+    },
+    {
+      "id": "SELÇUK",
+      "name": "Selçuk"
+    },
+    {
+      "id": "SELAHADDİNİ_EYYUBİ",
+      "name": "Selahaddini Eyyubi"
+    },
+    {
+      "id": "SİLLE_AK",
+      "name": "Sille Ak"
+    },
+    {
+      "id": "SİLLE",
+      "name": "Sille"
+    },
+    {
+      "id": "KOSOVA",
+      "name": "Kosova"
+    },
+    {
+      "id": "ŞEKER",
+      "name": "Şeker"
+    },
+    {
+      "id": "ŞEYHŞAMİL",
+      "name": "Şeyhşamil"
+    },
+    {
+      "id": "YAZIR",
+      "name": "Yazır"
+    },
+    {
+      "id": "BAŞARAKAVAK",
+      "name": "Başarakavak"
+    },
+    {
+      "id": "SIZMA",
+      "name": "Sızma"
+    },
+    {
+      "id": "TEPEKENT",
+      "name": "Tepekent"
+    },
+    {
+      "id": "PARSANA",
+      "name": "Parsana"
+    },
+    {
+      "id": "AKINCILAR",
+      "name": "Akıncılar"
+    },
+    {
+      "id": "AKŞEMSETTİN",
+      "name": "Akşemsettin"
+    },
+    {
+      "id": "AYDINLIKEVLER",
+      "name": "Aydınlıkevler"
+    },
+    {
+      "id": "BEDİR",
+      "name": "Bedir"
+    },
+    {
+      "id": "BEYHEKİM",
+      "name": "Beyhekim"
+    },
+    {
+      "id": "BOSNAHERSEK",
+      "name": "Bosnahersek"
+    },
+    {
+      "id": "BUHARA",
+      "name": "Buhara"
+    },
+    {
+      "id": "SANCAK",
+      "name": "Sancak"
+    },
+    {
+      "id": "BÜYÜKKAYACIK",
+      "name": "Büyükkayacık"
+    },
+    {
+      "id": "CUMHURİYET",
+      "name": "Cumhuriyet"
+    },
+    {
+      "id": "DUMLUPINAR",
+      "name": "Dumlupınar"
+    },
+    {
+      "id": "ERENKÖY",
+      "name": "Erenköy"
+    },
+    {
+      "id": "ESENLER",
+      "name": "Esenler"
+    },
+    {
+      "id": "FATİH",
+      "name": "Fatih"
+    },
+    {
+      "id": "FERHUNİYE",
+      "name": "Ferhuniye"
+    },
+    {
+      "id": "FERİTPAŞA",
+      "name": "Feritpaşa"
+    },
+    {
+      "id": "HACIKAYMAK",
+      "name": "Hacıkaymak"
+    },
+    {
+      "id": "AŞAĞIPINARBAŞI_BUCAK",
+      "name": "Aşağıpınarbaşı-bucak"
+    },
+    {
+      "id": "DOKUZ",
+      "name": "Dokuz"
+    },
+    {
+      "id": "SARAYKÖY",
+      "name": "Sarayköy"
+    },
+    {
+      "id": "SULUTAŞ",
+      "name": "Sulutaş"
+    },
+    {
+      "id": "TATKÖY",
+      "name": "Tatköy"
+    },
+    {
+      "id": "TÖMEK",
+      "name": "Tömek"
+    },
+    {
+      "id": "YUKARIPINARBAŞI",
+      "name": "Yukarıpınarbaşı"
+    },
+    {
+      "id": "ARDIÇLI",
+      "name": "Ardıçlı"
+    },
+    {
+      "id": "İHSANİYE",
+      "name": "İhsaniye"
+    },
+    {
+      "id": "BİLECİK",
+      "name": "Bilecik"
+    }
+  ]
+}

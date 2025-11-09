@@ -37,13 +37,13 @@ export class CompanySelector {
    */
   async init() {
     if (!this.container) {
-      console.warn('Company selector container not found:', this.containerSelector);
+      logger.warn('Company selector container not found', { containerSelector: this.containerSelector });
       return;
     }
 
     this.user = auth.currentUser;
     if (!this.user) {
-      console.warn('User not authenticated');
+      logger.warn('User not authenticated');
       return;
     }
 
@@ -62,7 +62,7 @@ export class CompanySelector {
       const userData = userDoc.data();
       
       if (!userData) {
-        console.warn('User data not found');
+        logger.warn('User data not found');
         return;
       }
 
@@ -102,7 +102,7 @@ export class CompanySelector {
         this.companies[0] || null;
 
     } catch (error) {
-      console.error('Error loading companies:', error);
+      logger.error('Error loading companies', error);
       this.companies = [];
     }
   }
@@ -205,7 +205,7 @@ export class CompanySelector {
   async selectCompany(companyId) {
     const company = this.companies.find(c => c.id === companyId);
     if (!company) {
-      console.warn('Company not found:', companyId);
+      logger.warn('Company not found', { companyId });
       return;
     }
 
@@ -299,7 +299,7 @@ export async function getCompanyName(companyId) {
     }
     return 'Şirket Bulunamadı';
   } catch (error) {
-    console.error('Error getting company name:', error);
+    logger.error('Error getting company name', error);
     return 'Hata';
   }
 }

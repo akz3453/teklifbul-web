@@ -1,0 +1,2592 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>Şirket Profili — Teklifbul</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%233b82f6' rx='6'/%3E%3Ctext x='16' y='22' font-family='Arial' font-size='18' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/utils.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <style>
+    body { 
+      margin: 0; 
+      font-family: system-ui, -apple-system, 'Segoe UI', Arial, sans-serif; 
+      background: #f9fafb; 
+    }
+    .container { 
+      max-width: 1200px; 
+      margin: 0 auto; 
+      padding: 20px; 
+    }
+    .profile-header {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      display: flex;
+      gap: 24px;
+      align-items: flex-start;
+    }
+    .company-logo {
+      width: 120px;
+      height: 120px;
+      border-radius: 12px;
+      object-fit: cover;
+      border: 2px solid #e5e7eb;
+      background: #f3f4f6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      color: #9ca3af;
+    }
+    .company-info {
+      flex: 1;
+    }
+    .company-name {
+      font-size: 28px;
+      font-weight: 700;
+      color: #1f2937;
+      margin: 0 0 8px 0;
+    }
+    .company-code {
+      display: inline-block;
+      padding: 4px 12px;
+      background: #eff6ff;
+      color: #1e40af;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+    .rating-section {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .stars {
+      display: flex;
+      gap: 4px;
+      font-size: 24px;
+    }
+    .star { color: #fbbf24; }
+    .star-empty { color: #d1d5db; }
+    .rating-text {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1f2937;
+    }
+    .rating-count {
+      font-size: 14px;
+      color: #6b7280;
+    }
+    .section {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .section h3 {
+      margin: 0 0 16px 0;
+      font-size: 20px;
+      color: #1f2937;
+      border-bottom: 2px solid #e5e7eb;
+      padding-bottom: 12px;
+    }
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .toggle-group {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .toggle-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .toggle-switch {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      background: #d1d5db;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .toggle-switch.active {
+      background: #10b981;
+    }
+    .toggle-switch::after {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      background: white;
+      border-radius: 50%;
+      top: 3px;
+      left: 3px;
+      transition: left 0.2s;
+    }
+    .toggle-switch.active::after {
+      left: 23px;
+    }
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 16px;
+    }
+    .info-item {
+      padding: 12px;
+      background: #f9fafb;
+      border-radius: 8px;
+    }
+    .info-label {
+      font-size: 12px;
+      color: #6b7280;
+      margin-bottom: 4px;
+    }
+    .info-value {
+      font-size: 14px;
+      color: #1f2937;
+      font-weight: 500;
+    }
+    .reviews-container {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .review-card {
+      padding: 16px;
+      background: #f9fafb;
+      border-radius: 8px;
+      border-left: 4px solid #3b82f6;
+    }
+    .review-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .review-author {
+      font-weight: 600;
+      color: #1f2937;
+    }
+    .review-date {
+      font-size: 12px;
+      color: #6b7280;
+    }
+    .review-stars {
+      display: flex;
+      gap: 2px;
+      margin-bottom: 8px;
+      font-size: 16px;
+    }
+    .review-text {
+      color: #374151;
+      line-height: 1.6;
+    }
+    .write-review-btn {
+      padding: 10px 20px;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .write-review-btn:hover {
+      background: #2563eb;
+    }
+    .image-gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+    }
+    .gallery-item {
+      position: relative;
+      aspect-ratio: 4/3;
+      border-radius: 8px;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .gallery-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .referral-companies {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .referral-card {
+      padding: 12px 16px;
+      background: #f0f9ff;
+      border: 1px solid #3b82f6;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .referral-card:hover {
+      background: #dbeafe;
+    }
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: #3b82f6;
+      color: white;
+    }
+    .btn-primary:hover {
+      background: #2563eb;
+    }
+    .btn-secondary {
+      background: #6b7280;
+      color: white;
+    }
+    .hidden {
+      display: none !important;
+    }
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #6b7280;
+    }
+    #editModeBtn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 12px 24px;
+      background: #10b981;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 1000;
+    }
+  </style>
+</head>
+<body>
+  <header id="app-header"></header>
+  
+  <div class="container">
+    <!-- Loading State -->
+    <div id="loadingState" class="loading">
+      <p>Şirket profili yükleniyor...</p>
+    </div>
+    
+    <!-- Profile Content -->
+    <div id="profileContent" class="hidden">
+      <!-- Profile Header -->
+      <div class="profile-header">
+        <div id="companyLogoContainer" style="position:relative;">
+          <div class="company-logo" id="companyLogo">
+            🏢
+          </div>
+          <!-- Logo yükleme butonu (sadece yetkili kullanıcılar için) -->
+          <button id="uploadLogoBtn" class="hidden" style="position:absolute; bottom:0; right:0; padding:8px 12px; background:#3b82f6; color:white; border:none; border-radius:6px; cursor:pointer; font-size:12px; font-weight:600; box-shadow:0 2px 4px rgba(0,0,0,0.2); z-index:10;">
+            📷 Logo Yükle
+          </button>
+          <input type="file" id="logoFileInput" accept="image/*" style="display:none;" />
+        </div>
+        <div class="company-info">
+          <h1 class="company-name" id="companyName">Şirket Adı</h1>
+          <span class="company-code" id="companyCode">KOD</span>
+          <div class="rating-section">
+            <div class="stars" id="ratingStars">
+              ⭐⭐⭐⭐⭐
+            </div>
+            <span class="rating-text" id="averageRating">0.0</span>
+            <span class="rating-count" id="reviewCount">(0 değerlendirme)</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Company Info Section -->
+      <div class="section">
+        <div class="section-header">
+          <h3>Şirket Bilgileri</h3>
+          <div id="visibilityToggles" class="toggle-group hidden">
+            <!-- Visibility toggles will be added dynamically -->
+          </div>
+        </div>
+        <div id="companyInfoGrid" class="info-grid">
+          <!-- Company info will be added dynamically -->
+        </div>
+      </div>
+      
+      <!-- Contact Info Section (if needed separately) -->
+      <div class="section hidden" id="contactInfoSection">
+        <div class="section-header">
+          <h3>İletişim Bilgileri</h3>
+          <div id="contactInfoVisibilityToggle" class="toggle-group hidden"></div>
+        </div>
+        <div id="contactInfoGrid" class="info-grid">
+          <!-- Contact info will be added dynamically -->
+        </div>
+      </div>
+      
+      <!-- About Company -->
+      <div class="section">
+        <div class="section-header">
+          <h3>Hakkında</h3>
+          <div id="aboutVisibilityToggle" class="toggle-group hidden"></div>
+        </div>
+        <div id="companyAbout" style="line-height:1.8; color:#374151;">
+          <!-- About text will be added here -->
+        </div>
+      </div>
+      
+      <!-- Categories -->
+      <div class="section">
+        <div class="section-header">
+          <h3>Kategoriler</h3>
+          <div id="categoriesVisibilityToggle" class="toggle-group hidden"></div>
+        </div>
+        <div id="companyCategories" style="display:flex; flex-wrap:wrap; gap:8px;">
+          <!-- Categories will be added dynamically -->
+        </div>
+      </div>
+      
+      <!-- Company Team -->
+      <div class="section">
+        <div class="section-header">
+          <h3>Ekip Üyeleri</h3>
+          <div id="teamVisibilityToggle" class="toggle-group hidden"></div>
+        </div>
+        <div id="companyTeam" class="info-grid">
+          <!-- Team members will be added dynamically -->
+        </div>
+      </div>
+      
+      <!-- Gallery -->
+      <div class="section">
+        <div class="section-header">
+          <h3>Şantiye / Tesis Fotoğrafları</h3>
+          <button id="uploadGalleryBtn" class="btn btn-primary hidden">📷 Fotoğraf Ekle</button>
+        </div>
+        <input type="file" id="galleryFileInput" accept="image/*" multiple style="display:none;" />
+        <div id="imageGallery" class="image-gallery">
+          <!-- Images will be added dynamically -->
+        </div>
+      </div>
+      
+      <!-- Referral Companies -->
+      <div class="section">
+        <div class="section-header">
+          <h3>Referans Şirketler</h3>
+          <button id="addReferralBtn" class="btn btn-primary hidden">➕ Referans Ekle</button>
+        </div>
+        <div id="referralCompanies" class="referral-companies">
+          <!-- Referral companies will be added dynamically -->
+        </div>
+      </div>
+      
+      <!-- Teklifbul Rol & Onay Sistemi - Onay Mekanizması (Alıcı Şirketler için) -->
+      <div class="section hidden" id="approvalMechanismSection">
+        <div class="section-header">
+          <h3>📋 Onay Mekanizması</h3>
+        </div>
+        <div id="approvalMechanismContent">
+          <!-- Onay mekanizması bilgileri buraya eklenecek -->
+        </div>
+      </div>
+      
+      <!-- Teklifbul Rol & Onay Sistemi - Başarılı Ticaret Geçmişi -->
+      <div class="section">
+        <div class="section-header">
+          <h3>✅ Başarılı Ticaret Geçmişi</h3>
+        </div>
+        <div id="successfulTradeHistoryContent">
+          <!-- Başarılı ticaret geçmişi buraya eklenecek -->
+        </div>
+      </div>
+      
+      <!-- Reviews Section -->
+      <div class="section">
+        <div class="section-header">
+          <h3>Değerlendirmeler</h3>
+          <button id="writeReviewBtn" class="write-review-btn">✍️ Değerlendirme Yap</button>
+        </div>
+        
+        <!-- Google Business Link Section (Ücretsiz Çözüm) -->
+        <div id="googleBusinessSection" style="margin-bottom:24px; display:none;">
+          <div style="padding:16px; background:#f0f9ff; border-radius:8px; border:1px solid #3b82f6;">
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+              <img src="https://www.google.com/favicon.ico" alt="Google" style="width:24px; height:24px;">
+              <h4 style="margin:0; font-size:16px; color:#1e40af;">Google Business Profili</h4>
+            </div>
+            <p style="margin:0 0 12px 0; font-size:14px; color:#6b7280;">
+              Bu şirketin Google Business profilini görüntüleyebilir ve yorum yapabilirsiniz.
+            </p>
+            <a id="googleBusinessLink" href="#" target="_blank" 
+               style="display:inline-flex; align-items:center; gap:8px; padding:10px 16px; background:#3b82f6; color:white; text-decoration:none; border-radius:6px; font-weight:600; font-size:14px;">
+              📍 Google Maps'te Görüntüle
+            </a>
+          </div>
+          
+          <!-- Google Maps Iframe (Ücretsiz Embed) -->
+          <div id="googleMapsEmbed" style="margin-top:16px; display:none;">
+            <h5 style="margin:0 0 8px 0; font-size:14px; color:#374151;">Konum Haritası</h5>
+            <iframe id="googleMapsIframe" 
+                    style="width:100%; height:300px; border:0; border-radius:8px;" 
+                    loading="lazy" 
+                    allowfullscreen>
+            </iframe>
+          </div>
+        </div>
+        
+        <!-- Reviews Section -->
+        <div>
+          <h4 style="margin:0 0 12px 0; font-size:16px; color:#374151;">Teklifbul Değerlendirmeleri</h4>
+          <div id="reviewsContainer" class="reviews-container">
+            <!-- Internal reviews will be added dynamically -->
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Edit Mode Button (for authorized users) -->
+    <button id="editModeBtn" class="hidden">⚙️ Düzenleme Modu</button>
+  </div>
+  
+  <!-- Review Modal -->
+  <div id="reviewModal" class="hidden" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:2000; display:flex; align-items:center; justify-content:center;">
+    <div style="background:white; padding:24px; border-radius:12px; max-width:600px; width:90%; max-height:90vh; overflow-y:auto;">
+      <h2 style="margin:0 0 16px 0;">Değerlendirme Yap</h2>
+      <div style="margin-bottom:16px;">
+        <label style="display:block; margin-bottom:8px; font-weight:600;">Puan (Yıldız) <span id="ratingText" style="font-weight:400; color:#6b7280; font-size:14px;">(5 yıldız seçildi)</span></label>
+        <div id="reviewStarsInput" class="stars" style="font-size:32px; cursor:pointer; display:flex; gap:4px; align-items:center; user-select:none;">
+          <span class="star" data-rating="1" style="cursor:pointer; transition:all 0.2s;">⭐</span>
+          <span class="star" data-rating="2" style="cursor:pointer; transition:all 0.2s;">⭐</span>
+          <span class="star" data-rating="3" style="cursor:pointer; transition:all 0.2s;">⭐</span>
+          <span class="star" data-rating="4" style="cursor:pointer; transition:all 0.2s;">⭐</span>
+          <span class="star" data-rating="5" style="cursor:pointer; transition:all 0.2s;">⭐</span>
+        </div>
+        <input type="hidden" id="selectedRating" value="5">
+        <div style="margin-top:8px; font-size:13px; color:#6b7280;">
+          Yıldızların üzerine gelerek veya tıklayarak puanınızı seçebilirsiniz.
+        </div>
+      </div>
+      <div style="margin-bottom:16px;">
+        <label for="reviewText" style="display:block; margin-bottom:8px; font-weight:600;">Yorum</label>
+        <textarea id="reviewText" rows="6" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:6px; font-size:14px;" placeholder="Deneyimlerinizi paylaşın..."></textarea>
+      </div>
+      <div style="display:flex; gap:8px; justify-content:flex-end;">
+        <button id="cancelReviewBtn" class="btn btn-secondary">İptal</button>
+        <button id="submitReviewBtn" class="btn btn-primary">Gönder</button>
+      </div>
+    </div>
+  </div>
+  
+  <script type="module">
+    // Import statements will be added
+    import { auth, db, app } from "./firebase.js";
+    // Teklifbul Rule v1.0 - Structured Logging
+    import { logger } from './src/shared/log/logger.js';
+    // Teklifbul Rule v1.0 - Toast Notification System
+    import { toast } from './src/shared/ui/toast.js';
+    // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
+    import { MESSAGES } from './src/shared/constants/messages.js';
+    import { 
+      doc, getDoc, setDoc, updateDoc, addDoc, collection, getDocs, query, where, orderBy, limit,
+      serverTimestamp, deleteDoc
+    } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+    import {
+      getStorage, ref, uploadBytes, getDownloadURL, deleteObject
+    } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-storage.js";
+    import { initGlobalHeader } from "./assets/js/ui/header.js";
+    // Teklifbul Rol & Onay Sistemi - Guard fonksiyonları
+    import { hasActiveTopApprover, getApprovalPolicy } from "./assets/js/services/approval-guards.js";
+    
+    // Initialize header
+    initGlobalHeader({ mount: '#app-header', activeRoute: 'profile' });
+    
+    const storage = getStorage(app);
+    let currentCompanyId = null;
+    let currentUserId = null;
+    let isEditMode = false;
+    let isAuthorized = false;
+    let selectedRating = 5;
+    
+    // Get company ID from URL or user's company
+    async function getCompanyIdFromURL() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const companyId = urlParams.get('id');
+      const companyCode = urlParams.get('code');
+      
+      if (companyId) return companyId;
+      
+      if (companyCode) {
+        const codeQuery = query(
+          collection(db, "companies"),
+          where("code", "==", companyCode)
+        );
+        const snapshot = await getDocs(codeQuery);
+        if (!snapshot.empty) {
+          return snapshot.docs[0].id;
+        }
+      }
+      
+      // Default: current user's company
+      const user = auth.currentUser;
+      if (user) {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          return userDoc.data().companyId || null;
+        }
+      }
+      
+      return null;
+    }
+    
+    // Check if user is authorized (owner or privileged)
+    async function checkAuthorization(companyId) {
+      const user = auth.currentUser;
+      if (!user) return false;
+      
+      try {
+        const companyDoc = await getDoc(doc(db, "companies", companyId));
+        if (!companyDoc.exists()) return false;
+        
+        const companyData = companyDoc.data();
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (!userDoc.exists()) return false;
+        
+        const userData = userDoc.data();
+        const privilegedRoles = new Set(['isveren','genel_mudur','yonetim_kurulu_baskani','sirket_sahibi']);
+        
+        return (companyData.ownerId === user.uid) || 
+               (companyData.ownerUid === user.uid) ||
+               privilegedRoles.has(userData.companyRole || '');
+      } catch (e) {
+        logger.error("Authorization check failed", e);
+        return false;
+      }
+    }
+    
+    // Load company profile
+    async function loadCompanyProfile(companyId) {
+      try {
+        const companyDoc = await getDoc(doc(db, "companies", companyId));
+        if (!companyDoc.exists()) {
+          document.getElementById('loadingState').innerHTML = '<p>Şirket bulunamadı.</p>';
+          return;
+        }
+        
+        const companyData = companyDoc.data();
+        currentCompanyId = companyId;
+        
+        // Check authorization
+        isAuthorized = await checkAuthorization(companyId);
+        if (isAuthorized) {
+          document.getElementById('editModeBtn').classList.remove('hidden');
+          document.getElementById('uploadLogoBtn')?.classList.remove('hidden');
+          setupLogoUpload(companyId);
+          setupEditMode(companyId);
+        }
+        
+        // Load profile data
+        await displayCompanyProfile(companyData);
+        await loadReviews(companyId);
+        await loadGoogleBusinessLink(companyId); // Teklifbul Rule v1.0 - Ücretsiz: Google Business linki göster
+        
+        // Teklifbul Rol & Onay Sistemi - Onay mekanizması ve ticaret geçmişi
+        await loadApprovalMechanism(companyId);
+        await loadSuccessfulTradeHistory(companyId);
+        
+        // Görünürlük ayarlarını yükle (içerik gösteriminden ÖNCE)
+        await loadVisibilitySettings(companyId);
+        
+        // Referans şirket butonunu aktifleştir (yetkili kullanıcılar için)
+        if (isAuthorized) {
+          setupReferralCompanySystem(companyId);
+          setupGalleryUpload(companyId);
+        }
+        
+        document.getElementById('loadingState').classList.add('hidden');
+        document.getElementById('profileContent').classList.remove('hidden');
+        
+      } catch (e) {
+        logger.error("Profile load failed", e);
+        document.getElementById('loadingState').innerHTML = '<p style="color:#ef4444;">Profil yüklenirken hata oluştu.</p>';
+      }
+    }
+    
+    // Display company profile
+    async function displayCompanyProfile(companyData) {
+      // Company name and code
+      document.getElementById('companyName').textContent = companyData.name || 'Şirket Adı';
+      document.getElementById('companyCode').textContent = companyData.code || 'KOD';
+      
+      // Company logo
+      if (companyData.logoUrl) {
+        document.getElementById('companyLogo').innerHTML = `<img src="${companyData.logoUrl}" alt="${companyData.name}" style="width:100%; height:100%; object-fit:cover;">`;
+      }
+      
+      // Company info grid
+      const infoGrid = document.getElementById('companyInfoGrid');
+      infoGrid.innerHTML = '';
+      
+      const infoItems = [
+        { label: 'Vergi No', value: companyData.taxNumber, key: 'taxNumber' },
+        { label: 'MERSİS No', value: companyData.mersisNo, key: 'mersisNo' },
+        { label: 'Web Sitesi', value: companyData.website ? `<a href="${companyData.website}" target="_blank">${companyData.website}</a>` : '-', key: 'website' },
+        { label: 'Adres', value: companyData.address || companyData.invoiceAddress, key: 'address' },
+        { label: 'Vergi Dairesi', value: companyData.taxOffice, key: 'taxOffice' },
+      ];
+      
+      // İletişim bilgileri ekle
+      if (companyData.companyPhone || companyData.mobilePhone || companyData.whatsappPhone || 
+          (companyData.contactPhones && companyData.contactPhones.length > 0) ||
+          (companyData.contactEmails && companyData.contactEmails.length > 0)) {
+        let contactInfo = [];
+        if (companyData.companyPhone) contactInfo.push(`Şirket: ${companyData.companyPhone}`);
+        if (companyData.mobilePhone) contactInfo.push(`Cep: ${companyData.mobilePhone}`);
+        if (companyData.whatsappPhone) contactInfo.push(`WhatsApp: ${companyData.whatsappPhone}`);
+        if (companyData.contactPhones && Array.isArray(companyData.contactPhones)) {
+          companyData.contactPhones.forEach(phone => {
+            if (phone && !contactInfo.some(item => item.includes(phone))) {
+              contactInfo.push(`Tel: ${phone}`);
+            }
+          });
+        }
+        if (companyData.contactEmails && Array.isArray(companyData.contactEmails) && companyData.contactEmails.length > 0) {
+          companyData.contactEmails.forEach(email => {
+            contactInfo.push(`Email: ${email}`);
+          });
+        }
+        if (contactInfo.length > 0) {
+          infoItems.push({ label: 'İletişim', value: contactInfo.join('<br>'), key: 'contactInfo' });
+        }
+      }
+      
+      infoItems.forEach(item => {
+        if (item.value && item.value !== '-') {
+          const infoItem = document.createElement('div');
+          infoItem.className = 'info-item';
+          infoItem.dataset.key = item.key;
+          infoItem.innerHTML = `
+            <div class="info-label">${item.label}</div>
+            <div class="info-value">${item.value}</div>
+          `;
+          infoGrid.appendChild(infoItem);
+        }
+      });
+      
+      // About section
+      if (companyData.about) {
+        document.getElementById('companyAbout').textContent = companyData.about;
+      } else {
+        document.getElementById('companyAbout').textContent = 'Henüz hakkında bilgisi eklenmemiş.';
+      }
+      
+      // Categories
+      await loadCategories(companyData);
+      
+      // Team members
+      await loadTeamMembers(currentCompanyId);
+      
+      // Gallery
+      await loadGallery(currentCompanyId);
+      
+      // Referral companies
+      await loadReferralCompanies(currentCompanyId);
+      
+      // Contact info and bank accounts
+      await loadContactInfo(companyData);
+      await loadBankAccounts(companyData);
+    }
+    
+    // Load contact info
+    async function loadContactInfo(companyData) {
+      // İletişim bilgileri bölümü varsa göster
+      // Şimdilik company info grid içinde gösterilebilir veya ayrı bir section oluşturulabilir
+      // Mevcut sistemde company info grid içinde gösteriliyor, bu yeterli
+    }
+    
+    // Load bank accounts
+    async function loadBankAccounts(companyData) {
+      const bankAccountsSection = document.getElementById('bankAccountsSection');
+      if (!bankAccountsSection) {
+        // Bölümü oluştur
+        const referralSection = document.querySelector('.section:has(#referralCompanies)');
+        if (referralSection && referralSection.nextElementSibling) {
+          const newSection = document.createElement('div');
+          newSection.className = 'section';
+          newSection.id = 'bankAccountsSection';
+          newSection.innerHTML = `
+            <div class="section-header">
+              <h3>Banka Hesapları</h3>
+              <div id="bankAccountsVisibilityToggle" class="toggle-group hidden"></div>
+            </div>
+            <div id="bankAccountsList" class="info-grid">
+              <!-- Bank accounts will be added dynamically -->
+            </div>
+          `;
+          referralSection.parentElement.insertBefore(newSection, referralSection.nextElementSibling);
+        }
+      }
+      
+      const bankAccountsList = document.getElementById('bankAccountsList');
+      if (!bankAccountsList) return;
+      
+      bankAccountsList.innerHTML = '';
+      
+      if (companyData.bankAccounts && Array.isArray(companyData.bankAccounts) && companyData.bankAccounts.length > 0) {
+        companyData.bankAccounts.forEach((account, index) => {
+          const accountItem = document.createElement('div');
+          accountItem.className = 'info-item';
+          accountItem.dataset.index = index;
+          accountItem.innerHTML = `
+            <div class="info-label">Banka ${index + 1}</div>
+            <div class="info-value">
+              <div><strong>${account.bankName || 'Banka'}</strong></div>
+              <div style="font-size:12px; color:#6b7280; margin-top:4px;">
+                IBAN: ${account.iban || '-'}<br>
+                Hesap Adı: ${account.accountName || '-'}
+              </div>
+            </div>
+          `;
+          bankAccountsList.appendChild(accountItem);
+        });
+      } else {
+        bankAccountsList.innerHTML = '<div style="color:#6b7280; grid-column:1/-1;">Banka hesabı bilgisi yok.</div>';
+      }
+    }
+    
+    // Load categories
+    async function loadCategories(companyData) {
+      const categoriesContainer = document.getElementById('companyCategories');
+      categoriesContainer.innerHTML = '';
+      
+      // This will be enhanced with category system integration
+      if (companyData.categories && companyData.categories.length > 0) {
+        companyData.categories.forEach(cat => {
+          const chip = document.createElement('span');
+          chip.style.cssText = 'padding:6px 12px; background:#e0e7ff; color:#3730a3; border-radius:16px; font-size:13px;';
+          chip.textContent = cat;
+          categoriesContainer.appendChild(chip);
+        });
+      } else {
+        categoriesContainer.innerHTML = '<span style="color:#6b7280;">Kategori bilgisi yok.</span>';
+      }
+    }
+    
+    // Load team members
+    async function loadTeamMembers(companyId) {
+      const teamContainer = document.getElementById('companyTeam');
+      teamContainer.innerHTML = '';
+      
+      try {
+        const usersQuery = query(
+          collection(db, "users"),
+          where("companyId", "==", companyId),
+          where("companyJoinStatus", "==", "approved")
+        );
+        const usersSnapshot = await getDocs(usersQuery);
+        
+        if (usersSnapshot.empty) {
+          teamContainer.innerHTML = '<div style="color:#6b7280;">Ekip üyesi bilgisi yok.</div>';
+          return;
+        }
+        
+        usersSnapshot.forEach(docSnap => {
+          const userData = docSnap.data();
+          const teamItem = document.createElement('div');
+          teamItem.className = 'info-item';
+          teamItem.innerHTML = `
+            <div class="info-label">${userData.companyRole || 'Üye'}</div>
+            <div class="info-value">${userData.displayName || userData.email || 'Kullanıcı'}</div>
+          `;
+          teamContainer.appendChild(teamItem);
+        });
+      } catch (e) {
+        logger.error("Team load failed", e);
+      }
+    }
+    
+    // Load gallery
+    async function loadGallery(companyId) {
+      const galleryContainer = document.getElementById('imageGallery');
+      galleryContainer.innerHTML = '';
+      
+      try {
+        const galleryRef = collection(db, 'companies', companyId, 'gallery');
+        const gallerySnapshot = await getDocs(galleryRef);
+        
+        if (gallerySnapshot.empty) {
+          galleryContainer.innerHTML = '<div style="color:#6b7280; grid-column:1/-1;">Henüz fotoğraf eklenmemiş.</div>';
+          return;
+        }
+        
+        gallerySnapshot.forEach(docSnap => {
+          const imageData = docSnap.data();
+          const galleryItem = document.createElement('div');
+          galleryItem.className = 'gallery-item';
+          galleryItem.dataset.imageId = docSnap.id;
+          
+          // Yetkili kullanıcılar için silme butonu
+          if (isAuthorized) {
+            galleryItem.innerHTML = `
+              <img src="${imageData.url}" alt="${imageData.caption || 'Fotoğraf'}" style="width:100%; height:100%; object-fit:cover;">
+              <button class="delete-image-btn" data-image-id="${docSnap.id}" data-storage-path="${imageData.storagePath || ''}" 
+                      style="position:absolute; top:4px; right:4px; padding:4px 8px; background:rgba(239,68,68,0.9); color:white; border:none; border-radius:4px; cursor:pointer; font-size:11px; font-weight:600;">
+                ✕
+              </button>
+            `;
+          } else {
+            galleryItem.innerHTML = `<img src="${imageData.url}" alt="${imageData.caption || 'Fotoğraf'}" style="width:100%; height:100%; object-fit:cover;">`;
+          }
+          
+          galleryContainer.appendChild(galleryItem);
+        });
+        
+        // Silme butonları için event listener
+        if (isAuthorized) {
+          document.querySelectorAll('.delete-image-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+              e.stopPropagation();
+              const imageId = btn.dataset.imageId;
+              const storagePath = btn.dataset.storagePath;
+              
+              if (!confirm('Bu fotoğrafı silmek istediğinizden emin misiniz?')) return;
+              
+              await deleteGalleryImage(companyId, imageId, storagePath);
+            });
+          });
+        }
+      } catch (e) {
+        logger.error("Gallery load failed", e);
+      }
+    }
+    
+    // Teklifbul Rule v1.0 - Galeri yükleme sistemi kurulumu
+    function setupGalleryUpload(companyId) {
+      const uploadBtn = document.getElementById('uploadGalleryBtn');
+      const fileInput = document.getElementById('galleryFileInput');
+      
+      if (!uploadBtn || !fileInput) return;
+      
+      uploadBtn.classList.remove('hidden');
+      
+      uploadBtn.addEventListener('click', () => {
+        fileInput.click();
+      });
+      
+      fileInput.addEventListener('change', async (e) => {
+        const files = Array.from(e.target.files);
+        if (files.length === 0) return;
+        
+        // Dosya tipi kontrolü
+        const invalidFiles = files.filter(f => !f.type.startsWith('image/'));
+        if (invalidFiles.length > 0) {
+          toast.error(invalidFiles.length + ' ' + MESSAGES.ERROR_FILE_IMAGE);
+          return;
+        }
+        
+        // Dosya boyutu kontrolü (max 5MB per file)
+        const largeFiles = files.filter(f => f.size > 5 * 1024 * 1024);
+        if (largeFiles.length > 0) {
+          toast.error(largeFiles.length + ' ' + MESSAGES.ERROR_FILE_SIZE_5MB);
+          return;
+        }
+        
+        // Dosyaları yükle
+        await uploadGalleryImages(companyId, files);
+      });
+    }
+    
+    // Galeri fotoğraflarını yükle
+    async function uploadGalleryImages(companyId, files) {
+      const uploadBtn = document.getElementById('uploadGalleryBtn');
+      const originalText = uploadBtn?.textContent || '📷 Fotoğraf Ekle';
+      
+      if (uploadBtn) {
+        uploadBtn.disabled = true;
+        uploadBtn.textContent = `⏳ ${files.length} fotoğraf yükleniyor...`;
+      }
+      
+      let successCount = 0;
+      let errorCount = 0;
+      
+      try {
+        for (const file of files) {
+          try {
+            const user = auth.currentUser;
+            if (!user) {
+              toast.error(MESSAGES.ERROR_AUTH);
+              return;
+            }
+            
+            const timestamp = Date.now();
+            const randomId = Math.random().toString(36).substring(7);
+            const fileName = `${timestamp}-${randomId}.${file.name.split('.').pop()}`;
+            const storagePath = `company-gallery/${companyId}/${fileName}`;
+            const storageRef = ref(storage, storagePath);
+            
+            // Yükle
+            await uploadBytes(storageRef, file);
+            
+            // Download URL al
+            const downloadURL = await getDownloadURL(storageRef);
+            
+            // Firestore'a kaydet
+            await addDoc(collection(db, 'companies', companyId, 'gallery'), {
+              url: downloadURL,
+              storagePath: storagePath,
+              caption: file.name,
+              uploadedBy: user.uid,
+              uploadedAt: serverTimestamp(),
+              fileSize: file.size,
+              fileType: file.type
+            });
+            
+            successCount++;
+          } catch (fileError) {
+            logger.error("File upload failed", fileError);
+            errorCount++;
+          }
+        }
+        
+        // Sonuç mesajı
+        if (successCount > 0) {
+          let _msg = successCount + ' ' + MESSAGES.SUCCESS_FILES_UPLOADED;
+          if (errorCount > 0) _msg += ', ' + MESSAGES.ERROR_PHOTOS_NOT_UPLOADED.replace('{n}', String(errorCount));
+          toast.success(_msg);
+          await loadGallery(companyId);
+        } else {
+          toast.error(MESSAGES.ERROR_PHOTOS_UPLOAD);
+        }
+        
+      } catch (e) {
+        logger.error("Gallery upload failed", e);
+        toast.error(MESSAGES.ERROR_PHOTOS_UPLOAD_ERROR + ': ' + (e?.message || e));
+      } finally {
+        if (uploadBtn) {
+          uploadBtn.disabled = false;
+          uploadBtn.textContent = originalText;
+        }
+        
+        // File input'u temizle
+        const fileInput = document.getElementById('galleryFileInput');
+        if (fileInput) fileInput.value = '';
+      }
+    }
+    
+    // Galeri fotoğrafını sil
+    async function deleteGalleryImage(companyId, imageId, storagePath) {
+      try {
+        // Firestore'dan sil
+        await deleteDoc(doc(db, 'companies', companyId, 'gallery', imageId));
+        
+        // Storage'dan sil (varsa)
+        if (storagePath) {
+          try {
+            await deleteObject(ref(storage, storagePath));
+          } catch (storageError) {
+            logger.warn("Storage delete failed (may already be deleted)", storageError);
+          }
+        }
+        
+        toast.success(MESSAGES.SUCCESS_PHOTO_DELETED);
+        await loadGallery(companyId);
+      } catch (e) {
+        logger.error("Delete gallery image failed", e);
+        toast.error(MESSAGES.ERROR_PHOTO_DELETE + ': ' + (e?.message || e));
+      }
+    }
+    
+    // Teklifbul Rule v1.0 - Referans şirket sistemi kurulumu
+    function setupReferralCompanySystem(companyId) {
+      const addReferralBtn = document.getElementById('addReferralBtn');
+      if (!addReferralBtn) return;
+      
+      addReferralBtn.classList.remove('hidden');
+      addReferralBtn.addEventListener('click', () => {
+        showAddReferralModal(companyId);
+      });
+    }
+    
+    // Referans ekleme modalı göster
+    function showAddReferralModal(companyId) {
+      // Modal oluştur
+      const modal = document.createElement('div');
+      modal.id = 'addReferralModal';
+      modal.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:2000; display:flex; align-items:center; justify-content:center;';
+      
+      modal.innerHTML = `
+        <div style="background:white; padding:24px; border-radius:12px; max-width:500px; width:90%; max-height:90vh; overflow-y:auto;">
+          <h2 style="margin:0 0 16px 0;">Referans Şirket Ekle</h2>
+          <p style="margin:0 0 16px 0; font-size:14px; color:#6b7280;">
+            Referans olarak eklemek istediğiniz şirketin kodunu girin. Şirket sahibi onayladıktan sonra referans olarak görünecektir.
+          </p>
+          
+          <div style="margin-bottom:16px;">
+            <label for="referralCompanyCode" style="display:block; margin-bottom:8px; font-weight:600;">Şirket Kodu <span style="color:#ef4444;">*</span></label>
+            <input type="text" id="referralCompanyCode" placeholder="Örn: ABC12345" 
+                   style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:6px; font-size:14px; text-transform:uppercase;"
+                   maxlength="20" />
+            <p style="margin:4px 0 0 0; font-size:12px; color:#6b7280;">
+              💡 Şirket kodunu şirket profil sayfasında bulabilirsiniz.
+            </p>
+          </div>
+          
+          <div style="display:flex; gap:8px; justify-content:flex-end;">
+            <button id="cancelReferralBtn" class="btn btn-secondary">İptal</button>
+            <button id="submitReferralBtn" class="btn btn-primary">Gönder</button>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(modal);
+      
+      // Event listeners
+      document.getElementById('cancelReferralBtn').addEventListener('click', () => {
+        document.body.removeChild(modal);
+      });
+      
+      document.getElementById('submitReferralBtn').addEventListener('click', async () => {
+        await submitReferralRequest(companyId, modal);
+      });
+      
+      // Enter tuşu ile gönder
+      document.getElementById('referralCompanyCode').addEventListener('keypress', async (e) => {
+        if (e.key === 'Enter') {
+          await submitReferralRequest(companyId, modal);
+        }
+      });
+    }
+    
+    // Referans isteği gönder
+    async function submitReferralRequest(companyId, modal) {
+      const codeInput = document.getElementById('referralCompanyCode');
+      const companyCode = codeInput.value.trim().toUpperCase();
+      
+      if (!companyCode) {
+        toast.error(MESSAGES.ERROR_COMPANY_CODE_REQUIRED);
+        return;
+      }
+      
+      const submitBtn = document.getElementById('submitReferralBtn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Gönderiliyor...';
+      
+      try {
+        // Şirket koduna göre şirketi bul
+        const codeQuery = query(
+          collection(db, 'companies'),
+          where('code', '==', companyCode)
+        );
+        const codeSnapshot = await getDocs(codeQuery);
+        
+        if (codeSnapshot.empty) {
+          toast.error(MESSAGES.ERROR_COMPANY_NOT_FOUND);
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Gönder';
+          return;
+        }
+        
+        const referredCompanyId = codeSnapshot.docs[0].id;
+        const referredCompanyData = codeSnapshot.docs[0].data();
+        
+        // Kendi şirketini referans olarak eklemeye çalışıyorsa uyar
+        if (referredCompanyId === companyId) {
+          toast.error(MESSAGES.ERROR_SELF_REFERENCE);
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Gönder';
+          return;
+        }
+        
+        // Zaten referans olarak eklenmiş mi kontrol et
+        const existingRefQuery = query(
+          collection(db, 'companies', companyId, 'referralCompanies'),
+          where('referredCompanyId', '==', referredCompanyId)
+        );
+        const existingRefSnap = await getDocs(existingRefQuery);
+        
+        if (!existingRefSnap.empty) {
+          const existingRef = existingRefSnap.docs[0].data();
+          if (existingRef.status === 'approved') {
+            toast.success(MESSAGES.SUCCESS_REFERENCE_EXISTS);
+            document.body.removeChild(modal);
+            await loadReferralCompanies(companyId);
+            return;
+          } else if (existingRef.status === 'pending') {
+            toast.info(MESSAGES.INFO_REFERENCE_PENDING);
+            document.body.removeChild(modal);
+            return;
+          }
+        }
+        
+        // Referans isteği oluştur
+        const referralRef = collection(db, 'companies', companyId, 'referralCompanies');
+        await addDoc(referralRef, {
+          referredCompanyId: referredCompanyId,
+          referredCompanyCode: companyCode,
+          referredCompanyName: referredCompanyData.name || 'Şirket',
+          status: 'pending', // Beklemede
+          requestedBy: currentUserId,
+          requestedAt: serverTimestamp(),
+          approvedAt: null,
+          approvedBy: null
+        });
+        
+        // Referans edilen şirketin sahiplerine bildirim gönder
+        try {
+          // Mevcut şirket bilgilerini al
+          const currentCompanyDoc = await getDoc(doc(db, 'companies', companyId));
+          const currentCompanyData = currentCompanyDoc.exists() ? currentCompanyDoc.data() : {};
+          
+          const referredCompanyDoc = await getDoc(doc(db, 'companies', referredCompanyId));
+          const referredCompanyData2 = referredCompanyDoc.data();
+          
+          // Şirket sahiplerini bul
+          const ownerId = referredCompanyData2?.ownerId || referredCompanyData2?.ownerUid;
+          if (ownerId) {
+            const notificationsRef = collection(db, 'companies', referredCompanyId, 'notifications');
+            await addDoc(notificationsRef, {
+              type: 'referral_request',
+              message: `${currentCompanyData.name || 'Bir şirket'} sizin şirketinizi referans olarak eklemek istiyor.`,
+              companyId: companyId,
+              companyName: currentCompanyData.name || 'Şirket',
+              companyCode: currentCompanyData.code || '',
+              read: false,
+              createdAt: serverTimestamp()
+            });
+          }
+        } catch (notifError) {
+          logger.warn("Bildirim gönderilemedi", notifError);
+        }
+        
+        toast.success(MESSAGES.SUCCESS_REFERENCE_REQUEST_SENT);
+        document.body.removeChild(modal);
+        await loadReferralCompanies(companyId);
+        
+      } catch (e) {
+        logger.error("Referral request failed", e);
+        toast.error(MESSAGES.ERROR_REFERENCE_REQUEST_SEND + ': ' + (e?.message || e));
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Gönder';
+      }
+    }
+    
+    // Load referral companies
+    async function loadReferralCompanies(companyId) {
+      const referralContainer = document.getElementById('referralCompanies');
+      if (!referralContainer) return;
+      
+      referralContainer.innerHTML = '';
+      
+      try {
+        const referralsRef = collection(db, 'companies', companyId, 'referralCompanies');
+        const referralsSnapshot = await getDocs(referralsRef);
+        
+        if (referralsSnapshot.empty) {
+          referralContainer.innerHTML = '<div style="color:#6b7280;">Referans şirket bilgisi yok.</div>';
+          return;
+        }
+        
+        const referralData = [];
+        
+        // Tüm referansları topla
+        for (const docSnap of referralsSnapshot.docs) {
+          const refData = docSnap.data();
+          referralData.push({ id: docSnap.id, ...refData });
+        }
+        
+        // Onaylanmış referansları göster
+        const approvedReferrals = referralData.filter(r => r.status === 'approved');
+        const pendingReferrals = referralData.filter(r => r.status === 'pending');
+        
+        if (approvedReferrals.length === 0 && pendingReferrals.length === 0) {
+          referralContainer.innerHTML = '<div style="color:#6b7280;">Referans şirket bilgisi yok.</div>';
+          return;
+        }
+        
+        // Onaylanmış referanslar
+        for (const ref of approvedReferrals) {
+          try {
+            const refCompanyDoc = await getDoc(doc(db, 'companies', ref.referredCompanyId));
+            if (refCompanyDoc.exists()) {
+              const refCompanyData = refCompanyDoc.data();
+              const referralCard = document.createElement('div');
+              referralCard.className = 'referral-card';
+              referralCard.onclick = () => {
+                window.location.href = `company-profile.html?id=${ref.referredCompanyId}`;
+              };
+              referralCard.innerHTML = `
+                <strong>${refCompanyData.name || ref.referredCompanyName || 'Şirket'}</strong>
+                <div style="font-size:12px; color:#6b7280; margin-top:4px;">Kod: ${ref.referredCompanyCode || refCompanyData.code || ''}</div>
+                <div style="font-size:11px; color:#10b981; margin-top:4px;">✓ Onaylandı</div>
+              `;
+              referralContainer.appendChild(referralCard);
+            }
+          } catch (e) {
+            logger.warn("Referral company load failed", { companyId: ref.referredCompanyId, error: e });
+          }
+        }
+        
+        // Beklemede olan referanslar (sadece yetkili kullanıcılara göster)
+        if (isAuthorized && pendingReferrals.length > 0) {
+          pendingReferrals.forEach(ref => {
+            const pendingCard = document.createElement('div');
+            pendingCard.className = 'referral-card';
+            pendingCard.style.border = '1px dashed #f59e0b';
+            pendingCard.style.background = '#fef3c7';
+            pendingCard.innerHTML = `
+              <strong>${ref.referredCompanyName || 'Şirket'}</strong>
+              <div style="font-size:12px; color:#6b7280; margin-top:4px;">Kod: ${ref.referredCompanyCode || ''}</div>
+              <div style="font-size:11px; color:#f59e0b; margin-top:4px;">⏳ Onay bekliyor</div>
+            `;
+            referralContainer.appendChild(pendingCard);
+          });
+        }
+        
+      } catch (e) {
+        logger.error("Referral companies load failed", e);
+        referralContainer.innerHTML = '<div style="color:#ef4444;">Referans şirketler yüklenirken hata oluştu.</div>';
+      }
+    }
+    
+    // Teklifbul Rule v1.0 - ÜCRETSİZ: Google Business linki göster (API kullanmadan)
+    async function loadGoogleBusinessLink(companyId) {
+      try {
+        const companyDoc = await getDoc(doc(db, 'companies', companyId));
+        const companyData = companyDoc.data();
+        
+        const googleSection = document.getElementById('googleBusinessSection');
+        const googleLink = document.getElementById('googleBusinessLink');
+        const mapsEmbed = document.getElementById('googleMapsEmbed');
+        const mapsIframe = document.getElementById('googleMapsIframe');
+        
+        // Google Business URL kontrolü
+        if (companyData?.googleBusinessUrl) {
+          // Link varsa göster
+          if (googleLink) {
+            googleLink.href = companyData.googleBusinessUrl;
+          }
+          if (googleSection) googleSection.style.display = 'block';
+        } else {
+          // Link yoksa gizle
+          if (googleSection) googleSection.style.display = 'none';
+        }
+        
+        // Adres varsa Google Maps iframe embed göster (ücretsiz)
+        const address = companyData?.invoiceAddress || companyData?.address;
+        if (address && mapsIframe && mapsEmbed) {
+          // Adresi URL encode et
+          const encodedAddress = encodeURIComponent(address);
+          // Google Maps embed URL oluştur (ücretsiz)
+          const mapsUrl = `https://www.google.com/maps/embed/v1/place?key=&q=${encodedAddress}`;
+          
+          // Not: Embed API için API key gerekiyor ama "search" query ile çalışabilir
+          // Alternatif: Direkt Google Maps linki kullan (iframe yerine)
+          // Ancak embed çalışmazsa, sadece link gösteririz
+          
+          // Basit çözüm: Adres varsa direkt Google Maps arama linki
+          if (mapsIframe) {
+            mapsIframe.src = `https://www.google.com/maps/embed/v1/place?q=${encodedAddress}`;
+            mapsEmbed.style.display = 'block';
+          }
+        } else {
+          if (mapsEmbed) mapsEmbed.style.display = 'none';
+        }
+        
+      } catch (e) {
+        logger.error("Google Business link load failed", e);
+        const googleSection = document.getElementById('googleBusinessSection');
+        if (googleSection) googleSection.style.display = 'none';
+      }
+    }
+    
+    // Load reviews and calculate rating
+    async function loadReviews(companyId) {
+      try {
+        const reviewsQuery = query(
+          collection(db, 'companies', companyId, 'reviews'),
+          orderBy('createdAt', 'desc'),
+          limit(50)
+        );
+        const reviewsSnapshot = await getDocs(reviewsQuery);
+        
+        const reviewsContainer = document.getElementById('reviewsContainer');
+        reviewsContainer.innerHTML = '';
+        
+        if (reviewsSnapshot.empty) {
+          reviewsContainer.innerHTML = '<div style="text-align:center; padding:40px; color:#6b7280;">Henüz değerlendirme yapılmamış.</div>';
+          updateRating(0, 0);
+          return;
+        }
+        
+        let totalRating = 0;
+        let reviewCount = 0;
+        
+        reviewsSnapshot.forEach(docSnap => {
+          const reviewData = docSnap.data();
+          totalRating += reviewData.rating || 0;
+          reviewCount++;
+          
+          const reviewCard = document.createElement('div');
+          reviewCard.className = 'review-card';
+          
+          const starsHtml = generateStars(reviewData.rating || 0);
+          const reviewDate = reviewData.createdAt?.toDate?.() || new Date();
+          
+          reviewCard.innerHTML = `
+            <div class="review-header">
+              <span class="review-author">${reviewData.authorName || 'Kullanıcı'}</span>
+              <span class="review-date">${reviewDate.toLocaleDateString('tr-TR')}</span>
+            </div>
+            <div class="review-stars">${starsHtml}</div>
+            <div class="review-text">${reviewData.comment || ''}</div>
+          `;
+          
+          reviewsContainer.appendChild(reviewCard);
+        });
+        
+        // Sadece internal yorumlar için ortalama (ücretsiz çözüm - API yok)
+        const internalAverage = reviewCount > 0 ? totalRating / reviewCount : 0;
+        
+        // UI'da göster: Sadece internal yorumlar
+        updateRating(internalAverage, reviewCount);
+        
+      } catch (e) {
+        logger.error("Reviews load failed", e);
+      }
+    }
+    
+    // Update rating display (sadece internal yorumlar)
+    function updateRating(average, count) {
+      document.getElementById('averageRating').textContent = average.toFixed(1);
+      document.getElementById('reviewCount').textContent = `(${count} değerlendirme)`;
+      document.getElementById('ratingStars').innerHTML = generateStars(average);
+    }
+    
+    // Generate stars HTML
+    function generateStars(rating) {
+      const fullStars = Math.floor(rating);
+      const hasHalfStar = rating % 1 >= 0.5;
+      let html = '';
+      
+      for (let i = 0; i < 5; i++) {
+        if (i < fullStars) {
+          html += '<span class="star">⭐</span>';
+        } else if (i === fullStars && hasHalfStar) {
+          html += '<span class="star">⭐</span>'; // Half star can be styled differently
+        } else {
+          html += '<span class="star-empty">☆</span>';
+        }
+      }
+      
+      return html;
+    }
+    
+    // Teklifbul Rule v1.0 - Profil görünürlük ayarları yükle ve toggle'ları oluştur
+    async function loadVisibilitySettings(companyId) {
+      try {
+        const settingsRef = doc(db, 'companies', companyId, 'profileSettings', 'visibility');
+        const settingsDoc = await getDoc(settingsRef);
+        const settings = settingsDoc.exists() ? settingsDoc.data() : {
+          // Varsayılan değerler: Her şey görünür (banka hesapları gizli)
+          companyInfo: true,
+          about: true,
+          categories: true,
+          team: true,
+          gallery: true,
+          bankAccounts: false, // Varsayılan olarak gizli
+          contactInfo: true,
+          googleBusiness: true
+        };
+        
+        // Varsayılan değerler yoksa ve yetkili kullanıcı ise kaydet
+        if (!settingsDoc.exists() && isAuthorized) {
+          await setDoc(settingsRef, settings);
+        }
+        
+        // Sadece yetkili kullanıcılar toggle'ları görebilir
+        if (isAuthorized) {
+          createVisibilityToggles(companyId, settings);
+        }
+        
+        // Görünürlük ayarlarına göre içerikleri güncelle (tüm kullanıcılar için)
+        applyVisibilitySettings(settings);
+        
+      } catch (e) {
+        logger.error("Visibility settings load failed", e);
+        // Hata durumunda her şeyi göster (varsayılan)
+        applyVisibilitySettings({
+          companyInfo: true,
+          about: true,
+          categories: true,
+          team: true,
+          gallery: true,
+          contactInfo: true
+        });
+      }
+    }
+    
+    // Toggle switch'leri oluştur
+    function createVisibilityToggles(companyId, settings) {
+      const visibilityConfig = [
+        { key: 'companyInfo', label: 'Şirket Bilgileri', containerId: 'visibilityToggles', sectionId: 'companyInfoGrid' },
+        { key: 'about', label: 'Hakkında', containerId: 'aboutVisibilityToggle', sectionId: 'companyAbout' },
+        { key: 'categories', label: 'Kategoriler', containerId: 'categoriesVisibilityToggle', sectionId: 'companyCategories' },
+        { key: 'team', label: 'Ekip Üyeleri', containerId: 'teamVisibilityToggle', sectionId: 'companyTeam' },
+        { key: 'gallery', label: 'Galeri', containerId: null, sectionId: 'imageGallery' },
+        { key: 'contactInfo', label: 'İletişim Bilgileri', containerId: 'visibilityToggles', sectionId: 'companyInfoGrid' },
+        { key: 'bankAccounts', label: 'Banka Hesapları', containerId: 'bankAccountsVisibilityToggle', sectionId: 'bankAccountsList' }
+      ];
+      
+      // Her bölüm için toggle oluştur
+      // Önce tüm container'ları temizle
+      const uniqueContainers = new Set(visibilityConfig.map(c => c.containerId).filter(Boolean));
+      uniqueContainers.forEach(containerId => {
+        const container = document.getElementById(containerId);
+        if (container) {
+          container.innerHTML = '';
+          container.classList.remove('hidden');
+        }
+      });
+      
+      visibilityConfig.forEach(config => {
+        if (config.containerId) {
+          const container = document.getElementById(config.containerId);
+          if (!container) return;
+          
+          const toggleItem = document.createElement('div');
+          toggleItem.className = 'toggle-item';
+          toggleItem.dataset.key = config.key; // Unique identifier için
+          
+          const label = document.createElement('span');
+          label.textContent = config.label;
+          label.style.fontSize = '13px';
+          label.style.color = '#374151';
+          
+          const toggle = document.createElement('div');
+          toggle.className = 'toggle-switch';
+          if (settings[config.key] !== false) {
+            toggle.classList.add('active');
+          }
+          
+          toggle.addEventListener('click', async () => {
+            const isActive = toggle.classList.contains('active');
+            toggle.classList.toggle('active');
+            
+            // Firestore'a kaydet
+            const newSettings = { ...settings };
+            newSettings[config.key] = !isActive;
+            
+            try {
+              await updateDoc(doc(db, 'companies', companyId, 'profileSettings', 'visibility'), newSettings);
+              
+              // UI'ı güncelle
+              applyVisibilitySettings(newSettings);
+              settings[config.key] = !isActive;
+              
+              logger.info(`${config.label} görünürlüğü güncellendi`, { isActive: !isActive });
+            } catch (e) {
+              logger.error("Visibility update failed", e);
+              // Rollback
+              toggle.classList.toggle('active');
+              toast.error(MESSAGES.ERROR_VISIBILITY_UPDATE);
+            }
+          });
+          
+          toggleItem.appendChild(label);
+          toggleItem.appendChild(toggle);
+          container.appendChild(toggleItem);
+        }
+      });
+    }
+    
+    // Görünürlük ayarlarını uygula (tüm kullanıcılar için)
+    function applyVisibilitySettings(settings) {
+      // Şirket Bilgileri
+      const companyInfoGrid = document.getElementById('companyInfoGrid');
+      if (companyInfoGrid) {
+        if (settings.companyInfo === false) {
+          // Mevcut içeriği gizle ve placeholder göster
+          const existingItems = companyInfoGrid.querySelectorAll('.info-item');
+          existingItems.forEach(item => item.style.display = 'none');
+          
+          // Placeholder zaten varsa tekrar ekleme
+          if (!companyInfoGrid.querySelector('.visibility-placeholder')) {
+            const placeholder = document.createElement('div');
+            placeholder.className = 'visibility-placeholder';
+            placeholder.style.cssText = 'grid-column:1/-1; padding:20px; text-align:center; color:#6b7280; font-style:italic; background:#f9fafb; border-radius:8px;';
+            placeholder.textContent = 'Bu bilgiler gizlenmiştir.';
+            companyInfoGrid.appendChild(placeholder);
+          }
+        } else {
+          // Placeholder'ı kaldır ve içeriği göster
+          const placeholder = companyInfoGrid.querySelector('.visibility-placeholder');
+          if (placeholder) placeholder.remove();
+          const existingItems = companyInfoGrid.querySelectorAll('.info-item');
+          existingItems.forEach(item => item.style.display = '');
+        }
+      }
+      
+      // Hakkında
+      const companyAbout = document.getElementById('companyAbout');
+      if (companyAbout) {
+        const aboutSection = companyAbout.closest('.section');
+        if (aboutSection) {
+          let placeholder = aboutSection.querySelector('.visibility-placeholder');
+          
+          if (settings.about === false) {
+            companyAbout.style.display = 'none';
+            if (!placeholder) {
+              placeholder = document.createElement('div');
+              placeholder.className = 'visibility-placeholder';
+              placeholder.style.cssText = 'padding:20px; text-align:center; color:#6b7280; font-style:italic; background:#f9fafb; border-radius:8px;';
+              placeholder.textContent = 'Bu bilgi gizlenmiştir.';
+              aboutSection.querySelector('.section-header')?.parentElement?.insertBefore(placeholder, companyAbout);
+            }
+          } else {
+            companyAbout.style.display = 'block';
+            if (placeholder) placeholder.remove();
+          }
+        }
+      }
+      
+      // Kategoriler
+      const companyCategories = document.getElementById('companyCategories');
+      if (companyCategories) {
+        const categoriesSection = companyCategories.closest('.section');
+        if (categoriesSection) {
+          let placeholder = categoriesSection.querySelector('.visibility-placeholder');
+          
+          if (settings.categories === false) {
+            companyCategories.style.display = 'none';
+            if (!placeholder) {
+              placeholder = document.createElement('div');
+              placeholder.className = 'visibility-placeholder';
+              placeholder.style.cssText = 'padding:20px; text-align:center; color:#6b7280; font-style:italic; background:#f9fafb; border-radius:8px;';
+              placeholder.textContent = 'Kategoriler gizlenmiştir.';
+              categoriesSection.querySelector('.section-header')?.parentElement?.insertBefore(placeholder, companyCategories);
+            }
+          } else {
+            companyCategories.style.display = 'flex';
+            if (placeholder) placeholder.remove();
+          }
+        }
+      }
+      
+      // Ekip Üyeleri
+      const companyTeam = document.getElementById('companyTeam');
+      if (companyTeam) {
+        const teamSection = companyTeam.closest('.section');
+        if (teamSection) {
+          let placeholder = teamSection.querySelector('.visibility-placeholder');
+          
+          if (settings.team === false) {
+            companyTeam.style.display = 'none';
+            if (!placeholder) {
+              placeholder = document.createElement('div');
+              placeholder.className = 'visibility-placeholder';
+              placeholder.style.cssText = 'padding:20px; text-align:center; color:#6b7280; font-style:italic; background:#f9fafb; border-radius:8px;';
+              placeholder.textContent = 'Ekip bilgileri gizlenmiştir.';
+              teamSection.querySelector('.section-header')?.parentElement?.insertBefore(placeholder, companyTeam);
+            }
+          } else {
+            companyTeam.style.display = 'grid';
+            if (placeholder) placeholder.remove();
+          }
+        }
+      }
+      
+      // Galeri
+      const imageGallery = document.getElementById('imageGallery');
+      if (imageGallery) {
+        const gallerySection = imageGallery.closest('.section');
+        if (gallerySection) {
+          let placeholder = gallerySection.querySelector('.visibility-placeholder');
+          
+          if (settings.gallery === false) {
+            imageGallery.style.display = 'none';
+            if (!placeholder) {
+              placeholder = document.createElement('div');
+              placeholder.className = 'visibility-placeholder';
+              placeholder.style.cssText = 'padding:20px; text-align:center; color:#6b7280; font-style:italic; background:#f9fafb; border-radius:8px;';
+              placeholder.textContent = 'Galeri gizlenmiştir.';
+              gallerySection.querySelector('.section-header')?.parentElement?.insertBefore(placeholder, imageGallery);
+            }
+          } else {
+            imageGallery.style.display = 'grid';
+            if (placeholder) placeholder.remove();
+          }
+        }
+      }
+      
+      // İletişim Bilgileri (companyInfoGrid içindeki contactInfo item'ını gizle)
+      if (settings.contactInfo === false) {
+        const contactInfoItem = document.querySelector('#companyInfoGrid .info-item[data-key="contactInfo"]');
+        if (contactInfoItem) {
+          contactInfoItem.style.display = 'none';
+        }
+      } else {
+        const contactInfoItem = document.querySelector('#companyInfoGrid .info-item[data-key="contactInfo"]');
+        if (contactInfoItem) {
+          contactInfoItem.style.display = '';
+        }
+      }
+      
+      // Banka Hesapları
+      const bankAccountsList = document.getElementById('bankAccountsList');
+      if (bankAccountsList) {
+        const bankSection = bankAccountsList.closest('.section');
+        if (bankSection) {
+          let placeholder = bankSection.querySelector('.visibility-placeholder');
+          
+          if (settings.bankAccounts === false) {
+            bankAccountsList.style.display = 'none';
+            if (!placeholder) {
+              placeholder = document.createElement('div');
+              placeholder.className = 'visibility-placeholder';
+              placeholder.style.cssText = 'padding:20px; text-align:center; color:#6b7280; font-style:italic; background:#f9fafb; border-radius:8px;';
+              placeholder.textContent = 'Banka hesabı bilgileri gizlenmiştir.';
+              bankSection.querySelector('.section-header')?.parentElement?.insertBefore(placeholder, bankAccountsList);
+            }
+          } else {
+            bankAccountsList.style.display = 'grid';
+            if (placeholder) placeholder.remove();
+          }
+        }
+      }
+    }
+    
+    // Teklifbul Rule v1.0 - Logo yükleme sistemi kurulumu
+    function setupLogoUpload(companyId) {
+      const uploadBtn = document.getElementById('uploadLogoBtn');
+      const fileInput = document.getElementById('logoFileInput');
+      
+      if (!uploadBtn || !fileInput) return;
+      
+      uploadBtn.addEventListener('click', () => {
+        fileInput.click();
+      });
+      
+      fileInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        // Dosya tipi kontrolü
+        if (!file.type.startsWith('image/')) {
+          toast.error(MESSAGES.ERROR_FILE_IMAGE);
+          return;
+        }
+        
+        // Dosya boyutu kontrolü (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          toast.error(MESSAGES.ERROR_FILE_SIZE_5MB);
+          return;
+        }
+        
+        await uploadCompanyLogo(companyId, file);
+      });
+    }
+    
+    // Şirket logosunu yükle
+    async function uploadCompanyLogo(companyId, file) {
+      const uploadBtn = document.getElementById('uploadLogoBtn');
+      const originalText = uploadBtn?.textContent || '📷 Logo Yükle';
+      
+      if (uploadBtn) {
+        uploadBtn.disabled = true;
+        uploadBtn.textContent = '⏳ Yükleniyor...';
+      }
+      
+      try {
+        // Firebase Storage'a yükle
+        const user = auth.currentUser;
+        if (!user) {
+          toast.error(MESSAGES.ERROR_AUTH);
+          return;
+        }
+        
+        const timestamp = Date.now();
+        const fileName = `${companyId}-${timestamp}.${file.name.split('.').pop()}`;
+        const storagePath = `company-logos/${companyId}/${fileName}`;
+        const storageRef = ref(storage, storagePath);
+        
+        // Yükleme progress göster (opsiyonel)
+        await uploadBytes(storageRef, file);
+        
+        // Download URL al
+        const downloadURL = await getDownloadURL(storageRef);
+        
+        // Firestore'da güncelle
+        await updateDoc(doc(db, 'companies', companyId), {
+          logoUrl: downloadURL,
+          logoUpdatedAt: serverTimestamp()
+        });
+        
+        // UI'ı güncelle
+        const logoElement = document.getElementById('companyLogo');
+        if (logoElement) {
+          logoElement.innerHTML = `<img src="${downloadURL}" alt="Şirket Logosu" style="width:100%; height:100%; object-fit:cover; border-radius:12px;">`;
+        }
+        
+        toast.success(MESSAGES.SUCCESS_LOGO_UPLOADED);
+        
+      } catch (e) {
+        logger.error("Logo upload failed", e);
+        toast.error(MESSAGES.ERROR_LOGO_UPLOAD + ': ' + (e?.message || e));
+      } finally {
+        if (uploadBtn) {
+          uploadBtn.disabled = false;
+          uploadBtn.textContent = originalText;
+        }
+        
+        // File input'u temizle
+        const fileInput = document.getElementById('logoFileInput');
+        if (fileInput) fileInput.value = '';
+      }
+    }
+    
+    // Teklifbul Rule v1.0 - Edit Mode kurulumu
+    function setupEditMode(companyId) {
+      const editBtn = document.getElementById('editModeBtn');
+      if (!editBtn) return;
+      
+      editBtn.addEventListener('click', () => {
+        isEditMode = !isEditMode;
+        toggleEditMode(isEditMode, companyId);
+      });
+    }
+    
+    // Edit Mode'u aç/kapat
+    function toggleEditMode(active, companyId) {
+      const editBtn = document.getElementById('editModeBtn');
+      
+      if (active) {
+        editBtn.textContent = '💾 Kaydet';
+        editBtn.style.background = '#10b981';
+        
+        // Düzenlenebilir alanları etkinleştir
+        enableEditMode(companyId);
+      } else {
+        editBtn.textContent = '⚙️ Düzenleme Modu';
+        editBtn.style.background = '';
+        
+        // Değişiklikleri kaydet
+        saveCompanyProfile(companyId).then(() => {
+          disableEditMode();
+          // Profili yeniden yükle
+          loadCompanyProfile(companyId);
+        });
+      }
+    }
+    
+    // Edit Mode'u etkinleştir
+    function enableEditMode(companyId) {
+      // Şirket Adı
+      const companyNameEl = document.getElementById('companyName');
+      if (companyNameEl && !companyNameEl.querySelector('input')) {
+        const originalText = companyNameEl.textContent;
+        companyNameEl.innerHTML = `<input type="text" id="editCompanyName" value="${originalText}" 
+          style="width:100%; padding:8px; border:1px solid #3b82f6; border-radius:6px; font-size:18px; font-weight:700;">`;
+      }
+      
+      // Hakkında
+      const aboutEl = document.getElementById('companyAbout');
+      if (aboutEl && !aboutEl.querySelector('textarea')) {
+        const originalText = aboutEl.textContent;
+        aboutEl.innerHTML = `<textarea id="editAbout" 
+          style="width:100%; padding:12px; border:1px solid #3b82f6; border-radius:6px; font-size:14px; line-height:1.6; min-height:120px; resize:vertical;"
+          placeholder="Şirketiniz hakkında bilgi girin...">${originalText}</textarea>`;
+      }
+      
+      // Şirket Bilgileri grid - her bir item'ı düzenlenebilir yap
+      const infoItems = document.querySelectorAll('#companyInfoGrid .info-item');
+      infoItems.forEach(item => {
+        const key = item.dataset.key;
+        const valueEl = item.querySelector('.info-value');
+        if (valueEl && !valueEl.querySelector('input') && !valueEl.querySelector('textarea')) {
+          let currentValue = valueEl.textContent.trim();
+          
+          // Link içeriyorsa sadece URL'yi al
+          const linkEl = valueEl.querySelector('a');
+          if (linkEl) {
+            currentValue = linkEl.href;
+          }
+          
+          if (key === 'website') {
+            valueEl.innerHTML = `<input type="url" id="edit_${key}" value="${currentValue}" 
+              style="width:100%; padding:6px; border:1px solid #3b82f6; border-radius:4px;">`;
+          } else if (key === 'address') {
+            valueEl.innerHTML = `<textarea id="edit_${key}" 
+              style="width:100%; padding:6px; border:1px solid #3b82f6; border-radius:4px; min-height:60px; resize:vertical;"
+              >${currentValue}</textarea>`;
+          } else {
+            valueEl.innerHTML = `<input type="text" id="edit_${key}" value="${currentValue}" 
+              style="width:100%; padding:6px; border:1px solid #3b82f6; border-radius:4px;">`;
+          }
+        }
+      });
+    }
+    
+    // Edit Mode'u devre dışı bırak
+    function disableEditMode() {
+      // Input'ları orijinal haline döndür (yükleme sırasında zaten güncellenecek)
+    }
+    
+    // Şirket profilini kaydet
+    async function saveCompanyProfile(companyId) {
+      try {
+        const updateData = {};
+        
+        // Şirket Adı
+        const editName = document.getElementById('editCompanyName');
+        if (editName) {
+          updateData.name = editName.value.trim();
+        }
+        
+        // Hakkında
+        const editAbout = document.getElementById('editAbout');
+        if (editAbout) {
+          updateData.about = editAbout.value.trim();
+        }
+        
+        // Şirket Bilgileri
+        const infoItems = document.querySelectorAll('#companyInfoGrid .info-item');
+        infoItems.forEach(item => {
+          const key = item.dataset.key;
+          const inputEl = document.getElementById(`edit_${key}`);
+          if (inputEl) {
+            const value = inputEl.value.trim();
+            if (value) {
+              updateData[key] = value;
+            } else {
+              updateData[key] = null;
+            }
+          }
+        });
+        
+        // Firestore'a kaydet
+        if (Object.keys(updateData).length > 0) {
+          updateData.updatedAt = serverTimestamp();
+          await updateDoc(doc(db, 'companies', companyId), updateData);
+          
+          logger.info('Şirket profili güncellendi', updateData);
+          toast.success(MESSAGES.SUCCESS_CHANGES_SAVED);
+        }
+      } catch (e) {
+        logger.error("Save company profile failed", e);
+        toast.error(MESSAGES.ERROR_CHANGES_SAVE + ': ' + (e?.message || e));
+        throw e;
+      }
+    }
+    
+    // Review modal handlers
+    document.getElementById('writeReviewBtn')?.addEventListener('click', () => {
+      document.getElementById('reviewModal').classList.remove('hidden');
+    });
+    
+    document.getElementById('cancelReviewBtn')?.addEventListener('click', () => {
+      document.getElementById('reviewModal').classList.add('hidden');
+    });
+    
+    // Reset star display to default (5 stars)
+    function resetStarDisplay() {
+      document.querySelectorAll('#reviewStarsInput .star').forEach((s) => {
+        s.style.opacity = '1';
+        s.style.transform = 'scale(1)';
+      });
+    }
+    
+    // Initialize star display
+    resetStarDisplay();
+    
+    // Star rating selection with hover effect
+    document.querySelectorAll('#reviewStarsInput .star').forEach((star, index) => {
+      // Click event
+      star.addEventListener('click', () => {
+        const rating = index + 1;
+        selectedRating = rating;
+        document.getElementById('selectedRating').value = rating;
+        updateStarDisplay(rating);
+      });
+      
+      // Hover event
+      star.addEventListener('mouseenter', () => {
+        updateStarDisplay(index + 1);
+      });
+    });
+    
+    // Reset stars when mouse leaves
+    const starsContainer = document.getElementById('reviewStarsInput');
+    if (starsContainer) {
+      starsContainer.addEventListener('mouseleave', () => {
+        updateStarDisplay(selectedRating);
+      });
+    }
+    
+    // Update star display based on rating
+    function updateStarDisplay(rating) {
+      document.querySelectorAll('#reviewStarsInput .star').forEach((s, i) => {
+        if (i < rating) {
+          s.style.opacity = '1';
+          s.style.transform = 'scale(1.1)';
+          s.style.transition = 'all 0.2s';
+        } else {
+          s.style.opacity = '0.3';
+          s.style.transform = 'scale(1)';
+          s.style.transition = 'all 0.2s';
+        }
+      });
+      
+      // Update rating text
+      const ratingText = document.getElementById('ratingText');
+      if (ratingText) {
+        const labels = {
+          1: '(Çok Kötü)',
+          2: '(Kötü)',
+          3: '(Orta)',
+          4: '(İyi)',
+          5: '(Mükemmel)'
+        };
+        ratingText.textContent = `(${rating} yıldız seçildi ${labels[rating] || ''})`;
+      }
+    }
+    
+    // Teklifbul Rule v1.0 - Kullanıcının bu şirketle tamamlanmış talebi var mı kontrol et
+    async function checkCompletedDemandWithCompany(userId, companyId) {
+      try {
+        // Kullanıcının şirket bilgisi
+        const userDoc = await getDoc(doc(db, 'users', userId));
+        if (!userDoc.exists()) return false;
+        
+        const userData = userDoc.data();
+        const userCompanyId = userData.companyId;
+        
+        if (!userCompanyId) return false;
+        
+        // Senaryo 1: Kullanıcı alıcı, bu şirket tedarikçi
+        // - Kullanıcının talepleri arasında, bu şirkete teklif vermiş ve tamamlanmış talepler
+        const userDemandsQuery = query(
+          collection(db, 'demands'),
+          where('createdBy', '==', userId),
+          where('status', '==', 'completed')
+        );
+        const userDemandsSnap = await getDocs(userDemandsQuery);
+        
+        for (const demandDoc of userDemandsSnap.docs) {
+          // Bu talebe verilen teklifleri kontrol et
+          const companyUserIds = await getCompanyUserIds(companyId);
+          
+          // Firestore 'in' operatörü maksimum 10 eleman kabul eder
+          if (companyUserIds.length === 0) continue;
+          
+          // Eğer 10'dan fazla kullanıcı varsa, ilk 10'unu kontrol et
+          const userIdsToCheck = companyUserIds.slice(0, 10);
+          const bidsQuery = query(
+            collection(db, 'bids'),
+            where('demandId', '==', demandDoc.id),
+            where('supplierId', 'in', userIdsToCheck)
+          );
+          const bidsSnap = await getDocs(bidsQuery);
+          
+          if (!bidsSnap.empty) {
+            // Bu şirkete teklif vermiş ve talep tamamlanmış
+            return true;
+          }
+          
+          // Eğer 10'dan fazla kullanıcı varsa, kalanlarını da kontrol et
+          if (companyUserIds.length > 10) {
+            for (let i = 10; i < companyUserIds.length; i += 10) {
+              const nextBatch = companyUserIds.slice(i, i + 10);
+              const nextBidsQuery = query(
+                collection(db, 'bids'),
+                where('demandId', '==', demandDoc.id),
+                where('supplierId', 'in', nextBatch)
+              );
+              const nextBidsSnap = await getDocs(nextBidsQuery);
+              
+              if (!nextBidsSnap.empty) {
+                return true;
+              }
+            }
+          }
+        }
+        
+        // Senaryo 2: Kullanıcı tedarikçi, bu şirket alıcı
+        // - Kullanıcının verdiği teklifler arasında, bu şirketin taleplerine verdiği ve tamamlanmış olanlar
+        const userBidsQuery = query(
+          collection(db, 'bids'),
+          where('supplierId', '==', userId)
+        );
+        const userBidsSnap = await getDocs(userBidsQuery);
+        
+        for (const bidDoc of userBidsSnap.docs) {
+          const bidData = bidDoc.data();
+          const demandDoc = await getDoc(doc(db, 'demands', bidData.demandId));
+          
+          if (demandDoc.exists()) {
+            const demandData = demandDoc.data();
+            
+            // Bu talep bu şirkete ait mi ve tamamlanmış mı?
+            const demandCompanyId = demandData.createdBy ? 
+              (await getDoc(doc(db, 'users', demandData.createdBy))).data()?.companyId : null;
+            
+            if (demandCompanyId === companyId && demandData.status === 'completed') {
+              return true;
+            }
+          }
+        }
+        
+        return false;
+      } catch (e) {
+        logger.error("Completed demand check failed", e);
+        // Hata durumunda izin ver (güvenlik için kısıtlama yapmıyoruz)
+        return true;
+      }
+    }
+    
+    // Şirketin kullanıcı ID'lerini getir
+    async function getCompanyUserIds(companyId) {
+      try {
+        const usersQuery = query(
+          collection(db, 'users'),
+          where('companyId', '==', companyId),
+          where('companyJoinStatus', '==', 'approved')
+        );
+        const usersSnap = await getDocs(usersQuery);
+        return usersSnap.docs.map(doc => doc.id);
+      } catch (e) {
+        logger.error("Get company user IDs failed", e);
+        return [];
+      }
+    }
+    
+    // Submit review
+    document.getElementById('submitReviewBtn')?.addEventListener('click', async () => {
+      const user = auth.currentUser;
+      if (!user) {
+        toast.error(MESSAGES.ERROR_REVIEW_LOGIN_REQUIRED);
+        return;
+      }
+      
+      const rating = parseInt(document.getElementById('selectedRating').value);
+      const comment = document.getElementById('reviewText').value.trim();
+      
+      if (!rating || rating < 1 || rating > 5) {
+        toast.error(MESSAGES.ERROR_RATING_INVALID);
+        return;
+      }
+      
+      if (!comment) {
+        toast.error(MESSAGES.ERROR_REVIEW_COMMENT_REQUIRED);
+        return;
+      }
+      
+      // Teklifbul Rule v1.0 - Tamamlanmış talep kontrolü
+      const submitBtn = document.getElementById('submitReviewBtn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Kontrol ediliyor...';
+      
+      const hasCompletedDemand = await checkCompletedDemandWithCompany(user.uid, currentCompanyId);
+      
+      if (!hasCompletedDemand) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Gönder';
+        toast.error(MESSAGES.ERROR_REVIEW_COMPLETED_DEMAND_REQUIRED);
+        return;
+      }
+      
+      // Kullanıcının daha önce bu şirkete yorum yapıp yapmadığını kontrol et
+      try {
+        const existingReviewQuery = query(
+          collection(db, 'companies', currentCompanyId, 'reviews'),
+          where('userId', '==', user.uid)
+        );
+        const existingReviewSnap = await getDocs(existingReviewQuery);
+        
+        if (!existingReviewSnap.empty) {
+          const updateConfirm = confirm('Bu şirkete daha önce bir değerlendirme yaptınız. Mevcut değerlendirmenizi güncellemek ister misiniz?');
+          if (!updateConfirm) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Gönder';
+            return;
+          }
+          
+          // Mevcut değerlendirmeyi güncelle
+          const existingReviewId = existingReviewSnap.docs[0].id;
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          const userData = userDoc.data();
+          
+          await updateDoc(doc(db, 'companies', currentCompanyId, 'reviews', existingReviewId), {
+            rating: rating,
+            comment: comment,
+            updatedAt: serverTimestamp(),
+            authorName: userData.displayName || userData.email || 'Kullanıcı'
+          });
+          
+          await loadReviews(currentCompanyId);
+          document.getElementById('reviewModal').classList.add('hidden');
+          document.getElementById('reviewText').value = '';
+          selectedRating = 5;
+          document.getElementById('selectedRating').value = '5';
+          updateStarDisplay(5);
+          
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Gönder';
+          toast.success(MESSAGES.SUCCESS_REVIEW_UPDATED);
+          return;
+        }
+      } catch (e) {
+        logger.error("Existing review check failed", e);
+      }
+      
+      try {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        const userData = userDoc.data();
+        
+        const reviewRef = collection(db, 'companies', currentCompanyId, 'reviews');
+        await addDoc(reviewRef, {
+          userId: user.uid,
+          authorName: userData.displayName || userData.email || 'Kullanıcı',
+          rating: rating,
+          comment: comment,
+          createdAt: serverTimestamp(),
+          companyId: userData.companyId,
+          userCompanyName: userData.companyName || null
+        });
+        
+        // Reload reviews
+        await loadReviews(currentCompanyId);
+        
+        // Close modal
+        document.getElementById('reviewModal').classList.add('hidden');
+        document.getElementById('reviewText').value = '';
+        selectedRating = 5;
+        document.getElementById('selectedRating').value = '5';
+        updateStarDisplay(5);
+        
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Gönder';
+        
+        toast.success(MESSAGES.SUCCESS_REVIEW_SAVED);
+      } catch (e) {
+        logger.error("Review submit failed", e);
+        toast.error(MESSAGES.ERROR_REVIEW_SAVE + ': ' + (e.message || e));
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Gönder';
+      }
+    });
+    
+    // Teklifbul Rol & Onay Sistemi - Onay mekanizması bilgilerini yükle
+    async function loadApprovalMechanism(companyId) {
+      try {
+        const approvalSection = document.getElementById('approvalMechanismSection');
+        const approvalContent = document.getElementById('approvalMechanismContent');
+        if (!approvalSection || !approvalContent) return;
+        
+        // Kullanıcı yetkisi kontrolü (Satın Alma Uzman Yardımcısı ve üzeri)
+        const user = auth.currentUser;
+        if (!user) return;
+        
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (!userDoc.exists()) return;
+        
+        const userData = userDoc.data();
+        const userRole = userData.companyRole || userData.requestedCompanyRole || '';
+        
+        // Yetkili roller listesi (Satın Alma Uzman Yardımcısı ve üzeri)
+        const authorizedRoles = [
+          'buyer:satinalma_uzman_yardimcisi',
+          'buyer:satinalma_uzmani',
+          'buyer:satinalma_yetkilisi',
+          'buyer:satinalma_muduru',
+          'buyer:genel_mudur',
+          'buyer:genel_mudur_yardimcisi',
+          'buyer:ceo',
+          'buyer:isveren',
+          'buyer:yonetim_kurulu_baskani',
+          'buyer:yonetim_kurulu_uyesi'
+        ];
+        
+        const hasPermission = authorizedRoles.some(role => userRole.includes(role) || userRole === role);
+        
+        // Şirket alıcı mı kontrol et
+        const companyDoc = await getDoc(doc(db, 'companies', companyId));
+        if (!companyDoc.exists()) return;
+        
+        const companyData = companyDoc.data();
+        const companyRoles = companyData.roles || [];
+        const isBuyerCompany = companyRoles.includes('buyer') || companyRoles.includes('both');
+        
+        // Alıcı şirket ve yetkili kullanıcı ise göster
+        if (isBuyerCompany && hasPermission) {
+          approvalSection.classList.remove('hidden');
+          
+          // Üst onaycı kontrolü
+          const hasTopApprover = await hasActiveTopApprover(companyId);
+          
+          // Şirket düzeyindeki approvalPolicy'yi al
+          const approvalPolicy = await getApprovalPolicy(companyId);
+          
+          // Aktif üst onaycıları listele
+          // Hem companies array hem de companyId field'ını kontrol et
+          const usersQuery1 = query(
+            collection(db, 'users'),
+            where('companies', 'array-contains', companyId)
+          );
+          const usersQuery2 = query(
+            collection(db, 'users'),
+            where('companyId', '==', companyId)
+          );
+          
+          const [usersSnapshot1, usersSnapshot2] = await Promise.all([
+            getDocs(usersQuery1).catch(() => ({ docs: [] })),
+            getDocs(usersQuery2).catch(() => ({ docs: [] }))
+          ]);
+          
+          // Kullanıcıları birleştir ve tekilleştir
+          const allUsers = new Map();
+          [...usersSnapshot1.docs, ...usersSnapshot2.docs].forEach(userDoc => {
+            if (!allUsers.has(userDoc.id)) {
+              allUsers.set(userDoc.id, userDoc);
+            }
+          });
+          
+          const topApprovers = [];
+          allUsers.forEach((userDoc) => {
+            const userData = userDoc.data();
+            if (userData.isActive !== false && userData.companyJoinStatus !== 'rejected') {
+              const role = userData.companyRole || userData.requestedCompanyRole || '';
+              if (approvalPolicy.top_approver_roles.includes(role)) {
+                topApprovers.push({
+                  name: userData.displayName || userData.email || 'Kullanıcı',
+                  role: role,
+                  email: userData.email || ''
+                });
+              }
+            }
+          });
+          
+          // Rol isimlerini çevir
+          const roleLabels = {
+            'buyer:genel_mudur': 'Genel Müdür',
+            'buyer:genel_mudur_yardimcisi': 'Genel Müdür Yardımcısı',
+            'buyer:ceo': 'CEO',
+            'buyer:isveren': 'İşveren (Şirket Sahibi)',
+            'buyer:yonetim_kurulu_baskani': 'Yönetim Kurulu Başkanı',
+            'buyer:yonetim_kurulu_uyesi': 'Yönetim Kurulu Üyesi'
+          };
+          
+          approvalContent.innerHTML = `
+            <div style="display:grid; gap:16px;">
+              <div style="padding:16px; background:${hasTopApprover ? '#d1fae5' : '#fee2e2'}; border-radius:8px; border:1px solid ${hasTopApprover ? '#10b981' : '#ef4444'};">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                  <span style="font-size:20px;">${hasTopApprover ? '✅' : '❌'}</span>
+                  <strong style="color:${hasTopApprover ? '#065f46' : '#991b1b'};">
+                    ${hasTopApprover ? 'Üst Onaycı Mevcut' : 'Üst Onaycı Bulunamadı'}
+                  </strong>
+                </div>
+                <p style="margin:0; font-size:13px; color:${hasTopApprover ? '#065f46' : '#991b1b'};">
+                  ${hasTopApprover 
+                    ? 'Bu şirkette e-imza ile teklif onaylama ve PO oluşturma işlemleri yapılabilir.' 
+                    : 'E-imza ile teklif onaylama ve PO oluşturma için en az 1 üst onaycı rolü gereklidir.'}
+                </p>
+              </div>
+              
+              ${topApprovers.length > 0 ? `
+                <div>
+                  <h4 style="margin:0 0 12px 0; font-size:16px; color:#1f2937;">Aktif Üst Onaycılar</h4>
+                  <div style="display:grid; gap:8px;">
+                    ${topApprovers.map(approver => `
+                      <div style="padding:12px; background:#f9fafb; border-radius:6px; border:1px solid #e5e7eb;">
+                        <div style="font-weight:600; color:#1f2937; margin-bottom:4px;">${approver.name}</div>
+                        <div style="font-size:12px; color:#6b7280;">${roleLabels[approver.role] || approver.role}</div>
+                        ${approver.email ? `<div style="font-size:11px; color:#9ca3af; margin-top:2px;">${approver.email}</div>` : ''}
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+              ` : `
+                <div style="padding:12px; background:#fef3c7; border-radius:6px; border:1px solid #f59e0b;">
+                  <p style="margin:0; font-size:13px; color:#92400e;">
+                    ⚠️ Henüz aktif üst onaycı bulunmuyor. E-imza ile teklif onaylama için üst onaycı rolleri eklenmelidir.
+                  </p>
+                </div>
+              `}
+              
+              <div style="padding:16px; background:#eff6ff; border-radius:8px; border:1px solid #3b82f6;">
+                <h4 style="margin:0 0 8px 0; font-size:14px; color:#1e40af; font-weight:600;">Onay Politikası</h4>
+                <ul style="margin:0; padding-left:20px; font-size:13px; color:#1e40af; line-height:1.8;">
+                  <li>E-imza ile teklif onaylama yalnızca üst onaycı rolleri tarafından yapılabilir</li>
+                  <li>PO oluşturma için en az 1 üst onaycı ve birden fazla aktif kullanıcı gereklidir</li>
+                  <li>Tek kullanıcılı şirketler yalnızca teklif toplama ve mukayese yapabilir</li>
+                </ul>
+              </div>
+            </div>
+          `;
+        } else {
+          approvalSection.classList.add('hidden');
+        }
+      } catch (e) {
+        logger.error('Onay mekanizması yüklenirken hata', e);
+      }
+    }
+    
+    // Teklifbul Rol & Onay Sistemi - Başarılı ticaret geçmişini yükle
+    async function loadSuccessfulTradeHistory(companyId) {
+      try {
+        const historyContent = document.getElementById('successfulTradeHistoryContent');
+        if (!historyContent) return;
+        
+        historyContent.innerHTML = '<div style="text-align:center; padding:20px; color:#6b7280;">Yükleniyor...</div>';
+        
+        // Şirketin kullanıcılarını bul (hem companies array hem de companyId field'ını kontrol et)
+        const usersQuery1 = query(
+          collection(db, 'users'),
+          where('companies', 'array-contains', companyId)
+        );
+        const usersQuery2 = query(
+          collection(db, 'users'),
+          where('companyId', '==', companyId)
+        );
+        
+        const [usersSnapshot1, usersSnapshot2] = await Promise.all([
+          getDocs(usersQuery1).catch(() => ({ docs: [] })),
+          getDocs(usersQuery2).catch(() => ({ docs: [] }))
+        ]);
+        
+        // Kullanıcı ID'lerini birleştir ve tekilleştir
+        const companyUserIds = Array.from(new Set([
+          ...usersSnapshot1.docs.map(doc => doc.id),
+          ...usersSnapshot2.docs.map(doc => doc.id)
+        ]));
+        
+        if (companyUserIds.length === 0) {
+          historyContent.innerHTML = '<div style="text-align:center; padding:20px; color:#6b7280;">Henüz ticaret geçmişi yok.</div>';
+          return;
+        }
+        
+        // Onaylanan ve tamamlanan teklifleri bul
+        const successfulTrades = new Map(); // companyId -> { companyName, count, lastDate }
+        
+        // Senaryo 1: Bu şirket alıcı, onaylanan teklifler var mı?
+        for (const userId of companyUserIds.slice(0, 10)) { // Firestore limit
+          try {
+            const demandsQuery = query(
+              collection(db, 'demands'),
+              where('createdBy', '==', userId),
+              where('status', 'in', ['completed', 'accepted'])
+            );
+            const demandsSnapshot = await getDocs(demandsQuery);
+            
+            for (const demandDoc of demandsSnapshot.docs) {
+              const demandId = demandDoc.id;
+              
+              // Bu talebe verilen onaylanan teklifleri bul
+              const bidsQuery = query(
+                collection(db, 'bids'),
+                where('demandId', '==', demandId),
+                where('status', 'in', ['accepted', 'completed'])
+              );
+              const bidsSnapshot = await getDocs(bidsQuery);
+              
+              for (const bidDoc of bidsSnapshot.docs) {
+                const bidData = bidDoc.data();
+                const supplierId = bidData.supplierId;
+                
+                if (!supplierId) continue;
+                
+                // Tedarikçi şirket bilgisini al
+                try {
+                  const supplierDoc = await getDoc(doc(db, 'users', supplierId));
+                  if (supplierDoc.exists()) {
+                    const supplierData = supplierDoc.data();
+                    const supplierCompanyId = supplierData.companies?.[0] || null;
+                    
+                    if (supplierCompanyId && supplierCompanyId !== companyId) {
+                      const supplierCompanyDoc = await getDoc(doc(db, 'companies', supplierCompanyId));
+                      if (supplierCompanyDoc.exists()) {
+                        const supplierCompanyName = supplierCompanyDoc.data().name || 'Bilinmeyen Firma';
+                        
+                        if (!successfulTrades.has(supplierCompanyId)) {
+                          successfulTrades.set(supplierCompanyId, {
+                            companyName: supplierCompanyName,
+                            count: 0,
+                            lastDate: null,
+                            companyId: supplierCompanyId
+                          });
+                        }
+                        
+                        const trade = successfulTrades.get(supplierCompanyId);
+                        trade.count++;
+                        
+                        const bidDate = bidData.approvedAt?.toDate?.() || bidData.createdAt?.toDate?.() || new Date();
+                        if (!trade.lastDate || bidDate > trade.lastDate) {
+                          trade.lastDate = bidDate;
+                        }
+                      }
+                    }
+                  }
+                } catch (e) {
+                  logger.warn('Supplier company load failed', e);
+                }
+              }
+            }
+          } catch (e) {
+            logger.warn('Demands query failed', e);
+          }
+        }
+        
+        // Senaryo 2: Bu şirket tedarikçi, onaylanan teklifler var mı?
+        for (const userId of companyUserIds.slice(0, 10)) {
+          try {
+            const bidsQuery = query(
+              collection(db, 'bids'),
+              where('supplierId', '==', userId),
+              where('status', 'in', ['accepted', 'completed'])
+            );
+            const bidsSnapshot = await getDocs(bidsQuery);
+            
+            for (const bidDoc of bidsSnapshot.docs) {
+              const bidData = bidDoc.data();
+              const demandId = bidData.demandId;
+              
+              if (!demandId) continue;
+              
+              // Talep bilgisini al
+              try {
+                const demandDoc = await getDoc(doc(db, 'demands', demandId));
+                if (demandDoc.exists()) {
+                  const demandData = demandDoc.data();
+                  const buyerId = demandData.createdBy;
+                  
+                  if (!buyerId) continue;
+                  
+                  // Alıcı şirket bilgisini al
+                  const buyerDoc = await getDoc(doc(db, 'users', buyerId));
+                  if (buyerDoc.exists()) {
+                    const buyerData = buyerDoc.data();
+                    const buyerCompanyId = buyerData.companies?.[0] || null;
+                    
+                    if (buyerCompanyId && buyerCompanyId !== companyId) {
+                      const buyerCompanyDoc = await getDoc(doc(db, 'companies', buyerCompanyId));
+                      if (buyerCompanyDoc.exists()) {
+                        const buyerCompanyName = buyerCompanyDoc.data().name || 'Bilinmeyen Firma';
+                        
+                        if (!successfulTrades.has(buyerCompanyId)) {
+                          successfulTrades.set(buyerCompanyId, {
+                            companyName: buyerCompanyName,
+                            count: 0,
+                            lastDate: null,
+                            companyId: buyerCompanyId
+                          });
+                        }
+                        
+                        const trade = successfulTrades.get(buyerCompanyId);
+                        trade.count++;
+                        
+                        const bidDate = bidData.approvedAt?.toDate?.() || bidData.createdAt?.toDate?.() || new Date();
+                        if (!trade.lastDate || bidDate > trade.lastDate) {
+                          trade.lastDate = bidDate;
+                        }
+                      }
+                    }
+                  }
+                }
+              } catch (e) {
+                logger.warn('Demand load failed', e);
+              }
+            }
+          } catch (e) {
+            logger.warn('Bids query failed', e);
+          }
+        }
+        
+        // Sonuçları göster
+        if (successfulTrades.size === 0) {
+          historyContent.innerHTML = '<div style="text-align:center; padding:20px; color:#6b7280;">Henüz başarılı ticaret geçmişi yok.</div>';
+          return;
+        }
+        
+        const tradesArray = Array.from(successfulTrades.values()).sort((a, b) => {
+          // Önce tarihe göre (en yeni), sonra sayıya göre sırala
+          if (b.lastDate && a.lastDate) {
+            return b.lastDate - a.lastDate;
+          }
+          return b.count - a.count;
+        });
+        
+        historyContent.innerHTML = `
+          <div style="display:grid; gap:12px;">
+            ${tradesArray.map(trade => `
+              <div style="padding:16px; background:#f9fafb; border-radius:8px; border:1px solid #e5e7eb; cursor:pointer; transition:all 0.2s;" 
+                   onmouseover="this.style.background='#f3f4f6'; this.style.borderColor='#3b82f6';"
+                   onmouseout="this.style.background='#f9fafb'; this.style.borderColor='#e5e7eb';"
+                   onclick="window.location.href='company-profile.html?id=${trade.companyId}'">
+                <div style="display:flex; justify-content:space-between; align-items:start; gap:16px;">
+                  <div style="flex:1;">
+                    <div style="font-weight:600; font-size:16px; color:#1f2937; margin-bottom:4px;">
+                      ${trade.companyName}
+                    </div>
+                    <div style="font-size:13px; color:#6b7280;">
+                      ${trade.count} ${trade.count === 1 ? 'başarılı işlem' : 'başarılı işlem'}
+                    </div>
+                    ${trade.lastDate ? `
+                      <div style="font-size:12px; color:#9ca3af; margin-top:4px;">
+                        Son işlem: ${trade.lastDate.toLocaleDateString('tr-TR', { year: 'numeric', month: 'long', day: 'numeric' })}
+                      </div>
+                    ` : ''}
+                  </div>
+                  <div style="padding:8px 12px; background:#d1fae5; color:#065f46; border-radius:6px; font-size:12px; font-weight:600;">
+                    ✅ İş Ortaklığı
+                  </div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      } catch (e) {
+        logger.error('Başarılı ticaret geçmişi yüklenirken hata', e);
+        const historyContent = document.getElementById('successfulTradeHistoryContent');
+        if (historyContent) {
+          historyContent.innerHTML = 
+            '<div style="text-align:center; padding:20px; color:#ef4444;">Ticaret geçmişi yüklenirken hata oluştu.</div>';
+        }
+      }
+    }
+    
+    // Initialize
+    auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        currentUserId = user.uid;
+        const companyId = await getCompanyIdFromURL();
+        if (companyId) {
+          await loadCompanyProfile(companyId);
+        } else {
+          document.getElementById('loadingState').innerHTML = '<p>Şirket bulunamadı.</p>';
+        }
+      } else {
+        window.location.href = './index.html';
+      }
+    });
+  </script>
+</body>
+</html>
+

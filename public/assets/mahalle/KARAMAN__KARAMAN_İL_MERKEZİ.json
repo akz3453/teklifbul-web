@@ -1,0 +1,234 @@
+{
+  "districtId": "KARAMAN__KARAMAN_İL_MERKEZİ",
+  "districtName": "Karaman-il Merkezi",
+  "neighborhoods": [
+    {
+      "id": "BAŞAKŞEHİR",
+      "name": "Başakşehir"
+    },
+    {
+      "id": "ÜNİVERSİTE",
+      "name": "Üniversite"
+    },
+    {
+      "id": "RAUF_DENKTAŞ",
+      "name": "Rauf Denktaş"
+    },
+    {
+      "id": "ELMA_ŞEHİR",
+      "name": "Elma Şehir"
+    },
+    {
+      "id": "YUNUS_EMRE",
+      "name": "Yunus Emre"
+    },
+    {
+      "id": "ABBAS",
+      "name": "Abbas"
+    },
+    {
+      "id": "AHİOSMAN",
+      "name": "Ahiosman"
+    },
+    {
+      "id": "AHMET_YESEVİ",
+      "name": "Ahmet Yesevi"
+    },
+    {
+      "id": "ALACASULUK",
+      "name": "Alacasuluk"
+    },
+    {
+      "id": "ALİŞAHANE",
+      "name": "Alişahane"
+    },
+    {
+      "id": "ATATÜRK",
+      "name": "Atatürk"
+    },
+    {
+      "id": "BAHÇELİEVLER",
+      "name": "Bahçelievler"
+    },
+    {
+      "id": "BEYAZKENT",
+      "name": "Beyazkent"
+    },
+    {
+      "id": "CEDİT",
+      "name": "Cedit"
+    },
+    {
+      "id": "CUMHURİYET",
+      "name": "Cumhuriyet"
+    },
+    {
+      "id": "ÇELTEK",
+      "name": "Çeltek"
+    },
+    {
+      "id": "FATİH",
+      "name": "Fatih"
+    },
+    {
+      "id": "FENARİ",
+      "name": "Fenari"
+    },
+    {
+      "id": "GAZİDÜKKAN",
+      "name": "Gazidükkan"
+    },
+    {
+      "id": "GEVHERHATUN",
+      "name": "Gevherhatun"
+    },
+    {
+      "id": "HACICELAL",
+      "name": "Hacıcelal"
+    },
+    {
+      "id": "HAMİDİYE",
+      "name": "Hamidiye"
+    },
+    {
+      "id": "HİSAR",
+      "name": "Hisar"
+    },
+    {
+      "id": "HÜRRİYET",
+      "name": "Hürriyet"
+    },
+    {
+      "id": "İBRAHİM_HAKKI_KONYALI",
+      "name": "İbrahim Hakkı Konyalı"
+    },
+    {
+      "id": "İMARET",
+      "name": "İmaret"
+    },
+    {
+      "id": "KARAMANOĞLU_MEHMET_BEY",
+      "name": "Karamanoğlu Mehmet Bey"
+    },
+    {
+      "id": "KAZIMKARABEKİR_PAŞA",
+      "name": "Kazımkarabekir Paşa"
+    },
+    {
+      "id": "KIRBAĞI",
+      "name": "Kırbağı"
+    },
+    {
+      "id": "KİRİŞÇİ",
+      "name": "Kirişçi"
+    },
+    {
+      "id": "KOÇAKDEDE",
+      "name": "Koçakdede"
+    },
+    {
+      "id": "KÜLHAN",
+      "name": "Külhan"
+    },
+    {
+      "id": "LARENDE",
+      "name": "Larende"
+    },
+    {
+      "id": "MAHMUDİYE",
+      "name": "Mahmudiye"
+    },
+    {
+      "id": "MANSURDEDE",
+      "name": "Mansurdede"
+    },
+    {
+      "id": "MEHMET_AKİF_ERSOY",
+      "name": "Mehmet Akif Ersoy"
+    },
+    {
+      "id": "MÜMİNE_HATUN",
+      "name": "Mümine Hatun"
+    },
+    {
+      "id": "NEFİSE_SULTAN",
+      "name": "Nefise Sultan"
+    },
+    {
+      "id": "OSMANGAZİ",
+      "name": "Osmangazi"
+    },
+    {
+      "id": "PİRİREİS",
+      "name": "Pirireis"
+    },
+    {
+      "id": "SAKABAŞI",
+      "name": "Sakabaşı"
+    },
+    {
+      "id": "SEKİÇEŞME",
+      "name": "Sekiçeşme"
+    },
+    {
+      "id": "SİYAHSER",
+      "name": "Siyahser"
+    },
+    {
+      "id": "SÜMER",
+      "name": "Sümer"
+    },
+    {
+      "id": "ŞEYH_EDEBALİ",
+      "name": "Şeyh Edebali"
+    },
+    {
+      "id": "ŞEYH_ŞAMİL",
+      "name": "Şeyh Şamil"
+    },
+    {
+      "id": "TABDUK_EMRE",
+      "name": "Tabduk Emre"
+    },
+    {
+      "id": "TAHSİN_ÜNAL",
+      "name": "Tahsin Ünal"
+    },
+    {
+      "id": "TOPUCAK",
+      "name": "Topucak"
+    },
+    {
+      "id": "URGAN",
+      "name": "Urgan"
+    },
+    {
+      "id": "VALİDE_SULTAN",
+      "name": "Valide Sultan"
+    },
+    {
+      "id": "YENİMAHALLE",
+      "name": "Yenimahalle"
+    },
+    {
+      "id": "YENİŞEHİR",
+      "name": "Yenişehir"
+    },
+    {
+      "id": "YEŞİLADA",
+      "name": "Yeşilada"
+    },
+    {
+      "id": "YUNUSKENT",
+      "name": "Yunuskent"
+    },
+    {
+      "id": "ZEMBİLLİ_ALİ_EFENDİ",
+      "name": "Zembilli Ali Efendi"
+    },
+    {
+      "id": "ZİYA_GÖKALP",
+      "name": "Ziya Gökalp"
+    }
+  ]
+}

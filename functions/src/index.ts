@@ -79,6 +79,90 @@ export const generateSATFK = functions.firestore
   });
 
 /**
+ * Backfill missing SATFK codes for existing demands
+ * Can be triggered manually or periodically
+ */
+export const backfillMissingSATFK = functions.https.onRequest(async (req, res) => {
+  // Only allow authenticated users to trigger this
+  if (!req.auth) {
+    res.status(401).json({ error: 'Unauthorized' });
+    return;
+  }
+
+  try {
+    // Get all demands without SATFK
+    const demandsRef = admin.firestore().collection('demands');
+    const query = demandsRef.where('satfk', '==', null).limit(100);
+    const snapshot = await query.get();
+
+    if (snapshot.empty) {
+      res.json({ message: 'No demands without SATFK found' });
+      return;
+    }
+
+    console.log(`Found ${snapshot.size} demands without SATFK`);
+
+    // Process each demand
+    const batch = admin.firestore().batch();
+    let processedCount = 0;
+
+    for (const doc of snapshot.docs) {
+      const demandData = doc.data();
+      
+      // Get creation date
+      let creationDate: Date;
+      if (demandData.createdAt && demandData.createdAt.toDate) {
+        creationDate = demandData.createdAt.toDate();
+      } else if (demandData.createdAt && demandData.createdAt._seconds) {
+        creationDate = new Date(demandData.createdAt._seconds * 1000);
+      } else {
+        creationDate = new Date();
+      }
+
+      // Format date as YYYYMMDD
+      const dateStr = creationDate.toISOString().slice(0, 10).replace(/-/g, '');
+      
+      // Get daily counter
+      const counterRef = admin.firestore().collection('counters').doc(`demandCode_${dateStr}`);
+      
+      const satfk = await admin.firestore().runTransaction(async (transaction) => {
+        const counterDoc = await transaction.get(counterRef);
+        const currentCount = counterDoc.exists ? (counterDoc.data()?.count || 0) : 0;
+        const newCount = currentCount + 1;
+        
+        // Convert to Base36 and pad to 3-4 characters
+        const base36 = newCount.toString(36).toUpperCase();
+        const padded = base36.padStart(3, '0');
+        
+        // Update counter
+        transaction.set(counterRef, { count: newCount }, { merge: true });
+        
+        // Generate SATFK
+        return `SATFK-${dateStr}-${padded}`;
+      });
+
+      // Update demand with SATFK
+      batch.update(doc.ref, { satfk });
+      processedCount++;
+      
+      console.log(`Generated SATFK for demand ${doc.id}: ${satfk}`);
+    }
+
+    // Commit all updates
+    await batch.commit();
+    
+    res.json({ 
+      message: `Successfully processed ${processedCount} demands`,
+      processedCount
+    });
+    
+  } catch (error) {
+    console.error('Error in backfillMissingSATFK:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
  * Normalize demand categories to slug format
  * Triggered on write to /demands/{id}
  */

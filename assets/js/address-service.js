@@ -127,7 +127,7 @@ export async function loadStreets({
       }
     }
     // 404 sessizce geç (normal durum)
-  } catch (localError) {
+  } catch (_localError) {
     // Local fetch hatası sessizce geç
   }
   
@@ -153,7 +153,7 @@ export async function loadStreets({
               streets: apiJson.data
             })
           });
-        } catch (saveError) {
+        } catch (_saveError) {
           // Cache kaydetme hatası sessizce geç
         }
       }

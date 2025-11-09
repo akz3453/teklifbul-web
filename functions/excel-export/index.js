@@ -194,7 +194,7 @@ exports.exportPurchaseForm = functions
       ];
 
       demandInfo.forEach(info => {
-        const row = shTalep.addRow([]);
+        shTalep.addRow([]);
         const labelCell = shTalep.getCell(rowNumTalep, 1);
         labelCell.value = info.label;
         labelCell.font = labelStyle.font;
@@ -214,7 +214,7 @@ exports.exportPurchaseForm = functions
 
       // Kategoriler
       if (kategoriler && Array.isArray(kategoriler) && kategoriler.length > 0) {
-        const row = shTalep.addRow([]);
+        shTalep.addRow([]);
         const labelCell = shTalep.getCell(rowNumTalep, 1);
         labelCell.value = "Kategoriler:";
         labelCell.font = labelStyle.font;
@@ -234,7 +234,7 @@ exports.exportPurchaseForm = functions
 
       // Açıklama
       if (aciklama) {
-        const row = shTalep.addRow([]);
+        shTalep.addRow([]);
         const labelCell = shTalep.getCell(rowNumTalep, 1);
         labelCell.value = "Açıklama:";
         labelCell.font = labelStyle.font;
@@ -376,9 +376,9 @@ exports.exportPurchaseForm = functions
         { label: "Teslim Yeri:", value: teslim_yeri || "" }
       ];
 
-      summaryInfo.forEach((info, idx) => {
+  summaryInfo.forEach((info, idx) => {
         if (idx % 2 === 0) {
-          const row = shTeklif.addRow([]);
+          shTeklif.addRow([]);
           const labelCell = shTeklif.getCell(rowNumTeklif, 1);
           labelCell.value = info.label;
           labelCell.font = labelStyle.font;
@@ -600,9 +600,9 @@ exports.exportPurchaseForm = functions
       shTeklif.addRow([]);
       rowNumTeklif++;
       
-      const noteRowTeklif = shTeklif.addRow(["NOT: 'TEKLİF' sütunlarını doldurunuz. Talep bilgileri referans amaçlıdır. Teklif ürün adı, miktar, birim fiyat ve KDV bilgilerini girdikten sonra toplamlar otomatik hesaplanacaktır."]);
-      shTeklif.mergeCells(`A${rowNumTeklif}:S${rowNumTeklif}`);
-      const noteCellTeklif = shTeklif.getCell(rowNumTeklif, 1);
+  shTeklif.addRow(["NOT: 'TEKLİF' sütunlarını doldurunuz. Talep bilgileri referans amaçlıdır. Teklif ürün adı, miktar, birim fiyat ve KDV bilgilerini girdikten sonra toplamlar otomatik hesaplanacaktır."]);
+  shTeklif.mergeCells(`A${rowNumTeklif}:S${rowNumTeklif}`);
+  const noteCellTeklif = shTeklif.getCell(rowNumTeklif, 1);
       noteCellTeklif.font = { italic: true, size: 10, color: { argb: "FF6B7280" } };
       noteCellTeklif.alignment = { horizontal: "left" };
 

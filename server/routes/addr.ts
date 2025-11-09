@@ -40,8 +40,13 @@ async function fetchWithRetry(url: string, tries = 3): Promise<any> {
       }
       
       lastErr = new Error(`${res.status} ${res.statusText}`);
-    } catch (e: any) {
-      lastErr = e;
+    } catch (e: unknown) {
+      // Normalize unknown to Error for lastErr
+      if (e instanceof Error) {
+        lastErr = e;
+      } else {
+        lastErr = new Error(String(e));
+      }
     }
     
     // Exponential backoff: 250ms, 500ms, 1000ms
@@ -91,10 +96,14 @@ router.get('/streets', async (req: Request, res: Response) => {
         ok: true,
         data: normalizedStreets 
       });
-    } catch (apiError: any) {
+    } catch (apiError: unknown) {
+      const errMsg = (typeof apiError === 'object' && apiError && 'message' in apiError)
+        ? String((apiError as any).message)
+        : String(apiError);
+
       console.warn('[addr] TürkiyeAPI streets fetch failed', { 
         neighborhoodId: neighborhoodIdNum, 
-        error: apiError.message || String(apiError) 
+        error: errMsg
       });
       
       // Hata durumunda boş array döndür (UI free-text'e düşsün)
@@ -184,12 +193,16 @@ router.get('/resolve-ids', async (req: Request, res: Response) => {
           defaultPostalCode
         }
       });
-    } catch (apiError: any) {
+    } catch (apiError: unknown) {
+      const errMsg = (typeof apiError === 'object' && apiError && 'message' in apiError)
+        ? String((apiError as any).message)
+        : String(apiError);
+
       console.warn('[addr] TürkiyeAPI resolve-ids failed', { 
         provinceName, 
         districtName, 
         neighborhoodName,
-        error: apiError.message || String(apiError) 
+        error: errMsg
       });
       
       return res.status(500).json({ 

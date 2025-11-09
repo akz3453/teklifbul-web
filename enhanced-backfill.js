@@ -1,6 +1,6 @@
 // Enhanced backfill script to ensure data consistency for supplier matching
 import { db } from "./firebase.js";
-import { collection, query, where, getDocs, updateDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+import { collection, query, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
 
 // Helper: Convert string to slug format
 function toSlug(name) {

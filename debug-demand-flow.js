@@ -53,7 +53,7 @@ async function checkDemandRecipients() {
     console.log("2. 📨 demandRecipients Koleksiyonu Kontrol Ediliyor...");
     
     try {
-        const { collection, getDocs, query, where, orderBy, limit } = await import("https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js");
+        const { collection, getDocs } = await import("https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js");
         
         // Tüm demandRecipients kayıtlarını al
         const allRecipients = await getDocs(collection(window.__db, 'demandRecipients'));

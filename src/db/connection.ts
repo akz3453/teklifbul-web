@@ -12,7 +12,7 @@ let pgPool: PGPool | null = null;
 let redisClient: Redis | null = null;
 
 // PostgreSQL connection config
-function createPgPool(): Pool {
+function createPgPool(): PGPool {
   const config: PoolConfig = {
     host: process.env.POSTGRES_HOST || 'localhost',
     port: Number(process.env.POSTGRES_PORT) || 5432,
@@ -41,16 +41,19 @@ function createRedisClient(): Redis {
   });
 }
 
-export function getPgPool(): Pool {
+export function getPgPool(): PGPool {
   if (!pgPool) {
-    pgPool = createPgPool();
-    
+    const pool = createPgPool();
+    pgPool = pool;
+
     // Error handling
-    pgPool!.on('error', (err: any) => {
-        console.error('Unexpected PostgreSQL pool error:', err);
-      });
+    pool.on('error', (err: unknown) => {
+      // prefer unknown over any; log safely
+      console.error('Unexpected PostgreSQL pool error:', err);
+    });
   }
-  return pgPool;
+  // pgPool is guaranteed to be set here
+  return pgPool as PGPool;
 }
 
 export function getRedisClient(): Redis | null {
@@ -96,7 +99,7 @@ export async function testConnection(): Promise<boolean> {
     const pool = getPgPool();
     await pool.query('SELECT 1');
     return true;
-  } catch (e) {
+  } catch (e: unknown) {
     console.error('PostgreSQL connection test failed:', e);
     return false;
   }

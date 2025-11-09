@@ -1,5 +1,5 @@
 // firebase.js (FINAL)
-import { initializeApp, getApp, getApps } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
 import {
   getAuth,
   setPersistence,
@@ -120,7 +120,7 @@ export const db   = getFirestore(app);
       try {
         await signOut(auth);
         logger.info("Eski local persistence oturumu temizlendi");
-      } catch (signOutError) {
+      } catch {
         // Oturum zaten kapalı olabilir, hata verme
         logger.info("Oturum zaten kapalı veya temizlenmiş");
       }

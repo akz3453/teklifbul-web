@@ -1,6 +1,5 @@
 // header.js — tüm sayfalarda ortak: firma adı + çıkış + multi-role support
-import { db, requireAuth, logout } from "./firebase.js";
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+import { requireAuth, logout } from "./firebase.js";
 
 export async function setupHeader() {
   const user = await requireAuth();

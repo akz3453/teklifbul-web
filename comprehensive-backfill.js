@@ -1,6 +1,6 @@
 // Comprehensive backfill script to update existing supplier records with proper fields
 import { db } from "./firebase.js";
-import { collection, query, where, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+import { collection, query, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
 
 // Helper: Convert string to slug format
 function toSlug(name) {

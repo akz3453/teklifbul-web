@@ -338,7 +338,7 @@ exports.onNotificationTestCreated = onDocumentWritten(
       return;
     }
 
-    const { userId, token, title, body } = after;
+  const { token, title, body } = after;
 
     try {
       // Send notification to specific token

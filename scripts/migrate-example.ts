@@ -34,8 +34,8 @@ if (getApps().length === 0) {
       });
     }
   } catch (error: any) {
-    console.error('Firebase Admin initialize hatasi:', error.message);
-    console.error('Lutfen serviceAccountKey.json dosyasini proje kokune ekleyin veya FIREBASE_SERVICE_ACCOUNT environment variable ayarlayin');
+    logger.error('Firebase Admin initialize hatasi', error);
+    logger.error('Lutfen serviceAccountKey.json dosyasini proje kokune ekleyin veya FIREBASE_SERVICE_ACCOUNT environment variable ayarlayin');
     process.exit(1);
   }
 }

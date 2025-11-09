@@ -8,7 +8,31 @@
 
 ## 🎯 Öne Çıkanlar
 
-### 1. Büyük Dosya İçe/Dışa Aktarma: Progress Bar + İptal
+### 1. Kalite Kapıları: Husky + lint-staged + Smoke
+
+**Yeni Özellik:** Otomatik kod kalitesi kontrolleri
+
+**Özellikler:**
+- ✅ Pre-commit hook: Lint + type-check (staged dosyalar)
+- ✅ Pre-push hook: Smoke test (opsiyonel)
+- ✅ lint-staged konfigürasyonu (sadece değişen dosyalar)
+- ✅ README-DEV.md dokümantasyonu
+- ✅ ESLint no-console kuralı korunuyor (logger.ts hariç)
+
+**Yeni Dosyalar:**
+- `.husky/pre-commit` - Pre-commit hook
+- `.husky/pre-push` - Pre-push hook (opsiyonel)
+- `README-DEV.md` - Developer guide
+
+**Faydalar:**
+- Her commit'te otomatik lint + type-check
+- Push öncesi smoke test (opsiyonel)
+- Kod kalitesi korunuyor
+- CI/CD'ye benzer kontroller lokal ortamda
+
+---
+
+### 2. Büyük Dosya İçe/Dışa Aktarma: Progress Bar + İptal
 
 **Sorun:** Excel export/import işlemleri sırasında UI donuyor, kullanıcı işlemi iptal edemiyordu.
 
@@ -46,7 +70,7 @@
 
 ---
 
-### 3. Tax Offices Arama: Index'li, Case-Insensitive ve TR-Normalize
+### 4. Tax Offices Arama: Index'li, Case-Insensitive ve TR-Normalize
 
 **Sorun:** Tax offices araması tam koleksiyon taraması yapıyordu, performans düşüktü.
 
@@ -70,7 +94,7 @@
 
 ---
 
-### 4. Migrations: Batch'li, Retry/Backoff, SIGINT ve Dry-Run
+### 5. Migrations: Batch'li, Retry/Backoff, SIGINT ve Dry-Run
 
 **Yeni Özellik:** Production-ready migration sistemi
 
@@ -91,7 +115,7 @@
 
 ---
 
-### 5. Otomasyon: Deploy → Migrate → Smoke Tek Komutla
+### 6. Otomasyon: Deploy → Migrate → Smoke Tek Komutla
 
 **Yeni Özellik:** Tüm deployment adımlarını tek komutla çalıştırma
 
@@ -158,6 +182,12 @@
 ---
 
 ## 📊 Teknik Detaylar
+
+### Kalite Kapıları
+- `husky` - Git hooks yönetimi
+- `lint-staged` - Staged dosyalar için lint
+- `.husky/pre-commit` - Pre-commit hook
+- `.husky/pre-push` - Pre-push hook (opsiyonel)
 
 ### Yeni Component'ler
 - `ProgressBar` - Progress bar component

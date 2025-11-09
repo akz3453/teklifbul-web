@@ -13,6 +13,7 @@ import { requiresCurrencyInfo, createCurrencyInfo, getCurrencyNameTR } from '../
 import type { DemandData } from '../../../domain/offer/schema';
 import { toast } from '../../../shared/ui/toast.js';
 import { exportSupplierOfferBrowser } from '../../../export/excel/supplierOfferExport';
+import { importSupplierOfferBrowser } from '../../../import/excel/supplierOfferImport';
 import { useCancellableTask } from '../../../shared/hooks/useCancellableTask';
 import { ProgressBar } from '../../../shared/ui/ProgressBar';
 
@@ -105,6 +106,8 @@ export default function OfferTab({ demandId, demandData, onSubmit }: OfferTabPro
   
   // Excel export için progress tracking
   const exportTask = useCancellableTask<Blob>();
+  // Excel import için progress tracking
+  const importTask = useCancellableTask<Offer>();
   
   // Form başlangıç değerleri
   const defaultValues = useMemo(() => {
@@ -233,6 +236,43 @@ export default function OfferTab({ demandId, demandData, onSubmit }: OfferTabPro
       if (error.message !== 'İşlem iptal edildi') {
         toast.error(`Excel export hatası: ${error.message}`);
       }
+    }
+  };
+
+  // Excel import handler
+  const handleExcelImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    // Dosya tipi kontrolü
+    if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+      toast.error('Lütfen Excel dosyası (.xlsx veya .xls) seçin');
+      return;
+    }
+
+    try {
+      await importTask.start(async (signal, reportProgress) => {
+        const offer = await importSupplierOfferBrowser(file, signal, reportProgress);
+        
+        // Form'u import edilen verilerle doldur
+        setValue('header', offer.header);
+        setValue('lines', offer.lines);
+        if (offer.currencyInfo) {
+          setCurrencyInfo(offer.currencyInfo);
+        }
+        
+        toast.success('Excel dosyası başarıyla yüklendi');
+        return offer;
+      });
+    } catch (error: any) {
+      if (error.message !== 'İşlem iptal edildi') {
+        toast.error(`Excel import hatası: ${error.message}`);
+      }
+    } finally {
+      // Input'u temizle
+      event.target.value = '';
     }
   };
   
@@ -443,27 +483,71 @@ export default function OfferTab({ demandId, demandData, onSubmit }: OfferTabPro
           </div>
         )}
 
+        {/* Excel Import Progress */}
+        {importTask.isRunning && (
+          <div style={{ marginBottom: '20px' }}>
+            <ProgressBar
+              value={importTask.progress}
+              onCancel={importTask.cancel}
+              label="Excel dosyası yükleniyor..."
+              showPercentage={true}
+            />
+          </div>
+        )}
+
         {/* Gönder Butonu */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-          <button
-            type="button"
-            onClick={handleExcelExport}
-            disabled={exportTask.isRunning}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', alignItems: 'center' }}>
+          <label
             style={{ 
               padding: '12px 24px', 
-              backgroundColor: exportTask.isRunning ? '#9ca3af' : '#6b7280', 
+              backgroundColor: importTask.isRunning ? '#9ca3af' : '#10b981', 
               color: 'white', 
               border: 'none', 
               borderRadius: '4px', 
-              cursor: exportTask.isRunning ? 'not-allowed' : 'pointer',
-              opacity: exportTask.isRunning ? 0.6 : 1
+              cursor: importTask.isRunning ? 'not-allowed' : 'pointer',
+              opacity: importTask.isRunning ? 0.6 : 1,
+              display: 'inline-block',
+              fontWeight: 500
+            }}
+          >
+            {importTask.isRunning ? 'Yükleniyor...' : 'Excel\'den Yükle'}
+            <input
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleExcelImport}
+              disabled={importTask.isRunning}
+              style={{ display: 'none' }}
+            />
+          </label>
+          <button
+            type="button"
+            onClick={handleExcelExport}
+            disabled={exportTask.isRunning || importTask.isRunning}
+            style={{ 
+              padding: '12px 24px', 
+              backgroundColor: (exportTask.isRunning || importTask.isRunning) ? '#9ca3af' : '#6b7280', 
+              color: 'white', 
+              border: 'none', 
+              borderRadius: '4px', 
+              cursor: (exportTask.isRunning || importTask.isRunning) ? 'not-allowed' : 'pointer',
+              opacity: (exportTask.isRunning || importTask.isRunning) ? 0.6 : 1
             }}
           >
             {exportTask.isRunning ? 'İndiriliyor...' : 'Excel İndir'}
           </button>
           <button
             type="submit"
-            style={{ padding: '12px 24px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+            disabled={importTask.isRunning || exportTask.isRunning}
+            style={{ 
+              padding: '12px 24px', 
+              backgroundColor: (importTask.isRunning || exportTask.isRunning) ? '#9ca3af' : '#2563eb', 
+              color: 'white', 
+              border: 'none', 
+              borderRadius: '4px', 
+              cursor: (importTask.isRunning || exportTask.isRunning) ? 'not-allowed' : 'pointer', 
+              fontWeight: 'bold',
+              opacity: (importTask.isRunning || exportTask.isRunning) ? 0.6 : 1
+            }}
           >
             Teklifi Gönder
           </button>

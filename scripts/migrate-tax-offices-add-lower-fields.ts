@@ -70,15 +70,16 @@ async function migrateTaxOfficesLowerFields(batchSize: number = 1000) {
     let updated = 0;
     let skipped = 0;
 
-    // Batch'li migration çalıştır
+    // Cursor-based pagination ile migration (Firestore'da offset verimsiz)
+    // Progress tracking için runCancellableBatches kullanıyoruz ama cursor-based pagination yapıyoruz
     const result = await runCancellableBatches(
       totalCount,
-      async (offset, batchLimit, signal) => {
+      async (_offset, batchLimit, signal) => {
         if (signal.aborted) {
           throw new Error('Migration cancelled');
         }
 
-        // Cursor-based pagination (Firestore'da offset yerine)
+        // Cursor-based pagination (Firestore'da offset yerine - daha verimli)
         let query = officesRef.limit(batchLimit);
         if (lastDoc) {
           query = query.startAfter(lastDoc);

@@ -10,7 +10,11 @@
  * Bu alanlar case-insensitive sorgular için Firestore index'lerinde kullanılacak.
  * 
  * Usage:
- *   tsx scripts/migrate-tax-offices-add-lower-fields.ts [--batch=1000]
+ *   tsx scripts/migrate-tax-offices-add-lower-fields.ts [--batch=1000] [--credentials=/path/to/key.json] [--dry-run]
+ * 
+ * Environment Variables:
+ *   GOOGLE_APPLICATION_CREDENTIALS - Service account key dosya yolu
+ *   FIREBASE_SERVICE_ACCOUNT - Service account JSON string (alternatif)
  */
 
 import 'dotenv/config';
@@ -18,32 +22,73 @@ import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore as getAdminFirestore } from 'firebase-admin/firestore';
 import { runCancellableBatches } from '../src/shared/utils/migration-runner';
 import { logger } from '../src/shared/log/logger';
+import { commitBatchWithRetry } from '../src/shared/utils/backoff-retry';
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 
-// Firebase Admin initialize
-if (getApps().length === 0) {
+/**
+ * Service account key dosya yolunu maskele (güvenlik için)
+ */
+function maskPath(path: string): string {
+  if (!path) return 'N/A';
+  const parts = path.split(/[/\\]/);
+  if (parts.length <= 2) return '***/***';
+  return `***/${parts.slice(-2).join('/')}`;
+}
+
+/**
+ * Firebase Admin initialize - esnek kimlik yönetimi
+ */
+function initializeFirebaseAdmin(credentialsPath?: string): void {
+  if (getApps().length > 0) {
+    return; // Zaten initialize edilmiş
+  }
+
   try {
-    // Önce environment variable'dan kontrol et
-    if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-      const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-      initializeApp({
-        credential: cert(serviceAccount),
-      });
-    } else {
-      // JSON dosyasını direkt oku
+    let serviceAccount: any;
+
+    // 1. Öncelik: GOOGLE_APPLICATION_CREDENTIALS environment variable
+    if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+      const credPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+      logger.info('GOOGLE_APPLICATION_CREDENTIALS kullaniliyor', { path: maskPath(credPath) });
+      if (!existsSync(credPath)) {
+        throw new Error(`GOOGLE_APPLICATION_CREDENTIALS dosyasi bulunamadi: ${maskPath(credPath)}`);
+      }
+      serviceAccount = JSON.parse(readFileSync(credPath, 'utf-8'));
+    }
+    // 2. --credentials flag ile verilen yol
+    else if (credentialsPath) {
+      logger.info('--credentials flag kullaniliyor', { path: maskPath(credentialsPath) });
+      if (!existsSync(credentialsPath)) {
+        throw new Error(`Credentials dosyasi bulunamadi: ${maskPath(credentialsPath)}`);
+      }
+      serviceAccount = JSON.parse(readFileSync(credentialsPath, 'utf-8'));
+    }
+    // 3. FIREBASE_SERVICE_ACCOUNT environment variable (JSON string)
+    else if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+      logger.info('FIREBASE_SERVICE_ACCOUNT environment variable kullaniliyor');
+      serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+    }
+    // 4. Fallback: proje kökündeki serviceAccountKey.json
+    else {
       const serviceAccountPath = join(process.cwd(), 'serviceAccountKey.json');
       if (!existsSync(serviceAccountPath)) {
-        throw new Error('serviceAccountKey.json bulunamadi');
+        throw new Error(
+          'Service account key bulunamadi. ' +
+          'Lutfen GOOGLE_APPLICATION_CREDENTIALS environment variable ayarlayin, ' +
+          '--credentials flag kullanin, veya serviceAccountKey.json dosyasini proje kokune ekleyin.'
+        );
       }
-      const serviceAccount = JSON.parse(readFileSync(serviceAccountPath, 'utf-8'));
-      initializeApp({
-        credential: cert(serviceAccount),
-      });
+      logger.info('serviceAccountKey.json kullaniliyor (proje koku)');
+      serviceAccount = JSON.parse(readFileSync(serviceAccountPath, 'utf-8'));
     }
+
+    initializeApp({
+      credential: cert(serviceAccount),
+    });
+    logger.info('Firebase Admin basariyla initialize edildi');
   } catch (error: any) {
     logger.error('Firebase Admin initialize hatasi', error);
-    logger.error('Lutfen serviceAccountKey.json dosyasini proje kokune ekleyin veya FIREBASE_SERVICE_ACCOUNT environment variable ayarlayin');
     process.exit(1);
   }
 }
@@ -69,9 +114,16 @@ function normalizeTurkishLower(text: string): string {
 /**
  * Tax offices migration: lowercase alanları ekle
  */
-async function migrateTaxOfficesLowerFields(batchSize: number = 1000) {
+async function migrateTaxOfficesLowerFields(
+  batchSize: number = 1000,
+  dryRun: boolean = false
+) {
   logger.group('Migration: Tax Offices - Add Lowercase Fields');
-  logger.info('Migration başlatılıyor', { batchSize });
+  logger.info('Migration baslatiliyor', { 
+    batchSize, 
+    dryRun,
+    expectedBehavior: dryRun ? 'SADECE SAYIM (yazma yok)' : 'NORMAL (yazma var)',
+  });
 
   try {
     // Toplam kayıt sayısını al
@@ -165,13 +217,24 @@ async function migrateTaxOfficesLowerFields(batchSize: number = 1000) {
 
         // Batch commit (Firestore limit: 500)
         if (batchUpdated > 0) {
-          // Tüm batch'leri commit et
-          for (const batchToCommit of batches) {
-            await batchToCommit.commit();
+          if (dryRun) {
+            // Dry-run modunda sadece log, yazma yok
+            logger.info('DRY-RUN: Batch atlandi (yazma yapilmadi)', { 
+              wouldUpdate: batchUpdated,
+              batchCount: batches.length,
+            });
+            updated += batchUpdated; // Sayım için
+          } else {
+            // Normal mod: retry mekanizması ile commit
+            for (const batchToCommit of batches) {
+              await commitBatchWithRetry(batchToCommit, {
+                maxRetries: 5,
+                initialDelayMs: 250,
+              });
+            }
+            updated += batchUpdated;
+            logger.info('Batch islendi', { updated: batchUpdated, batchCount: batches.length });
           }
-
-          updated += batchUpdated;
-          logger.info(`Batch işlendi`, { offset, updated: batchUpdated, batchLimit });
         } else {
           skipped += snapshot.size;
         }
@@ -190,12 +253,24 @@ async function migrateTaxOfficesLowerFields(batchSize: number = 1000) {
       }
     );
 
-    logger.info('Migration tamamlandı', {
+    const summary = {
       processed: result.processed,
-      updated,
+      updated: dryRun ? `[DRY-RUN] ${updated} (yazilmadi)` : updated,
       skipped,
       duration: `${result.ms}ms`,
-    });
+      dryRun,
+    };
+
+    logger.info('Migration tamamlandi', summary);
+    
+    if (dryRun) {
+      logger.info('DRY-RUN Ozeti', {
+        totalRecords: totalCount,
+        expectedWrites: updated,
+        wouldSkip: skipped,
+        dryRun: true,
+      });
+    }
     logger.end();
   } catch (error) {
     logger.error('Migration hatası', error);
@@ -207,27 +282,83 @@ async function migrateTaxOfficesLowerFields(batchSize: number = 1000) {
 /**
  * CLI argümanlarını parse et
  */
-function parseArgs(): { batchSize: number } {
+function parseArgs(): { 
+  batchSize: number; 
+  credentialsPath?: string; 
+  dryRun: boolean;
+} {
   const args = process.argv.slice(2);
   let batchSize = 1000;
+  let credentialsPath: string | undefined;
+  let dryRun = false;
 
   for (const arg of args) {
     if (arg.startsWith('--batch=')) {
       batchSize = parseInt(arg.split('=')[1], 10);
+      if (isNaN(batchSize) || batchSize <= 0) {
+        logger.error('Gecersiz batch size', { arg });
+        process.exit(1);
+      }
+    } else if (arg.startsWith('--credentials=')) {
+      credentialsPath = arg.split('=')[1];
+    } else if (arg === '--dry-run' || arg === '--dryrun') {
+      dryRun = true;
+    } else if (arg === '--help' || arg === '-h') {
+      console.log(`
+Usage: tsx scripts/migrate-tax-offices-add-lower-fields.ts [OPTIONS]
+
+Options:
+  --batch=<size>              Batch size (default: 1000)
+  --credentials=<path>         Service account key dosya yolu
+  --dry-run                    Sadece sayim yap, yazma yapma
+  --help, -h                   Bu yardim mesajini goster
+
+Environment Variables:
+  GOOGLE_APPLICATION_CREDENTIALS  Service account key dosya yolu (oncelikli)
+  FIREBASE_SERVICE_ACCOUNT         Service account JSON string (alternatif)
+
+Examples:
+  tsx scripts/migrate-tax-offices-add-lower-fields.ts --batch=500
+  tsx scripts/migrate-tax-offices-add-lower-fields.ts --credentials=/secure/path/key.json
+  tsx scripts/migrate-tax-offices-add-lower-fields.ts --dry-run
+  GOOGLE_APPLICATION_CREDENTIALS=/path/key.json tsx scripts/migrate-tax-offices-add-lower-fields.ts
+      `);
+      process.exit(0);
     }
   }
 
-  return { batchSize };
+  return { batchSize, credentialsPath, dryRun };
 }
 
 /**
  * Main
  */
 async function main() {
-  const { batchSize } = parseArgs();
+  const { batchSize, credentialsPath, dryRun } = parseArgs();
+
+  // Config log (güvenlik için path maskeli)
+  logger.group('Migration Configuration');
+  logger.info('Config', {
+    batchSize,
+    dryRun,
+    credentialsSource: credentialsPath 
+      ? `--credentials=${maskPath(credentialsPath)}`
+      : process.env.GOOGLE_APPLICATION_CREDENTIALS
+      ? `GOOGLE_APPLICATION_CREDENTIALS=${maskPath(process.env.GOOGLE_APPLICATION_CREDENTIALS)}`
+      : process.env.FIREBASE_SERVICE_ACCOUNT
+      ? 'FIREBASE_SERVICE_ACCOUNT (env)'
+      : 'serviceAccountKey.json (fallback)',
+  });
+  logger.end();
 
   try {
-    await migrateTaxOfficesLowerFields(batchSize);
+    // Firebase Admin initialize (credentials ile)
+    initializeFirebaseAdmin(credentialsPath);
+
+    // Migration çalıştır
+    await migrateTaxOfficesLowerFields(batchSize, dryRun);
+    
+    logger.info('Migration basariyla tamamlandi');
     process.exit(0);
   } catch (error) {
     logger.error('Migration execution failed', error);

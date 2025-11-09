@@ -2,7 +2,7 @@
 // Bu script mevcut tekliflere buyerId alanını ekler (basit versiyon)
 
 const { initializeApp } = require('firebase/app');
-const { getFirestore, collection, getDocs, updateDoc, doc, query, where } = require('firebase/firestore');
+const { getFirestore, collection, getDocs, updateDoc, doc, getDoc } = require('firebase/firestore');
 
 // Firebase config
 const firebaseConfig = {

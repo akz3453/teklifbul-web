@@ -16,10 +16,10 @@ param(
 $ErrorActionPreference = "Stop"
 $script:LogDir = "logs"
 $script:Results = @{
-    IndexDeploy = "❌"
-    Migration = "❌"
-    SmokeTest = "❌"
-    PRs = "⏭️"
+    IndexDeploy = "HATA"
+    Migration = "HATA"
+    SmokeTest = "HATA"
+    PRs = "ATLANDI"
 }
 
 # Logs klasörü oluştur
@@ -33,28 +33,28 @@ function Write-Log {
     $logMessage = "[$timestamp] $Message"
     Write-Host $logMessage
     if ($LogFile) {
-        Add-Content -Path $LogFile -Value $logMessage
+        Add-Content -Path $LogFile -Value $logMessage -Encoding UTF8
     }
 }
 
 function Test-Prerequisites {
-    Write-Log "🔍 Önkoşullar kontrol ediliyor..." ""
+    Write-Log "Onkosullar kontrol ediliyor..." ""
     
     # Firebase CLI kontrolü
     try {
         $firebaseVersion = firebase --version 2>&1
-        Write-Log "✅ Firebase CLI: $firebaseVersion" ""
+        Write-Log "OK Firebase CLI: $firebaseVersion" ""
     } catch {
-        Write-Log "❌ Firebase CLI bulunamadı. Lütfen yükleyin: npm install -g firebase-tools" ""
+        Write-Log "HATA Firebase CLI bulunamadi. Lutfen yukleyin: npm install -g firebase-tools" ""
         exit 1
     }
     
     # tsx kontrolü
     try {
         $tsxVersion = npx tsx --version 2>&1
-        Write-Log "✅ tsx: $tsxVersion" ""
+        Write-Log "OK tsx: $tsxVersion" ""
     } catch {
-        Write-Log "❌ tsx bulunamadı. Lütfen yükleyin: npm install -g tsx" ""
+        Write-Log "HATA tsx bulunamadi. Lutfen yukleyin: npm install -g tsx" ""
         exit 1
     }
     
@@ -62,24 +62,24 @@ function Test-Prerequisites {
     $nodeVersion = node --version
     $nodeMajor = [int]($nodeVersion -replace 'v(\d+)\..*', '$1')
     if ($nodeMajor -lt 18) {
-        Write-Log "❌ Node.js versiyonu 18+ olmalı. Mevcut: $nodeVersion" ""
+        Write-Log "HATA Node.js versiyonu 18+ olmali. Mevcut: $nodeVersion" ""
         exit 1
     }
-    Write-Log "✅ Node.js: $nodeVersion" ""
+    Write-Log "OK Node.js: $nodeVersion" ""
     
     # Firebase proje kontrolü
     try {
         $firebaseProject = firebase use 2>&1 | Select-String -Pattern "Using (.+)" | ForEach-Object { $_.Matches.Groups[1].Value }
-        Write-Log "✅ Firebase proje: $firebaseProject" ""
+        Write-Log "OK Firebase proje: $firebaseProject" ""
     } catch {
-        Write-Log "⚠️  Firebase proje kontrolü başarısız. Devam ediliyor..." ""
+        Write-Log "UYARI Firebase proje kontrolu basarisiz. Devam ediliyor..." ""
     }
     
-    Write-Log "✅ Tüm önkoşullar sağlandı" ""
+    Write-Log "OK Tum onkosullar saglandi" ""
 }
 
 function Deploy-Indexes {
-    Write-Log "📦 Firestore index'leri deploy ediliyor..." ""
+    Write-Log "Firestore index'leri deploy ediliyor..." ""
     
     $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
     $logFile = Join-Path $script:LogDir "deploy-indexes-$timestamp.log"
@@ -89,28 +89,28 @@ function Deploy-Indexes {
         
         if ($LASTEXITCODE -eq 0) {
             if ($output -match "indexes.*deployed" -or $output -match "Deployed") {
-                Write-Log "✅ Index'ler başarıyla deploy edildi" $logFile
-                $script:Results.IndexDeploy = "✅"
+                Write-Log "OK Index'ler basariyla deploy edildi" $logFile
+                $script:Results.IndexDeploy = "OK"
                 return $true
             } else {
-                Write-Log "⚠️  Deploy tamamlandı ama onay mesajı bulunamadı" $logFile
-                $script:Results.IndexDeploy = "⚠️"
+                Write-Log "UYARI Deploy tamamlandi ama onay mesaji bulunamadi" $logFile
+                $script:Results.IndexDeploy = "UYARI"
                 return $true
             }
         } else {
-            Write-Log "❌ Index deploy başarısız (exit code: $LASTEXITCODE)" $logFile
-            $script:Results.IndexDeploy = "❌"
+            Write-Log "HATA Index deploy basarisiz (exit code: $LASTEXITCODE)" $logFile
+            $script:Results.IndexDeploy = "HATA"
             return $false
         }
     } catch {
-        Write-Log "❌ Index deploy hatası: $_" $logFile
-        $script:Results.IndexDeploy = "❌"
+        Write-Log "HATA Index deploy hatasi: $_" $logFile
+        $script:Results.IndexDeploy = "HATA"
         return $false
     }
 }
 
 function Run-Migration {
-    Write-Log "🔄 Migration çalıştırılıyor..." ""
+    Write-Log "Migration calistiriliyor..." ""
     
     $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
     $logFile = Join-Path $script:LogDir "migration-tax-offices-$timestamp.log"
@@ -119,29 +119,29 @@ function Run-Migration {
         $output = npx tsx scripts/migrate-tax-offices-add-lower-fields.ts --batch=1000 2>&1 | Tee-Object -FilePath $logFile
         
         if ($LASTEXITCODE -eq 0) {
-            if ($output -match "Migration tamamlandı" -or $output -match "processed") {
-                Write-Log "✅ Migration başarıyla tamamlandı" $logFile
-                $script:Results.Migration = "✅"
+            if ($output -match "Migration tamamlandi" -or $output -match "processed") {
+                Write-Log "OK Migration basariyla tamamlandi" $logFile
+                $script:Results.Migration = "OK"
                 return $true
             } else {
-                Write-Log "⚠️  Migration tamamlandı ama özet bulunamadı" $logFile
-                $script:Results.Migration = "⚠️"
+                Write-Log "UYARI Migration tamamlandi ama ozet bulunamadi" $logFile
+                $script:Results.Migration = "UYARI"
                 return $true
             }
         } else {
-            Write-Log "❌ Migration başarısız (exit code: $LASTEXITCODE)" $logFile
-            $script:Results.Migration = "❌"
+            Write-Log "HATA Migration basarisiz (exit code: $LASTEXITCODE)" $logFile
+            $script:Results.Migration = "HATA"
             return $false
         }
     } catch {
-        Write-Log "❌ Migration hatası: $_" $logFile
-        $script:Results.Migration = "❌"
+        Write-Log "HATA Migration hatasi: $_" $logFile
+        $script:Results.Migration = "HATA"
         return $false
     }
 }
 
 function Run-SmokeTest {
-    Write-Log "🧪 Smoke test çalıştırılıyor..." ""
+    Write-Log "Smoke test calistiriliyor..." ""
     
     $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
     $logFile = Join-Path $script:LogDir "smoke-tax-offices-$timestamp.log"
@@ -151,28 +151,28 @@ function Run-SmokeTest {
         
         if ($LASTEXITCODE -eq 0) {
             if ($output -match "veri yok" -or $output -match "no data") {
-                Write-Log "⚠️  Smoke test: Veri yok (demo ortam olabilir)" $logFile
-                $script:Results.SmokeTest = "⚠️"
+                Write-Log "UYARI Smoke test: Veri yok (demo ortam olabilir)" $logFile
+                $script:Results.SmokeTest = "UYARI"
                 return $true
             } else {
-                Write-Log "✅ Smoke test başarılı" $logFile
-                $script:Results.SmokeTest = "✅"
+                Write-Log "OK Smoke test basarili" $logFile
+                $script:Results.SmokeTest = "OK"
                 return $true
             }
         } else {
-            Write-Log "❌ Smoke test başarısız (exit code: $LASTEXITCODE)" $logFile
-            $script:Results.SmokeTest = "❌"
+            Write-Log "HATA Smoke test basarisiz (exit code: $LASTEXITCODE)" $logFile
+            $script:Results.SmokeTest = "HATA"
             return $false
         }
     } catch {
-        Write-Log "❌ Smoke test hatası: $_" $logFile
-        $script:Results.SmokeTest = "❌"
+        Write-Log "HATA Smoke test hatasi: $_" $logFile
+        $script:Results.SmokeTest = "HATA"
         return $false
     }
 }
 
 function Update-TechDebtTrack {
-    Write-Log "📝 TECH-DEBT-TRACK güncelleniyor..." ""
+    Write-Log "TECH-DEBT-TRACK guncelleniyor..." ""
     
     try {
         # Git branch oluştur
@@ -182,39 +182,39 @@ function Update-TechDebtTrack {
         # TECH-DEBT-TRACK.md dosyasını oku ve güncelle
         $techDebtPath = "TECH-DEBT-TRACK.md"
         if (Test-Path $techDebtPath) {
-            $content = Get-Content $techDebtPath -Raw
+            $content = Get-Content $techDebtPath -Raw -Encoding UTF8
             
             # Migration ve Tax Offices optimizasyonunu tamamlandı olarak işaretle
             $content = $content -replace '\[ \] \*\*Progress bar entegrasyonu \(kalan\)\*\*', '[x] **Progress bar entegrasyonu (kalan)**'
-            $content = $content -replace '\[ \] Migration script''leri', '[x] Migration script''leri ✅'
-            $content = $content -replace '\[x\] \*\*Performans: getTaxOffices optimizasyonu\*\*', '[x] **Performans: getTaxOffices optimizasyonu** ✅'
+            $content = $content -replace '\[ \] Migration script''leri', '[x] Migration script''leri OK'
+            $content = $content -replace '\[x\] \*\*Performans: getTaxOffices optimizasyonu\*\*', '[x] **Performans: getTaxOffices optimizasyonu** OK'
             
-            Set-Content -Path $techDebtPath -Value $content -NoNewline
+            Set-Content -Path $techDebtPath -Value $content -NoNewline -Encoding UTF8
             
             # Commit
             git add $techDebtPath
             git add $script:LogDir
             git commit -m "docs: mark migrations + tax offices optimization as completed; add logs" 2>&1 | Out-Null
             
-            Write-Log "✅ TECH-DEBT-TRACK güncellendi ve commit edildi" ""
+            Write-Log "OK TECH-DEBT-TRACK guncellendi ve commit edildi" ""
             return $branchName
         } else {
-            Write-Log "⚠️  TECH-DEBT-TRACK.md bulunamadı" ""
+            Write-Log "UYARI TECH-DEBT-TRACK.md bulunamadi" ""
             return $null
         }
     } catch {
-        Write-Log "⚠️  TECH-DEBT-TRACK güncelleme hatası: $_" ""
+        Write-Log "UYARI TECH-DEBT-TRACK guncelleme hatasi: $_" ""
         return $null
     }
 }
 
 function Create-PRs {
     if ($SkipPR) {
-        Write-Log "⏭️  PR oluşturma atlandı (--SkipPR flag)" ""
+        Write-Log "PR olusturma atlandi (--SkipPR flag)" ""
         return
     }
     
-    Write-Log "🔀 PR'lar oluşturuluyor..." ""
+    Write-Log "PR'lar olusturuluyor..." ""
     
     try {
         # Remote kontrolü
@@ -249,8 +249,8 @@ function Create-PRs {
                 # gh CLI kontrolü
                 $ghExists = Get-Command gh -ErrorAction SilentlyContinue
                 if ($ghExists) {
-                    $prTitle = "$branch: auto PR"
-                    $prBody = "Automated PR: indexes deploy ✅, migration run ✅, smoke tests ✅. Loglar /logs altında."
+                    $prTitle = "${branch}: auto PR"
+                    $prBody = "Automated PR: indexes deploy, migration run, smoke tests. Loglar /logs altinda."
                     gh pr create --fill --title $prTitle --body $prBody 2>&1 | Out-Null
                     if ($LASTEXITCODE -eq 0) {
                         Write-Log "✅ PR oluşturuldu: $branch" ""
@@ -267,71 +267,71 @@ function Create-PRs {
         }
         
         if ($createdPRs -gt 0) {
-            $script:Results.PRs = "✅ ($createdPRs PR)"
+            $script:Results.PRs = "OK ($createdPRs PR)"
         } else {
-            $script:Results.PRs = "⚠️ (manuel)"
+            $script:Results.PRs = "UYARI (manuel)"
         }
     } catch {
-        Write-Log "⚠️  PR oluşturma hatası: $_" ""
-        $script:Results.PRs = "❌"
+        Write-Log "UYARI PR olusturma hatasi: $_" ""
+        $script:Results.PRs = "HATA"
     }
 }
 
 function Show-Summary {
-    Write-Log "`n📊 ÖZET" ""
-    Write-Log "=" * 50 ""
+    Write-Log "`nOZET" ""
+    Write-Log ("=" * 50) ""
     
     Write-Log "Index Deploy: $($script:Results.IndexDeploy)" ""
     Write-Log "Migration: $($script:Results.Migration)" ""
     Write-Log "Smoke Test: $($script:Results.SmokeTest)" ""
     Write-Log "PR'lar: $($script:Results.PRs)" ""
     
-    Write-Log "`n📁 Log Dosyaları:" ""
+    Write-Log "`nLog Dosyalari:" ""
     $logFiles = Get-ChildItem $script:LogDir -Filter "*.log" | Sort-Object LastWriteTime -Descending | Select-Object -First 3
     foreach ($logFile in $logFiles) {
         Write-Log "   - $($logFile.FullName)" ""
     }
     
     # Başarısızlık kontrolü
-    $hasFailures = ($script:Results.IndexDeploy -eq "❌") -or 
-                   ($script:Results.Migration -eq "❌") -or 
-                   ($script:Results.SmokeTest -eq "❌")
+    $hasFailures = ($script:Results.IndexDeploy -eq "HATA") -or 
+                   ($script:Results.Migration -eq "HATA") -or 
+                   ($script:Results.SmokeTest -eq "HATA")
     
     if ($hasFailures) {
-        Write-Log "`n❌ BAZI ADIMLAR BAŞARISIZ!" ""
-        Write-Log "Lütfen log dosyalarını kontrol edin." ""
+        Write-Log "`nHATA: BAZI ADIMLAR BASARISIZ!" ""
+        Write-Log "Lutfen log dosyalarini kontrol edin." ""
         exit 1
     } else {
-        Write-Log "`n✅ TÜM ADIMLAR TAMAMLANDI!" ""
+        Write-Log "`nOK: TUM ADIMLAR TAMAMLANDI!" ""
         exit 0
     }
 }
 
 # Ana akış
 try {
-    Write-Log "🚀 Index Deploy → Migration → Smoke Test Otomasyonu Başlatılıyor..." ""
-    Write-Log "=" * 50 ""
+    Write-Log "Index Deploy -> Migration -> Smoke Test Otomasyonu Baslatiliyor..." ""
+    Write-Log ("=" * 50) ""
     
     # 0) Önkoşullar
     Test-Prerequisites
     
     # 1) Index deploy
     if (-not (Deploy-Indexes)) {
-        Write-Log "❌ Index deploy başarısız. İşlem durduruluyor." ""
+        Write-Log "HATA Index deploy basarisiz. Islem durduruluyor." ""
         Show-Summary
         exit 1
     }
     
     # 2) Migration
     if (-not (Run-Migration)) {
-        Write-Log "❌ Migration başarısız. İşlem durduruluyor." ""
+        Write-Log "HATA Migration basarisiz. Islem durduruluyor." ""
         Show-Summary
         exit 1
     }
     
     # 3) Smoke test
     if (-not (Run-SmokeTest)) {
-        Write-Log "⚠️  Smoke test başarısız ama devam ediliyor..." ""
+        Write-Log "UYARI Smoke test basarisiz ama devam ediliyor..." ""
     }
     
     # 4) TECH-DEBT-TRACK güncelle
@@ -346,7 +346,7 @@ try {
     Show-Summary
     
 } catch {
-    Write-Log "❌ Kritik hata: $_" ""
+    Write-Log "HATA Kritik hata: $_" ""
     Show-Summary
     exit 1
 }

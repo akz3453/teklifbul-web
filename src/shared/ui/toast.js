@@ -15,9 +15,9 @@ const createToast = (messageOrKey, type = 'info') => {
     : messageOrKey;
 
   if (typeof document === 'undefined') {
-    // SSR ortamında console'a yaz
-    // use console.info to comply with lint allow-list (groupCollapsed, groupEnd, info, warn, error)
-    console.info(`[${type.toUpperCase()}]`, message);
+    // SSR ortamında logger kullan (eğer mevcut değilse sessizce geç)
+    // Not: toast.js logger'dan bağımsız olmalı (circular dependency önlemek için)
+    // Bu durumda SSR'da toast gösterilemez, bu normal
     return;
   }
   

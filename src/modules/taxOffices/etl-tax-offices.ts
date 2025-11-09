@@ -61,14 +61,14 @@ async function parsePdfToOffices(pdfPath: string): Promise<TaxOffice[]> {
     
     // Debug: İlk 20 satırı göster (sadece ilk sayfa)
     if (pageNum === 1) {
-      console.info(`\n📋 İlk sayfa - İlk 20 satır (debug):`);
+      logger.info(`\n📋 İlk sayfa - İlk 20 satır (debug):`);
       sortedRows.slice(0, 20).forEach(([yKey, items], idx) => {
         const lineText = items.join(' ').trim();
         if (lineText.length > 20) {
-          console.info(`${idx + 1}. [Y:${yKey}] ${lineText.substring(0, 120)}`);
+          logger.info(`${idx + 1}. [Y:${yKey}] ${lineText.substring(0, 120)}`);
         }
       });
-      console.info('---\n');
+      logger.info('---\n');
     }
     
     // Her satırı parse et
@@ -180,7 +180,7 @@ async function upsertOffices(offices: TaxOffice[]): Promise<void> {
     }
     
   await client.query('COMMIT');
-  console.info(`✅ ${offices.length} vergi dairesi upsert edildi`);
+  logger.info(`✅ ${offices.length} vergi dairesi upsert edildi`);
   } catch (e: any) {
     await client.query('ROLLBACK');
     throw e;

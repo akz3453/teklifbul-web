@@ -45,10 +45,8 @@ export default [
     rules: {
       ...reactHooks.configs.recommended.rules,
       ...reactRefresh.configs.vite.rules,
-      // Teklifbul Rule v1.1 - Console logging kontrolü
-      'no-console': ['error', { 
-        allow: ['groupCollapsed', 'groupEnd', 'info', 'warn', 'error'] 
-      }],
+      // Teklifbul Rule v1.1 - Console logging kontrolü (sıkılaştırıldı)
+      'no-console': 'error', // Hiçbir console metoduna izin verilmez
       // TypeScript unused vars
       '@typescript-eslint/no-unused-vars': ['error', { 
         argsIgnorePattern: '^_',
@@ -59,6 +57,13 @@ export default [
       // Strict mode uyumluluğu
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/explicit-function-return-type': 'off',
+    },
+  },
+  // Logger modülü için exception (logger.ts içinde console kullanımı normal)
+  {
+    files: ['src/shared/log/logger.ts'],
+    rules: {
+      'no-console': 'off', // Logger modülü console kullanabilir
     },
   },
   // JavaScript frontend dosyaları

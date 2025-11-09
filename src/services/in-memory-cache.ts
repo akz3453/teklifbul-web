@@ -1,12 +1,13 @@
 /**
  * In-Memory Cache Service
- * Teklifbul Rule v1.0
+ * Teklifbul Rule v1.0 - Structured Logging
  * 
  * Redis alternatifi - $0 maliyet, maksimum performans
  * Sunucu RAM'inde çalışır, network latency yok
  */
 
 import NodeCache from 'node-cache';
+import { logger } from '../shared/log/logger.js';
 
 class InMemoryCache {
   private cache: NodeCache;
@@ -44,7 +45,7 @@ class InMemoryCache {
       const value = this.cache.get<T>(key);
       return value || null;
     } catch (error) {
-      console.error('❌ Cache get error:', error);
+      logger.error('❌ Cache get error:', error);
       return null;
     }
   }
@@ -60,7 +61,7 @@ class InMemoryCache {
         return this.cache.set(key, value);
       }
     } catch (error) {
-      console.error('❌ Cache set error:', error);
+      logger.error('❌ Cache set error:', error);
       return false;
     }
   }
@@ -72,7 +73,7 @@ class InMemoryCache {
     try {
       return this.cache.del(key);
     } catch (error) {
-      console.error('❌ Cache del error:', error);
+      logger.error('❌ Cache del error:', error);
       return 0;
     }
   }
@@ -95,7 +96,7 @@ class InMemoryCache {
       
       return deleted;
     } catch (error) {
-      console.error('❌ Cache delPattern error:', error);
+      logger.error('❌ Cache delPattern error:', error);
       return 0;
     }
   }
@@ -107,7 +108,7 @@ class InMemoryCache {
     try {
       this.cache.flushAll();
     } catch (error) {
-      console.error('❌ Cache clear error:', error);
+      logger.error('❌ Cache clear error:', error);
     }
   }
   

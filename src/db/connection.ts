@@ -1,12 +1,13 @@
 /**
  * PostgreSQL Connection Pool
- * Teklifbul Rule v1.0
+ * Teklifbul Rule v1.0 - Structured Logging
  */
 
 import pkg from 'pg';
 const { Pool } = pkg;
 import type { Pool as PGPool, PoolConfig } from 'pg';
 import Redis from 'ioredis';
+import { logger } from '../shared/log/logger.js';
 
 let pgPool: PGPool | null = null;
 let redisClient: Redis | null = null;
@@ -49,7 +50,7 @@ export function getPgPool(): PGPool {
     // Error handling
     pool.on('error', (err: unknown) => {
       // prefer unknown over any; log safely
-      console.error('Unexpected PostgreSQL pool error:', err);
+      logger.error('Unexpected PostgreSQL pool error:', err);
     });
   }
   // pgPool is guaranteed to be set here
@@ -69,14 +70,14 @@ export function getRedisClient(): Redis | null {
       // Geliştirme modunda sadece uyarı ver, uygulamayı durdurma
       const msg = err instanceof Error ? err.message : String(err);
       if (process.env.NODE_ENV !== 'production') {
-        console.warn('⚠️  Redis client error (cache disabled):', msg);
+        logger.warn('⚠️  Redis client error (cache disabled):', msg);
       } else {
-        console.error('Redis client error:', err);
+        logger.error('Redis client error:', err);
       }
     });
     
     redisClient.on('connect', () => {
-      console.info('✅ Redis connected');
+      logger.info('✅ Redis connected');
     });
   }
   return redisClient;
@@ -101,7 +102,7 @@ export async function testConnection(): Promise<boolean> {
     await pool.query('SELECT 1');
     return true;
   } catch (e: unknown) {
-    console.error('PostgreSQL connection test failed:', e);
+    logger.error('PostgreSQL connection test failed:', e);
     return false;
   }
 }

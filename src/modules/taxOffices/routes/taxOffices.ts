@@ -1,12 +1,13 @@
 /**
  * Tax Offices API Routes
- * Teklifbul Rule v1.0
+ * Teklifbul Rule v1.0 - Structured Logging
  * 
  * Firestore + In-Memory Cache kullanıyor - $0 maliyet
  */
 
 import { Router, Request, Response } from 'express';
 import { getProvinces, getTaxOffices } from '../../../services/firestore-tax-offices';
+import { logger } from '../../../shared/log/logger.js';
 
 const router = Router();
 
@@ -16,7 +17,7 @@ router.get('/provinces', async (req: Request, res: Response) => {
     const provinces = await getProvinces();
     res.json(provinces);
   } catch (e: any) {
-    console.error('Tax offices provinces error:', e);
+    logger.error('Tax offices provinces error:', e);
     res.status(500).json({ error: e.message || 'Internal server error' });
   }
 });
@@ -43,7 +44,7 @@ router.get('/', async (req: Request, res: Response) => {
     
     res.json(offices);
   } catch (e: any) {
-    console.error('Tax offices list error:', e);
+    logger.error('Tax offices list error:', e);
     res.status(500).json({ error: e.message || 'Internal server error' });
   }
 });

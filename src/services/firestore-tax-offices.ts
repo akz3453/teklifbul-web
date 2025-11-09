@@ -1,6 +1,6 @@
 /**
  * Firestore Tax Offices Service
- * Teklifbul Rule v1.0
+ * Teklifbul Rule v1.0 - Structured Logging
  * 
  * PostgreSQL alternatifi - $0 maliyet, otomatik yedekleme
  */
@@ -14,6 +14,7 @@ import {
   orderBy
 } from 'firebase/firestore';
 import { cache } from './in-memory-cache';
+import { logger } from '../shared/log/logger.js';
 
 interface TaxOffice {
   id: string;
@@ -77,7 +78,7 @@ export async function getProvinces(): Promise<string[]> {
     
     return provincesArray;
   } catch (error: any) {
-    console.error('❌ Firestore getProvinces error:', error);
+    logger.error('❌ Firestore getProvinces error:', error);
     throw new Error(`İller yüklenemedi: ${error.message}`);
   }
 }
@@ -135,7 +136,7 @@ export async function getTaxOffices(options: {
     
     return offices;
   } catch (error: any) {
-    console.error('❌ Firestore getTaxOffices error:', error);
+    logger.error('❌ Firestore getTaxOffices error:', error);
     throw new Error(`Vergi daireleri yüklenemedi: ${error.message}`);
   }
 }

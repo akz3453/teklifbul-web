@@ -1,6 +1,6 @@
 /**
  * Vergi Daireleri ETL Script
- * Teklifbul Rule v1.0
+ * Teklifbul Rule v1.0 - Structured Logging
  * 
  * GİB PDF'den vergi dairelerini parse edip Postgres'e yükler
  * Usage: tsx src/modules/taxOffices/etl-tax-offices.ts --input=./data/gib_tax_offices.pdf
@@ -11,6 +11,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { createRequire } from 'module';
 import { getPgPool } from '../../db/connection';
+import { logger } from '../../shared/log/logger.js';
 
 // pdfjs-dist kullanarak PDF parse (pdf-parse çalışmadığı için)
 const require = createRequire(import.meta.url);
@@ -193,32 +194,35 @@ async function main() {
   const inputArg = args.find(arg => arg.startsWith('--input='));
   
   if (!inputArg) {
-    console.error('Usage: tsx etl-tax-offices.ts --input=./data/gib_tax_offices.pdf');
+    logger.error('Usage: tsx etl-tax-offices.ts --input=./data/gib_tax_offices.pdf');
     process.exit(1);
   }
   
   const inputPath = inputArg.split('=')[1];
   const fullPath = join(process.cwd(), inputPath);
   
-  console.info(`📄 PDF okunuyor: ${fullPath}`);
+  logger.info(`📄 PDF okunuyor: ${fullPath}`);
   
   try {
     const offices = await parsePdfToOffices(fullPath);
-  console.info(`📊 ${offices.length} vergi dairesi parse edildi`);
+  logger.info(`📊 ${offices.length} vergi dairesi parse edildi`);
     
     if (offices.length === 0) {
-      console.warn('⚠️  Hiç vergi dairesi bulunamadı. PDF formatını kontrol edin.');
+      logger.warn('⚠️  Hiç vergi dairesi bulunamadı. PDF formatını kontrol edin.');
       process.exit(1);
     }
     
   await upsertOffices(offices);
-  console.info('✅ ETL tamamlandı');
+  logger.info('✅ ETL tamamlandı');
     
   } catch (e: any) {
-    console.error('❌ ETL hatası:', e);
+    logger.error('❌ ETL hatası:', e);
     process.exit(1);
   }
 }
 
-main().catch(console.error);
+main().catch((err) => {
+  logger.error('Main execution error:', err);
+  process.exit(1);
+});
 

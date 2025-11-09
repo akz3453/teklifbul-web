@@ -1,6 +1,6 @@
 /**
  * Migration Runner
- * Teklifbul Rule v1.0
+ * Teklifbul Rule v1.0 - Structured Logging
  * 
  * Usage: tsx src/db/migrations/run-migrations.ts [migration-file]
  */
@@ -9,21 +9,22 @@ import 'dotenv/config';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { getPgPool } from '../connection';
+import { logger } from '../../shared/log/logger.js';
 
 async function runMigration(filePath: string): Promise<void> {
   const pool = getPgPool();
   const sql = readFileSync(filePath, 'utf-8');
   
-  console.info(`Running migration: ${filePath}`);
+  logger.info(`Running migration: ${filePath}`);
   
   try {
   await pool.query(sql);
-  console.info(`✅ Migration completed: ${filePath}`);
+  logger.info(`✅ Migration completed: ${filePath}`);
   } catch (e: any) {
       if (e.code === '42P07' || e.message?.includes('already exists')) {
-      console.info(`⚠️  Table/index already exists, skipping: ${filePath}`);
+      logger.info(`⚠️  Table/index already exists, skipping: ${filePath}`);
     } else {
-      console.error(`❌ Migration failed: ${filePath}`, e);
+      logger.error(`❌ Migration failed: ${filePath}`, e);
       throw e;
     }
   }
@@ -33,7 +34,7 @@ async function main() {
   const migrationFile = process.argv[2];
   
   if (!migrationFile) {
-    console.error('Usage: tsx run-migrations.ts <migration-file>');
+    logger.error('Usage: tsx run-migrations.ts <migration-file>');
     process.exit(1);
   }
   
@@ -43,11 +44,14 @@ async function main() {
     await runMigration(fullPath);
     process.exit(0);
   } catch (e) {
-    console.error('Migration execution failed:', e);
+    logger.error('Migration execution failed:', e);
     process.exit(1);
   }
 }
 
 // ES module entry point
-main().catch(console.error);
+main().catch((err) => {
+  logger.error('Main execution error:', err);
+  process.exit(1);
+});
 

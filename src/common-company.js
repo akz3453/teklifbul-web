@@ -1,9 +1,11 @@
 // public/common-company.js
+// Teklifbul Rule v1.0 - Toast bildirim sistemi
 import { db, auth } from "../firebase.js";
 import { 
   doc, getDoc 
 } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
 import { signOut } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+import { toast } from "../src/shared/ui/toast.js";
 
 export async function setupHeader() {
   // Setup universal logout buttons
@@ -14,7 +16,7 @@ export async function setupHeader() {
           await signOut(auth);
           window.location.href = "./index.html";
         } catch (e) {
-          alert("Çıkış yapılamadı: " + (e?.message || e));
+          toast.error("Çıkış yapılamadı: " + (e?.message || e));
         }
       });
     });

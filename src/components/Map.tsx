@@ -8,6 +8,7 @@
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { logger } from '../shared/log/logger.js';
 
 // Leaflet default icon sorunu için fix
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -87,7 +88,7 @@ async function geocodeAddress(address: string): Promise<GeocodeResult | null> {
     
     return result;
   } catch (error) {
-    console.error('❌ Geocoding error:', error);
+    logger.error('❌ Geocoding error:', error);
     return null;
   }
 }
@@ -163,7 +164,7 @@ export function Map({
           }
         })
         .catch(err => {
-          console.error('Geocoding error:', err);
+          logger.error('Geocoding error:', err);
           // Default: İstanbul
           map.setView([41.0082, 28.9784], 10);
           setError('Harita yüklenemedi');
@@ -223,7 +224,7 @@ export function Map({
 export function initMap(elementId: string, address: string, lat?: number, lng?: number) {
   const mapElement = document.getElementById(elementId);
   if (!mapElement) {
-    console.error(`Map element not found: ${elementId}`);
+    logger.error(`Map element not found: ${elementId}`);
     return;
   }
   

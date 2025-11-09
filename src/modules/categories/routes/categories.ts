@@ -1,12 +1,13 @@
 /**
  * Categories API Routes
- * Teklifbul Rule v1.0
+ * Teklifbul Rule v1.0 - Structured Logging
  * 
  * Firestore kullanıyor - $0 maliyet
  */
 
 import { Router, Request, Response } from 'express';
 import { getCategories, getCategoryById, suggestCategory, saveFeedback } from '../../../services/firestore-categories';
+import { logger } from '../../../shared/log/logger.js';
 
 const router = Router();
 
@@ -24,7 +25,7 @@ router.get('/', async (req: Request, res: Response) => {
     
     res.json(result);
   } catch (e: any) {
-    console.error('Categories list error:', e);
+    logger.error('Categories list error:', e);
     res.status(500).json({ error: e.message || 'Internal server error' });
   }
 });
@@ -41,7 +42,7 @@ router.get('/:id', async (req: Request, res: Response) => {
     
     res.json(category);
   } catch (e: any) {
-    console.error('Category detail error:', e);
+    logger.error('Category detail error:', e);
     res.status(500).json({ error: e.message || 'Internal server error' });
   }
 });
@@ -70,7 +71,7 @@ router.post('/:id/desc', async (req: Request, res: Response) => {
     
     res.json({ success: true });
   } catch (e: any) {
-    console.error('Category desc update error:', e);
+    logger.error('Category desc update error:', e);
     res.status(500).json({ error: e.message });
   }
 });
@@ -87,7 +88,7 @@ router.post('/suggest', async (req: Request, res: Response) => {
     const result = await suggestCategory(text);
     res.json(result);
   } catch (e: any) {
-    console.error('Category suggest error:', e);
+    logger.error('Category suggest error:', e);
     res.status(500).json({ error: e.message || 'Internal server error' });
   }
 });
@@ -101,7 +102,7 @@ router.post('/feedback', async (req: Request, res: Response) => {
     
     res.json({ success: true });
   } catch (e: any) {
-    console.error('Category feedback error:', e);
+    logger.error('Category feedback error:', e);
     res.status(500).json({ error: e.message || 'Internal server error' });
   }
 });

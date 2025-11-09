@@ -1,11 +1,12 @@
 /**
  * Firestore Categories Service
- * Teklifbul Rule v1.0
+ * Teklifbul Rule v1.0 - Structured Logging
  * 
  * PostgreSQL alternatifi - $0 maliyet, otomatik yedekleme
  */
 
 import { db } from '../lib/firebase';
+import { logger } from '../shared/log/logger.js';
 import { 
   collection, 
   query, 
@@ -123,7 +124,7 @@ export async function getCategories(options?: {
     
     return response;
   } catch (error: any) {
-    console.error('❌ Firestore getCategories error:', error);
+    logger.error('❌ Firestore getCategories error:', error);
     throw new Error(`Kategoriler yüklenemedi: ${error.message}`);
   }
 }
@@ -157,7 +158,7 @@ export async function getCategoryById(id: string): Promise<Category | null> {
     
     return category;
   } catch (error: any) {
-    console.error('❌ Firestore getCategoryById error:', error);
+    logger.error('❌ Firestore getCategoryById error:', error);
     throw new Error(`Kategori yüklenemedi: ${error.message}`);
   }
 }
@@ -249,7 +250,7 @@ export async function suggestCategory(text: string): Promise<{
     
     return result;
   } catch (error: any) {
-    console.error('❌ Firestore suggestCategory error:', error);
+    logger.error('❌ Firestore suggestCategory error:', error);
     throw new Error(`Kategori önerisi oluşturulamadı: ${error.message}`);
   }
 }
@@ -272,7 +273,7 @@ export async function saveFeedback(
       createdAt: new Date()
     });
   } catch (error: any) {
-    console.error('❌ Firestore saveFeedback error:', error);
+    logger.error('❌ Firestore saveFeedback error:', error);
     throw new Error(`Feedback kaydedilemedi: ${error.message}`);
   }
 }

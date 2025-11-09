@@ -11,6 +11,7 @@ import { OfferSchema, Offer, OfferLine, OfferHeader, Currency } from '../../../d
 import { mapDemandToOfferHeader, mapDemandItemsToOfferLines, calculateDifference, DifferenceResult } from '../../../domain/offer/mapping';
 import { requiresCurrencyInfo, createCurrencyInfo, getCurrencyNameTR } from '../../../services/currency';
 import type { DemandData } from '../../../domain/offer/schema';
+import { toast } from '../../../shared/ui/toast.js';
 
 interface OfferTabProps {
   demandId: string;
@@ -190,10 +191,10 @@ export default function OfferTab({ demandId, demandData, onSubmit }: OfferTabPro
           throw new Error('Teklif gönderilemedi');
         }
         
-        alert('Teklif başarıyla gönderildi!');
+        toast.success('Teklif başarıyla gönderildi!');
       }
     } catch (error: any) {
-      alert(`Hata: ${error.message}`);
+      toast.error(`Hata: ${error.message}`);
     }
   };
   

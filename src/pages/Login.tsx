@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { auth } from "../lib/firebase";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
 import { useAuth } from "../context/AuthContext";
+import { toast } from "../shared/ui/toast.js";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -27,7 +28,7 @@ export default function Login() {
         // Guard otomatik yönlendirecek, navigate gerekmez
       }
     } catch (err: any) {
-      alert("⚠️ Hata: " + err.message);
+      toast.error("⚠️ Hata: " + err.message);
     } finally {
       setLoading(false);
     }

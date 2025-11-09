@@ -2,6 +2,7 @@ import { useState } from "react";
 import { InviteSection } from "./InviteSection";
 import { BidVisibility, DemandPayload, DemandVisibility, Group, InviteMode, Supplier } from "./types";
 import { createDemand } from "./api";
+import { toast } from "../../shared/ui/toast.js";
 
 export function DemandForm({ allGroups, supplierSearch }:{ allGroups: Group[]; supplierSearch:(q:string)=>Promise<Supplier[]> }) {
   const [title, setTitle] = useState("");
@@ -25,9 +26,9 @@ export function DemandForm({ allGroups, supplierSearch }:{ allGroups: Group[]; s
     setLoading(true);
     try {
       await createDemand(payload);
-      alert("Talep oluşturuldu");
+      toast.success("Talep oluşturuldu");
     } catch (e:any) {
-      alert(e.message || "Hata");
+      toast.error(e.message || "Hata");
     } finally {
       setLoading(false);
     }

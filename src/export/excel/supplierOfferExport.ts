@@ -8,6 +8,7 @@ import ExcelJS from 'exceljs';
 import type { Offer } from '../../domain/offer/schema';
 import * as path from 'path';
 import * as fs from 'fs';
+import { logger } from '../../shared/log/logger.js';
 
 const TEMPLATE_PATH = path.join(process.cwd(), 'assets', 'SATINALMAVETEKLİFFORMU.xlsx');
 const SHEET_NAME = 'SATIN ALMA VE TEKLIF FORMU';
@@ -26,7 +27,7 @@ export async function exportSupplierOffer(offer: Offer): Promise<ExcelJS.Buffer>
       templateExists = true;
     }
   } catch (error) {
-    console.warn('Şablon yüklenemedi, yeni dosya oluşturuluyor:', error);
+    logger.warn('Şablon yüklenemedi, yeni dosya oluşturuluyor:', error);
   }
   
   // Worksheet al veya oluştur

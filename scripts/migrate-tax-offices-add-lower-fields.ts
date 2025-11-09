@@ -18,8 +18,7 @@ import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore as getAdminFirestore } from 'firebase-admin/firestore';
 import { runCancellableBatches } from '../src/shared/utils/migration-runner';
 import { logger } from '../src/shared/log/logger';
-import { createRequire } from 'module';
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 
 // Firebase Admin initialize
@@ -34,7 +33,7 @@ if (getApps().length === 0) {
     } else {
       // JSON dosyasını direkt oku
       const serviceAccountPath = join(process.cwd(), 'serviceAccountKey.json');
-      if (!readFileSync(serviceAccountPath, { flag: 'r' })) {
+      if (!existsSync(serviceAccountPath)) {
         throw new Error('serviceAccountKey.json bulunamadi');
       }
       const serviceAccount = JSON.parse(readFileSync(serviceAccountPath, 'utf-8'));

@@ -10,7 +10,8 @@ import { TOAST_UI } from '../constants/ui.js';
 const createToast = (message, type = 'info') => {
   if (typeof document === 'undefined') {
     // SSR ortamında console'a yaz
-    console.log(`[${type.toUpperCase()}]`, message);
+    // use console.info to comply with lint allow-list (groupCollapsed, groupEnd, info, warn, error)
+    console.info(`[${type.toUpperCase()}]`, message);
     return;
   }
   

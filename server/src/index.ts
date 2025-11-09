@@ -29,7 +29,7 @@ app.get('/api/health', (_req, res) => {
 
 const PORT = process.env.API_PORT ? Number(process.env.API_PORT) : 5174;
 app.listen(PORT, () => {
-  console.log(`API listening on http://localhost:${PORT}`);
+  console.info(`API listening on http://localhost:${PORT}`);
 });
 
 

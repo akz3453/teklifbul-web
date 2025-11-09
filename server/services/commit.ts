@@ -9,7 +9,7 @@ if (!admin.apps.length) {
       projectId: 'teklifbul'
     });
   } catch (err) {
-    console.log('[Firebase Admin] Using fallback auth', err);
+    console.info('[Firebase Admin] Using fallback auth', err);
     // Fallback to in-memory DB if Firebase Admin fails
   }
 }
@@ -18,7 +18,7 @@ let db: FirebaseFirestore.Firestore | null = null;
 try {
   db = admin.apps.length ? admin.firestore() : null;
 } catch (err) {
-  console.log('[Firestore] Disabled, falling back to in-memory DB', err);
+  console.info('[Firestore] Disabled, falling back to in-memory DB', err);
   db = null;
 }
 const DB:any = { demands: new Map<string, any>(), bySATFK: new Map<string,string>() };
@@ -62,20 +62,20 @@ export async function commitDemand({ demand, items }:{ demand:any, items:any[] }
 
   // Save to Firestore (if available) or fallback to in-memory DB
   if (db) {
-    try {
+      try {
       await db.collection('demands').doc(demandId).set(payload);
-      console.log(`[Firestore] Saved demand ${demandId} (${satfk})`);
+      console.info(`[Firestore] Saved demand ${demandId} (${satfk})`);
     } catch (err) {
-      console.log('[Firestore] write failed, using mock DB', (err as any)?.message);
+      console.info('[Firestore] write failed, using mock DB', (err as any)?.message);
       db = null;
       DB.demands.set(demandId, payload);
       DB.bySATFK.set(satfk, demandId);
-      console.log(`[Mock DB] Saved demand ${demandId} (${satfk})`);
+      console.info(`[Mock DB] Saved demand ${demandId} (${satfk})`);
     }
   } else {
-    DB.demands.set(demandId, payload);
-    DB.bySATFK.set(satfk, demandId);
-    console.log(`[Mock DB] Saved demand ${demandId} (${satfk})`);
+  DB.demands.set(demandId, payload);
+  DB.bySATFK.set(satfk, demandId);
+  console.info(`[Mock DB] Saved demand ${demandId} (${satfk})`);
   }
   
   return { demandId, satfk };

@@ -5,10 +5,10 @@
 
 import pkg from 'pg';
 const { Pool } = pkg;
-import type { PoolConfig } from 'pg';
+import type { Pool as PGPool, PoolConfig } from 'pg';
 import Redis from 'ioredis';
 
-let pgPool: Pool | null = null;
+let pgPool: PGPool | null = null;
 let redisClient: Redis | null = null;
 
 // PostgreSQL connection config
@@ -46,9 +46,9 @@ export function getPgPool(): Pool {
     pgPool = createPgPool();
     
     // Error handling
-    pgPool.on('error', (err) => {
-      console.error('Unexpected PostgreSQL pool error:', err);
-    });
+    pgPool!.on('error', (err: any) => {
+        console.error('Unexpected PostgreSQL pool error:', err);
+      });
   }
   return pgPool;
 }
@@ -72,7 +72,7 @@ export function getRedisClient(): Redis | null {
     });
     
     redisClient.on('connect', () => {
-      console.log('✅ Redis connected');
+      console.info('✅ Redis connected');
     });
   }
   return redisClient;

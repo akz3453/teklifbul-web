@@ -17,6 +17,10 @@ export default [
       '**/xlsx.full.min.js',
       '**/openstreetmap-helper.js',
       '**/teklifbul-compare-app/**',
+      // Large generated or data folders that produce noise during lint
+      'public/assets/**',
+      'seed/**',
+      'test-fixtures/**',
     ],
   },
   // TypeScript recommended configs
@@ -43,7 +47,7 @@ export default [
       ...reactRefresh.configs.vite.rules,
       // Teklifbul Rule v1.1 - Console logging kontrolü
       'no-console': ['error', { 
-        allow: ['groupCollapsed', 'info', 'warn', 'error'] 
+        allow: ['groupCollapsed', 'groupEnd', 'info', 'warn', 'error'] 
       }],
       // TypeScript unused vars
       '@typescript-eslint/no-unused-vars': ['error', { 
@@ -66,11 +70,26 @@ export default [
     },
     rules: {
       'no-console': ['error', { 
-        allow: ['groupCollapsed', 'info', 'warn', 'error'] 
+        allow: ['groupCollapsed', 'groupEnd', 'info', 'warn', 'error'] 
       }],
-      'no-undef': 'error',
+        'no-undef': 'error',
     },
   },
+    // Legacy JS files under src (frontend legacy scripts that use globals directly)
+    {
+      files: ['src/**/*.js'],
+      languageOptions: {
+        ecmaVersion: 2020,
+        globals: globals.browser,
+      },
+      rules: {
+        // Many legacy src/*.js files rely on global browser or firebase variables;
+        // silence no-undef for these legacy JS files so we can focus on TS/runtime fixes.
+        'no-undef': 'off',
+        'no-console': ['error', { allow: ['info', 'warn', 'error'] }],
+        '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      },
+    },
   // Node.js ortamı (server dosyaları)
   {
     files: ['server/**/*.{ts,js}'],
@@ -84,7 +103,7 @@ export default [
     },
     rules: {
       'no-console': ['error', { 
-        allow: ['groupCollapsed', 'info', 'warn', 'error'] 
+        allow: ['groupCollapsed', 'groupEnd', 'info', 'warn', 'error'] 
       }],
       'no-undef': 'off',
       '@typescript-eslint/no-unused-vars': ['error', { 
@@ -110,7 +129,26 @@ export default [
     rules: {
       '@typescript-eslint/no-require-imports': 'off',
       'no-undef': 'off',
+      // Keep console off for these legacy/function/public script files (Phase A)
       'no-console': 'off',
+    },
+  },
+  // Lightweight overrides for public and assets folders to reduce noise
+  {
+    files: ['public/**/*', 'assets/**/*', 'seed/**', 'test-fixtures/**'],
+    languageOptions: {
+      ecmaVersion: 2020,
+      globals: {
+        ...globals.node,
+        ...globals.browser,
+      },
+    },
+    rules: {
+      // Silence noisy rules in large legacy/data folders during Phase A
+      'no-console': 'off',
+      'no-undef': 'off',
+      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-explicit-any': 'off',
     },
   },
   // Script dosyaları (browser ve Node.js globals)

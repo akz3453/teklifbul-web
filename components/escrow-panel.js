@@ -58,7 +58,7 @@ export function initEscrowPanel({ mount, role = 'buyer', demandId = null, bidId 
 
     switch(state.status){
       case 'awaiting_funds':
-        actionsEl.appendChild(btn('Dekont Yükle', async ()=>{ const r = await apiPost('/api/escrow/upload-proof', { id: state.id, url: 'mock://proof' }); pushLog('upload-proof', {}); }));
+  actionsEl.appendChild(btn('Dekont Yükle', async ()=>{ await apiPost('/api/escrow/upload-proof', { id: state.id, url: 'mock://proof' }); pushLog('upload-proof', {}); }));
         actionsEl.appendChild(btn('Banka Onayı (Webhook)', async ()=>{ const r = await apiPost('/api/escrow/webhook/bank', { id: state.id }); setStatus(r.status); pushLog('bank-ok', {}); }));
         break;
       case 'in_escrow':

@@ -50,7 +50,7 @@ r.post('/preview', upload.single('file'), async (req, res) => {
     const name = req.file.originalname || '';
     const format = sniffFormat(req.file.buffer, name);
     
-    console.log(`[Import] ${name} (${format}) - ${req.file.buffer.length} bytes`);
+  console.info(`[Import] ${name} (${format}) - ${req.file.buffer.length} bytes`);
     
     if (format === 'unknown') {
       return res.status(415).json({
@@ -120,7 +120,7 @@ r.post('/preview', upload.single('file'), async (req, res) => {
           suggestedCategory: suggestion.auto_select // Skor ≥0.70 ise otomatik seçim
         };
       } catch (e: any) {
-        console.warn('[Import] Category suggestion failed for item:', item.itemName, e.message);
+    console.warn('[Import] Category suggestion failed for item:', item.itemName, e.message);
         return {
           ...item,
           categorySuggestions: [],

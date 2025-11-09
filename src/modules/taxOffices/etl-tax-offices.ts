@@ -60,18 +60,18 @@ async function parsePdfToOffices(pdfPath: string): Promise<TaxOffice[]> {
     
     // Debug: İlk 20 satırı göster (sadece ilk sayfa)
     if (pageNum === 1) {
-      console.log(`\n📋 İlk sayfa - İlk 20 satır (debug):`);
+      console.info(`\n📋 İlk sayfa - İlk 20 satır (debug):`);
       sortedRows.slice(0, 20).forEach(([yKey, items], idx) => {
         const lineText = items.join(' ').trim();
         if (lineText.length > 20) {
-          console.log(`${idx + 1}. [Y:${yKey}] ${lineText.substring(0, 120)}`);
+          console.info(`${idx + 1}. [Y:${yKey}] ${lineText.substring(0, 120)}`);
         }
       });
-      console.log('---\n');
+      console.info('---\n');
     }
     
     // Her satırı parse et
-    for (const [yKey, items] of sortedRows) {
+  for (const [_yKey, items] of sortedRows) {
       const lineText = items.join(' ').trim();
       
       // Çok kısa satırları atla
@@ -95,7 +95,7 @@ async function parsePdfToOffices(pdfPath: string): Promise<TaxOffice[]> {
       let officeName = '';
       
       if (match) {
-        const [, sıraNo, plaka, il, ilçe, kod, daireAdı] = match;
+  const [, _sıraNo, _plaka, il, ilçe, kod, daireAdı] = match;
         province = normalizeProvinceName(il.trim());
         district = normalizeDistrictName(ilçe.replace(/\*\*/g, '').replace(/\(6360.*?\)/gi, '').trim() || 'Merkez');
         officeName = normalizeOfficeName(daireAdı.trim());
@@ -178,8 +178,8 @@ async function upsertOffices(offices: TaxOffice[]): Promise<void> {
       );
     }
     
-    await client.query('COMMIT');
-    console.log(`✅ ${offices.length} vergi dairesi upsert edildi`);
+  await client.query('COMMIT');
+  console.info(`✅ ${offices.length} vergi dairesi upsert edildi`);
   } catch (e: any) {
     await client.query('ROLLBACK');
     throw e;
@@ -200,19 +200,19 @@ async function main() {
   const inputPath = inputArg.split('=')[1];
   const fullPath = join(process.cwd(), inputPath);
   
-  console.log(`📄 PDF okunuyor: ${fullPath}`);
+  console.info(`📄 PDF okunuyor: ${fullPath}`);
   
   try {
     const offices = await parsePdfToOffices(fullPath);
-    console.log(`📊 ${offices.length} vergi dairesi parse edildi`);
+  console.info(`📊 ${offices.length} vergi dairesi parse edildi`);
     
     if (offices.length === 0) {
       console.warn('⚠️  Hiç vergi dairesi bulunamadı. PDF formatını kontrol edin.');
       process.exit(1);
     }
     
-    await upsertOffices(offices);
-    console.log('✅ ETL tamamlandı');
+  await upsertOffices(offices);
+  console.info('✅ ETL tamamlandı');
     
   } catch (e: any) {
     console.error('❌ ETL hatası:', e);

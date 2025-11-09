@@ -14,14 +14,14 @@ async function runMigration(filePath: string): Promise<void> {
   const pool = getPgPool();
   const sql = readFileSync(filePath, 'utf-8');
   
-  console.log(`Running migration: ${filePath}`);
+  console.info(`Running migration: ${filePath}`);
   
   try {
-    await pool.query(sql);
-    console.log(`✅ Migration completed: ${filePath}`);
+  await pool.query(sql);
+  console.info(`✅ Migration completed: ${filePath}`);
   } catch (e: any) {
-    if (e.code === '42P07' || e.message?.includes('already exists')) {
-      console.log(`⚠️  Table/index already exists, skipping: ${filePath}`);
+      if (e.code === '42P07' || e.message?.includes('already exists')) {
+      console.info(`⚠️  Table/index already exists, skipping: ${filePath}`);
     } else {
       console.error(`❌ Migration failed: ${filePath}`, e);
       throw e;

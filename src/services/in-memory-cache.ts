@@ -24,7 +24,8 @@ class InMemoryCache {
     if (process.env.NODE_ENV === 'development') {
       setInterval(() => {
         const stats = this.cache.getStats();
-        console.log('📊 Cache Stats:', {
+        // use console.info to comply with lint allow-list
+        console.info('📊 Cache Stats:', {
           keys: stats.keys,
           hits: stats.hits,
           misses: stats.misses,

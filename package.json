@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "preinstall": "npm config set legacy-peer-deps true",
-    "prepare": "husky install",
+    "prepare": "husky",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "api": "tsx server/src/index.ts",

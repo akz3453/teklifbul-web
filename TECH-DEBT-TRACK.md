@@ -45,10 +45,12 @@ Bu dosya, projedeki standartlaşma çalışmalarının durumunu takip eder.
   - Şu an `src/` klasöründe sadece `logger.ts` içinde console kullanımı var (normal)
   - Test/debug dosyalarına dokunulmuyor (kasıtlı)
 
-- [ ] **Performans: getTaxOffices optimizasyonu**
-  - Şu an tüm koleksiyonu çekip client-side filter yapıyor
-  - Case-insensitive search için normalize edilmiş alan gerekir
-  - Cache mevcut (24 saat), bu yüzden düşük öncelik
+- [x] **Performans: getTaxOffices optimizasyonu** - `perf/tax-offices-index-optimization`
+  - ✅ Lowercase alanlar eklendi (province_name_lower, district_name_lower, office_name_lower)
+  - ✅ Migration script oluşturuldu
+  - ✅ Index'li sorgu implementasyonu (fallback ile)
+  - ✅ Firestore index'leri tanımlandı
+  - ⚠️  Migration çalıştırılmalı: `tsx scripts/migrate-tax-offices-add-lower-fields.ts`
 
 - [ ] **Progress bar entegrasyonu (kalan)**
   - ✅ Excel export (`OfferTab.tsx`) - Tamamlandı

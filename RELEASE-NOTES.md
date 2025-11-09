@@ -1,7 +1,7 @@
 # Teklifbul Web – Performans & Dayanıklılık Güncellemesi
 
 **Release Date:** 2025-01-20  
-**Version:** v1.1.0  
+**Version:** v1.2.0  
 **Teklifbul Rule v1.0** - Standartlaştırma ve optimizasyon
 
 ---

@@ -88,7 +88,11 @@
   }
 
   function init(){ upgradeSectionHeaders(); tagTables(); tagItemBlocks(); classifyBlocks(); }
-  document.readyState==='loading' ? document.addEventListener('DOMContentLoaded',init) : init();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 })();
 
 

@@ -7,15 +7,32 @@
 import ExcelJS from 'exceljs';
 import { Offer, OfferLine, OfferHeader } from '../../domain/offer/schema';
 import { mapCurrency, mapDate, mapPriority } from '../../domain/offer/mapping';
+import { checkAborted, calculateBatchProgress } from '../../shared/utils/async-utils.js';
 
 const SHEET_NAME = 'SATIN ALMA VE TEKLIF FORMU';
 
 /**
- * Excel dosyasını parse et
+ * Excel dosyasını parse et (progress ve cancel desteği ile)
+ * Teklifbul Rule v1.0 - Uzun async işlemler için progress bar + cancel
+ * 
+ * @param buffer - Excel dosyası buffer'ı
+ * @param signal - AbortSignal (iptal için)
+ * @param reportProgress - Progress callback (0-100)
  */
-export async function importSupplierOffer(buffer: ArrayBuffer | Buffer): Promise<Offer> {
+export async function importSupplierOffer(
+  buffer: ArrayBuffer | Buffer,
+  signal?: AbortSignal,
+  reportProgress?: (progress: number) => void
+): Promise<Offer> {
+  const report = (p: number) => {
+    if (reportProgress) reportProgress(p);
+    if (signal) checkAborted(signal);
+  };
+
+  report(5);
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.load(buffer);
+  report(15);
   
   // Worksheet bul
   let worksheet = workbook.getWorksheet(SHEET_NAME);
@@ -26,14 +43,20 @@ export async function importSupplierOffer(buffer: ArrayBuffer | Buffer): Promise
       throw new Error('Excel dosyasında worksheet bulunamadı');
     }
   }
+  report(20);
   
   // Başlık bilgilerini oku (N1..P4)
   const header = parseHeaderSection(worksheet);
+  report(30);
   
   // Satır bilgilerini oku (6. satırdan itibaren)
-  const lines = parseLineRows(worksheet);
+  const lines = parseLineRows(worksheet, signal, (p) => {
+    // Satır parse progress: 30% - 90%
+    const totalProgress = 30 + (p * 0.6);
+    report(totalProgress);
+  });
   
-  // Toplam satırını atla
+  report(95);
   
   return {
     header,
@@ -86,14 +109,28 @@ function parseHeaderSection(worksheet: ExcelJS.Worksheet): OfferHeader {
 }
 
 /**
- * Satır bilgilerini parse et
+ * Satır bilgilerini parse et (progress desteği ile)
+ * 
+ * @param worksheet - Excel worksheet
+ * @param signal - AbortSignal (iptal için)
+ * @param reportProgress - Progress callback (0-100)
  */
-function parseLineRows(worksheet: ExcelJS.Worksheet): OfferLine[] {
+function parseLineRows(
+  worksheet: ExcelJS.Worksheet,
+  signal?: AbortSignal,
+  reportProgress?: (progress: number) => void
+): OfferLine[] {
   const lines: OfferLine[] = [];
   let rowNum = 6; // Başlangıç satırı
   
+  // Toplam satır sayısını tahmin et (worksheet.rowCount kullan)
+  const maxRows = Math.min(worksheet.rowCount, 1000); // Maksimum 1000 satır
+  let processedRows = 0;
+  
   // Toplam satırına kadar oku (TOPLAM yazan satıra kadar veya boş satıra kadar)
-  while (rowNum <= worksheet.rowCount) {
+  while (rowNum <= maxRows) {
+    if (signal) checkAborted(signal);
+    
     const row = worksheet.getRow(rowNum);
     
     // A sütununda "TOPLAM" yazıyorsa dur
@@ -106,6 +143,7 @@ function parseLineRows(worksheet: ExcelJS.Worksheet): OfferLine[] {
     const itemName = getCellValue(row, 2); // B sütunu
     if (!itemName || itemName.trim() === '') {
       rowNum++;
+      processedRows++;
       continue;
     }
     
@@ -116,6 +154,17 @@ function parseLineRows(worksheet: ExcelJS.Worksheet): OfferLine[] {
     }
     
     rowNum++;
+    processedRows++;
+    
+    // Her 10 satırda bir progress güncelle
+    if (reportProgress && processedRows % 10 === 0) {
+      const progress = calculateBatchProgress(processedRows, maxRows);
+      reportProgress(progress);
+    }
+  }
+  
+  if (reportProgress) {
+    reportProgress(100);
   }
   
   return lines;
@@ -258,10 +307,34 @@ function parseNumber(worksheet: ExcelJS.Worksheet | ExcelJS.Row, col: string | n
 }
 
 /**
- * Tarayıcıda çalışan versiyon
+ * Tarayıcıda çalışan versiyon (progress ve cancel desteği ile)
+ * Teklifbul Rule v1.0
+ * 
+ * @param file - Excel dosyası
+ * @param signal - AbortSignal (iptal için)
+ * @param reportProgress - Progress callback (0-100)
  */
-export async function importSupplierOfferBrowser(file: File): Promise<Offer> {
+export async function importSupplierOfferBrowser(
+  file: File,
+  signal?: AbortSignal,
+  reportProgress?: (progress: number) => void
+): Promise<Offer> {
+  const report = (p: number) => {
+    if (reportProgress) reportProgress(p);
+    if (signal) checkAborted(signal);
+  };
+
+  report(0);
+  
+  // Dosyayı oku
   const arrayBuffer = await file.arrayBuffer();
-  return importSupplierOffer(arrayBuffer);
+  report(5);
+  
+  // Parse et
+  return importSupplierOffer(arrayBuffer, signal, (p) => {
+    // Dosya okuma 5% aldı, parse 95% alacak
+    const totalProgress = 5 + (p * 0.95);
+    report(totalProgress);
+  });
 }
 

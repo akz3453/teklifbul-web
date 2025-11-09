@@ -218,7 +218,7 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
       if (!user) return;
       
       // Firestore'dan bildirimleri yükle
-      const { collection, query, where, orderBy, limit, getDocs, doc, updateDoc } = await import('https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js');
+  const { collection, query, where, orderBy, limit, getDocs } = await import('https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js');
       const { db } = await import('../../firebase.js');
       
       // Teklifbul Rule v1.0 - Firestore index olmadan sorgu yap (index oluşturulana kadar)
@@ -446,7 +446,7 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
     setTimeout(() => {
       try {
         unsub();
-      } catch (e) {
+      } catch (_e) {
         // Ignore - might already be unsubscribed
       }
     }, 5000);

@@ -1,7 +1,5 @@
 // Teklifbul Rule v1.0 - Adres compose ve preview utilities
 import type { Address } from '../types/address.js';
-import { trNorm } from './stringNorm.js';
-
 export const composeAddress = (a: Partial<Address>): string => {
   const parts = [
     a.sokak && (/(sokak|cadde)$/i.test(a.sokak) ? a.sokak : `${a.sokak} Sokak`),

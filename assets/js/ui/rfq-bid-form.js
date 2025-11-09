@@ -1,5 +1,5 @@
 // RFQ Bid Form UI Component
-import { createRFQBid, updateRFQBid, validateBidData, calculateBidTotal } from '../services/rfq-bids.js';
+import { createRFQBid, validateBidData, calculateBidTotal } from '../services/rfq-bids.js';
 // Teklifbul Rule v1.0 - Structured Logging
 import { logger } from '../../../src/shared/log/logger.js';
 

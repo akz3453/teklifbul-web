@@ -3,7 +3,7 @@
  * Teklifbul Rule v1.0 - Modal + Places Autocomplete + Harita
  */
 
-import { loadGoogleMaps, isGoogleMapsLoaded } from './google-maps-loader.js';
+import { loadGoogleMaps } from './google-maps-loader.js';
 
 /**
  * Adres doğrulama modalını oluşturur ve gösterir

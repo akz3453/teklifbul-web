@@ -13,8 +13,6 @@ import {
   orderBy,
   limit,
   getDocs,
-  doc,
-  getDoc,
   addDoc
 } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
 

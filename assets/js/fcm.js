@@ -8,7 +8,7 @@ import { app, db, auth } from '/firebase.js';
 import { logger } from '../../src/shared/log/logger.js';
 import { getApp, getApps } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js';
 import { getMessaging, getToken, onMessage, isSupported } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-messaging.js';
-import { doc, setDoc, getDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+import { doc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
 
 // VAPID Public Key - Firebase Console → Project Settings → Cloud Messaging → Web Push certificates
 // Teklifbul Rule v1.0 - FCM Push Notifications
@@ -60,7 +60,7 @@ export async function setupMessaging(swReg) {
           } else {
             throw new Error('Default app\'de de messagingSenderId yok');
           }
-        } catch (e) {
+        } catch (_e) {
           logger.error('Firebase app\'de messagingSenderId yok!');
           logger.error('Import edilen app options', app.options);
           logger.error('Tüm app\'ler', allApps.map(a => ({ name: a.name, hasMessaging: !!a.options?.messagingSenderId })));

@@ -82,47 +82,86 @@ export async function getCategories(options?: {
   
   try {
     const categoriesRef = collection(db, 'categories');
-    const q = query(categoriesRef, orderBy('name', 'asc'));
     
-    // Search filter (Firestore'da case-insensitive search yok, client-side filter)
-    const snapshot = await getDocs(q);
-    let categories = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    })) as Category[];
-    
-    // Client-side search filter
+    // Search varsa: Tüm kategorileri çekip client-side filter (case-insensitive gerekli)
+    // Search yoksa: Firestore pagination kullan (daha hızlı)
     if (search) {
+      // Search için tüm kategorileri çek (case-insensitive filter gerekli)
+      const q = query(categoriesRef, orderBy('name', 'asc'));
+      const snapshot = await getDocs(q);
+      let categories = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Category[];
+      
+      // Client-side search filter
       const searchLower = search.toLowerCase();
       categories = categories.filter(cat => 
         cat.name.toLowerCase().includes(searchLower) ||
         cat.short_desc?.toLowerCase().includes(searchLower)
       );
+      
+      // Pagination
+      const startIndex = (page - 1) * size;
+      const endIndex = startIndex + size;
+      const paginated = categories.slice(startIndex, endIndex);
+      
+      // withDesc kontrolü
+      const result = withDesc 
+        ? paginated 
+        : paginated.map(({ short_desc, examples, ...rest }) => rest);
+      
+      const response = {
+        data: result,
+        pagination: {
+          page,
+          size,
+          total: categories.length
+        }
+      };
+      
+      // Cache'e kaydet (5 dakika)
+      await cache.set(cacheKey, response, 300);
+      
+      return response;
+    } else {
+      // Search yoksa: Firestore pagination kullan (daha performanslı)
+      const q = query(
+        categoriesRef,
+        orderBy('name', 'asc'),
+        limit(size)
+      );
+      
+      const snapshot = await getDocs(q);
+      let categories = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Category[];
+      
+      // withDesc kontrolü
+      const result = withDesc 
+        ? categories 
+        : categories.map(({ short_desc, examples, ...rest }) => rest);
+      
+      // Total count için ayrı sorgu (sadece ilk sayfa için gerekli)
+      // Not: Firestore'da total count için ayrı sorgu gerekir, bu pahalı olabilir
+      // Bu yüzden sadece ilk sayfa için total count gösteriyoruz
+      const totalCount = page === 1 ? snapshot.size : undefined;
+      
+      const response = {
+        data: result,
+        pagination: {
+          page,
+          size,
+          total: totalCount ?? result.length // Yaklaşık değer
+        }
+      };
+      
+      // Cache'e kaydet (5 dakika)
+      await cache.set(cacheKey, response, 300);
+      
+      return response;
     }
-    
-    // Pagination
-    const startIndex = (page - 1) * size;
-    const endIndex = startIndex + size;
-    const paginated = categories.slice(startIndex, endIndex);
-    
-    // withDesc kontrolü
-    const result = withDesc 
-      ? paginated 
-      : paginated.map(({ short_desc, examples, ...rest }) => rest);
-    
-    const response = {
-      data: result,
-      pagination: {
-        page,
-        size,
-        total: categories.length
-      }
-    };
-    
-    // Cache'e kaydet (5 dakika)
-    await cache.set(cacheKey, response, 300);
-    
-    return response;
   } catch (error: any) {
     logger.error('❌ Firestore getCategories error:', error);
     throw new Error(`Kategoriler yüklenemedi: ${error.message}`);

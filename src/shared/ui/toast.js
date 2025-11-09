@@ -5,9 +5,15 @@
 import { TOAST_COLORS } from '../constants/colors.js';
 import { TOAST_TIMING } from '../constants/timing.js';
 import { TOAST_UI } from '../constants/ui.js';
+import { MESSAGES } from '../constants/messages.js';
 
 // Basit toast implementasyonu
-const createToast = (message, type = 'info') => {
+const createToast = (messageOrKey, type = 'info') => {
+  // Resolve message: allow passing either a message string or a MESSAGES key
+  const message = (typeof messageOrKey === 'string' && Object.prototype.hasOwnProperty.call(MESSAGES, messageOrKey))
+    ? MESSAGES[messageOrKey]
+    : messageOrKey;
+
   if (typeof document === 'undefined') {
     // SSR ortamında console'a yaz
     // use console.info to comply with lint allow-list (groupCollapsed, groupEnd, info, warn, error)

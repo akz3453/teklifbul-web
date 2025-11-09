@@ -93,8 +93,6 @@ function initializeFirebaseAdmin(credentialsPath?: string): void {
   }
 }
 
-const db = getAdminFirestore();
-
 /**
  * Türkçe karakter normalizasyonu (lowercase)
  */
@@ -126,6 +124,9 @@ async function migrateTaxOfficesLowerFields(
   });
 
   try {
+    // Firestore instance'ı al (initialize edilmiş olmalı)
+    const db = getAdminFirestore();
+    
     // Toplam kayıt sayısını al
     const officesRef = db.collection('tax_offices');
     const countSnapshot = await officesRef.count().get();

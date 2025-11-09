@@ -46,9 +46,9 @@ async function migrateBidsAddBuyerId() {
       }
       
       try {
-        // Talep bilgisini al - doc() kullanarak
-        const demandRef = doc(db, 'demands', bidData.demandId);
-        const demandDoc = await getDocs(query(collection(db, 'demands'), where('__name__', '==', bidData.demandId)));
+  // Talep bilgisini al - doc() kullanarak
+  const _demandRef = doc(db, 'demands', bidData.demandId);
+  const demandDoc = await getDocs(query(collection(db, 'demands'), where('__name__', '==', bidData.demandId)));
         
         if (demandDoc.empty) {
           console.log(`⚠️ Teklif ${bidDoc.id} için talep bulunamadı: ${bidData.demandId}`);

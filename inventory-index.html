@@ -27,6 +27,19 @@
   <header id="app-header"></header>
 
   <div class="container">
+    <!-- Breadcrumb Navigation -->
+    <div class="tb-breadcrumb" id="breadcrumb">
+      <span class="tb-crumb">
+        <span class="ico">🏠</span>
+        <a href="/dashboard.html">Ana Sayfa</a>
+      </span>
+      <span class="tb-sep">›</span>
+      <span class="tb-crumb">
+        <span class="ico">📦</span>
+        <span>Stok Takip ve ŞMTF Sistemi</span>
+      </span>
+    </div>
+    
     <h1>📦 Stok Takip ve ŞMTF Sistemi</h1>
     <p class="subtitle">Teklifbul entegrasyonlu envanter yönetim sistemi</p>
     
@@ -37,6 +50,13 @@
     <div class="section">
       <h2>🛠️ Stok Yönetimi</h2>
       <div class="grid">
+        <div class="card" onclick="location.href='/pages/stock-list.html'">
+          <div class="icon">📋</div>
+          <h3>Stok Listesi</h3>
+          <p>Tüm stokları görüntüleyin, arayın ve filtreleyin. Gelişmiş arama ve Excel export.</p>
+          <span class="status">✅ Hazır</span>
+        </div>
+        
         <div class="card" onclick="location.href='/pages/stock-import.html'">
           <div class="icon">📥</div>
           <h3>Stok İçe Aktar</h3>
@@ -48,6 +68,13 @@
           <div class="icon">💰</div>
           <h3>Toplu Fiyat Güncelleme</h3>
           <p>Filtreleme ile toplu fiyat güncelleme. Excel export/import akışı.</p>
+          <span class="status">✅ Hazır</span>
+        </div>
+        
+        <div class="card" onclick="location.href='/pages/sku-merge.html'">
+          <div class="icon">🔀</div>
+          <h3>SKU Birleştirme</h3>
+          <p>İki farklı SKU'yu birleştirme. Duplicate SKU'ları temizleme.</p>
           <span class="status">✅ Hazır</span>
         </div>
       </div>
@@ -163,6 +190,8 @@
     import { toast } from './src/shared/ui/toast.js';
     // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
     import { MESSAGES } from './src/shared/constants/messages.js';
+    // Teklifbul Rule v1.0 - Auth Guard (tek kaynaktan yönlendirme)
+    import { initAuthGuard } from './assets/js/auth-guard.js';
     
     import { initGlobalHeader } from './assets/js/ui/header.js';
     
@@ -172,16 +201,10 @@
     // Initialize global header
     initGlobalHeader({ mount: '#app-header', activeRoute: 'inventory' });
     
-    // Check Firebase connection
-    import('/firebase.js').then(({ auth }) => {
-      logger.info('Firebase loaded');
-      if (auth.currentUser) {
-        logger.info('User authenticated', { email: auth.currentUser.email });
-      } else {
-        logger.warn('User not authenticated - Some features may be limited');
-      }
-    }).catch(err => {
-      logger.error('Firebase error', err);
+    // Teklifbul Rule v1.0 - Auth guard başlat (giriş kontrolü ve otomatik yönlendirme)
+    // Kullanıcı giriş yapmamışsa login sayfasına yönlendirir
+    initAuthGuard().catch(err => {
+      logger.error('Auth guard initialization error', err);
     });
   </script>
 </body>

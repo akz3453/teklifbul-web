@@ -3,32 +3,604 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Giriş Yap</title>
+  <title>Giriş Yap — Teklifbul</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%233b82f6' rx='6'/%3E%3Ctext x='16' y='22' font-family='Arial' font-size='18' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E" />
-  <style>
-    body { font-family: system-ui, Arial; max-width: 420px; margin: 60px auto; padding: 0 12px; }
-    input, button { width: 100%; padding: 12px; margin: 8px 0; box-sizing: border-box; }
-    button { cursor: pointer; }
-    a { color: #1a56db; text-decoration: none; }
-    #status { margin-top: 12px; font-size: 14px; color: #333; }
-  </style>
   <link rel="stylesheet" href="/css/ui-standard.css" />
+  <style>
+    /* Teklifbul Rule v1.0 - Modern Login Page Styles */
+    
+    * {
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary: #2563EB;
+      --primary-dark: #1E40AF;
+      --text-dark: #111827;
+      --text-muted: #6B7280;
+      --border: #E5E7EB;
+      --bg-light: #F3F4F6;
+      --error: #DC2626;
+      --success: #10B981;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 50%, #BFDBFE 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .login-container {
+      width: 100%;
+      max-width: 1100px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+      overflow: hidden;
+      min-height: 600px;
+    }
+
+    /* Sol Panel - Logo ve Bilgiler */
+    .login-left {
+      background: linear-gradient(135deg, #2563EB 0%, #1E40AF 100%);
+      color: white;
+      padding: 60px 50px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .login-left::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+      animation: pulse 20s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 0.5; }
+      50% { transform: scale(1.1); opacity: 0.3; }
+    }
+
+    .logo-container {
+      margin-bottom: 40px;
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 300px;
+    }
+
+    .logo-container img {
+      max-width: 100%;
+      width: 320px;
+      height: auto;
+      display: block;
+      object-fit: contain;
+      margin-bottom: 0;
+    }
+
+    .brand-title {
+      display: none;
+    }
+
+    .brand-slogan {
+      font-size: 20px;
+      font-weight: 500;
+      margin: 24px 0 12px 0;
+      opacity: 0.95;
+      position: relative;
+      z-index: 1;
+      text-align: center;
+    }
+
+    .brand-description {
+      font-size: 16px;
+      line-height: 1.6;
+      opacity: 0.9;
+      margin: 0;
+      position: relative;
+      z-index: 1;
+      text-align: center;
+    }
+
+    .features-list {
+      margin-top: 80px;
+      list-style: none;
+      padding: 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .features-list li {
+      padding: 12px 0;
+      font-size: 15px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .features-list li::before {
+      content: '✓';
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    /* Sağ Panel - Login Form */
+    .login-right {
+      padding: 60px 50px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .form-header {
+      margin-bottom: 40px;
+    }
+
+    .form-title {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text-dark);
+      margin: 0 0 8px 0;
+    }
+
+    .form-subtitle {
+      font-size: 15px;
+      color: var(--text-muted);
+      margin: 0;
+    }
+
+    .form-group {
+      margin-bottom: 24px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-dark);
+      margin-bottom: 8px;
+    }
+
+    .input-wrapper {
+      position: relative;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 14px 16px;
+      font-size: 15px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      background: white;
+      color: var(--text-dark);
+      transition: all 0.2s ease;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+    }
+
+    .form-input.error {
+      border-color: var(--error);
+    }
+
+    .password-toggle {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 18px;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.2s;
+    }
+
+    .password-toggle:hover {
+      color: var(--primary);
+    }
+
+    .error-message {
+      display: none;
+      font-size: 13px;
+      color: var(--error);
+      margin-top: 6px;
+    }
+
+    .error-message.show {
+      display: block;
+    }
+
+    .remember-forgot {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      font-size: 14px;
+    }
+
+    .remember-me {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .remember-me input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      accent-color: var(--primary);
+    }
+
+    .remember-me label {
+      cursor: pointer;
+      color: var(--text-dark);
+      user-select: none;
+    }
+
+    .forgot-link {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    .forgot-link:hover {
+      color: var(--primary-dark);
+      text-decoration: underline;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      margin-bottom: 16px;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+
+    .btn-primary:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
+
+    .btn-google {
+      background: white;
+      color: var(--text-dark);
+      border: 2px solid var(--border);
+    }
+
+    .btn-google:hover:not(:disabled) {
+      background: var(--bg-light);
+      border-color: var(--primary);
+    }
+
+    .btn-google:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
+
+    .divider {
+      text-align: center;
+      margin: 24px 0;
+      color: var(--text-muted);
+      font-size: 14px;
+      position: relative;
+    }
+
+    .divider::before,
+    .divider::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      width: 45%;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .divider::before {
+      left: 0;
+    }
+
+    .divider::after {
+      right: 0;
+    }
+
+    .signup-link {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .signup-link a {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .signup-link a:hover {
+      text-decoration: underline;
+    }
+
+    #status {
+      margin-top: 16px;
+      font-size: 13px;
+      color: var(--text-muted);
+      text-align: center;
+      min-height: 20px;
+    }
+
+    #logoutBtn {
+      display: none;
+      margin-top: 16px;
+    }
+
+    /* Shake Animation for Errors */
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+      20%, 40%, 60%, 80% { transform: translateX(5px); }
+    }
+
+    .login-container.shake {
+      animation: shake 0.5s;
+    }
+
+    /* Footer */
+    .login-footer {
+      margin-top: 40px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+      text-align: center;
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .footer-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 13px;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover {
+      color: var(--primary);
+    }
+
+    .footer-copyright {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin: 0;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 968px) {
+      .login-container {
+        grid-template-columns: 1fr;
+        max-width: 500px;
+      }
+
+      .login-left {
+        padding: 40px 30px;
+        text-align: center;
+      }
+
+      .logo-container img {
+        margin: 0 auto 20px;
+      }
+
+      .brand-title {
+        font-size: 28px;
+      }
+
+      .brand-slogan {
+        font-size: 18px;
+      }
+
+      .features-list {
+        display: none;
+      }
+
+      .login-right {
+        padding: 40px 30px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 10px;
+      }
+
+      .login-container {
+        border-radius: 12px;
+        min-height: auto;
+      }
+
+      .login-left {
+        padding: 30px 20px;
+      }
+
+      .login-right {
+        padding: 30px 20px;
+      }
+
+      .logo-container {
+        min-height: 200px;
+      }
+      
+      .logo-container img {
+        width: 200px;
+        max-width: 100%;
+      }
+
+      .form-title {
+        font-size: 24px;
+      }
+    }
+  </style>
 </head>
 <body>
-  <h1>Giriş Yap</h1>
+  <div class="login-container" id="loginContainer">
+    <!-- Sol Panel - Logo ve Bilgiler -->
+    <div class="login-left">
+      <div class="logo-container">
+        <img src="/assets/images/logo.png" alt="Teklifbul Logo" />
+        <p class="brand-slogan">Teklif ve stok yönetim platformu</p>
+        <p class="brand-description">
+          Tedarik, teklif, sipariş ve stok süreçlerinizi tek ekrandan yönetin.
+        </p>
+      </div>
+      <ul class="features-list">
+        <li>Tedarikçiler ve alıcılar için merkezi yönetim paneli</li>
+        <li>Çoklu firma, çoklu depo ve stok takibi desteği</li>
+        <li>Teklif karşılaştırma ve analiz araçları</li>
+        <li>Güvenli ve hızlı iş akışı yönetimi</li>
+      </ul>
+    </div>
 
-  <label for="email">E-posta</label>
-  <input id="email" type="email" placeholder="E-posta" autocomplete="username" />
-  <label for="password">Şifre</label>
-  <input id="password" type="password" placeholder="Şifre" autocomplete="current-password" />
-  <button id="loginBtn">Giriş Yap</button>
+    <!-- Sağ Panel - Login Form -->
+    <div class="login-right">
+      <div class="form-header">
+        <h2 class="form-title">Giriş Yap</h2>
+        <p class="form-subtitle">Hesabınıza giriş yaparak devam edin</p>
+      </div>
 
-  <button id="googleBtn">Google ile Giriş</button>
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="email" class="form-label">E-posta</label>
+          <div class="input-wrapper">
+            <input 
+              id="email" 
+              type="email" 
+              class="form-input" 
+              placeholder="ornek@email.com" 
+              autocomplete="username"
+              required
+            />
+          </div>
+          <div class="error-message" id="emailError"></div>
+        </div>
 
-  <p>Hesabın yok mu? <a href="./signup.html">Kayıt ol</a></p>
+        <div class="form-group">
+          <label for="password" class="form-label">Şifre</label>
+          <div class="input-wrapper">
+            <input 
+              id="password" 
+              type="password" 
+              class="form-input" 
+              placeholder="••••••••" 
+              autocomplete="current-password"
+              required
+            />
+            <button 
+              type="button" 
+              class="password-toggle" 
+              id="passwordToggle"
+              aria-label="Şifreyi göster/gizle"
+            >
+              👁️
+            </button>
+          </div>
+          <div class="error-message" id="passwordError"></div>
+        </div>
 
-  <div id="status">Oturum kapalı.</div>
-  <button id="logoutBtn" style="display:none">Çıkış Yap</button>
+        <div class="remember-forgot">
+          <div class="remember-me">
+            <input type="checkbox" id="rememberMe" />
+            <label for="rememberMe">Beni hatırla</label>
+          </div>
+          <a href="#" class="forgot-link" id="forgotPassword">Şifremi Unuttum</a>
+        </div>
+
+        <button type="submit" id="loginBtn" class="btn btn-primary">
+          Giriş Yap
+        </button>
+
+        <div class="divider">veya</div>
+
+        <button type="button" id="googleBtn" class="btn btn-google">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/>
+            <path d="M9 18c2.43 0 4.467-.806 5.965-2.184l-2.908-2.258c-.806.54-1.837.86-3.057.86-2.35 0-4.34-1.587-5.053-3.72H.957v2.331C2.438 15.983 5.482 18 9 18z" fill="#34A853"/>
+            <path d="M3.943 10.698c-.18-.54-.282-1.117-.282-1.698s.102-1.158.282-1.698V4.971H.957C.348 6.175 0 7.55 0 9s.348 2.825.957 4.029l2.986-2.331z" fill="#FBBC05"/>
+            <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.971L3.943 7.302C4.656 5.167 6.646 3.58 9 3.58z" fill="#EA4335"/>
+          </svg>
+          Google ile Giriş
+        </button>
+
+        <div class="signup-link">
+          Hesabın yok mu? <a href="./signup.html">Kayıt ol</a>
+        </div>
+
+        <div id="status">Oturum kapalı.</div>
+        <button id="logoutBtn" class="btn btn-primary" style="display:none">Çıkış Yap</button>
+      </form>
+
+      <div class="login-footer">
+        <div class="footer-links">
+          <a href="#" id="kvkkLink">KVKK</a>
+          <a href="#" id="privacyLink">Gizlilik Politikası</a>
+          <a href="#" id="termsLink">Kullanım Şartları</a>
+          <a href="#" id="contactLink">İletişim</a>
+        </div>
+        <p class="footer-copyright">© 2025 Teklifbul – Tüm hakları saklıdır.</p>
+      </div>
+    </div>
+  </div>
 
   <script type="module">
     // Teklifbul Rule v1.0 - Login akışı (toast + logger ile)
@@ -39,12 +611,105 @@
     import { MESSAGES } from '/src/shared/constants/messages.js';
     import { logger } from "/src/shared/log/logger.js";
 
-    const emailEl   = document.getElementById("email");
-    const passEl    = document.getElementById("password");
-    const loginBtn  = document.getElementById("loginBtn");
+    const emailEl = document.getElementById("email");
+    const passEl = document.getElementById("password");
+    const loginBtn = document.getElementById("loginBtn");
     const googleBtn = document.getElementById("googleBtn");
     const logoutBtn = document.getElementById("logoutBtn");
-    const statusEl  = document.getElementById("status");
+    const statusEl = document.getElementById("status");
+    const loginForm = document.getElementById("loginForm");
+    const passwordToggle = document.getElementById("passwordToggle");
+    const loginContainer = document.getElementById("loginContainer");
+    const emailError = document.getElementById("emailError");
+    const passwordError = document.getElementById("passwordError");
+
+    // Şifre göster/gizle toggle
+    passwordToggle.addEventListener("click", () => {
+      const type = passEl.getAttribute("type") === "password" ? "text" : "password";
+      passEl.setAttribute("type", type);
+      passwordToggle.textContent = type === "password" ? "👁️" : "🙈";
+    });
+
+    // Form validasyonu
+    function validateEmail(email) {
+      const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return re.test(email);
+    }
+
+    function showError(element, message) {
+      element.textContent = message;
+      element.classList.add("show");
+      element.previousElementSibling.querySelector(".form-input").classList.add("error");
+    }
+
+    function clearError(element) {
+      element.textContent = "";
+      element.classList.remove("show");
+      const input = element.previousElementSibling.querySelector(".form-input");
+      if (input) input.classList.remove("error");
+    }
+
+    function clearAllErrors() {
+      clearError(emailError);
+      clearError(passwordError);
+      loginContainer.classList.remove("shake");
+    }
+
+    // Input validasyonu (real-time)
+    emailEl.addEventListener("blur", () => {
+      const email = emailEl.value.trim();
+      if (email && !validateEmail(email)) {
+        showError(emailError, "Geçerli bir e-posta adresi girin");
+      } else {
+        clearError(emailError);
+      }
+    });
+
+    emailEl.addEventListener("input", () => {
+      if (emailError.classList.contains("show")) {
+        clearError(emailError);
+      }
+    });
+
+    passEl.addEventListener("input", () => {
+      if (passwordError.classList.contains("show")) {
+        clearError(passwordError);
+      }
+    });
+
+    // Form submit handler
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      clearAllErrors();
+
+      const email = emailEl.value.trim();
+      const password = passEl.value.trim();
+      let hasError = false;
+
+      if (!email) {
+        showError(emailError, "E-posta adresi gereklidir");
+        hasError = true;
+      } else if (!validateEmail(email)) {
+        showError(emailError, "Geçerli bir e-posta adresi girin");
+        hasError = true;
+      }
+
+      if (!password) {
+        showError(passwordError, "Şifre gereklidir");
+        hasError = true;
+      } else if (password.length < 6) {
+        showError(passwordError, "Şifre en az 6 karakter olmalıdır");
+        hasError = true;
+      }
+
+      if (hasError) {
+        loginContainer.classList.add("shake");
+        setTimeout(() => loginContainer.classList.remove("shake"), 500);
+        return;
+      }
+
+      await handleEmailLogin(email, password);
+    });
 
     // Check for Google redirect result on page load
     checkGoogleRedirect().then(async user => {
@@ -61,38 +726,49 @@
     async function handleEmailLogin(email, password) {
       logger.group("Email Login");
       try {
+        loginBtn.disabled = true;
+        loginBtn.textContent = "Giriş yapılıyor...";
+        clearAllErrors();
+
         await signInWithEmailAndPassword(auth, email, password);
         toast.success(MESSAGES.SUCCESS_LOGIN);
         logger.info("Giriş başarılı", { email });
         // onAuthStateChanged yönlendirir; burada ekstra push yok
       } catch (err) {
         logger.error("Giriş hatası", err);
-        toast.error(MESSAGES.ERROR_LOGIN + ": " + (err?.message || "Bilinmeyen hata"));
+        
+        // Hata mesajlarını kullanıcı dostu hale getir
+        let errorMessage = MESSAGES.ERROR_LOGIN;
+        if (err.code === "auth/user-not-found") {
+          errorMessage = "Bu e-posta adresi ile kayıtlı kullanıcı bulunamadı";
+        } else if (err.code === "auth/wrong-password") {
+          errorMessage = "Şifre hatalı";
+          showError(passwordError, "Şifre hatalı");
+        } else if (err.code === "auth/invalid-email") {
+          errorMessage = "Geçersiz e-posta adresi";
+          showError(emailError, "Geçersiz e-posta adresi");
+        } else if (err.code === "auth/too-many-requests") {
+          errorMessage = "Çok fazla başarısız deneme. Lütfen daha sonra tekrar deneyin";
+        }
+        
+        toast.error(errorMessage);
+        loginContainer.classList.add("shake");
+        setTimeout(() => loginContainer.classList.remove("shake"), 500);
       } finally {
+        loginBtn.disabled = false;
+        loginBtn.textContent = "Giriş Yap";
         logger.end();
       }
     }
-
-    // Form submit handler
-    loginBtn.addEventListener("click", async (e) => {
-      e.preventDefault();
-      const email = (emailEl.value || "").trim();
-      const password = (passEl.value || "").trim();
-      
-      if (!email || !password) {
-        toast.error(MESSAGES.ERROR_EMAIL_PASSWORD_REQUIRED);
-        return;
-      }
-      
-      await handleEmailLogin(email, password);
-    });
 
     // Google login handler
     googleBtn.addEventListener("click", async () => {
       logger.group("Google Login");
       try {
         googleBtn.disabled = true;
-        googleBtn.textContent = "Giriş yapılıyor...";
+        googleBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.965-2.184l-2.908-2.258c-.806.54-1.837.86-3.057.86-2.35 0-4.34-1.587-5.053-3.72H.957v2.331C2.438 15.983 5.482 18 9 18z" fill="#34A853"/><path d="M3.943 10.698c-.18-.54-.282-1.117-.282-1.698s.102-1.158.282-1.698V4.971H.957C.348 6.175 0 7.55 0 9s.348 2.825.957 4.029l2.986-2.331z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.971L3.943 7.302C4.656 5.167 6.646 3.58 9 3.58z" fill="#EA4335"/></svg> Giriş yapılıyor...';
+        clearAllErrors();
+        
         await loginWithGoogle();
         toast.success(MESSAGES.SUCCESS_LOGIN_GOOGLE);
         logger.info("Google login başarılı");
@@ -101,7 +777,9 @@
         logger.error("Google login hatası", e);
         toast.error(MESSAGES.ERROR_LOGIN_GOOGLE + ": " + (e.message || "Bilinmeyen hata"));
         googleBtn.disabled = false;
-        googleBtn.textContent = "Google ile Giriş";
+        googleBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.965-2.184l-2.908-2.258c-.806.54-1.837.86-3.057.86-2.35 0-4.34-1.587-5.053-3.72H.957v2.331C2.438 15.983 5.482 18 9 18z" fill="#34A853"/><path d="M3.943 10.698c-.18-.54-.282-1.117-.282-1.698s.102-1.158.282-1.698V4.971H.957C.348 6.175 0 7.55 0 9s.348 2.825.957 4.029l2.986-2.331z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.971L3.943 7.302C4.656 5.167 6.646 3.58 9 3.58z" fill="#EA4335"/></svg> Google ile Giriş';
+        loginContainer.classList.add("shake");
+        setTimeout(() => loginContainer.classList.remove("shake"), 500);
       } finally {
         logger.end();
       }
@@ -121,7 +799,13 @@
         authUnsubscribe();
       }
     });
+
+    // Şifremi Unuttum link handler (placeholder)
+    document.getElementById("forgotPassword").addEventListener("click", (e) => {
+      e.preventDefault();
+      toast.info("Şifre sıfırlama özelliği yakında eklenecek");
+    });
   </script>
+  <script type="module" src="/js/ui-standard.js"></script>
 </body>
-<script type="module" src="/js/ui-standard.js"></script>
 </html>

@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>SKU Birleştirme</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="/utils.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <style>
+    body{font-family:system-ui, Arial; background:#f8fafc; color:#111827; margin:0}
+    .container{max-width:900px;margin:0 auto;padding:20px}
+    h1{margin:0 0 8px 0}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:20px;margin:16px 0}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}
+    @media (max-width:640px){.row{grid-template-columns:1fr}}
+    label{display:block;margin-bottom:4px;font-weight:500;font-size:14px;color:#374151}
+    input,select{width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px}
+    input:focus,select:focus{outline:none;border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,0.1)}
+    .btn{padding:10px 20px;border:0;border-radius:6px;cursor:pointer;font-weight:600;font-size:14px}
+    .btn-primary{background:#2563eb;color:#fff}
+    .btn-primary:hover{background:#1d4ed8}
+    .btn-primary:disabled{background:#9ca3af;cursor:not-allowed}
+    .btn-secondary{background:#6b7280;color:#fff}
+    .btn-secondary:hover{background:#4b5563}
+    .muted{color:#6b7280;font-size:13px}
+    .preview-section{margin:20px 0;padding:16px;background:#f9fafb;border-radius:8px;border:1px solid #e5e7eb}
+    .preview-section h3{margin:0 0 12px 0;font-size:16px;color:#1f2937}
+    .preview-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e5e7eb}
+    .preview-row:last-child{border-bottom:none}
+    .preview-label{color:#6b7280;font-size:14px}
+    .preview-value{font-weight:600;color:#1f2937;font-size:14px}
+    .error{color:#ef4444;font-size:13px;margin-top:4px}
+    .success{color:#10b981;font-size:13px;margin-top:4px}
+    .search-results{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #d1d5db;border-radius:6px;max-height:400px;overflow-y:auto;z-index:1000;box-shadow:0 4px 6px rgba(0,0,0,0.1);margin-top:4px}
+    .search-result-item{padding:8px 12px;cursor:pointer;border-bottom:1px solid #f3f4f6;transition:background 0.15s}
+    .search-result-item:hover,.search-result-item:focus{background:#f9fafb;outline:none}
+    .search-result-item:last-child{border-bottom:none}
+    .search-result-item[tabindex="0"]:focus{background:#e0e7ff;border-left:3px solid #3b82f6}
+    .stock-info{display:flex;justify-content:space-between;align-items:center}
+    .stock-sku{font-weight:600;color:#1f2937}
+    .stock-name{color:#6b7280;font-size:13px}
+  </style>
+</head>
+<body>
+  <!-- Common Header -->
+  <header id="app-header"></header>
+
+  <div class="container">
+    <!-- Breadcrumb Navigation -->
+    <div class="tb-breadcrumb" id="breadcrumb">
+      <span class="tb-crumb">
+        <span class="ico">🏠</span>
+        <a href="/dashboard.html">Ana Sayfa</a>
+      </span>
+      <span class="tb-sep">›</span>
+      <span class="tb-crumb">
+        <span class="ico">📦</span>
+        <a href="/inventory-index.html">Stok Takip</a>
+      </span>
+      <span class="tb-sep">›</span>
+      <span class="tb-crumb">
+        <span class="ico">🔀</span>
+        <span>SKU Birleştirme</span>
+      </span>
+    </div>
+    
+    <h1>🔀 SKU Birleştirme</h1>
+    <p class="muted">İki farklı SKU'yu birleştirin. Kaynak SKU'dan hedef SKU'ya veri aktarımı yapılır.</p>
+
+    <div class="card">
+      <h2 style="margin:0 0 16px 0;font-size:18px">SKU Seçimi</h2>
+      
+      <div class="row">
+        <div style="position:relative">
+          <label for="sourceSku">Kaynak SKU (Birleştirilecek) <span style="color:#6b7280;font-size:12px;font-weight:normal">(F6 ile liste aç)</span></label>
+          <input id="sourceSku" placeholder="SKU veya ürün adı ara... (*çim* gibi)" autocomplete="off" title="F6 tuşu ile tüm stokları listeleyebilirsiniz. Yıldız (*) ile wildcard arama yapabilirsiniz." />
+          <div id="sourceSearchResults" class="search-results" style="display:none"></div>
+          <div id="sourceError" class="error" style="display:none"></div>
+        </div>
+        
+        <div style="position:relative">
+          <label for="targetSku">Hedef SKU (Birleştirilecek) <span style="color:#6b7280;font-size:12px;font-weight:normal">(F6 ile liste aç)</span></label>
+          <input id="targetSku" placeholder="SKU veya ürün adı ara... (*çim* gibi)" autocomplete="off" title="F6 tuşu ile tüm stokları listeleyebilirsiniz. Yıldız (*) ile wildcard arama yapabilirsiniz." />
+          <div id="targetSearchResults" class="search-results" style="display:none"></div>
+          <div id="targetError" class="error" style="display:none"></div>
+        </div>
+      </div>
+
+      <div style="margin-top:16px;display:flex;gap:8px">
+        <button id="btnPreview" class="btn btn-secondary" disabled>Önizleme</button>
+        <button id="btnMerge" class="btn btn-primary" disabled>Birleştir</button>
+      </div>
+    </div>
+
+    <div id="previewCard" class="card" style="display:none">
+      <h2 style="margin:0 0 16px 0;font-size:18px">Birleştirme Önizlemesi</h2>
+      <div id="previewContent"></div>
+    </div>
+
+    <div id="resultCard" class="card" style="display:none">
+      <h2 style="margin:0 0 16px 0;font-size:18px">Sonuç</h2>
+      <div id="resultContent"></div>
+    </div>
+  </div>
+
+  <!-- Firebase -->
+  <script type="module" src="/firebase.js"></script>
+  <!-- Header -->
+  <script type="module">
+    import { initGlobalHeader } from '../assets/js/ui/header.js';
+    initGlobalHeader({ mount: '#app-header', activeRoute: 'inventory' });
+  </script>
+  <!-- Main -->
+  <script type="module" src="/scripts/sku-merge-ui.js"></script>
+</body>
+</html>
+

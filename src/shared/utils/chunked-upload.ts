@@ -110,13 +110,13 @@ export async function processChunkedCSV<T>(
   logger.info('Satırlar parse edildi', { totalRows });
 
   // Header'ı al (ilk satır)
-  const header = lines[0].split(',').map(cell => cell.trim());
+  // const _header = lines[0].split(',').map(cell => cell.trim());
   const dataLines = lines.slice(1);
 
   report(10);
 
   // Chunk'lara böl
-  const chunks: string[][] = [];
+  const chunks: any[][] = [];
   for (let i = 0; i < dataLines.length; i += chunkSize) {
     const chunk = dataLines.slice(i, i + chunkSize).map(line => {
       return line.split(',').map(cell => cell.trim());

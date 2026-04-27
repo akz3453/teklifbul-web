@@ -3,7 +3,7 @@
  * Teklifbul Rule v1.0
  */
 
-import React from 'react';
+// import React from 'react';
 import { ProgressBar } from './ProgressBar';
 import { useCancellableTask } from '../hooks/useCancellableTask';
 import { checkAborted, calculateBatchProgress } from '../utils/async-utils';
@@ -80,7 +80,7 @@ export function ExampleProgressUsage() {
 
       <div style={{ marginTop: '20px', display: 'flex', gap: '12px' }}>
         <button
-          onClick={handleExport}
+          onClick={() => { void handleExport(); }}
           disabled={isRunning}
           style={{
             padding: '10px 20px',

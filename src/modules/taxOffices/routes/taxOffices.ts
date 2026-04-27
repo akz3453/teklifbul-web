@@ -5,14 +5,15 @@
  * Firestore + In-Memory Cache kullanıyor - $0 maliyet
  */
 
-import { Router, Request, Response } from 'express';
+import { Router } from 'express';
+import type { Request, Response } from 'express';
 import { getProvinces, getTaxOffices } from '../../../services/firestore-tax-offices';
 import { logger } from '../../../shared/log/logger.js';
 
 const router = Router();
 
 // GET /api/tax-offices/provinces - İl listesi
-router.get('/provinces', async (req: Request, res: Response) => {
+router.get('/provinces', async (_req: Request, res: Response) => {
   try {
     const provinces = await getProvinces();
     res.json(provinces);

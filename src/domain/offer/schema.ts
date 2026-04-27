@@ -8,16 +8,12 @@ import { z } from 'zod';
  */
 
 // Öncelik değerleri ve Türkçe çevirileri
-export const PriorityEnum = z.enum(['price', 'date', 'quality'], {
-  errorMap: () => ({ message: 'Öncelik: Fiyat, Tarih veya Kalite olmalı' })
-});
+export const PriorityEnum = z.enum(['price', 'date', 'quality']);
 
 export type Priority = z.infer<typeof PriorityEnum>;
 
 // Para birimi enum
-export const CurrencyEnum = z.enum(['TRY', 'USD', 'EUR', 'GBP'], {
-  errorMap: () => ({ message: 'Para birimi: TRY, USD, EUR veya GBP olmalı' })
-});
+export const CurrencyEnum = z.enum(['TRY', 'USD', 'EUR', 'GBP']);
 
 export type Currency = z.infer<typeof CurrencyEnum>;
 

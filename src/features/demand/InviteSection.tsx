@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Group, Supplier, DemandVisibility, InviteMode } from "./types";
+import type { Group, Supplier, DemandVisibility, InviteMode } from "./types";
 import { fetchGroupMembers } from "./api";
 
 export function InviteSection({
@@ -133,10 +133,10 @@ function CustomInviteEditor({
     <div className="grid gap-2">
       <div className="flex gap-2">
         <input className="border rounded px-2 py-1 flex-1" placeholder="Firma ara…" value={q} onChange={e=>setQ(e.target.value)} />
-        <button className="px-3 py-1 rounded bg-blue-600 text-white" onClick={async ()=>{
+        <button className="px-3 py-1 rounded bg-blue-600 text-white" onClick={() => { void (async () => {
           const r = await search(q); setResults(r);
-        }}>Ara</button>
-        <button className="px-3 py-1 rounded bg-gray-600 text-white" onClick={seedFromGroups}>Gruplardan başlat</button>
+        })(); }}>Ara</button>
+        <button className="px-3 py-1 rounded bg-gray-600 text-white" onClick={() => { void seedFromGroups(); }}>Gruplardan başlat</button>
       </div>
       <div className="flex gap-4">
         <div className="flex-1">

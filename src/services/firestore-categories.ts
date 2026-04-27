@@ -10,17 +10,12 @@ import { logger } from '../shared/log/logger.js';
 import { 
   collection, 
   query, 
-  where, 
   getDocs, 
   doc, 
   getDoc, 
-  setDoc, 
   addDoc,
   orderBy,
-  limit,
-  startAfter,
-  QueryDocumentSnapshot,
-  DocumentData
+  limit
 } from 'firebase/firestore';
 import { cache } from './in-memory-cache';
 
@@ -86,17 +81,18 @@ export async function getCategories(options?: {
     // Search varsa: Tüm kategorileri çekip client-side filter (case-insensitive gerekli)
     // Search yoksa: Firestore pagination kullan (daha hızlı)
     if (search) {
-      // Search için tüm kategorileri çek (case-insensitive filter gerekli)
-      const q = query(categoriesRef, orderBy('name', 'asc'));
+      // Search için kategorileri çek (case-insensitive filter gerekli)
+      // Teklifbul Rule v1.0 - Firestore query limit zorunlu (kategoriler küçük koleksiyon ama yine de limit ekle)
+      const q = query(categoriesRef, orderBy('name', 'asc'), limit(1000));
       const snapshot = await getDocs(q);
-      let categories = snapshot.docs.map(doc => ({
+      const allCategories = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as Category[];
       
       // Client-side search filter
       const searchLower = search.toLowerCase();
-      categories = categories.filter(cat => 
+      const categories = allCategories.filter(cat => 
         cat.name.toLowerCase().includes(searchLower) ||
         cat.short_desc?.toLowerCase().includes(searchLower)
       );
@@ -109,7 +105,7 @@ export async function getCategories(options?: {
       // withDesc kontrolü
       const result = withDesc 
         ? paginated 
-        : paginated.map(({ short_desc, examples, ...rest }) => rest);
+        : paginated.map(({ short_desc: _short_desc, examples: _examples, ...rest }) => rest);
       
       const response = {
         data: result,
@@ -133,7 +129,7 @@ export async function getCategories(options?: {
       );
       
       const snapshot = await getDocs(q);
-      let categories = snapshot.docs.map(doc => ({
+      const categories = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as Category[];
@@ -141,7 +137,7 @@ export async function getCategories(options?: {
       // withDesc kontrolü
       const result = withDesc 
         ? categories 
-        : categories.map(({ short_desc, examples, ...rest }) => rest);
+        : categories.map(({ short_desc: _short_desc, examples: _examples, ...rest }) => rest);
       
       // Total count için ayrı sorgu (sadece ilk sayfa için gerekli)
       // Not: Firestore'da total count için ayrı sorgu gerekir, bu pahalı olabilir

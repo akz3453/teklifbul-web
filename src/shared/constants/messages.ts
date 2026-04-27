@@ -27,6 +27,7 @@ export const MESSAGES = {
   ERROR_NETWORK: "Ağ hatası oluştu, lütfen internet bağlantınızı kontrol edin",
   ERROR_AUTH: "Giriş yapmanız gerekiyor",
   ERROR_SESSION: "Oturum bulunamadı",
+  ERROR_OPERATION_CANCELLED: "İşlem iptal edildi",
   
   // Uyarı Mesajları
   WARN_BELOW_COST: "Ortalama maliyetin altında satış tespit edildi",
@@ -34,6 +35,10 @@ export const MESSAGES = {
   WARN_VALIDATION: "Lütfen tüm zorunlu alanları doldurun",
   WARN_FILE_SIZE: "Dosya boyutu çok büyük",
   WARN_FILE_TYPE: "Geçersiz dosya tipi",
+  WARN_CATEGORY_MISMATCH: "Kategori {name} malzeme tanımına uymuyor",
+  WARN_CATEGORY_MISMATCH_LIST: "Uyumsuz kategoriler: {list}",
+  WARN_CATEGORY_GROUP_INCOMPATIBLE: "Bu grupta malzeme tanımına uygun kategori bulunamadı",
+  WARN_CATEGORY_TOO_MANY: "Çok sayıda kategori seçtiniz; sadece gerekli olanları bırakın",
   WARN_PREVIEW_DATA: "Önizleme verileri forma aktarılamadı",
   WARN_GROUP_NAME: "Lütfen grup adını yazın",
   WARN_CATEGORY_SELECT: "En az bir kategori seçin",
@@ -51,6 +56,9 @@ export const MESSAGES = {
   INFO_LOCATION_FOUND: "📍 Konum bulunuyor...",
   INFO_REDIRECT: "Yönlendiriliyorsunuz...",
   INFO_WAIT: "Lütfen bekleyin...",
+  INFO_CATEGORY_ADDED_COUNT: "{count} kategori eklendi",
+  INFO_CATEGORY_WARNING: "Kategori {name}: {details}",
+  INFO_COMPATIBILITY_SUMMARY: "{compatible}/{total} kategori uyumlu",
   INFO_DEFAULT_GROUP: "Bu varsayılan grup düzenlenemez. Kendi gruplarınızı oluşturmak için 'Kategori Grubu Oluştur' butonunu kullanın",
   INFO_GROUP_EDIT: "Grup düzenleme/silme için şu an sadece 'Grup Yönet' modali kullanılmaktadır",
   
@@ -73,6 +81,8 @@ export const MESSAGES = {
   SUCCESS_GROUPS_DELETED: "Gruplar başarıyla silindi!",
   ERROR_GROUPS_DELETE: "Silme işlemi başarısız",
   ERROR_LOGOUT: "Çıkış yapılırken hata oluştu",
+  ERROR_CATEGORY_BLOCKED: "Kategori {name} malzeme tanımıyla uyumsuz ({reason})",
+  ERROR_CATEGORY_BLOCKED_LIST: "Engellenen kategoriler: {list}",
   ERROR_FCM_TOKEN: "FCM token bulunamadı. Lütfen sayfayı yenileyin",
   ERROR_USER_NOT_AUTH: "Kullanıcı oturum açmamış. Lütfen giriş yapın",
   ERROR_COMPANY_ID_REQUIRED: "companyId girin",

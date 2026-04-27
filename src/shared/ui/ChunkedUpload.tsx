@@ -5,11 +5,13 @@
  * Büyük dosyaları chunk'lara bölerek yükler, progress gösterir ve iptal desteği sağlar.
  */
 
-import React, { useState, useRef } from 'react';
+import React, { useRef } from 'react';
 import { useCancellableTask } from '../hooks/useCancellableTask';
 import { ProgressBar } from './ProgressBar';
 import { validateUploadFile, processChunkedCSV, processChunkedExcel, type ChunkedUploadOptions, type ChunkedUploadResult } from '../utils/chunked-upload';
 import { toast } from '../ui/toast';
+// Teklifbul Rule v1.0 - Constants import
+import { UI_COLORS } from '../constants/colors.js';
 
 interface ChunkedUploadProps {
   /** Dosya tipi: 'csv' | 'excel' | 'both' */
@@ -155,7 +157,7 @@ export function ChunkedUpload({
       <label
         style={{
           padding: '12px 24px',
-          backgroundColor: uploadTask.isRunning ? '#9ca3af' : '#3b82f6',
+          backgroundColor: uploadTask.isRunning ? UI_COLORS.PRIMARY_DISABLED : UI_COLORS.PRIMARY,
           color: 'white',
           border: 'none',
           borderRadius: '4px',
@@ -171,7 +173,7 @@ export function ChunkedUpload({
           ref={fileInputRef}
           type="file"
           accept={getAcceptTypes()}
-          onChange={handleFileSelect}
+          onChange={(e) => { void handleFileSelect(e); }}
           disabled={uploadTask.isRunning}
           style={{ display: 'none' }}
         />
@@ -183,8 +185,8 @@ export function ChunkedUpload({
           style={{
             marginTop: '12px',
             padding: '12px',
-            backgroundColor: '#fee2e2',
-            color: '#991b1b',
+            backgroundColor: UI_COLORS.ERROR_BG,
+            color: UI_COLORS.ERROR_TEXT,
             borderRadius: '4px',
             fontSize: '14px',
           }}
@@ -199,8 +201,8 @@ export function ChunkedUpload({
           style={{
             marginTop: '12px',
             padding: '12px',
-            backgroundColor: '#d1fae5',
-            color: '#065f46',
+            backgroundColor: UI_COLORS.SUCCESS_BG,
+            color: UI_COLORS.SUCCESS_TEXT,
             borderRadius: '4px',
             fontSize: '14px',
           }}

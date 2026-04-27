@@ -20,9 +20,11 @@ function createPgPool(): PGPool {
     database: process.env.POSTGRES_DB || 'teklifbul',
     user: process.env.POSTGRES_USER || 'postgres',
     password: process.env.POSTGRES_PASSWORD || '',
-    max: 20, // Connection pool size
+    max: Number(process.env.POSTGRES_MAX_CONNECTIONS) || 50, // Connection pool size (artırıldı)
+    min: Number(process.env.POSTGRES_MIN_CONNECTIONS) || 5, // Minimum bağlantı sayısı
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 2000,
+    allowExitOnIdle: false, // Pool'u idle durumda kapatma
   };
 
   return new Pool(config);
@@ -52,6 +54,24 @@ export function getPgPool(): PGPool {
       // prefer unknown over any; log safely
       logger.error('Unexpected PostgreSQL pool error:', err);
     });
+
+    // Connection pool monitoring (her 1 dakikada bir)
+    if (process.env.NODE_ENV === 'production' || process.env.ENABLE_POOL_MONITORING === '1') {
+      setInterval(() => {
+        const stats = {
+          total: pool.totalCount,
+          idle: pool.idleCount,
+          waiting: pool.waitingCount,
+          active: (pool.totalCount || 0) - (pool.idleCount || 0)
+        };
+        logger.info('PostgreSQL Pool Stats', stats);
+        
+        // Uyarı: Pool tükeniyorsa
+        if (stats.waiting > 5) {
+          logger.warn('PostgreSQL pool tükeniyor!', stats);
+        }
+      }, 60000); // Her 1 dakikada bir
+    }
   }
   // pgPool is guaranteed to be set here
   return pgPool as PGPool;

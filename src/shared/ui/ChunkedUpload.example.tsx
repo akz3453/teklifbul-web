@@ -5,7 +5,7 @@
  * Bu dosya, ChunkedUpload component'inin nasıl kullanılacağını gösterir.
  */
 
-import React from 'react';
+// import React from 'react';
 import { ChunkedUpload } from './ChunkedUpload';
 import { logger } from '../log/logger';
 

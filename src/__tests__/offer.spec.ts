@@ -3,7 +3,8 @@
  */
 
 import { describe, it, expect } from '@jest/globals';
-import { OfferSchema, Offer, Priority, Currency } from '../domain/offer/schema';
+import { OfferSchema } from '../domain/offer/schema';
+import type { Offer } from '../domain/offer/schema';
 import { mapPriority, mapCurrency, mapDemandToOfferHeader, mapDemandItemsToOfferLines, calculateDifference } from '../domain/offer/mapping';
 import { requiresCurrencyInfo, getCurrencyNameTR } from '../services/currency';
 
@@ -37,7 +38,7 @@ describe('Offer Module Tests', () => {
         title: 'Test Talep',
         siteName: 'Test Şantiye',
         purchaseLocation: 'İstanbul',
-        priority: 'price' as Priority,
+        priority: 'price' as 'price' | 'quality' | 'speed' | undefined,
         dueDate: '2025-12-31',
         currency: 'TRY',
         biddingMode: 'secret' as const,
@@ -92,7 +93,7 @@ describe('Offer Module Tests', () => {
     it('should calculate net unit with VAT correctly', () => {
       const unitPrice = 100;
       const vatRate = 18;
-      const expected = 100 * (1 + 18 / 100); // 118
+      // const expected = 100 * (1 + 18 / 100); // 118
       
       // Bu fonksiyon OfferTab.tsx'te tanımlı, burada test ediyoruz
       const calculateNetUnitWithVat = (up: number, vr: number) => up * (1 + vr / 100);
@@ -286,6 +287,7 @@ describe('Offer Module Tests', () => {
           satfkCode: 'SATFK-20251024-00C9',
           title: 'Test Talep',
           currency: 'TRY',
+          isSealedBid: false,
         },
         lines: [
           {

@@ -6,8 +6,16 @@
 // Teklifbul Rule v1.0 - Structured Logging
 import { logger } from '../shared/log/logger.js';
 
-// Import slugifyTr with absolute path from root
-import { slugifyTr } from '/utils/slugify-tr.js';
+// Import slugifyTr with relative path
+import { slugifyTr } from '../../utils/slugify-tr.js';
+
+import {
+  CATEGORY_RULES,
+  buildMaterialProfileFromItems,
+  evaluateCategoryCompatibility,
+  summarizeGroupCompatibility,
+  suggestCategoriesForProfile
+} from '../../category-rules.js';
 
 // Hardcoded categories (fallback - always available)
 const FALLBACK_CATEGORIES = [
@@ -35,8 +43,17 @@ const FALLBACK_CATEGORIES = [
   {"id":"CAT.RULMAN","slug":"rulman-guc-aktarim","name":"Rulman & Güç Aktarım","group":"Endüstriyel","synonyms":["kayış","kaplin","redüktör"],"isActive":true},
   {"id":"CAT.HVAC","slug":"iklimlendirme-havalandirma","name":"HVAC","group":"MEP","synonyms":["vrf","kanal","fan"],"isActive":true},
   {"id":"CAT.YANGIN","slug":"yangin-guvenligi","name":"Yangın Güvenliği","group":"MEP","synonyms":["sprinkler","algılama"],"isActive":true},
-  {"id":"CAT.KIRALAMA","slug":"ekipman-kiralama","name":"Ekipman Kiralama","group":"Hizmet","synonyms":["forklift","vinç"],"isActive":true}
-];
+  {"id":"CAT.KIRALAMA","slug":"ekipman-kiralama","name":"Ekipman Kiralama","group":"Hizmet","synonyms":["forklift","vinç"],"isActive":true},
+  {"id":"CAT.PEYZAJ","slug":"peyzaj-bahce","name":"Peyzaj & Bahçe","group":"Hizmet","synonyms":["rulo çim","hazır çim","fidan","bahçe bakımı"],"isActive":true},
+  {"id":"CAT.TESISAT","slug":"tesisat","name":"Tesisat","group":"MEP","synonyms":["su tesisatı","pprc boru","vana","drenaj"],"isActive":true},
+  {"id":"CAT.MARANGOZ","slug":"marangoz-ahsap-isleri","name":"Marangoz & Ahşap İşleri","group":"Hizmet","synonyms":["ahşap","mobilya imalat","kapı imalatı"],"isActive":true},
+  {"id":"CAT.AKARYAKIT","slug":"akaryakit-yaglar","name":"Akaryakıt & Yağlar","group":"Endüstriyel","synonyms":["benzin","motorin","madeni yağ","hidrolik yağ"],"isActive":true}
+].map(cat => ({
+  ...cat,
+  materialTags: CATEGORY_RULES[cat.id]?.materialTags || [],
+  blockedTags: CATEGORY_RULES[cat.id]?.blockedTags || [],
+  requiredAttributes: CATEGORY_RULES[cat.id]?.requiredAttributes || []
+}));
 
 // Dictionary data - try to load from JSON, fallback to hardcoded
 let dictionaryData = null;
@@ -61,21 +78,9 @@ export function loadDictionary() {
 
   // Ensure dictionaryData is loaded
   if (!dictionaryData) {
-    // Try synchronous load first (for Node.js)
-    if (typeof require !== 'undefined' && typeof process !== 'undefined') {
-      try {
-        const fs = require('fs');
-        const path = require('path');
-        const dictPath = path.join(__dirname, 'CATEGORY_DICTIONARY.json');
-        const data = fs.readFileSync(dictPath, 'utf8');
-        dictionaryData = JSON.parse(data);
-      } catch (e) {
-        dictionaryData = FALLBACK_CATEGORIES;
-      }
-    } else {
-      // Browser: use fallback (will be async loaded later if needed)
-      dictionaryData = FALLBACK_CATEGORIES;
-    }
+    // Teklifbul Rule v1.0 - Vite compatibility: Browser-only code (Node.js code removed to avoid Vite parse errors)
+    // In browser context, always use fallback (Vite doesn't support require() in static analysis)
+    dictionaryData = FALLBACK_CATEGORIES;
   }
 
   categoryDictionary = dictionaryData.filter(cat => cat.isActive !== false);
@@ -194,6 +199,8 @@ export function normalizeToIds(inputTokens) {
   }
   
   if (!categoryDictionary) loadDictionary();
+  // Allowlist: only IDs that exist in the current category dictionary are allowed
+  const validCategoryIds = new Set((categoryDictionary || []).map(cat => cat.id).filter(Boolean));
   
   // Legacy incorrect slug map (for fixing old data)
   const incorrectSlugMap = {
@@ -291,8 +298,15 @@ export function normalizeToIds(inputTokens) {
     // 7. Not found - warn but don't fail
     logger.warn('Unknown category token', { token: tokenTrimmed });
   }
-  
-  return Array.from(resultIds);
+
+  // Enforce allowlist (drop anything not in categories dictionary)
+  const normalized = Array.from(resultIds).filter(id => validCategoryIds.has(id));
+  if (normalized.length !== resultIds.size) {
+    const dropped = Array.from(resultIds).filter(id => !validCategoryIds.has(id));
+    logger.warn('normalizeToIds: dropped invalid category IDs (not in allowlist)', { dropped });
+  }
+
+  return normalized;
 }
 
 /**
@@ -383,4 +397,12 @@ export function createCategory({ name, group, synonyms = [], slug = null }) {
 
 // Initialize on module load
 loadDictionary();
+
+export {
+  CATEGORY_RULES,
+  buildMaterialProfileFromItems,
+  evaluateCategoryCompatibility,
+  summarizeGroupCompatibility,
+  suggestCategoriesForProfile
+};
 

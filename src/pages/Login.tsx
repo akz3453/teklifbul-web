@@ -1,15 +1,16 @@
 import React, { useState } from "react";
 import { auth } from "../lib/firebase";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
-import { useAuth } from "../context/AuthContext";
 import { toast } from "../shared/ui/toast.js";
+import { MESSAGES } from "../shared/constants/messages.js";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
-  const { user } = useAuth();
+
+  const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5174";
 
   // Kullanıcı varsa guard zaten yönlendirecek, burada navigate etmeye gerek yok
   // PublicRoute zaten kontrol ediyor
@@ -28,7 +29,7 @@ export default function Login() {
         // Guard otomatik yönlendirecek, navigate gerekmez
       }
     } catch (err: any) {
-      toast.error("⚠️ Hata: " + err.message);
+      toast.error(MESSAGES.ERROR_LOGIN_WITH_MESSAGE.replace('{message}', err.message));
     } finally {
       setLoading(false);
     }
@@ -37,7 +38,7 @@ export default function Login() {
   return (
     <div style={{ maxWidth: 320, margin: "80px auto", textAlign: "center" }}>
       <h2>{isLogin ? "Giriş Yap" : "Kayıt Ol"}</h2>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={(e) => { void handleSubmit(e); }}>
         <input
           type="email"
           placeholder="E-posta"

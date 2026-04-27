@@ -221,6 +221,7 @@ export function Map({
 /**
  * Standalone HTML/JS kullanımı için
  */
+// eslint-disable-next-line react-refresh/only-export-components -- legacy HTML/JS entrypoint
 export function initMap(elementId: string, address: string, lat?: number, lng?: number) {
   const mapElement = document.getElementById(elementId);
   if (!mapElement) {

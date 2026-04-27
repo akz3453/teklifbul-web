@@ -1,5 +1,7 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User, onAuthStateChanged } from 'firebase/auth';
+import { createContext, useContext, useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
+import type { User } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 
 interface AuthContextType {
@@ -29,6 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- AuthProvider ile birlikte tutulması okunabilirlik açısından yararlı
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {

@@ -4,7 +4,7 @@
  * TRY dışı para birimi için kur bilgilerini yönetir.
  */
 
-import { Currency, CurrencyInfo } from '../domain/offer/schema';
+import type { Currency, CurrencyInfo } from '../domain/offer/schema';
 
 /**
  * Kur kaynakları

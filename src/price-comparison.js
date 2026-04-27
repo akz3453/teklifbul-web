@@ -1,12 +1,29 @@
 /**
  * Fiyat Karşılaştırma Sistemi
  * Excel şablonunu kullanarak teklifleri karşılaştırır
+ * 
+ * Teklifbul Rule v1.0 - Security: xlsx paketi güvenlik notu
+ * xlsx paketinde bilinen bazı security advisory'ler mevcuttur (Prototype Pollution, ReDoS).
+ * Risk azaltma önlemleri:
+ * - Dosya boyutu limiti: 5 MB
+ * - Satır/sütun limiti: 10.000 satır, 50 sütun
+ * - Try/catch ile güvenli hata yönetimi
+ * - Input validation ve sanitization
+ * İleride alternatif kütüphaneye veya server-side işleme modeline geçiş değerlendirilebilir.
  */
 
 // Teklifbul Rule v1.0 - Structured Logging
 import { logger } from './shared/log/logger.js';
 
-import * as XLSX from './assets/vendor/xlsx.full.min.js';
+// Teklifbul Rule v1.0 - Bundle Size: Named imports for tree shaking
+import { read, utils, writeFile } from 'xlsx';
+
+// Teklifbul Rule v1.0 - Security: Excel işleme limitleri
+const EXCEL_LIMITS = {
+    MAX_FILE_SIZE: 5 * 1024 * 1024, // 5 MB
+    MAX_ROWS: 10000,
+    MAX_COLUMNS: 50
+};
 
 export class PriceComparisonSystem {
     constructor() {
@@ -16,22 +33,69 @@ export class PriceComparisonSystem {
 
     /**
      * Excel şablonunu yükler
+     * Teklifbul Rule v1.0 - Security: Dosya boyutu ve içerik limitleri ile güvenli yükleme
      */
     async loadTemplate() {
         try {
             const response = await fetch(this.templatePath);
+            
+            // Teklifbul Rule v1.0 - Security: Dosya boyutu kontrolü
+            const contentLength = response.headers.get('content-length');
+            if (contentLength && parseInt(contentLength, 10) > EXCEL_LIMITS.MAX_FILE_SIZE) {
+                logger.error('Excel dosyası çok büyük', { size: contentLength, limit: EXCEL_LIMITS.MAX_FILE_SIZE });
+                throw new Error(`Excel dosyası çok büyük. Maksimum boyut: ${EXCEL_LIMITS.MAX_FILE_SIZE / 1024 / 1024} MB`);
+            }
+            
             const arrayBuffer = await response.arrayBuffer();
-            const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+            
+            // Teklifbul Rule v1.0 - Security: ArrayBuffer boyutu kontrolü
+            if (arrayBuffer.byteLength > EXCEL_LIMITS.MAX_FILE_SIZE) {
+                logger.error('Excel dosyası çok büyük', { size: arrayBuffer.byteLength, limit: EXCEL_LIMITS.MAX_FILE_SIZE });
+                throw new Error(`Excel dosyası çok büyük. Maksimum boyut: ${EXCEL_LIMITS.MAX_FILE_SIZE / 1024 / 1024} MB`);
+            }
+            
+            // Teklifbul Rule v1.0 - Security: xlsx.read işlemini try/catch ile sar
+            let workbook;
+            try {
+                workbook = read(arrayBuffer, { type: 'array' });
+            } catch (parseError) {
+                logger.error('Excel dosyası parse edilemedi', parseError);
+                throw new Error('Yüklediğiniz Excel dosyası işlenemedi. Lütfen formatını veya boyutunu kontrol edin.');
+            }
+            
+            // Teklifbul Rule v1.0 - Security: Sheet sayısı ve içerik kontrolü
+            if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+                throw new Error('Excel dosyasında geçerli bir sayfa bulunamadı.');
+            }
             
             // İlk sheet'i al
             const sheetName = workbook.SheetNames[0];
-            this.templateData = workbook.Sheets[sheetName];
+            const sheet = workbook.Sheets[sheetName];
             
-            logger.info('Excel şablonu yüklendi');
+            // Teklifbul Rule v1.0 - Security: Satır/sütun limiti kontrolü
+            const range = utils.decode_range(sheet['!ref'] || 'A1');
+            const rowCount = range.e.r - range.s.r + 1;
+            const colCount = range.e.c - range.s.c + 1;
+            
+            if (rowCount > EXCEL_LIMITS.MAX_ROWS) {
+                logger.error('Excel dosyası çok fazla satır içeriyor', { rows: rowCount, limit: EXCEL_LIMITS.MAX_ROWS });
+                throw new Error(`Excel dosyası çok fazla satır içeriyor. Maksimum satır: ${EXCEL_LIMITS.MAX_ROWS}`);
+            }
+            
+            if (colCount > EXCEL_LIMITS.MAX_COLUMNS) {
+                logger.error('Excel dosyası çok fazla sütun içeriyor', { columns: colCount, limit: EXCEL_LIMITS.MAX_COLUMNS });
+                throw new Error(`Excel dosyası çok fazla sütun içeriyor. Maksimum sütun: ${EXCEL_LIMITS.MAX_COLUMNS}`);
+            }
+            
+            this.templateData = sheet;
+            
+            logger.info('Excel şablonu yüklendi', { rows: rowCount, columns: colCount });
             return true;
         } catch (error) {
-            logger.error('Excel şablonu yüklenemedi', error);
-            return false;
+            // Teklifbul Rule v1.0 - Security: Kullanıcıya teknik detay göstermeden güvenli hata mesajı
+            const userMessage = error.message || 'Excel şablonu yüklenemedi. Lütfen dosya formatını kontrol edin.';
+            logger.error('Excel şablonu yüklenemedi', { error: error.message, stack: error.stack });
+            throw new Error(userMessage);
         }
     }
 
@@ -180,24 +244,45 @@ export class PriceComparisonSystem {
 
     /**
      * Excel hücresine değer atar
+     * Teklifbul Rule v1.0 - Security: User input sanitization
      */
     setCellValue(worksheet, cellAddress, value) {
         if (!worksheet[cellAddress]) {
             worksheet[cellAddress] = {};
         }
-        worksheet[cellAddress].v = value;
-        worksheet[cellAddress].t = typeof value === 'number' ? 'n' : 's';
+        // Teklifbul Rule v1.0 - Security: Değeri string'e çevir ve güvenli hale getir
+        // XSS riskini azaltmak için HTML tag'lerini temizle
+        let safeValue = value;
+        if (typeof value === 'string') {
+            // Basit HTML tag temizleme (DOMPurify client-side'da kullanılabilir ama burada basit regex yeterli)
+            safeValue = value.replace(/<[^>]*>/g, '').trim();
+        }
+        worksheet[cellAddress].v = safeValue;
+        worksheet[cellAddress].t = typeof safeValue === 'number' ? 'n' : 's';
     }
 
     /**
      * Excel dosyasını indirir
+     * Teklifbul Rule v1.0 - Security: Güvenli dosya adı ve try/catch
      */
     downloadExcel(worksheet, filename = 'fiyat-karsilastirma.xlsx') {
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Fiyat Karşılaştırma');
-        
-        // Dosyayı indir
-        XLSX.writeFile(workbook, filename);
+        try {
+            // Teklifbul Rule v1.0 - Security: Dosya adı sanitization
+            const safeFilename = filename
+                .replace(/[<>:"/\\|?*]/g, '') // Tehlikeli karakterleri temizle
+                .replace(/\.\./g, '') // Path traversal önleme
+                .substring(0, 255); // Maksimum dosya adı uzunluğu
+            
+            const workbook = utils.book_new();
+            utils.book_append_sheet(workbook, worksheet, 'Fiyat Karşılaştırma');
+            
+            // Teklifbul Rule v1.0 - Security: writeFile işlemini try/catch ile sar
+            writeFile(workbook, safeFilename);
+            logger.info('Excel dosyası indirildi', { filename: safeFilename });
+        } catch (error) {
+            logger.error('Excel dosyası indirilemedi', error);
+            throw new Error('Excel dosyası oluşturulamadı. Lütfen tekrar deneyin.');
+        }
     }
 
     /**

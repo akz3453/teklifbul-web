@@ -21,19 +21,31 @@ class InMemoryCache {
       maxKeys: 10000 // Maksimum 10K key (memory kontrolü için)
     });
     
-    // Cache istatistiklerini logla (production'da kapatılabilir)
-    if (process.env.NODE_ENV === 'development') {
-      setInterval(() => {
-        const stats = this.cache.getStats();
-        logger.info('📊 Cache Stats:', {
-          keys: stats.keys,
-          hits: stats.hits,
-          misses: stats.misses,
-          ksize: stats.ksize,
-          vsize: stats.vsize
-        });
-      }, 60000); // Her 1 dakikada bir
-    }
+    // Cache istatistiklerini logla (production'da da aktif - monitoring için)
+    const logInterval = process.env.CACHE_MONITORING_INTERVAL 
+      ? Number(process.env.CACHE_MONITORING_INTERVAL) 
+      : (process.env.NODE_ENV === 'production' ? 300000 : 60000); // Prod: 5 dk, Dev: 1 dk
+    
+    setInterval(() => {
+      const stats = this.cache.getStats();
+      const hitRate = stats.hits + stats.misses > 0 
+        ? Math.round((stats.hits / (stats.hits + stats.misses)) * 100) 
+        : 0;
+      
+      logger.info('📊 Cache Stats:', {
+        keys: stats.keys,
+        hits: stats.hits,
+        misses: stats.misses,
+        hitRate: `${hitRate}%`,
+        ksize: stats.ksize,
+        vsize: stats.vsize
+      });
+
+      // Uyarı: Cache hit rate düşükse
+      if (hitRate < 50 && stats.hits + stats.misses > 100) {
+        logger.warn('⚠️  Cache hit rate düşük!', { hitRate: `${hitRate}%` });
+      }
+    }, logInterval);
   }
   
   /**

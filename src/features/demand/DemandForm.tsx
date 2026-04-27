@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { InviteSection } from "./InviteSection";
-import { BidVisibility, DemandPayload, DemandVisibility, Group, InviteMode, Supplier } from "./types";
+import type { BidVisibility, DemandPayload, DemandVisibility, Group, InviteMode, Supplier } from "./types";
 import { createDemand } from "./api";
+// @ts-expect-error -- shared/ui/toast.js JS modülü, type tanımı ileride eklenecek
 import { toast } from "../../shared/ui/toast.js";
+// @ts-expect-error -- shared/constants/messages.js JS modülü, type tanımı ileride eklenecek
+import { MESSAGES } from "../../shared/constants/messages.js";
 
 export function DemandForm({ allGroups, supplierSearch }:{ allGroups: Group[]; supplierSearch:(q:string)=>Promise<Supplier[]> }) {
   const [title, setTitle] = useState("");
@@ -26,7 +29,7 @@ export function DemandForm({ allGroups, supplierSearch }:{ allGroups: Group[]; s
     setLoading(true);
     try {
       await createDemand(payload);
-      toast.success("Talep oluşturuldu");
+      toast.success(MESSAGES.SUCCESS_DEMAND_CREATED);
     } catch (e:any) {
       toast.error(e.message || "Hata");
     } finally {
@@ -35,7 +38,7 @@ export function DemandForm({ allGroups, supplierSearch }:{ allGroups: Group[]; s
   }
 
   return (
-    <form onSubmit={onSubmit} className="grid gap-4">
+    <form onSubmit={(e) => { void onSubmit(e); }} className="grid gap-4">
       <div>
         <label className="text-sm">Başlık</label>
         <input className="border rounded p-2 w-full" value={title} onChange={e=>setTitle(e.target.value)} />

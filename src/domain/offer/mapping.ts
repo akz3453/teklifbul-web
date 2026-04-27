@@ -4,29 +4,29 @@
  * Talep detay sayfasındaki DOM/JSON alanlarını şemaya eşleyen deterministik bağlantılar.
  */
 
-import { DemandData, OfferHeader, OfferLine, Priority } from './schema';
-import synonyms from './synonyms.tr.json';
+import type { DemandData, OfferHeader, OfferLine, Priority } from './schema';
+import _synonyms from './synonyms.tr.json';
 
 /**
  * Sözlük tabanlı eşleme fonksiyonu
  */
-function mapField(fieldKey: string, value: any, synonymsMap: Record<string, string[]>): any {
-  const normalizedKey = fieldKey.toLowerCase().trim();
-  
-  // Direkt eşleşme kontrolü
-  if (synonymsMap[normalizedKey]) {
-    return value;
-  }
-  
-  // Sözlük eşleşmesi
-  for (const [key, aliases] of Object.entries(synonymsMap)) {
-    if (aliases.includes(normalizedKey)) {
-      return value;
-    }
-  }
-  
-  return value;
-}
+// function _mapField(fieldKey: string, value: any, synonymsMap: Record<string, string[]>): any {
+//   const normalizedKey = fieldKey.toLowerCase().trim();
+//   
+//   // Direkt eşleşme kontrolü
+//   if (synonymsMap[normalizedKey]) {
+//     return value;
+//   }
+//   
+//   // Sözlük eşleşmesi
+//   for (const [_key, aliases] of Object.entries(synonymsMap)) {
+//     if (aliases.includes(normalizedKey)) {
+//       return value;
+//     }
+//   }
+//   
+//   return value;
+// }
 
 /**
  * Öncelik çevirisi (EN → TR)

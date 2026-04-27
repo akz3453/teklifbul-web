@@ -1,7 +1,8 @@
-// Teklifbul Rule v1.0 - Structured Logging Sistemi
-// Bu dosya logger.ts'ye yönlendirme yapar (backward compatibility için)
-// Yeni kod logger.ts kullanmalı
+// Teklifbul Rule v1.0 - Logger.js → Logger.ts Re-export
+// Bu dosya geriye dönük uyumluluk için logger.ts'yi re-export eder
+// Tüm yeni kod logger.ts'yi doğrudan import etmeli
 
-// TypeScript versiyonunu re-export et
+// TypeScript dosyasını JavaScript olarak import et
+// Vite ve modern build sistemleri .ts uzantısını otomatik çözümler
 export { logger } from './logger.ts';
 

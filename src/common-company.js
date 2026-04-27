@@ -6,6 +6,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
 import { signOut } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
 import { toast } from "../src/shared/ui/toast.js";
+import { MESSAGES } from "../src/shared/constants/messages.js";
 
 export async function setupHeader() {
   // Setup universal logout buttons
@@ -16,7 +17,7 @@ export async function setupHeader() {
           await signOut(auth);
           window.location.href = "./index.html";
         } catch (e) {
-          toast.error("Çıkış yapılamadı: " + (e?.message || e));
+          toast.error(MESSAGES.ERROR_LOGOUT_WITH_MESSAGE.replace('{message}', e?.message || e || 'Bilinmeyen hata'));
         }
       });
     });

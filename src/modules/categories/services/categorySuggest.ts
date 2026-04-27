@@ -2,11 +2,12 @@
  * Category Suggestion Service
  * Teklifbul Rule v1.0
  * 
- * Firestore + In-Memory Cache kullanıyor - $0 maliyet
- * Skor hesaplama: 0.6*rule + 0.4*semantic (semantic için embedding gerekli, şimdilik rule-only)
- * 
- * NOT: Bu dosya artık kullanılmıyor, firestore-categories.ts kullanılıyor
+ * ⚠️ DEPRECATED: Bu dosya artık kullanılmıyor, firestore-categories.ts kullanılıyor
  * Backward compatibility için burada bırakıldı
+ * 
+ * Yeni kod için: import { suggestCategory } from '../../../services/firestore-categories'
+ * 
+ * @deprecated Use firestore-categories.ts instead
  */
 
 import { suggestCategory as firestoreSuggestCategory, saveFeedback as firestoreSaveFeedback } from '../../../services/firestore-categories';

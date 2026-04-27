@@ -6,7 +6,7 @@
 // Teklifbul Rule v1.0 - Structured Logging
 import { logger } from '../shared/log/logger.js';
 
-import { collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+import { collection, query, where, limit, getDocs } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
 
 /**
  * Chunk array into batches of max size
@@ -81,9 +81,11 @@ export async function matchSuppliers(db, { categoryIds, legacySlugs = [], legacy
         // CRITICAL: Firestore allows only ONE array-contains/array-contains-any per query
         // So we must query without roles filter, then filter in JavaScript
         // Note: We query without isActive first, then filter - some users may not have isActive set yet
+        // Teklifbul Rule v1.0 - Limit ekle (performans için)
         const q = query(
           collection(db, 'users'),
-          where(fieldName, 'array-contains-any', batch)
+          where(fieldName, 'array-contains-any', batch),
+          limit(100)
         );
         
         const snap = await getDocs(q);
@@ -119,41 +121,13 @@ export async function matchSuppliers(db, { categoryIds, legacySlugs = [], legacy
           }
         });
         
-        // Enhanced logging for debugging
-        if (totalUsers > 0) {
-          logger.info(`Query ${batchIndex + 1}/${batches.length} [${fieldName}]: Found ${foundCount} suppliers (filtered from ${totalUsers} active users, ${nonSupplierCount} non-suppliers)`);
-        } else {
-          logger.warn(`Query ${batchIndex + 1}/${batches.length} [${fieldName}]: No active users found with matching ${fieldName} values`, { batch });
-          // Try querying without isActive filter to see if there are any users with these categories
-          try {
-            const debugQ = query(
-              collection(db, 'users'),
-              where(fieldName, 'array-contains-any', batch)
-            );
-            const debugSnap = await getDocs(debugQ);
-            if (debugSnap.docs.length > 0) {
-              const sampleData = debugSnap.docs[0].data();
-              logger.info(`Debug: Found ${debugSnap.docs.length} users with matching ${fieldName}`);
-              logger.info('Debug: Sample user data', {
-                uid: debugSnap.docs[0].id,
-                isActive: sampleData.isActive,
-                roles: sampleData.roles,
-                role: sampleData.role,
-                [fieldName]: sampleData[fieldName]?.slice(0, 3) // First 3 categories
-              });
-              logger.info(`Debug: Active users: ${debugSnap.docs.filter(d => d.data().isActive !== false).length}`);
-              logger.info(`Debug: Supplier users: ${debugSnap.docs.filter(d => {
-                const data = d.data();
-                return (Array.isArray(data.roles) && data.roles.includes('supplier')) ||
-                       (data.roles && typeof data.roles === 'object' && data.roles.supplier === true) ||
-                       (data.role === 'supplier');
-              }).length}`);
-            } else {
-              logger.info(`Debug: No users found with ${fieldName} values at all. Suppliers may need to update their categories to ID format.`);
-            }
-          } catch (debugErr) {
-            // Ignore debug query errors
-          }
+        // Teklifbul Rule v1.0 - Log mesajlarını sadeleştir (gereksiz detayları kaldır)
+        if (totalUsers > 0 && foundCount > 0) {
+          // Sadece başarılı sorguları logla, detayları azalt
+          logger.info(`[${fieldName}] ${foundCount} tedarikçi bulundu`);
+        } else if (totalUsers === 0) {
+          // Sadece uyarı ver, debug sorgularını kaldır (performans için)
+          logger.warn(`[${fieldName}] Eşleşen kullanıcı bulunamadı`);
         }
         
       } catch (err) {
@@ -191,7 +165,10 @@ export async function matchSuppliers(db, { categoryIds, legacySlugs = [], legacy
   }
   
   const results = Array.from(resultMap.values());
-  logger.info(`Total unique suppliers matched: ${results.length}`);
+  // Teklifbul Rule v1.0 - Toplam sonuç logunu sadeleştir
+  if (results.length > 0) {
+    logger.info(`Toplam ${results.length} benzersiz tedarikçi eşleştirildi`);
+  }
   
   return results;
 }

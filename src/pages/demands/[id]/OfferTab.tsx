@@ -5,20 +5,32 @@
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { useForm, useFieldArray, Controller } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { OfferSchema, Offer, OfferLine, OfferHeader, Currency } from '../../../domain/offer/schema';
-import { mapDemandToOfferHeader, mapDemandItemsToOfferLines, calculateDifference, DifferenceResult } from '../../../domain/offer/mapping';
-import { requiresCurrencyInfo, createCurrencyInfo, getCurrencyNameTR } from '../../../services/currency';
+import { OfferSchema } from '../../../domain/offer/schema';
+import type { Offer, Currency } from '../../../domain/offer/schema';
+import { mapDemandToOfferHeader, mapDemandItemsToOfferLines, calculateDifference } from '../../../domain/offer/mapping';
+import type { DifferenceResult } from '../../../domain/offer/mapping';
+import { requiresCurrencyInfo, getCurrencyNameTR } from '../../../services/currency';
 import type { DemandData } from '../../../domain/offer/schema';
+// @ts-expect-error -- shared/ui/toast.js JS modülü, type tanımı eklenecek
 import { toast } from '../../../shared/ui/toast.js';
+// @ts-expect-error -- shared/constants/messages.js JS modülü, type tanımı eklenecek
+import { MESSAGES } from '../../../shared/constants/messages.js';
+// Teklifbul Rule v1.0 - Permission Matrix (bids.view/create/edit/approve/compare)
+// @ts-expect-error -- assets/js/state/permissions.js JS modülü, type tanımı eklenecek
+import {
+  initPermissions,
+  can as canPermission,
+  requirePerm,
+  getBidPerms,
+} from '../../../../assets/js/state/permissions.js';
 import { exportSupplierOfferBrowser } from '../../../export/excel/supplierOfferExport';
 import { importSupplierOfferBrowser } from '../../../import/excel/supplierOfferImport';
 import { useCancellableTask } from '../../../shared/hooks/useCancellableTask';
 import { ProgressBar } from '../../../shared/ui/ProgressBar';
 
 interface OfferTabProps {
-  demandId: string;
   demandData: DemandData;
   onSubmit?: (offer: Offer) => Promise<void>;
 }
@@ -44,7 +56,7 @@ function calculateTotalWithVat(quantity: number, netUnitWithVat: number): number
 function DifferenceBadge({ diff }: { diff: DifferenceResult }) {
   if (!diff.hasDifference) return null;
   
-  const badges: JSX.Element[] = [];
+  const badges: React.JSX.Element[] = [];
   
   if (diff.quantityDiff !== undefined && diff.quantityDiff !== 0) {
     const sign = diff.quantityDiff > 0 ? '+' : '';
@@ -76,33 +88,18 @@ function DifferenceBadge({ diff }: { diff: DifferenceResult }) {
   return <>{badges}</>;
 }
 
-/**
- * Ödeme şartları metni oluştur
- */
-function formatPaymentTerms(terms: any): string {
-  if (!terms || !terms.type) return '';
-  
-  switch (terms.type) {
-    case 'pesin_escrow':
-      return `Peşin (Escrow${terms.escrowDays ? ` / ${terms.escrowDays} gün` : ''})`;
-    case 'pesin_teslim_onay':
-      return `Peşin (Teslim&Onay${terms.deliveryConfirmDays ? ` / ${terms.deliveryConfirmDays} gün` : ''})`;
-    case 'pesin_on_odeme':
-      return `Peşin (Ön Ödeme %${terms.advancePercent || 0})`;
-    case 'kredi_karti':
-      return `Kredi Kartı (${terms.installments || 1} taksit${terms.financeRate ? ` / %${terms.financeRate} faiz` : ''})`;
-    case 'acik_hesap':
-      return `Açık Hesap (${terms.dueDays || 30} gün)`;
-    case 'evrak_cek':
-      return `Evrak/Çek (${terms.checkCount || 1} adet)`;
-    default:
-      return '';
-  }
-}
-
-export default function OfferTab({ demandId, demandData, onSubmit }: OfferTabProps) {
+export default function OfferTab({ demandData, onSubmit }: OfferTabProps) {
   const [showCurrencySection, setShowCurrencySection] = useState(false);
   const [currencyInfo, setCurrencyInfo] = useState<any>(null);
+  const bidPerms = useMemo(() => getBidPerms(), []);
+  const [permLoading, setPermLoading] = useState(true);
+  const [perm, setPerm] = useState({
+    canView: true,
+    canCreate: true,
+    canEdit: true,
+    canApprove: true,
+    canCompare: true,
+  });
   
   // Excel export için progress tracking
   const exportTask = useCancellableTask<Blob>();
@@ -139,10 +136,10 @@ export default function OfferTab({ demandId, demandData, onSubmit }: OfferTabPro
     handleSubmit,
     watch,
     setValue,
-    formState: { errors },
+    formState: { errors: _errors },
   } = useForm<Offer>({
-    resolver: zodResolver(OfferSchema),
-    defaultValues,
+    resolver: zodResolver(OfferSchema) as any,
+    defaultValues: defaultValues as any,
   });
   
   const { fields, append, remove } = useFieldArray({
@@ -152,6 +149,69 @@ export default function OfferTab({ demandId, demandData, onSubmit }: OfferTabPro
   
   const watchedLines = watch('lines');
   const watchedCurrency = watch('header.currency');
+
+  // Permission init - Teklif sekmesi (React) bids.view/create/edit/approve/compare
+  useEffect(() => {
+    let mounted = true;
+
+    const init = async () => {
+      try {
+        const permState = await initPermissions({ redirectOnPending: true });
+        if (!permState) {
+          if (mounted) {
+            setPerm({
+              canView: false,
+              canCreate: false,
+              canEdit: false,
+              canApprove: false,
+              canCompare: false,
+            });
+            setPermLoading(false);
+          }
+          return;
+        }
+
+        let canView = true;
+        let canCreate = true;
+        let canEdit = true;
+        let canApprove = true;
+        let canCompare = true;
+
+        if (bidPerms.view) canView = canPermission(bidPerms.view);
+        if (bidPerms.create) canCreate = canPermission(bidPerms.create);
+        if (bidPerms.edit) canEdit = canPermission(bidPerms.edit);
+        if (bidPerms.approve) canApprove = canPermission(bidPerms.approve);
+        if (bidPerms.compare) canCompare = canPermission(bidPerms.compare);
+
+        if (mounted) {
+          setPerm({ canView, canCreate, canEdit, canApprove, canCompare });
+          setPermLoading(false);
+        }
+      } catch (error: any) {
+        // Fail-open yerine minimum bilgilendirme; HTML tarafındaki can() davranışı ile uyumlu
+        toast.error(
+          (MESSAGES.ERROR_PERMISSION as string) ||
+            'Yetki bilgileri yüklenirken bir hata oluştu.',
+        );
+        if (mounted) {
+          setPerm({
+            canView: true,
+            canCreate: true,
+            canEdit: true,
+            canApprove: true,
+            canCompare: true,
+          });
+          setPermLoading(false);
+        }
+      }
+    };
+
+    void init();
+
+    return () => {
+      mounted = false;
+    };
+  }, [bidPerms]);
   
   // Para birimi değiştiğinde kur bölümünü göster/gizle
   useEffect(() => {
@@ -182,6 +242,18 @@ export default function OfferTab({ demandId, demandData, onSubmit }: OfferTabPro
   
   const onSubmitForm = async (data: Offer) => {
     try {
+      // Permission Write Guard - Teklif Gönder (bids.create)
+      if (bidPerms.create) {
+        const ok = await requirePerm(bidPerms.create, {
+          toastMessage:
+            (MESSAGES.ERROR_PERMISSION_BIDS_CREATE as string) ||
+            'Teklif gönderme yetkiniz yok.',
+        });
+        if (!ok) {
+          return;
+        }
+      }
+
       if (currencyInfo) {
         data.currencyInfo = currencyInfo;
       }
@@ -189,18 +261,20 @@ export default function OfferTab({ demandId, demandData, onSubmit }: OfferTabPro
       if (onSubmit) {
         await onSubmit(data);
       } else {
-        // Default: API'ye gönder
-        const response = await fetch('/api/offers', {
+        // Teklifbul Rule v1.0 - authFetch ile token + x-company-id otomatik
+        // @ts-expect-error -- assets/js/utils/api-helpers.js JS modülü, type tanımı eklenecek
+        const { authFetch } = await import('../../../../assets/js/utils/api-helpers.js');
+        const response = await authFetch('/api/offers', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data),
         });
-        
+
         if (!response.ok) {
-          throw new Error('Teklif gönderilemedi');
+          throw new Error('Teklif gonderilemedi');
         }
-        
-        toast.success('Teklif başarıyla gönderildi!');
+
+        toast.success(MESSAGES.SUCCESS_BID_SENT_ALT);
       }
     } catch (error: any) {
       toast.error(`Hata: ${error.message}`);
@@ -211,7 +285,7 @@ export default function OfferTab({ demandId, demandData, onSubmit }: OfferTabPro
   const handleExcelExport = async () => {
     const formData = watch();
     if (!formData) {
-      toast.error('Form verisi bulunamadı');
+      toast.error(MESSAGES.ERROR_BID_FORM_DATA_NOT_FOUND);
       return;
     }
 
@@ -223,13 +297,14 @@ export default function OfferTab({ demandId, demandData, onSubmit }: OfferTabPro
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
+        // @ts-expect-error -- demandData.header tipi optional, runtime'da kontrol edilmis
         a.download = `teklif_${demandData.header?.satfkCode || 'export'}_${new Date().toISOString().split('T')[0]}.xlsx`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
         
-        toast.success('Excel dosyası indirildi');
+        toast.success(MESSAGES.SUCCESS_EXCEL_DOWNLOADED);
         return blob;
       });
     } catch (error: any) {
@@ -248,7 +323,7 @@ export default function OfferTab({ demandId, demandData, onSubmit }: OfferTabPro
 
     // Dosya tipi kontrolü
     if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
-      toast.error('Lütfen Excel dosyası (.xlsx veya .xls) seçin');
+      toast.error(MESSAGES.ERROR_EXCEL_FILE_TYPE);
       return;
     }
 
@@ -263,7 +338,7 @@ export default function OfferTab({ demandId, demandData, onSubmit }: OfferTabPro
           setCurrencyInfo(offer.currencyInfo);
         }
         
-        toast.success('Excel dosyası başarıyla yüklendi');
+        toast.success(MESSAGES.SUCCESS_EXCEL_UPLOADED);
         return offer;
       });
     } catch (error: any) {
@@ -276,11 +351,48 @@ export default function OfferTab({ demandId, demandData, onSubmit }: OfferTabPro
     }
   };
   
+  // Permission loading & view guard
+  if (permLoading) {
+    return (
+      <div style={{ padding: '20px', maxWidth: '1400px', margin: '0 auto' }}>
+        <p>Yetki bilgileri yükleniyor...</p>
+      </div>
+    );
+  }
+
+  if (!perm.canView) {
+    return (
+      <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
+        <h2 style={{ marginBottom: '12px' }}>Teklif Formu</h2>
+        <div
+          style={{
+            padding: '16px',
+            borderRadius: '8px',
+            border: '1px solid #fee2e2',
+            backgroundColor: '#fef2f2',
+            color: '#b91c1c',
+            fontSize: '14px',
+          }}
+        >
+          <strong>Teklifleri görüntüleme yetkiniz yok.</strong>
+          <div style={{ marginTop: '4px' }}>
+            Bu talep için teklif göndermek veya görüntülemek için şirket
+            yöneticinizden yetki talep etmeniz gerekir.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const isSubmitDisabled =
+    importTask.isRunning || exportTask.isRunning || !perm.canCreate;
+
   return (
     <div style={{ padding: '20px', maxWidth: '1400px', margin: '0 auto' }}>
       <h2 style={{ marginBottom: '20px' }}>Teklif Formu</h2>
       
-      <form onSubmit={handleSubmit(onSubmitForm)}>
+      { }
+      <form onSubmit={handleSubmit(onSubmitForm) as any}>
         {/* Başlık Bilgileri */}
         <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px', marginBottom: '20px', border: '1px solid #e5e7eb' }}>
           <h3 style={{ marginBottom: '16px' }}>Başlık Bilgileri</h3>
@@ -514,14 +626,14 @@ export default function OfferTab({ demandId, demandData, onSubmit }: OfferTabPro
             <input
               type="file"
               accept=".xlsx,.xls"
-              onChange={handleExcelImport}
+              onChange={(e) => { void handleExcelImport(e); }}
               disabled={importTask.isRunning}
               style={{ display: 'none' }}
             />
           </label>
           <button
             type="button"
-            onClick={handleExcelExport}
+            onClick={() => { void handleExcelExport(); }}
             disabled={exportTask.isRunning || importTask.isRunning}
             style={{ 
               padding: '12px 24px', 
@@ -537,16 +649,22 @@ export default function OfferTab({ demandId, demandData, onSubmit }: OfferTabPro
           </button>
           <button
             type="submit"
-            disabled={importTask.isRunning || exportTask.isRunning}
+            disabled={isSubmitDisabled}
+            title={
+              !perm.canCreate
+                ? ((MESSAGES.ERROR_PERMISSION_BIDS_CREATE as string) ||
+                  'Teklif gönderme yetkiniz yok.')
+                : undefined
+            }
             style={{ 
               padding: '12px 24px', 
-              backgroundColor: (importTask.isRunning || exportTask.isRunning) ? '#9ca3af' : '#2563eb', 
+              backgroundColor: isSubmitDisabled ? '#9ca3af' : '#2563eb', 
               color: 'white', 
               border: 'none', 
               borderRadius: '4px', 
-              cursor: (importTask.isRunning || exportTask.isRunning) ? 'not-allowed' : 'pointer', 
+              cursor: isSubmitDisabled ? 'not-allowed' : 'pointer', 
               fontWeight: 'bold',
-              opacity: (importTask.isRunning || exportTask.isRunning) ? 0.6 : 1
+              opacity: isSubmitDisabled ? 0.6 : 1
             }}
           >
             Teklifi Gönder

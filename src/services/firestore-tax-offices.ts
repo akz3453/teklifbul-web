@@ -11,7 +11,8 @@ import {
   query, 
   where, 
   getDocs, 
-  orderBy
+  orderBy,
+  limit
 } from 'firebase/firestore';
 import { cache } from './in-memory-cache';
 import { logger } from '../shared/log/logger.js';
@@ -147,8 +148,8 @@ export async function getTaxOffices(options: {
       // Index yoksa veya alan yoksa fallback
       if (indexError.code === 'failed-precondition' || indexError.message?.includes('index')) {
         logger.warn('⚠️  Index bulunamadı, fallback kullanılıyor', { error: indexError.message });
-        // Fallback: Tüm koleksiyonu çek
-        snapshot = await getDocs(officesRef);
+        // Fallback: Tüm koleksiyonu çek (limit ile)
+        snapshot = await getDocs(query(officesRef, limit(5000))); // Teklifbul Rule v1.0 - Limit eklendi
         useIndexedQuery = false;
       } else {
         throw indexError;

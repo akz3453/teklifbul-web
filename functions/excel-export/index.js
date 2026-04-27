@@ -270,7 +270,7 @@ exports.exportPurchaseForm = functions
       // Tablo başlıkları (sadece talep bilgileri)
       const demandHeaders = [
         "Sıra No",
-        "Malzeme Kodu",
+        "Stok Kodu",
         "Ürün Tanımı",
         "Marka/Model",
         "Talep Edilen Miktar",
@@ -315,7 +315,7 @@ exports.exportPurchaseForm = functions
       // Sütun genişlikleri
       shTalep.columns = [
         { width: 10 }, // Sıra No
-        { width: 15 }, // Malzeme Kodu
+        { width: 15 }, // Stok Kodu
         { width: 40 }, // Ürün Tanımı
         { width: 20 }, // Marka/Model
         { width: 18 }, // Talep Edilen Miktar
@@ -438,7 +438,7 @@ exports.exportPurchaseForm = functions
       // Tablo başlıkları - Talep bilgileri (okunur) + Teklif bilgileri (düzenlenebilir)
       const teklifHeaders = [
         "Sıra", // A
-        "Talep Malzeme Kodu", // B (okunur)
+        "Talep Stok Kodu", // B (okunur)
         "Talep Edilen Ürün", // C (okunur)
         "Talep Miktar", // D (okunur)
         "Talep Birim", // E (okunur)
@@ -490,7 +490,7 @@ exports.exportPurchaseForm = functions
       itemsArray.forEach((item, index) => {
         const row = shTeklif.addRow([
           index + 1, // Sıra
-          item.sku || item.materialCode || "", // Talep Malzeme Kodu (okunur)
+          item.sku || item.materialCode || "", // Talep Stok Kodu (okunur)
           item.name || item.description || "", // Talep Edilen Ürün (okunur)
           item.qty || item.quantity || 0, // Talep Miktar (okunur)
           item.unit || "", // Talep Birim (okunur)
@@ -609,7 +609,7 @@ exports.exportPurchaseForm = functions
       // Sütun genişlikleri
       shTeklif.columns = [
         { width: 8 },  // Sıra
-        { width: 15 }, // Talep Malzeme Kodu
+        { width: 15 }, // Talep Stok Kodu
         { width: 30 }, // Talep Edilen Ürün
         { width: 12 }, // Talep Miktar
         { width: 10 }, // Talep Birim

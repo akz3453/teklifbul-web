@@ -1,7 +1,11 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import * as functions from 'firebase-functions';
+import functions = require('firebase-functions/v1');
+import { onRequest } from "firebase-functions/v2/https";
 // Use v1-style runtime through functions API but cast to any where types diverge
-import * as admin from 'firebase-admin';
+import admin = require('firebase-admin');
+// Import pure helper functions (no side effects)
+import { buildSearchTokens, tokensChanged } from './lib/stockSearchTokens';
+// Full Excel bid form generator (matching frontend exportSatfkBtn exactly)
+import { generateFullBidFormExcel } from './lib/excelGenerator';
 
 // Initialize Firebase Admin
 admin.initializeApp();
@@ -28,57 +32,57 @@ function toSlug(name: string): string {
  */
 // Allow an explicit any cast at the runtime boundary: the project uses v1-style Cloud Functions API
 export const generateSATFK = (functions as any).firestore.document('demands/{id}').onCreate(async (snap: admin.firestore.DocumentSnapshot) => {
-    const demandData = snap.data();
-    if (!demandData) return;
+  const demandData = snap.data();
+  if (!demandData) return;
 
-    // Skip if SATFK already exists
-    if (demandData.satfk) {
-      console.log(`Demand ${snap.id} already has SATFK: ${demandData.satfk}`);
-      return;
+  // Skip if SATFK already exists
+  if (demandData.satfk) {
+    console.log(`Demand ${snap.id} already has SATFK: ${demandData.satfk}`);
+    return;
+  }
+
+  try {
+    // Get creation date
+    let creationDate: Date;
+    if (demandData.createdAt && demandData.createdAt.toDate) {
+      creationDate = demandData.createdAt.toDate();
+    } else if (demandData.createdAt && demandData.createdAt._seconds) {
+      creationDate = new Date(demandData.createdAt._seconds * 1000);
+    } else {
+      creationDate = new Date();
     }
 
-    try {
-      // Get creation date
-      let creationDate: Date;
-      if (demandData.createdAt && demandData.createdAt.toDate) {
-        creationDate = demandData.createdAt.toDate();
-      } else if (demandData.createdAt && demandData.createdAt._seconds) {
-        creationDate = new Date(demandData.createdAt._seconds * 1000);
-      } else {
-        creationDate = new Date();
-      }
+    // Format date as YYYYMMDD
+    const dateStr = creationDate.toISOString().slice(0, 10).replace(/-/g, '');
 
-      // Format date as YYYYMMDD
-      const dateStr = creationDate.toISOString().slice(0, 10).replace(/-/g, '');
-      
-      // Get daily counter
-      const counterRef = admin.firestore().collection('counters').doc(`demandCode_${dateStr}`);
-      
-      const satfk = await admin.firestore().runTransaction(async (transaction) => {
-        const counterDoc = await transaction.get(counterRef);
-        const currentCount = counterDoc.exists ? (counterDoc.data()?.count || 0) : 0;
-        const newCount = currentCount + 1;
-        
-        // Convert to Base36 and pad to 3-4 characters
-        const base36 = newCount.toString(36).toUpperCase();
-        const padded = base36.padStart(3, '0');
-        
-        // Update counter
-        transaction.set(counterRef, { count: newCount }, { merge: true });
-        
-        // Generate SATFK
-        return `SATFK-${dateStr}-${padded}`;
-      });
+    // Get daily counter
+    const counterRef = admin.firestore().collection('counters').doc(`demandCode_${dateStr}`);
 
-      // Update demand with SATFK
-      await snap.ref.update({ satfk });
-      
-      console.log(`Generated SATFK for demand ${snap.id}: ${satfk}`);
-      
-    } catch (error) {
-      console.error(`Error generating SATFK for demand ${snap.id}:`, error);
-    }
-  });
+    const satfk = await admin.firestore().runTransaction(async (transaction) => {
+      const counterDoc = await transaction.get(counterRef);
+      const currentCount = counterDoc.exists ? (counterDoc.data()?.count || 0) : 0;
+      const newCount = currentCount + 1;
+
+      // Convert to Base36 and pad to 3-4 characters
+      const base36 = newCount.toString(36).toUpperCase();
+      const padded = base36.padStart(3, '0');
+
+      // Update counter
+      transaction.set(counterRef, { count: newCount }, { merge: true });
+
+      // Generate SATFK
+      return `SATFK-${dateStr}-${padded}`;
+    });
+
+    // Update demand with SATFK
+    await snap.ref.update({ satfk });
+
+    console.log(`Generated SATFK for demand ${snap.id}: ${satfk}`);
+
+  } catch (error) {
+    console.error(`Error generating SATFK for demand ${snap.id}:`, error);
+  }
+});
 
 /**
  * Backfill missing SATFK codes for existing demands
@@ -111,7 +115,7 @@ export const backfillMissingSATFK = functions.https.onRequest(async (req, res) =
 
     for (const doc of snapshot.docs) {
       const demandData = doc.data();
-      
+
       // Get creation date
       let creationDate: Date;
       if (demandData.createdAt && demandData.createdAt.toDate) {
@@ -124,22 +128,22 @@ export const backfillMissingSATFK = functions.https.onRequest(async (req, res) =
 
       // Format date as YYYYMMDD
       const dateStr = creationDate.toISOString().slice(0, 10).replace(/-/g, '');
-      
+
       // Get daily counter
       const counterRef = admin.firestore().collection('counters').doc(`demandCode_${dateStr}`);
-      
+
       const satfk = await admin.firestore().runTransaction(async (transaction) => {
         const counterDoc = await transaction.get(counterRef);
         const currentCount = counterDoc.exists ? (counterDoc.data()?.count || 0) : 0;
         const newCount = currentCount + 1;
-        
+
         // Convert to Base36 and pad to 3-4 characters
         const base36 = newCount.toString(36).toUpperCase();
         const padded = base36.padStart(3, '0');
-        
+
         // Update counter
         transaction.set(counterRef, { count: newCount }, { merge: true });
-        
+
         // Generate SATFK
         return `SATFK-${dateStr}-${padded}`;
       });
@@ -147,18 +151,18 @@ export const backfillMissingSATFK = functions.https.onRequest(async (req, res) =
       // Update demand with SATFK
       batch.update(doc.ref, { satfk });
       processedCount++;
-      
+
       console.log(`Generated SATFK for demand ${doc.id}: ${satfk}`);
     }
 
     // Commit all updates
     await batch.commit();
-    
-    res.json({ 
+
+    res.json({
       message: `Successfully processed ${processedCount} demands`,
       processedCount
     });
-    
+
   } catch (error) {
     console.error('Error in backfillMissingSATFK:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -172,26 +176,26 @@ export const backfillMissingSATFK = functions.https.onRequest(async (req, res) =
 // Allow an explicit any cast at the runtime boundary for v1-style trigger
 export const normalizeDemandCategories = (functions as any).firestore.document('demands/{id}').onWrite(async (change: { before: admin.firestore.DocumentSnapshot; after: admin.firestore.DocumentSnapshot; params?: Record<string, unknown> }) => {
   const after = change.after.data();
-    if (!after) return;
+  if (!after) return;
 
-    const categories = after.categories || [];
-    const normalizedCategories = categories.map(toSlug).filter(Boolean);
+  const categories = after.categories || [];
+  const normalizedCategories = categories.map(toSlug).filter(Boolean);
 
-    // Only update if categories have changed
-    if (JSON.stringify(normalizedCategories) !== JSON.stringify(categories)) {
-      console.log(`Normalizing categories for demand ${change.after.id}:`, {
-        from: categories,
-        to: normalizedCategories
-      });
+  // Only update if categories have changed
+  if (JSON.stringify(normalizedCategories) !== JSON.stringify(categories)) {
+    console.log(`Normalizing categories for demand ${change.after.id}:`, {
+      from: categories,
+      to: normalizedCategories
+    });
 
-      try {
-        await change.after.ref.update({ categories: normalizedCategories });
-        console.log(`Successfully normalized categories for demand ${change.after.id}`);
-      } catch (error) {
-        console.error(`Error normalizing categories for demand ${change.after.id}:`, error);
-      }
+    try {
+      await change.after.ref.update({ categories: normalizedCategories });
+      console.log(`Successfully normalized categories for demand ${change.after.id}`);
+    } catch (error) {
+      console.error(`Error normalizing categories for demand ${change.after.id}:`, error);
     }
-  });
+  }
+});
 
 /**
  * Normalize supplier categories to slug format
@@ -199,82 +203,187 @@ export const normalizeDemandCategories = (functions as any).firestore.document('
  */
 // Allow an explicit any cast at the runtime boundary for v1-style trigger
 export const normalizeSupplierCategories = (functions as any).firestore.document('users/{uid}').onWrite(async (change: { before: admin.firestore.DocumentSnapshot; after: admin.firestore.DocumentSnapshot; params?: Record<string, unknown> }) => {
-    const after = change.after.data();
-    if (!after || !after.isSupplier) return;
+  const after = change.after.data();
+  if (!after || !after.isSupplier) return;
 
-    const supplierCategories = after.supplierCategories || [];
-    const normalizedCategories = supplierCategories.map(toSlug).filter(Boolean);
+  const supplierCategories = after.supplierCategories || [];
+  const normalizedCategories = supplierCategories.map(toSlug).filter(Boolean);
 
-    // Only update if categories have changed
-    if (JSON.stringify(normalizedCategories) !== JSON.stringify(supplierCategories)) {
-      console.log(`Normalizing supplier categories for user ${change.after.id}:`, {
-        from: supplierCategories,
-        to: normalizedCategories
-      });
+  // Only update if categories have changed
+  if (JSON.stringify(normalizedCategories) !== JSON.stringify(supplierCategories)) {
+    console.log(`Normalizing supplier categories for user ${change.after.id}:`, {
+      from: supplierCategories,
+      to: normalizedCategories
+    });
 
-      try {
-        await change.after.ref.update({ supplierCategories: normalizedCategories });
-        console.log(`Successfully normalized supplier categories for user ${change.after.id}`);
-      } catch (error) {
-        console.error(`Error normalizing supplier categories for user ${change.after.id}:`, error);
-      }
+    try {
+      await change.after.ref.update({ supplierCategories: normalizedCategories });
+      console.log(`Successfully normalized supplier categories for user ${change.after.id}`);
+    } catch (error) {
+      console.error(`Error normalizing supplier categories for user ${change.after.id}:`, error);
     }
-  });
+  }
+});
 
 /**
- * Audit log for demand publish/unpublish changes
+ * Audit log for demand changes
  * Triggered on write to /demands/{id}
+ *
+ * Not: Eski auditDemandPublishChanges trigger'i kald\u0131r\u0131ld\u0131; publish/unpublish olaylar\u0131 da
+ * a\u015fa\u011f\u0131daki auditDemandChanges i\u00e7indeki update bran\u015f\u0131nda yakalan\u0131yor.
  */
-// Allow an explicit any cast at the runtime boundary for v1-style trigger
+// Teklifbul Rule v1.0 - v1-style trigger boundary; explicit any cast intentional
 export const auditDemandChanges = (functions as any).firestore.document('demands/{id}').onWrite(async (change: { before: admin.firestore.DocumentSnapshot; after: admin.firestore.DocumentSnapshot; params?: Record<string, unknown> }) => {
-    const before = change.before.data();
-    const after = change.after.data();
-    
-    if (!before || !after) return;
+  const before = change.before.data();
+  const after = change.after.data();
+
+  // Handle deletion
+  if (before && !after) {
+    const auditRef = admin.firestore().collection('auditLogs').doc();
+    await auditRef.set({
+      entityType: 'demand',
+      entityId: change.before.id,
+      action: 'delete',
+      actorUid: before.updatedBy || before.createdBy,
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      companyId: before.creatorCompanyId
+    });
+    return;
+  }
+
+  // Handle creation
+  if (!before && after) {
+    const auditRef = admin.firestore().collection('auditLogs').doc();
+    await auditRef.set({
+      entityType: 'demand',
+      entityId: change.after.id,
+      action: 'create',
+      actorUid: after.createdBy,
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      companyId: after.creatorCompanyId
+    });
+    return;
+  }
+
+  if (!before || !after) return;
 
   const changes: Array<Record<string, unknown>> = [];
-    
-    // Check for isPublished changes
-    if (before.isPublished !== after.isPublished) {
-      changes.push({
-        field: 'isPublished',
-        from: before.isPublished,
-        to: after.isPublished,
-        actorUid: after.updatedBy || after.createdBy,
-        demandId: change.after.id,
-        timestamp: admin.firestore.FieldValue.serverTimestamp()
-      });
-    }
 
-    // Check for visibility changes
-    if (before.visibility !== after.visibility) {
-      changes.push({
-        field: 'visibility',
-        from: before.visibility,
-        to: after.visibility,
-        actorUid: after.updatedBy || after.createdBy,
-        demandId: change.after.id,
-        timestamp: admin.firestore.FieldValue.serverTimestamp()
-      });
-    }
+  // Check for status changes
+  if (before.status !== after.status) {
+    changes.push({
+      entityType: 'demand',
+      entityId: change.after.id,
+      field: 'status',
+      from: before.status,
+      to: after.status,
+      actorUid: after.updatedBy || after.createdBy,
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      companyId: after.creatorCompanyId
+    });
+  }
 
-    // Write audit logs if there are changes
-    if (changes.length > 0) {
-      const batch = admin.firestore().batch();
-      
-      changes.forEach((change) => {
-        const auditRef = admin.firestore().collection('auditLogs').doc();
-        batch.set(auditRef, change);
-      });
+  // Check for isPublished changes
+  if (before.isPublished !== after.isPublished) {
+    changes.push({
+      entityType: 'demand',
+      entityId: change.after.id,
+      field: 'isPublished',
+      from: before.isPublished,
+      to: after.isPublished,
+      actorUid: after.updatedBy || after.createdBy,
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      companyId: after.creatorCompanyId
+    });
+  }
 
-      try {
-        await batch.commit();
-        console.log(`Created ${changes.length} audit log entries for demand ${change.after.id}`);
-      } catch (error) {
-        console.error(`Error creating audit logs for demand ${change.after.id}:`, error);
-      }
-    }
-  });
+  if (changes.length > 0) {
+    const batch = admin.firestore().batch();
+    changes.forEach((c) => {
+      const auditRef = admin.firestore().collection('auditLogs').doc();
+      batch.set(auditRef, c);
+    });
+    await batch.commit();
+  }
+});
+
+/**
+ * Audit log for bid changes
+ * Triggered on write to /bids/{id}
+ */
+export const auditBidChanges = (functions as any).firestore.document('bids/{id}').onWrite(async (change: { before: admin.firestore.DocumentSnapshot; after: admin.firestore.DocumentSnapshot; params?: Record<string, unknown> }) => {
+  const before = change.before.data();
+  const after = change.after.data();
+
+  // Handle deletion
+  if (before && !after) {
+    const auditRef = admin.firestore().collection('auditLogs').doc();
+    await auditRef.set({
+      entityType: 'bid',
+      entityId: change.before.id,
+      action: 'delete',
+      actorUid: before.createdBy || before.supplierId,
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      companyId: before.supplierCompanyId
+    });
+    return;
+  }
+
+  // Handle creation
+  if (!before && after) {
+    const auditRef = admin.firestore().collection('auditLogs').doc();
+    await auditRef.set({
+      entityType: 'bid',
+      entityId: change.after.id,
+      action: 'create',
+      actorUid: after.createdBy || after.supplierId,
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      companyId: after.supplierCompanyId,
+      demandId: after.demandId
+    });
+    return;
+  }
+
+  if (!before || !after) return;
+
+  const changes: Array<Record<string, unknown>> = [];
+
+  // Check for status changes
+  if (before.status !== after.status) {
+    changes.push({
+      entityType: 'bid',
+      entityId: change.after.id,
+      field: 'status',
+      from: before.status,
+      to: after.status,
+      actorUid: after.updatedBy || after.supplierId,
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      companyId: after.buyerCompanyId || after.supplierCompanyId
+    });
+  }
+
+  // Check for price changes
+  if (JSON.stringify(before.items) !== JSON.stringify(after.items)) {
+    changes.push({
+      entityType: 'bid',
+      entityId: change.after.id,
+      field: 'items',
+      action: 'price_update',
+      actorUid: after.updatedBy || after.supplierId,
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      companyId: after.supplierCompanyId
+    });
+  }
+
+  if (changes.length > 0) {
+    const batch = admin.firestore().batch();
+    changes.forEach((c) => {
+      const auditRef = admin.firestore().collection('auditLogs').doc();
+      batch.set(auditRef, c);
+    });
+    await batch.commit();
+  }
+});
 
 /**
  * Search demands by SATFK (startsWith search)
@@ -297,7 +406,7 @@ export const searchBySATFK = functions.https.onRequest(async (req, res) => {
   }
 
   const code = req.query.code as string;
-  
+
   if (!code) {
     res.status(400).json({ error: 'Missing code parameter' });
     return;
@@ -315,9 +424,9 @@ export const searchBySATFK = functions.https.onRequest(async (req, res) => {
       .collection('demands')
       .where('satfk', '==', code)
       .limit(1);
-    
+
     const exactSnap = await exactQuery.get();
-    
+
     if (!exactSnap.empty) {
       const demand = exactSnap.docs[0];
       res.json({
@@ -336,9 +445,9 @@ export const searchBySATFK = functions.https.onRequest(async (req, res) => {
       .where('satfk', '>=', code)
       .where('satfk', '<', code + '\uf8ff')
       .limit(10);
-    
+
     const prefixSnap = await prefixQuery.get();
-    
+
     const results = prefixSnap.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
@@ -354,3 +463,419 @@ export const searchBySATFK = functions.https.onRequest(async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+/**
+ * Generate searchTokens for stocks collection
+ * Triggered on write to /stocks/{stockId}
+ * Teklifbul Rule v1.0 - Firestore autocomplete: Generate search tokens
+ */
+// Allow an explicit any cast at the runtime boundary for v1-style trigger
+export const generateStockSearchTokens = (functions as any).firestore.document('stocks/{stockId}').onWrite(async (change: { before: admin.firestore.DocumentSnapshot; after: admin.firestore.DocumentSnapshot; params?: Record<string, unknown> }) => {
+  const after = change.after.data();
+  if (!after) return; // Document deleted, nothing to do
+
+  // Extract searchable fields
+  const name = (after.name || '').toString();
+  const sku = (after.sku || '').toString();
+  const barcode = (after.barcode || '').toString();
+
+  const searchTokens = buildSearchTokens(name, sku, barcode);
+
+  if (searchTokens.length === 0) {
+    console.log(`Skipping searchTokens generation for stock ${change.after.id}: no searchable text`);
+    return;
+  }
+
+  // Check if tokens have changed (prevent infinite loop)
+  const before = change.before.data();
+  const existingTokens = before?.searchTokens || [];
+
+  if (!tokensChanged(searchTokens, existingTokens) && before) {
+    console.log(`SearchTokens unchanged for stock ${change.after.id}, skipping update`);
+    return;
+  }
+
+  // Update only searchTokens and searchUpdatedAt
+  try {
+    await change.after.ref.update({
+      searchTokens: searchTokens,
+      searchUpdatedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+    console.log(`Generated ${searchTokens.length} searchTokens for stock ${change.after.id}`);
+  } catch (error) {
+    console.error(`Error generating searchTokens for stock ${change.after.id}:`, error);
+  }
+});
+
+/**
+ * Send email notifications to additional suppliers when a demand is created
+ * Now includes Excel attachment, bid submission link with token, and registration CTA
+ */
+export const sendDemandCreatedNotifications = (functions as any).firestore.document('demands/{id}').onCreate(async (snap: admin.firestore.DocumentSnapshot) => {
+  const demandData = snap.data();
+  if (!demandData) return;
+
+  const { sendEmailOnNotification, supplierEmails, title, satfk, createdBy } = demandData;
+
+  if (!sendEmailOnNotification || !supplierEmails || !Array.isArray(supplierEmails) || supplierEmails.length === 0) {
+    console.log(`Skipping email notification for demand ${snap.id}: No emails or disabled.`);
+    return;
+  }
+
+  // Use process.env or fallback to known dev key - THIS IS A TEMPORARY DEV FALLBACK
+  const RESEND_API_KEY = process.env.RESEND_API_KEY || "re_MuMqKNSB_33FhfTGtJMNMsM18cioJ5ay1";
+
+  if (!RESEND_API_KEY) {
+    console.error("RESEND_API_KEY is missing");
+    return;
+  }
+
+  // Fetch demand items for Excel generation
+  const itemsSnap = await admin.firestore().collection('demands').doc(snap.id).collection('items').orderBy("lineNo", "asc").get();
+  const allItems = itemsSnap.docs.map(doc => doc.data());
+
+  console.log(`Sending notifications to ${supplierEmails.length} recipients for demand ${snap.id}`);
+
+  const emailPromises = supplierEmails.map(async (email: string) => {
+    try {
+      // Basic validation
+      if (!email || !email.includes('@')) return;
+
+      // 1. Get supplier's categories for filtering
+      const userSnap = await admin.firestore().collection('users').where('email', '==', email.toLowerCase().trim()).limit(1).get();
+      let supplierCategoryIds: string[] = [];
+      if (!userSnap.empty) {
+        const u = userSnap.docs[0].data();
+        const ids = Array.isArray(u.supplierCategoryIds) ? u.supplierCategoryIds : [];
+        const legacy = [...(Array.isArray(u.supplierCategoryKeys) ? u.supplierCategoryKeys : []), ...(Array.isArray(u.supplierCategories) ? u.supplierCategories : [])];
+        const legacySlugs = legacy.map(c => typeof c === 'string' ? toSlug(c) : c).filter(Boolean);
+        supplierCategoryIds = Array.from(new Set([...ids, ...legacySlugs]));
+      }
+
+      // 2. Filter items for THIS specific supplier
+      let filteredItems = allItems;
+      if (supplierCategoryIds.length > 0) {
+        const supSet = new Set(supplierCategoryIds);
+        filteredItems = allItems.filter(item => {
+          const itemCats = Array.isArray(item.itemCategoryIds) ? item.itemCategoryIds : [];
+          const itemTags = Array.isArray(item.categoryTags) ? item.categoryTags : [];
+          const itemLegacy = Array.isArray(item.itemCategories) ? item.itemCategories : [];
+          
+          const allItemIdentifiers = Array.from(new Set([
+            ...itemCats, 
+            ...itemTags, 
+            ...itemLegacy.map(c => typeof c === 'string' ? toSlug(c) : c).filter(Boolean)
+          ]));
+
+          if (allItemIdentifiers.length === 0) return true; // Show items with no category assigned (safety)
+          return allItemIdentifiers.some(id => supSet.has(id) || supSet.has(toSlug(id)));
+        });
+      }
+
+      if (filteredItems.length === 0) {
+        console.log(`Skipping notification for ${email}: No categorization match found with items.`);
+        return;
+      }
+
+      // 3. Generate personalized Excel bid form for this supplier
+      let excelBuffer: Buffer | null = null;
+      try {
+        excelBuffer = await generateFullBidFormExcel(demandData, filteredItems);
+      } catch (excelError) {
+        console.error(`Excel generation failed for ${email}:`, excelError);
+      }
+
+      // Create unique token for this supplier
+      const token = `${snap.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7); // 7 days validity
+
+      // Save bid invite token to Firestore
+      await admin.firestore().collection('bidInvites').doc(token).set({
+        demandId: snap.id,
+        supplierEmail: email,
+        recipientCategoryIds: supplierCategoryIds, // Traceability
+        filteredItemIds: filteredItems.map((_, i) => i), // Simplified tracking
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        expiresAt,
+        used: false,
+        createdBy: createdBy || null
+      });
+
+      const submitBidUrl = `${process.env.APP_URL || 'https://teklifbul-ce404.web.app'}/submit-bid.html?token=${token}`;
+
+      // Build email payload
+      const emailPayload: Record<string, unknown> = {
+        from: 'Nefisoft <onboarding@resend.dev>',
+        to: email,
+        subject: `Yeni Satın Alma Talebi: ${title}`,
+        html: `
+          <div style="font-family: sans-serif; padding: 20px;">
+            <h2>Satın Alma Talebi Daveti</h2>
+            <p><strong>${demandData.creatorCompanyName || 'Bir firma'}</strong> sizinle uzmanlık alanınıza giren bir talep paylaştı.</p>
+            <div style="background: #f3f4f6; padding: 15px; margin: 20px 0; border-radius: 8px;">
+              <p><strong>Başlık:</strong> ${title}</p>
+              <p><strong>Kod:</strong> ${satfk || 'Oluşturuluyor...'}</p>
+              <p><strong>Uzmanlık Alanınızla Eşleşen Kalem Sayısı:</strong> ${filteredItems.length}</p>
+            </div>
+            <p>Teklif vermek için aşağıdaki adımları takip edin:</p>
+            <ol>
+              <li>Ekteki size özel Excel dosyasını indirin ve fiyat bilgilerini doldurun.</li>
+              <li>Aşağıdaki butona tıklayarak doldurulan Excel'i yükleyin.</li>
+            </ol>
+            <p style="margin: 20px 0;">
+              <a href="${submitBidUrl}" 
+                 style="display: inline-block; padding: 12px 24px; background: #2563eb; color: white; text-decoration: none; border-radius: 6px; font-weight: bold;">
+                Teklif Ver
+              </a>
+            </p>
+            <p style="color: #666; font-size: 12px;">Bu link 7 gün geçerlidir. Sadece sizin kategorilerinizle eşleşen kalemleri içermektedir.</p>
+            
+            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+            
+            <div style="background: #f0fdf4; padding: 15px; border-radius: 8px; border-left: 4px solid #22c55e;">
+              <p style="margin: 0 0 10px 0; font-weight: bold; color: #166534;">📋 Ücretsiz Hesap Oluşturun</p>
+              <p style="margin: 0 0 15px 0; color: #15803d; font-size: 14px;">
+                Nefisoft'a üye olarak tüm talep ve tekliflerinizi tek bir yerden yönetebilirsiniz.
+              </p>
+              <a href="${process.env.APP_URL || 'https://teklifbul-ce404.web.app'}/register.html" 
+                 style="display: inline-block; padding: 10px 20px; background: #22c55e; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 14px;">
+                Kayıt Ol
+              </a>
+            </div>
+          </div>
+        `
+      };
+
+      if (excelBuffer) {
+        emailPayload.attachments = [
+          {
+            filename: `Teklif_Formu_${satfk || snap.id}.xlsx`,
+            content: excelBuffer.toString('base64')
+          }
+        ];
+      }
+
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${RESEND_API_KEY}`
+        },
+        body: JSON.stringify(emailPayload)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Failed to send email to ${email}: ${response.status} ${errorText}`);
+      } else {
+        const data = await response.json() as { id: string };
+        console.log(`Email sent to ${email} with token ${token}, id: ${data.id}. Items: ${filteredItems.length}`);
+      }
+    } catch (error) {
+      console.error(`Error sending email to ${email}:`, error);
+    }
+  });
+
+  await Promise.all(emailPromises);
+});
+
+/**
+ * Share demand details via email (Callable) - v2
+ * Triggered by demand owner from frontend
+ */
+/**
+ * Share demand details via email (HTTPS Request - V2)
+ * Triggered by demand owner from frontend via fetch
+ * Uses built-in CORS support
+ */
+export const shareDemandViaEmail = onRequest({ cors: true }, async (req, res) => {
+  // Only allow POST (or GET for health check / debugging)
+  if (req.method === 'GET') {
+    res.json({ status: 'ok', cors: 'enabled (v2)', sender: 'onboarding@resend.dev' });
+    return;
+  }
+
+  if (req.method !== 'POST') {
+    res.status(405).send('Method Not Allowed');
+    return;
+  }
+
+  try {
+    // 2. Auth Check (Manual)
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      res.status(401).json({ error: 'Unauthenticated', message: 'Missing or invalid token' });
+      return;
+    }
+    const idToken = authHeader.split('Bearer ')[1];
+
+    // Verify token
+    let decodedToken;
+    try {
+      decodedToken = await admin.auth().verifyIdToken(idToken);
+    } catch (e) {
+      console.error('Token verification failed:', e);
+      res.status(401).json({ error: 'Unauthenticated', message: 'Invalid token' });
+      return;
+    }
+
+    const uid = decodedToken.uid;
+    const { demandId, emails } = req.body;
+
+    // 3. Input Validation
+    if (!demandId || !emails || !Array.isArray(emails) || emails.length === 0) {
+      res.status(400).json({ error: 'Invalid Argument', message: 'Missing demandId or emails' });
+      return;
+    }
+
+    // 4. Ownership Verification
+    const demandRef = admin.firestore().collection('demands').doc(demandId);
+    const demandSnap = await demandRef.get();
+
+    if (!demandSnap.exists) {
+      res.status(404).json({ error: 'Not Found', message: 'Demand not found' });
+      return;
+    }
+
+    const demandData = demandSnap.data();
+    if (!demandData) {
+      res.status(404).json({ error: 'Not Found', message: 'Demand empty' });
+      return;
+    }
+
+    // 5. Fetch demand items for Excel generation
+    const itemsSnap = await admin.firestore().collection('demands').doc(demandId).collection('items').get();
+    const items = itemsSnap.docs.map(doc => doc.data());
+
+    // 6. Generate Excel bid form
+    let excelBuffer: Buffer | null = null;
+    try {
+      excelBuffer = await generateFullBidFormExcel(demandData, items);
+      console.log(`Generated Excel for demand ${demandId}, size: ${excelBuffer.length} bytes`);
+    } catch (excelError) {
+      console.error('Excel generation failed:', excelError);
+      // Continue without attachment if Excel fails
+    }
+
+    // 7. Send Emails with attachment and bid link
+    const RESEND_API_KEY = process.env.RESEND_API_KEY || "re_MuMqKNSB_33FhfTGtJMNMsM18cioJ5ay1";
+    if (!RESEND_API_KEY) {
+      console.error("RESEND_API_KEY missing");
+      res.status(500).json({ error: 'Internal', message: 'Email config missing' });
+      return;
+    }
+
+    console.log(`Sharing demand ${demandId} with ${emails.length} recipients (User: ${uid})`);
+
+    const emailPromises = emails.map(async (email: string) => {
+      if (!email || !email.includes('@')) return;
+      try {
+        // Create unique token for this supplier
+        const token = `${demandId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 7); // 7 days validity
+
+        // Save bid invite token to Firestore
+        await admin.firestore().collection('bidInvites').doc(token).set({
+          demandId,
+          supplierEmail: email,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          expiresAt,
+          used: false,
+          createdBy: uid
+        });
+
+        const submitBidUrl = `${process.env.APP_URL || 'http://localhost:5174'}/submit-bid.html?token=${token}`;
+
+        // Build email payload with optional attachment
+        const emailPayload: Record<string, unknown> = {
+          from: 'Nefisoft <onboarding@resend.dev>',
+          to: email,
+          subject: `Sizinle Bir Satın Alma Talebi Paylaşıldı: ${demandData.title || 'İsimsiz'}`,
+          html: `
+            <div style="font-family: sans-serif; padding: 20px;">
+              <h2>Satın Alma Talebi Daveti</h2>
+              <p><strong>${demandData.requester || demandData.creatorCompanyName || 'Bir firma'}</strong> sizinle bir talep paylaştı.</p>
+              <div style="background: #f3f4f6; padding: 15px; margin: 20px 0; border-radius: 8px;">
+                <p><strong>Başlık:</strong> ${demandData.title}</p>
+                <p><strong>Kod:</strong> ${demandData.satfk}</p>
+                <p><strong>Kalem Sayısı:</strong> ${items.length}</p>
+              </div>
+              <p>Teklif vermek için aşağıdaki adımları takip edin:</p>
+              <ol>
+                <li>Ekteki Excel dosyasını indirin ve fiyat bilgilerini doldurun.</li>
+                <li>Aşağıdaki butona tıklayarak doldurulan Excel'i yükleyin.</li>
+              </ol>
+              <p style="margin: 20px 0;">
+                <a href="${submitBidUrl}" 
+                   style="display: inline-block; padding: 12px 24px; background: #2563eb; color: white; text-decoration: none; border-radius: 6px; font-weight: bold;">
+                  Teklif Ver
+                </a>
+              </p>
+              <p style="color: #666; font-size: 12px;">Bu link 7 gün geçerlidir.</p>
+              
+              <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+              
+              <div style="background: #f0fdf4; padding: 15px; border-radius: 8px; border-left: 4px solid #22c55e;">
+                <p style="margin: 0 0 10px 0; font-weight: bold; color: #166534;">📋 Ücretsiz Hesap Oluşturun</p>
+                <p style="margin: 0 0 15px 0; color: #15803d; font-size: 14px;">
+                  Nefisoft'a üye olarak tüm talep ve tekliflerinizi tek bir yerden yönetebilirsiniz.
+                </p>
+                <a href="${process.env.APP_URL || 'http://localhost:5174'}/register.html" 
+                   style="display: inline-block; padding: 10px 20px; background: #22c55e; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 14px;">
+                  Kayıt Ol
+                </a>
+              </div>
+            </div>
+          `
+        };
+
+        // Add Excel attachment if available
+        if (excelBuffer) {
+          emailPayload.attachments = [
+            {
+              filename: `Teklif_Formu_${demandData.satfk || demandId}.xlsx`,
+              content: excelBuffer.toString('base64')
+            }
+          ];
+        }
+
+        await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${RESEND_API_KEY}`
+          },
+          body: JSON.stringify(emailPayload)
+        });
+
+        console.log(`Email sent to ${email} with token ${token}`);
+      } catch (e) {
+        console.error('Email send error', e);
+      }
+    });
+
+    await Promise.all(emailPromises);
+
+    res.json({ result: { success: true, count: emails.length } });
+
+  } catch (error) {
+    console.error('Share Handler Error:', error);
+    res.status(500).json({ error: 'Internal', message: 'Server error' });
+  }
+});
+
+/**
+ * Teklifbul API Export
+ * Connects the compiled Express app to Cloud Functions
+ */
+// @ts-ignore - Valid at runtime after build
+const { app } = require('../dist/server/index.js');
+
+export const api = onRequest({
+  memory: "512MiB",
+  timeoutSeconds: 60,
+  minInstances: 0,
+  cors: true
+}, app);

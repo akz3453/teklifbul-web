@@ -5,6 +5,9 @@ node_modules/
 /dist/
 /build/
 /tmp/
+functions/dist/
+functions/lib/
+functions/excel-export/lib/
 
 # Logs
 *.log

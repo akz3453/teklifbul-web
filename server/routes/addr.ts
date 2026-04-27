@@ -11,51 +11,26 @@ import { Router, Request, Response } from 'express';
 const router = Router();
 
 /**
- * Retry mekanizması ile fetch
+ * Retry mekanizması ile fetch (throttled)
  * @param url - Fetch edilecek URL
  * @param tries - Maksimum deneme sayısı (default: 3)
  * @returns Response
  */
 async function fetchWithRetry(url: string, tries = 3): Promise<any> {
-  let lastErr: Error | null = null;
+  // Teklifbul Rule v1.0 - Production Hardening: API throttling kullan
+  const { throttledFetchWithRetry } = await import('../../src/shared/utils/api-throttle.js');
+  const response = await throttledFetchWithRetry(url, {
+    headers: {
+      'Accept': 'application/json',
+      'User-Agent': 'Teklifbul/1.0'
+    }
+  } as any, tries);
   
-  for (let i = 0; i < tries; i++) {
-    try {
-      // AbortController ile timeout (Node.js 18+)
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000);
-      
-      const res = await fetch(url, { 
-        signal: controller.signal,
-        headers: {
-          'Accept': 'application/json',
-          'User-Agent': 'Teklifbul/1.0'
-        }
-      } as any);
-      
-      clearTimeout(timeoutId);
-      
-      if (res.ok) {
-        return await res.json();
-      }
-      
-      lastErr = new Error(`${res.status} ${res.statusText}`);
-    } catch (e: unknown) {
-      // Normalize unknown to Error for lastErr
-      if (e instanceof Error) {
-        lastErr = e;
-      } else {
-        lastErr = new Error(String(e));
-      }
-    }
-    
-    // Exponential backoff: 250ms, 500ms, 1000ms
-    if (i < tries - 1) {
-      await new Promise(resolve => setTimeout(resolve, 250 * Math.pow(2, i)));
-    }
+  if (!response.ok) {
+    throw new Error(`${response.status} ${response.statusText}`);
   }
   
-  throw lastErr || new Error('Fetch failed after retries');
+  return await response.json();
 }
 
 /**

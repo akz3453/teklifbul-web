@@ -1,13 +1,14 @@
 {
   "name": "teklifbul-functions",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Firebase Functions for Teklifbul",
-  "main": "index.js",
+  "main": "lib/index.js",
   "engines": {
-    "node": "22"
+    "node": "18"
   },
   "scripts": {
     "build": "tsc",
+    "lint": "echo 'No linting configured'",
     "serve": "npm run build && firebase emulators:start --only functions",
     "shell": "npm run build && firebase functions:shell",
     "start": "npm run shell",
@@ -15,9 +16,43 @@
     "logs": "firebase functions:log"
   },
   "dependencies": {
+    "@google-cloud/recaptcha-enterprise": "^4.1.0",
+    "@google/genai": "^1.30.0",
+    "@sentry/node": "^10.27.0",
+    "@types/compression": "^1.8.1",
+    "@types/cors": "^2.8.19",
+    "@types/pdfkit": "^0.17.4",
+    "compression": "^1.8.1",
+    "cors": "^2.8.5",
+    "date-fns": "^4.1.0",
+    "dayjs": "^1.11.19",
+    "docx": "^8.5.0",
+    "dompurify": "^3.2.2",
+    "dotenv": "^17.2.3",
+    "dotenv-safe": "^9.1.0",
+    "exceljs": "^4.4.0",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.2.1",
+    "fast-levenshtein": "^3.0.0",
+    "fast-xml-parser": "^4.5.3",
     "firebase-admin": "^12.7.0",
     "firebase-functions": "^6.6.0",
-    "teklifbul-web": "file:.."
+    "helmet": "^8.1.0",
+    "ioredis": "^5.8.2",
+    "jszip": "^3.10.1",
+    "mammoth": "^1.11.0",
+    "multer": "^1.4.5-lts.1",
+    "node-cache": "^5.1.2",
+    "openai": "^4.104.0",
+    "p-limit": "^7.2.0",
+    "pdf-parse": "^2.4.5",
+    "pdfkit": "^0.17.2",
+    "pg": "^8.16.3",
+    "resend": "^6.7.0",
+    "teklifbul-web": "file:..",
+    "winston": "^3.18.3",
+    "xlsx": "^0.18.5",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

@@ -83,8 +83,15 @@ const DATE_FORMATS = [
 
 export function parseDateTR(value: unknown): string | null {
   if (!value) return null;
+  const toLocalYMD = (d: Date) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
   if (value instanceof Date && !isNaN(value.getTime())) {
-    return value.toISOString().slice(0, 10);
+    // IMPORTANT: Use local date parts to avoid timezone day-shift (toISOString() is UTC).
+    return toLocalYMD(value);
   }
   const raw = String(value).trim();
   if (!raw) return null;
@@ -92,7 +99,8 @@ export function parseDateTR(value: unknown): string | null {
   for (const fmt of DATE_FORMATS) {
     const date = parseDateFns(raw, fmt, new Date());
     if (isValidDate(date)) {
-      return date.toISOString().slice(0, 10);
+      // IMPORTANT: Use local date parts to avoid timezone day-shift.
+      return toLocalYMD(date);
     }
   }
   return null;
@@ -114,8 +122,25 @@ const CURRENCY_MAP: Record<string, string> = {
 
 export function detectCurrency(raw: unknown): string | null {
   if (!raw) return null;
-  const normalized = lowercaseTR(String(raw)).replace(/[^a-z₺$€£]/g, "");
-  return CURRENCY_MAP[normalized] || null;
+  const text = lowercaseTR(String(raw));
+
+  // Fast symbol detection (most reliable)
+  if (text.includes("₺")) return "TRY";
+  if (text.includes("€")) return "EUR";
+  if (text.includes("£")) return "GBP";
+  if (text.includes("$")) return "USD";
+
+  // Token detection (TL/TRY/USD/EUR/GBP)
+  const token = text.replace(/[^a-z]/g, "");
+  if (!token) return null;
+  // exact map first
+  if (CURRENCY_MAP[token]) return CURRENCY_MAP[token];
+  // contains fallback (e.g. "odemetry")
+  if (token.includes("try") || token.includes("tl")) return "TRY";
+  if (token.includes("usd") || token.includes("dolar")) return "USD";
+  if (token.includes("eur") || token.includes("euro")) return "EUR";
+  if (token.includes("gbp")) return "GBP";
+  return null;
 }
 
 /** Synonym dictionary for mapping keys → canonical field names */

@@ -4,8 +4,9 @@ service firebase.storage {
     function signedIn() { return request.auth != null; }
     
     // supplier documents (tax certificates, etc.)
+    // Teklifbul Rule v1.0 - Security: Sadece dosya sahibi okuyabilir
     match /suppliers/{uid}/{fileName} {
-      allow read: if signedIn(); // anyone authenticated can download
+      allow read: if signedIn() && request.auth.uid == uid; // only owner can read
       allow write, delete: if signedIn() && request.auth.uid == uid; // only owner can upload/delete
     }
 

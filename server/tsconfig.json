@@ -1,18 +1,37 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2022"],
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "types": [],
+    "typeRoots": [
+      "../node_modules/@types"
+    ],
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
-    "strict": false,
+    "skipDefaultLibCheck": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
     "allowJs": true,
     "noEmit": true,
     "resolveJsonModule": true
   },
-  "include": ["index.ts", "**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": [
+    "index.ts",
+    "**/*.ts",
+    "../types/**/*.d.ts",
+    "types/**/*.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "**/AppData/Local/Microsoft/TypeScript/**",
+    "**/node_modules/@types/node/ts5.7/**",
+    "**/node_modules/@types/node/ts5.6/**"
+  ]
 }

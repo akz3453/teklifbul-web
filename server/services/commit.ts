@@ -38,6 +38,8 @@ export async function commitDemand({ demand, items }:{ demand:any, items:any[] }
         const snapshot = await db.collection('demands').where('satfk', '==', satfk).limit(1).get();
         if (!snapshot.empty) throw new Error('Bu SATFK daha önce kullanılmış');
       } catch (err) {
+        // Teklifbul Rule v1.0 - Server dosyalarında console.log kullanılabilir (eslint exception)
+         
         console.log('[Firestore] SATFK check failed, using mock DB', (err as any)?.message);
         db = null;
       }

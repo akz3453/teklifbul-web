@@ -13,11 +13,13 @@ export interface MemoryEntry {
   alias: string;
   confidence: number;
   seen: number;
+  filenamePattern?: string; // Teklifbul Rule v1.0 - Dosya adı pattern matching
 }
 
 export interface SupplierMemoryStore {
   getAliases(supplierId: string | null): MemoryEntry[];
-  remember(supplierId: string | null, alias: string, field: string, confidence: number): void;
+  remember(supplierId: string | null, alias: string, field: string, confidence: number, filenamePattern?: string): void;
+  getAliasesByFilename(supplierId: string | null, filename: string): MemoryEntry[]; // Teklifbul Rule v1.0 - Dosya adına göre eşleştirme
 }
 
 const MEMORY_DIR = path.join(process.cwd(), "data");
@@ -62,7 +64,7 @@ class FileSupplierMemory implements SupplierMemoryStore {
     return this.cache[key] || [];
   }
 
-  remember(supplierId: string | null, alias: string, field: string, confidence: number): void {
+  remember(supplierId: string | null, alias: string, field: string, confidence: number, filenamePattern?: string): void {
     if (!alias || !field) return;
     const key = this.key(supplierId);
     const entries = this.cache[key] || [];
@@ -70,11 +72,25 @@ class FileSupplierMemory implements SupplierMemoryStore {
     if (existing) {
       existing.seen += 1;
       existing.confidence = (existing.confidence * (existing.seen - 1) + confidence) / existing.seen;
+      if (filenamePattern) existing.filenamePattern = filenamePattern;
     } else {
-      entries.push({ alias, field, confidence, seen: 1 });
+      entries.push({ alias, field, confidence, seen: 1, filenamePattern });
     }
     this.cache[key] = entries.slice(-MAX_ENTRIES);
     saveStore(this.cache);
+  }
+
+  getAliasesByFilename(supplierId: string | null, filename: string): MemoryEntry[] {
+    const allAliases = this.getAliases(supplierId);
+    if (!filename) return allAliases;
+    
+    // Dosya adı pattern matching (basit: dosya adında pattern varsa eşleşir)
+    return allAliases.filter((entry) => {
+      if (!entry.filenamePattern) return true; // Pattern yoksa her zaman dahil
+      const pattern = entry.filenamePattern.toLowerCase();
+      const file = filename.toLowerCase();
+      return file.includes(pattern) || pattern.includes(file);
+    });
   }
 }
 

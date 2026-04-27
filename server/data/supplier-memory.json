@@ -1,0 +1,113 @@
+{
+  "__generic__": [
+    {
+      "alias": "Not",
+      "field": "title",
+      "confidence": 0.31999999999999995,
+      "seen": 1
+    },
+    {
+      "alias": "Not",
+      "field": "siteName",
+      "confidence": 0.255625,
+      "seen": 1
+    },
+    {
+      "alias": "Madde 1",
+      "field": "purchaseLocation",
+      "confidence": 0.2364285714285714,
+      "seen": 1
+    },
+    {
+      "alias": "Madde 1",
+      "field": "categories",
+      "confidence": 0.25142857142857145,
+      "seen": 1
+    },
+    {
+      "alias": "Not",
+      "field": "priority",
+      "confidence": 0.286875,
+      "seen": 1
+    },
+    {
+      "alias": "Madde 1",
+      "field": "currency",
+      "confidence": 0.15133928571428573,
+      "seen": 1
+    },
+    {
+      "alias": "Madde 1",
+      "field": "biddingMode",
+      "confidence": 0.2705194805194805,
+      "seen": 1
+    },
+    {
+      "alias": "Madde 1",
+      "field": "phaseStart",
+      "confidence": 0.16142857142857142,
+      "seen": 1
+    },
+    {
+      "alias": "Madde 1",
+      "field": "phaseEnd",
+      "confidence": 0.20267857142857143,
+      "seen": 1
+    },
+    {
+      "alias": "Not",
+      "field": "paymentTerms",
+      "confidence": 0.29416666666666663,
+      "seen": 1
+    },
+    {
+      "alias": "Madde 1",
+      "field": "deliveryMethod",
+      "confidence": 0.24,
+      "seen": 1
+    },
+    {
+      "alias": "Madde 1",
+      "field": "deliveryAddress",
+      "confidence": 0.27880952380952384,
+      "seen": 1
+    },
+    {
+      "alias": "Madde 1",
+      "field": "invoiceAddress",
+      "confidence": 0.2975892857142857,
+      "seen": 1
+    },
+    {
+      "alias": "Not",
+      "field": "approver",
+      "confidence": 0.255625,
+      "seen": 1
+    },
+    {
+      "alias": "Madde 1",
+      "field": "requester",
+      "confidence": 0.23682539682539683,
+      "seen": 1
+    },
+    {
+      "alias": "Madde 1",
+      "field": "demandDate",
+      "confidence": 0.25357142857142856,
+      "seen": 1
+    },
+    {
+      "alias": "Madde 10",
+      "field": "dueDate",
+      "confidence": 0.18348214285714284,
+      "seen": 1
+    },
+    {
+      "alias": "Not",
+      "field": "note",
+      "confidence": 0.4333333333333333,
+      "seen": 2,
+      "filenamePattern": "1.1B.01 TEKLİF TALEP FORMU.docx"
+    }
+  ]
+}

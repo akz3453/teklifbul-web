@@ -100,6 +100,7 @@ export function stringSimilarity(a: string, b: string): number {
 
 export type TargetField =
   | "itemName"
+  | "sku" // Teklifbul Rule v1.0 - Stok Kodu
   | "qty"
   | "unit"
   | "brand"
@@ -111,6 +112,18 @@ export type TargetField =
   | "demandDate"
   | "dueDate"
   | "title"
+  | "siteName" // Teklifbul Rule v1.0 - Şantiye
+  | "purchaseLocation" // Teklifbul Rule v1.0 - Alım Yeri
+  | "categories" // Teklifbul Rule v1.0 - Kategori(ler)
+  | "priority" // Teklifbul Rule v1.0 - Öncelik
+  | "biddingMode" // Teklifbul Rule v1.0 - Talep Tipi
+  | "phaseStart" // Teklifbul Rule v1.0 - Süre (Başlangıç)
+  | "phaseEnd" // Teklifbul Rule v1.0 - Süre (Bitiş)
+  | "paymentTerms" // Teklifbul Rule v1.0 - Ödeme Şartları
+  | "deliveryMethod" // Teklifbul Rule v1.0 - Teslim Şekli
+  | "deliveryAddress" // Teklifbul Rule v1.0 - Teslimat Adresi
+  | "invoiceAddress" // Teklifbul Rule v1.0 - Fatura Adresi
+  | "approver" // Teklifbul Rule v1.0 - Onay Kişileri
   | "note";
 
 function typeConfidence(field: TargetField, candidate: CandidateValue): number {
@@ -122,7 +135,9 @@ function typeConfidence(field: TargetField, candidate: CandidateValue): number {
       return num != null ? 1 : 0;
     }
     case "demandDate":
-    case "dueDate": {
+    case "dueDate":
+    case "phaseStart": // Teklifbul Rule v1.0 - Süre (Başlangıç)
+    case "phaseEnd": { // Teklifbul Rule v1.0 - Süre (Bitiş)
       const date = candidate.date ?? parseDateTR(candidate.raw);
       return date ? 1 : 0;
     }
@@ -159,6 +174,32 @@ function ruleConfidence(field: TargetField, label: string, candidate: CandidateV
       return contains("termin") || contains("istenen tarih") ? 1 : 0;
     case "title":
       return contains("başlık") ? 0.8 : 0.2;
+    case "sku": // Teklifbul Rule v1.0 - Stok Kodu
+      return contains("stok kodu") || contains("sku") || contains("malzeme kodu") ? 1 : 0;
+    case "siteName": // Teklifbul Rule v1.0 - Şantiye
+      return contains("şantiye") || contains("santiye") || contains("saha") ? 1 : 0;
+    case "purchaseLocation": // Teklifbul Rule v1.0 - Alım Yeri
+      return contains("alım yeri") || contains("alim yeri") || contains("il") ? 1 : 0;
+    case "categories": // Teklifbul Rule v1.0 - Kategori(ler)
+      return contains("kategori") ? 1 : 0;
+    case "priority": // Teklifbul Rule v1.0 - Öncelik
+      return contains("öncelik") || contains("oncelik") ? 1 : 0;
+    case "biddingMode": // Teklifbul Rule v1.0 - Talep Tipi
+      return contains("talep tipi") || contains("teklif tipi") || contains("gizli") || contains("açık") || contains("hibrit") ? 0.8 : 0;
+    case "phaseStart": // Teklifbul Rule v1.0 - Süre (Başlangıç)
+      return contains("başlangıç") || contains("baslangic") || contains("start") ? 0.8 : 0;
+    case "phaseEnd": // Teklifbul Rule v1.0 - Süre (Bitiş)
+      return contains("bitiş") || contains("bitis") || contains("end") ? 0.8 : 0;
+    case "paymentTerms": // Teklifbul Rule v1.0 - Ödeme Şartları
+      return contains("ödeme") || contains("odeme") || contains("peşin") || contains("pesin") || contains("kredi") || contains("açık hesap") ? 0.9 : 0;
+    case "deliveryMethod": // Teklifbul Rule v1.0 - Teslim Şekli
+      return contains("teslim şekli") || contains("teslim sekli") || contains("nakliye") ? 1 : 0;
+    case "deliveryAddress": // Teklifbul Rule v1.0 - Teslimat Adresi
+      return contains("teslimat adresi") || contains("teslimat adres") || contains("teslim adresi") ? 1 : 0;
+    case "invoiceAddress": // Teklifbul Rule v1.0 - Fatura Adresi
+      return contains("fatura adresi") || contains("fatura adres") ? 1 : 0;
+    case "approver": // Teklifbul Rule v1.0 - Onay Kişileri
+      return contains("onay") || contains("onaylayan") || contains("approver") ? 1 : 0;
     default:
       return candidate.raw.trim().length ? 0.2 : 0;
   }

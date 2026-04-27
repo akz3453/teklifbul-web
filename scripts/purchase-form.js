@@ -12,29 +12,29 @@ const state = {
 
 const HEADMAP = {
   'sıra no': 'lineNo', 'sira no': 'lineNo', 'no': 'lineNo',
-  'malzeme kodu': 'sku', 'stok kodu':'sku', 'sku':'sku',
-  'malzeme tanımı': 'name', 'malzeme tanimi':'name', 'urun adi':'name', 'ürün adı':'name', 'ad':'name',
-  'marka/model': 'brandModel', 'marka model': 'brandModel', 'marka':'brandModel', 'model':'brandModel',
-  'miktar': 'qty', 'qty':'qty',
-  'birim': 'unit', 'unit':'unit',
-  'ambardaki miktar': 'stockInWarehouse', 'depodaki miktar':'stockInWarehouse',
-  'ürün görseli': 'imageUrl', 'urun gorseli':'imageUrl', 'gorsel':'imageUrl',
-  'istenilen teslim tarihi': 'requestedDate', 'teslim tarihi':'requestedDate',
-  'açıklama': 'note', 'aciklama':'note'
+  'malzeme kodu': 'sku', 'stok kodu': 'sku', 'sku': 'sku', // Teklifbul Rule v1.0 - "Malzeme Kodu" geriye dönük uyumluluk için korundu, "Stok Kodu" eklendi
+  'malzeme tanımı': 'name', 'malzeme tanimi': 'name', 'urun adi': 'name', 'ürün adı': 'name', 'ad': 'name',
+  'marka/model': 'brandModel', 'marka model': 'brandModel', 'marka': 'brandModel', 'model': 'brandModel',
+  'miktar': 'qty', 'qty': 'qty',
+  'birim': 'unit', 'unit': 'unit',
+  'ambardaki miktar': 'stockInWarehouse', 'depodaki miktar': 'stockInWarehouse',
+  'ürün görseli': 'imageUrl', 'urun gorseli': 'imageUrl', 'gorsel': 'imageUrl',
+  'istenilen teslim tarihi': 'requestedDate', 'teslim tarihi': 'requestedDate',
+  'açıklama': 'note', 'aciklama': 'note'
 };
 
-function mapHeaders(headers){
+function mapHeaders(headers) {
   return headers.map(h => HEADMAP[normalizeTR(h)] || null);
 }
 
-function toNumber(v){
+function toNumber(v) {
   if (typeof v === 'number') return v;
   const s = String(v ?? '').replace(',', '.').trim();
   const n = parseFloat(s);
   return isFinite(n) ? n : NaN;
 }
 
-function renderPreview(){
+function renderPreview() {
   const tbody = qs('#previewTable tbody');
   tbody.innerHTML = '';
   state.rows.forEach(r => {
@@ -58,10 +58,10 @@ function renderPreview(){
   });
 }
 
-function renderValidation(){
+function renderValidation() {
   const ul = qs('#validationList');
   ul.innerHTML = '';
-  if (!state.validation.length){
+  if (!state.validation.length) {
     ul.innerHTML = '<li>Hiç hata/uyarı yok.</li>';
     return;
   }
@@ -73,67 +73,67 @@ function renderValidation(){
   });
 }
 
-async function findStocksBy(r){
-  try{
+async function findStocksBy(r) {
+  try {
     // 1) SKU ile
-    if (r.sku){
-      const q1 = query(collection(db,'stocks'), where('sku','==', String(r.sku)));
+    if (r.sku) {
+      const q1 = query(collection(db, 'stocks'), where('sku', '==', String(r.sku)));
       const s1 = await getDocs(q1);
-      if (s1.size === 1) return { status:'FOUND', sku: s1.docs[0].data().sku };
-      if (s1.size > 1) return { status:'MULTI', options: s1.docs.map(d=>d.data().sku) };
+      if (s1.size === 1) return { status: 'FOUND', sku: s1.docs[0].data().sku };
+      if (s1.size > 1) return { status: 'MULTI', options: s1.docs.map(d => d.data().sku) };
     }
     // 2) name + unit startsWith
     const start = normalizeTR(r.name || '');
-    if (!start) return { status:'NEW' };
-    const snap = await getDocs(collection(db,'stocks'));
+    if (!start) return { status: 'NEW' };
+    const snap = await getDocs(collection(db, 'stocks'));
     const candidates = [];
     snap.forEach(d => {
       const x = d.data();
-      if (normalizeTR(x.unit||'') === normalizeTR(r.unit||'') && normalizeTR(x.name||'').startsWith(start)){
+      if (normalizeTR(x.unit || '') === normalizeTR(r.unit || '') && normalizeTR(x.name || '').startsWith(start)) {
         candidates.push(x);
       }
     });
-    if (candidates.length === 1) return { status:'FOUND', sku: candidates[0].sku };
-    if (candidates.length > 1) return { status:'MULTI', options: candidates.map(c=>c.sku) };
-    return { status:'NEW' };
-  }catch(e){
-    console.warn('stock search failed', e); return { status:'NEW' };
+    if (candidates.length === 1) return { status: 'FOUND', sku: candidates[0].sku };
+    if (candidates.length > 1) return { status: 'MULTI', options: candidates.map(c => c.sku) };
+    return { status: 'NEW' };
+  } catch (e) {
+    console.warn('stock search failed', e); return { status: 'NEW' };
   }
 }
 
-async function validateAndMatch(){
+async function validateAndMatch() {
   state.validation = [];
-  for (const r of state.rows){
-    if (!r.name) state.validation.push({level:'error', msg:`Satır ${r.lineNo}: Malzeme Tanımı zorunlu`});
-    if (!(toNumber(r.qty) > 0)) state.validation.push({level:'error', msg:`Satır ${r.lineNo}: Miktar > 0 olmalı`});
-    if (!r.unit) state.validation.push({level:'error', msg:`Satır ${r.lineNo}: Birim zorunlu`});
-    if (r.requestedDate){
+  for (const r of state.rows) {
+    if (!r.name) state.validation.push({ level: 'error', msg: `Satır ${r.lineNo}: Malzeme Tanımı zorunlu` });
+    if (!(toNumber(r.qty) > 0)) state.validation.push({ level: 'error', msg: `Satır ${r.lineNo}: Miktar > 0 olmalı` });
+    if (!r.unit) state.validation.push({ level: 'error', msg: `Satır ${r.lineNo}: Birim zorunlu` });
+    if (r.requestedDate) {
       const iso = parseDateSmart(r.requestedDate);
       r.requestedDate = iso || r.requestedDate;
-      if (!iso) state.validation.push({level:'warn', msg:`Satır ${r.lineNo}: Tarih tanınamadı, olduğu gibi kaydedilecek`});
+      if (!iso) state.validation.push({ level: 'warn', msg: `Satır ${r.lineNo}: Tarih tanınamadı, olduğu gibi kaydedilecek` });
     }
     const match = await findStocksBy(r);
     r.matchStatus = match.status;
     if (match.status === 'FOUND') r.sku = r.sku || match.sku;
-    if (match.status === 'MULTI') state.validation.push({level:'warn', msg:`Satır ${r.lineNo}: Birden fazla stok adayı bulundu`});
+    if (match.status === 'MULTI') state.validation.push({ level: 'warn', msg: `Satır ${r.lineNo}: Birden fazla stok adayı bulundu` });
   }
   renderPreview();
   renderValidation();
-  qs('#btnCreate').disabled = state.validation.some(v=>v.level==='error');
+  qs('#btnCreate').disabled = state.validation.some(v => v.level === 'error');
   console.table(state.validation);
 }
 
-function parseSheet(ws){
-  const aoa = XLSX.utils.sheet_to_json(ws, { header:1, raw:false });
+function parseSheet(ws) {
+  const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false });
   if (!aoa.length) return [];
   const headerRow = aoa[0];
   const map = mapHeaders(headerRow);
   const rows = [];
-  for (let i=1;i<aoa.length;i++){
+  for (let i = 1; i < aoa.length; i++) {
     const row = aoa[i];
-    if (!row || row.every(c => (String(c||'').trim()===''))) continue;
+    if (!row || row.every(c => (String(c || '').trim() === ''))) continue;
     const r = {};
-    map.forEach((k,idx)=>{ if(!k) return; r[k] = row[idx]; });
+    map.forEach((k, idx) => { if (!k) return; r[k] = row[idx]; });
     r.lineNo = r.lineNo ?? i;
     if (r.qty != null) r.qty = toNumber(r.qty);
     if (r.stockInWarehouse != null) r.stockInWarehouse = toNumber(r.stockInWarehouse);
@@ -144,25 +144,25 @@ function parseSheet(ws){
   return rows;
 }
 
-async function onFile(e){
+async function onFile(e) {
   const f = e.target.files?.[0];
   if (!f) return;
   const data = await f.arrayBuffer();
-  const wb = XLSX.read(data, { type:'array' });
+  const wb = XLSX.read(data, { type: 'array' });
   const ws = wb.Sheets[wb.SheetNames[0]];
   // Detect SATFK template (H3 contains SATFK label, items from row 6, fixed columns)
   const h3 = ws['H3']?.v ? String(ws['H3'].v).toUpperCase() : '';
-  if (h3.includes('SATFK')){
+  if (h3.includes('SATFK')) {
     const rows = [];
-    for (let r=6; r<10000; r++){
+    for (let r = 6; r < 10000; r++) {
       const name = ws[`C${r}`]?.v;
       const qty = ws[`E${r}`]?.v;
       const unit = ws[`F${r}`]?.v;
-      const allEmpty = [ws[`B${r}`],name,qty,unit,ws[`I${r}`],ws[`J${r}`]].every(c=>!c || String(c.v).trim()==='');
+      const allEmpty = [ws[`B${r}`], name, qty, unit, ws[`I${r}`], ws[`J${r}`]].every(c => !c || String(c.v).trim() === '');
       if (allEmpty) break;
       if (!name && !qty && !unit) continue;
       rows.push({
-        lineNo: ws[`A${r}`]?.v ?? (r-5),
+        lineNo: ws[`A${r}`]?.v ?? (r - 5),
         sku: ws[`B${r}`]?.v ?? null,
         name: name ?? '',
         brandModel: ws[`D${r}`]?.v ?? null,
@@ -182,9 +182,20 @@ async function onFile(e){
   await validateAndMatch();
 }
 
-async function createRequest(){
+async function createRequest() {
   const user = auth.currentUser;
   if (!user) { alert('Oturum bulunamadı'); return; }
+
+  // Tedarikçi email bilgisi
+  const supplierEmail = qs('#pfSupplierEmail')?.value?.trim() || '';
+  const shouldSendEmail = qs('#pfSendEmail')?.checked && supplierEmail;
+
+  // Email validasyonu
+  if (shouldSendEmail && !supplierEmail.includes('@')) {
+    alert('Lütfen geçerli bir e-posta adresi girin.');
+    return;
+  }
+
   const meta = {
     type: qs('#pfType').value || 'IMTF',
     title: qs('#pfTitle').value?.trim() || 'Satın Alma Talebi',
@@ -198,10 +209,14 @@ async function createRequest(){
     status: 'DRAFT',
   };
 
-  try{
-    const reqRef = await addDoc(collection(db,'internal_requests'), meta);
+  try {
+    // Butonu devre dışı bırak
+    qs('#btnCreate').disabled = true;
+    qs('#btnCreate').textContent = 'Oluşturuluyor...';
+
+    const reqRef = await addDoc(collection(db, 'internal_requests'), meta);
     const linesCol = collection(reqRef, 'material_lines');
-    for (const r of state.rows){
+    for (const r of state.rows) {
       const line = {
         lineNo: r.lineNo ?? 0,
         sku: r.sku || null,
@@ -217,10 +232,43 @@ async function createRequest(){
       };
       await addDoc(linesCol, line);
     }
-    alert('Talep oluşturuldu.');
+
+    // E-posta gönder (eğer isteniyorsa)
+    if (shouldSendEmail) {
+      qs('#btnCreate').textContent = 'Mail gönderiliyor...';
+      try {
+        const token = await user.getIdToken();
+        const emailResponse = await fetch('/api/supplier-quotes/send-email', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            requestId: reqRef.id,
+            supplierEmail: supplierEmail
+          })
+        });
+        const emailResult = await emailResponse.json();
+        if (emailResult.success) {
+          alert('Talep oluşturuldu ve tedarikçiye e-posta gönderildi! ✅');
+        } else {
+          alert(`Talep oluşturuldu ama e-posta gönderilemedi: ${emailResult.error || 'Bilinmeyen hata'}`);
+        }
+      } catch (emailError) {
+        console.error('Email send error:', emailError);
+        alert('Talep oluşturuldu ama e-posta gönderilemedi. Talep detay sayfasından tekrar deneyebilirsiniz.');
+      }
+    } else {
+      alert('Talep oluşturuldu.');
+    }
+
     location.href = `/pages/purchase-form-detail.html?id=${reqRef.id}`;
-  }catch(e){
-    console.error(e); alert('Kayıt sırasında hata: '+ e.message);
+  } catch (e) {
+    console.error(e);
+    alert('Kayıt sırasında hata: ' + e.message);
+    qs('#btnCreate').disabled = false;
+    qs('#btnCreate').textContent = 'Talep Oluştur';
   }
 }
 

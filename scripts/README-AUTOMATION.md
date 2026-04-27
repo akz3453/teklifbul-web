@@ -1,5 +1,16 @@
 # Deployment & Migration Otomasyon Script'i
 
+## Script Dosyaları
+
+Tüm script dosyaları `scripts/` klasöründe bulunur:
+
+- `baslat.bat` - Sistem başlatma script'i
+- `deploy-rules.bat` - Firestore rules deploy
+- `deploy-rules-auto.bat` - Otomatik rules deploy
+- `deploy-rules-simple.bat` - Basit rules deploy
+- `deploy-multi-role-features.sh` - Multi-role özellikler deploy
+- `deploy-and-migrate.ps1` - Deployment ve migration otomasyonu
+
 ## Kullanım
 
 ### PowerShell (Windows)
@@ -10,6 +21,9 @@
 
 # PR oluşturmayı atla
 .\scripts\deploy-and-migrate.ps1 -SkipPR
+
+# Sistem başlatma
+.\scripts\baslat.bat
 ```
 
 ### Bash (Linux/Mac)

@@ -57,7 +57,7 @@ async function checkRedis() {
     console.log('⚠️  Redis bağlantısı başarısız (cache devre dışı)');
     console.log('   Hata:', e.message);
     console.log('💡 Redis kurulumu için:');
-    console.log('   - Docker: docker run -d -p 6379:6379 redis');
+    console.log('   - Redis indir: https://redis.io/download');
     console.log('   - veya CACHE_DISABLED=1 ile devam edebilirsiniz\n');
     return false; // Sorun değil, cache opsiyonel
   }

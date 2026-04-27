@@ -8,10 +8,19 @@
 
 import { db, auth, requireAuth } from '/firebase.js';
 import { normalizeTR, normalizeTRLower } from '/scripts/lib/tr-utils.js';
+import { createNotification } from '/scripts/inventory-notifications.js';
 import { 
   collection, getDocs, query, where, addDoc, doc, getDoc, 
-  orderBy, serverTimestamp 
+  orderBy, serverTimestamp, limit, startAfter 
 } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+import { pageGuard, UIState, renderUIState } from './lib/page-guard.js';
+import { initPermissions, can, getStockPerms } from '../assets/js/state/permissions.js';
+import { requireCompanyContext } from '../assets/js/state/company-context.js';
+import { logger } from '../src/shared/log/logger.js';
+import { toast } from '../src/shared/ui/toast.js';
+import { MESSAGES } from '../src/shared/constants/messages.js';
+import { authFetch } from '../assets/js/utils/api-helpers.js';
+import { debounce } from '../assets/js/utils/debounce.js';
 
 const qs = s => document.querySelector(s);
 
@@ -19,10 +28,30 @@ const qs = s => document.querySelector(s);
 const state = {
   sites: [],           // /companies/{companyId}/sites
   inventory: [],       // /companies/{companyId}/inventory (cache)
+  inventoryPageSize: 50, // Teklifbul Rule v1.0 - Pagination: Sayfa başına kayıt sayısı
+  inventoryLastDoc: null, // Teklifbul Rule v1.0 - Pagination: Son document snapshot
+  inventoryHasMore: false, // Teklifbul Rule v1.0 - Pagination: Daha fazla kayıt var mı?
+  inventoryTotal: 0,   // Teklifbul Rule v1.0 - Pagination: Toplam kayıt sayısı (opsiyonel)
   selectedSite: null,  // Seçili şantiye objesi
   selectedAddress: null, // Seçili adres (defaultAddress veya addresses[i])
   lines: [],           // Malzeme satırları
-  companyId: null      // Kullanıcının companyId'si
+  companyId: null,     // Kullanıcının companyId'si
+  userId: null,        // Kullanıcı ID
+  // Teklifbul Rule v1.0 - Workflow state
+  requestStatus: 'draft' // draft | sent | waiting_approval | approved | rejected | partially_fulfilled | completed | cancelled
+};
+
+// Teklifbul Rule v1.0 - UI State Machine
+const uiState = new UIState('idle');
+
+// Teklifbul Rule v1.0 - Request permissions (stock permissions kullanıyoruz)
+const STOCK_PERMS = getStockPerms();
+const REQUEST_PERMS = {
+  create: STOCK_PERMS.view, // ŞMTF oluşturma için stok görme yetkisi yeterli
+  edit: STOCK_PERMS.edit,
+  send: STOCK_PERMS.view,
+  export: STOCK_PERMS.reports,
+  view: STOCK_PERMS.view
 };
 
 let lineCounter = 1;
@@ -59,23 +88,95 @@ async function listSites(companyId) {
     const snap = await getDocs(q);
     return snap.docs.map(d => ({ id: d.id, ...d.data() }));
   } catch (error) {
-    console.error('Sites load error:', error);
+    logger.error('Sites load error', error);
     return [];
   }
 }
 
 /**
  * Stok kartlarını listele: /companies/{companyId}/inventory
+ * Teklifbul Rule v1.0 - Pagination desteği eklendi
+ * 
+ * @param {string} companyId - Company ID
+ * @param {boolean} reset - İlk sayfa için true, sonraki sayfa için false
  */
-async function loadInventory(companyId) {
+async function loadInventory(companyId, reset = true) {
   try {
-    const snap = await getDocs(collection(db, 'companies', companyId, 'inventory'));
-    state.inventory = snap.docs.map(d => ({ sku: d.id, ...d.data() }));
-    console.log(`✅ Loaded ${state.inventory.length} inventory items`);
+    // Teklifbul Rule v1.0 - Pagination: İlk sayfa için state'i sıfırla
+    if (reset) {
+      state.inventory = [];
+      state.inventoryLastDoc = null;
+      state.inventoryHasMore = false;
+    }
+
+    // Teklifbul Rule v1.0 - Pagination: Firestore query oluştur
+    // Not: SKU document ID olduğu için orderBy gerekmez, ancak tutarlılık için eklenebilir
+    // Eğer 'name' field'ı yoksa, orderBy olmadan da çalışır (document ID sıralaması)
+    let q = query(
+      collection(db, 'companies', companyId, 'inventory'),
+      limit(state.inventoryPageSize + 1) // +1 to check if there's more
+    );
+    
+    // Teklifbul Rule v1.0 - Pagination: Eğer 'name' field'ı varsa sıralama yap (opsiyonel)
+    // Not: Firestore index gerekebilir: companies/{companyId}/inventory: name ASC
+    // Şimdilik orderBy olmadan çalışıyor (document ID sıralaması)
+
+    // Teklifbul Rule v1.0 - Pagination: Cursor-based pagination
+    if (state.inventoryLastDoc && !reset) {
+      q = query(q, startAfter(state.inventoryLastDoc));
+    }
+
+    const snap = await getDocs(q);
+    const docs = snap.docs;
+    
+    // Teklifbul Rule v1.0 - Pagination: Daha fazla kayıt var mı kontrol et
+    state.inventoryHasMore = docs.length > state.inventoryPageSize;
+    const results = state.inventoryHasMore ? docs.slice(0, state.inventoryPageSize) : docs;
+
+    // Teklifbul Rule v1.0 - Pagination: Son document snapshot'ı kaydet
+    if (results.length > 0) {
+      state.inventoryLastDoc = results[results.length - 1];
+    }
+
+    // Teklifbul Rule v1.0 - Pagination: Yeni kayıtları state'e ekle
+    const newItems = results.map(d => ({ sku: d.id, ...d.data() }));
+    state.inventory = reset ? newItems : [...state.inventory, ...newItems];
+
+    logger.info(`Loaded ${newItems.length} inventory items`, { 
+      total: state.inventory.length, 
+      hasMore: state.inventoryHasMore 
+    });
+    
+    return {
+      items: newItems,
+      hasMore: state.inventoryHasMore,
+      total: state.inventory.length
+    };
   } catch (error) {
-    console.error('Inventory load error:', error);
-    state.inventory = [];
+    logger.error('Inventory load error', error);
+    // Teklifbul Rule v1.0 - Hata durumunda state'i koru (kısmi yükleme)
+    if (reset) {
+      state.inventory = [];
+      state.inventoryLastDoc = null;
+      state.inventoryHasMore = false;
+    }
+    return {
+      items: [],
+      hasMore: false,
+      total: state.inventory.length
+    };
   }
+}
+
+/**
+ * Teklifbul Rule v1.0 - Pagination: Sonraki sayfayı yükle
+ */
+async function loadInventoryNextPage(companyId) {
+  if (!state.inventoryHasMore) {
+    logger.info('No more inventory items to load');
+    return { items: [], hasMore: false, total: state.inventory.length };
+  }
+  return await loadInventory(companyId, false);
 }
 
 /**
@@ -97,7 +198,7 @@ async function getInventoryItem(companyId, sku) {
     }
     return null;
   } catch (error) {
-    console.error('Inventory item load error:', error);
+    logger.error('Inventory item load error', error);
     return null;
   }
 }
@@ -115,10 +216,14 @@ function initSiteDropdown() {
   
   if (!locationInput || !locationDropdown) return;
   
-  // Input'a yazarken filtrele
+  // Input'a yazarken filtrele (debounced - Teklifbul Rule v1.0)
+  const debouncedFilterSites = debounce((query) => {
+    filterAndShowSites(query);
+  }, 300);
+  
   locationInput.addEventListener('input', (e) => {
     const query = e.target.value.toLowerCase().trim();
-    filterAndShowSites(query);
+    debouncedFilterSites(query);
   });
   
   // Focus'ta dropdown göster
@@ -199,7 +304,11 @@ function fillAddress(addr) {
   if (textarea && addr) {
     textarea.value = formatAddress(addr);
     textarea.readOnly = true;
-    textarea.style.background = '#f9fafb';
+    // Teklifbul Rule v1.0 - Koyu mod kontrolü
+    const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark' || 
+                      document.documentElement.classList.contains('force-dark');
+    textarea.style.background = isDarkMode ? '#111827' : '#f9fafb';
+    textarea.style.color = isDarkMode ? '#ffffff' : '';
   }
 }
 
@@ -290,6 +399,9 @@ function attachSkuAutocomplete(input, rowIndex) {
   // Her input için kendi dropdown'unu sakla
   let dropdown = null;
   
+  // Teklifbul Rule v1.0 - Akıllı debounce: Her input için ayrı timer
+  let skuSearchDebounceTimer = null;
+  
   // Eski dropdown'u temizle
   function removeDropdown() {
     if (dropdown && dropdown.parentNode) {
@@ -298,80 +410,122 @@ function attachSkuAutocomplete(input, rowIndex) {
     }
   }
   
-  input.addEventListener('input', async (e) => {
+  input.addEventListener('input', (e) => {
+    // Önceki timer'ı iptal et
+    if (skuSearchDebounceTimer) {
+      clearTimeout(skuSearchDebounceTimer);
+      skuSearchDebounceTimer = null;
+    }
+    
     const query = e.target.value.trim().toUpperCase();
     
     // Eski dropdown'u temizle
     removeDropdown();
     
+    // Boş ise hemen çık
     if (query.length < 1) {
       return;
     }
     
-    // İlk 20 sonuç (startsWith + contains)
-    const startsWith = state.inventory.filter(inv => 
-      inv.sku?.startsWith(query)
-    ).slice(0, 10);
+    // Kelime uzunluğuna göre debounce süresi
+    // 1-2 karakter: 600ms (kullanıcı yazmaya devam ediyor olabilir)
+    // 3+ karakter: 300ms (kullanıcı muhtemelen yazmayı bitirdi)
+    const debounceTime = query.length <= 2 ? 600 : 300;
     
-    const contains = state.inventory.filter(inv => 
-      !inv.sku?.startsWith(query) && 
-      (inv.sku?.includes(query) || inv.productName?.toUpperCase().includes(query))
-    ).slice(0, 10);
-    
-    const results = [...startsWith, ...contains].slice(0, 20);
-    
-    if (results.length === 0) {
-      return;
-    }
-    
-    // Dropdown oluştur
-    dropdown = document.createElement('div');
-    dropdown.className = 'sku-dropdown';
-    dropdown.style.cssText = 'position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #d1d5db;border-radius:4px;max-height:200px;overflow-y:auto;z-index:1000;box-shadow:0 4px 6px rgba(0,0,0,0.1)';
-    dropdown.innerHTML = results.map(inv => `
-      <div class="sku-option" data-sku="${inv.sku}" style="padding:8px;cursor:pointer;border-bottom:1px solid #e5e7eb">
-        <strong>${inv.sku || ''}</strong> - ${inv.productName || ''}
-      </div>
-    `).join('');
-    
-    // Position relative için input'un parent'ını bul
-    const wrapper = input.parentElement; // <td>
-    if (wrapper && wrapper.tagName === 'TD') {
-      // TD için position:relative ayarla
-      if (!wrapper.style.position || wrapper.style.position === 'static') {
-        wrapper.style.position = 'relative';
+    skuSearchDebounceTimer = setTimeout(async () => {
+      // Timer içinde güncel query'yi al (kullanıcı yazmaya devam etmiş olabilir)
+      const currentQuery = e.target.value.trim().toUpperCase();
+      
+      // Boş ise çık
+      if (currentQuery.length < 1) {
+        return;
       }
-      wrapper.appendChild(dropdown);
-    } else {
-      // Fallback: body'ye ekle
-      document.body.appendChild(dropdown);
-    }
-    
-    // Click handler
-    dropdown.querySelectorAll('.sku-option').forEach(opt => {
-      opt.addEventListener('click', async () => {
-        const sku = opt.getAttribute('data-sku');
-        input.value = sku;
-        removeDropdown();
-        
-        // Stok kartı bilgilerini doldur
-        const invItem = await getInventoryItem(state.companyId, sku);
-        if (invItem && state.lines[rowIndex]) {
-          state.lines[rowIndex].sku = sku;
-          state.lines[rowIndex].name = invItem.productName || state.lines[rowIndex].name || '';
-          state.lines[rowIndex].brandModel = invItem.brandModel || state.lines[rowIndex].brandModel || '';
-          state.lines[rowIndex].unit = invItem.unit || state.lines[rowIndex].unit || 'ADT';
-          renderLines();
-          updateActions();
+      
+      // Teklifbul Rule v1.0 - Pagination: İlk 20 sonuç (startsWith + contains)
+      let startsWith = state.inventory.filter(inv => 
+        inv.sku?.startsWith(currentQuery)
+      ).slice(0, 10);
+      
+      let contains = state.inventory.filter(inv => 
+        !inv.sku?.startsWith(currentQuery) && 
+        (inv.sku?.includes(currentQuery) || inv.productName?.toUpperCase().includes(currentQuery))
+      ).slice(0, 10);
+      
+      // Teklifbul Rule v1.0 - Pagination: Eğer yeterli sonuç yoksa ve daha fazla kayıt varsa, lazy load yap
+      if ((startsWith.length + contains.length) < 10 && state.inventoryHasMore && state.companyId) {
+        // Sonraki sayfayı yükle
+        const nextPage = await loadInventoryNextPage(state.companyId);
+        if (nextPage.items.length > 0) {
+          // Yeni kayıtlarla tekrar filtrele
+          startsWith = state.inventory.filter(inv => 
+            inv.sku?.startsWith(currentQuery)
+          ).slice(0, 10);
+          
+          contains = state.inventory.filter(inv => 
+            !inv.sku?.startsWith(currentQuery) && 
+            (inv.sku?.includes(currentQuery) || inv.productName?.toUpperCase().includes(currentQuery))
+          ).slice(0, 10);
         }
+      }
+      
+      const results = [...startsWith, ...contains].slice(0, 20);
+      
+      if (results.length === 0) {
+        return;
+      }
+      
+      // Dropdown oluştur
+      dropdown = document.createElement('div');
+      dropdown.className = 'sku-dropdown';
+      dropdown.style.cssText = 'position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #d1d5db;border-radius:4px;max-height:200px;overflow-y:auto;z-index:1000;box-shadow:0 4px 6px rgba(0,0,0,0.1)';
+      dropdown.innerHTML = results.map(inv => `
+        <div class="sku-option" data-sku="${inv.sku}" style="padding:8px;cursor:pointer;border-bottom:1px solid #e5e7eb">
+          <strong>${inv.sku || ''}</strong> - ${inv.productName || ''}
+        </div>
+      `).join('');
+      
+      // Position relative için input'un parent'ını bul
+      const wrapper = input.parentElement; // <td>
+      if (wrapper && wrapper.tagName === 'TD') {
+        // TD için position:relative ayarla
+        if (!wrapper.style.position || wrapper.style.position === 'static') {
+          wrapper.style.position = 'relative';
+        }
+        wrapper.appendChild(dropdown);
+      } else {
+        // Fallback: body'ye ekle
+        document.body.appendChild(dropdown);
+      }
+      
+      // Click handler
+      dropdown.querySelectorAll('.sku-option').forEach(opt => {
+        opt.addEventListener('click', async () => {
+          const sku = opt.getAttribute('data-sku');
+          input.value = sku;
+          removeDropdown();
+          
+          // Stok kartı bilgilerini doldur
+          const invItem = await getInventoryItem(state.companyId, sku);
+          if (invItem && state.lines[rowIndex]) {
+            state.lines[rowIndex].sku = sku;
+            state.lines[rowIndex].name = invItem.productName || state.lines[rowIndex].name || '';
+            state.lines[rowIndex].brandModel = invItem.brandModel || state.lines[rowIndex].brandModel || '';
+            state.lines[rowIndex].unit = invItem.unit || state.lines[rowIndex].unit || 'ADT';
+            renderLines();
+            updateActions();
+          }
+        });
+        opt.addEventListener('mouseenter', () => {
+          opt.style.background = '#f3f4f6';
+        });
+        opt.addEventListener('mouseleave', () => {
+          opt.style.background = '#fff';
+        });
       });
-      opt.addEventListener('mouseenter', () => {
-        opt.style.background = '#f3f4f6';
-      });
-      opt.addEventListener('mouseleave', () => {
-        opt.style.background = '#fff';
-      });
-    });
+      
+      // Timer'ı temizle
+      skuSearchDebounceTimer = null;
+    }, debounceTime);
   });
   
   // Blur event: input'tan çıkınca dropdown'u kapat
@@ -591,12 +745,103 @@ async function saveRequest(status) {
       });
     }
     
+    // Teklifbul Rule v1.0 - ŞMTF gönderildiğinde bildirim gönder
+    if (status === 'SENT') {
+      await sendSmtfNotifications(requestRef.id, requestData);
+    }
+    
     alert('✅ Talep kaydedildi!');
     location.href = '/pages/request-detail.html?id=' + requestRef.id;
     
   } catch (error) {
-    console.error('Save error:', error);
+    logger.error('Save error', error);
     alert('❌ Talep kaydedilemedi: ' + error.message);
+  }
+}
+
+/**
+ * ŞMTF gönderildiğinde depo/stok ve şantiye yetkililerine bildirim gönder
+ * Teklifbul Rule v1.0 - Bildirim sistemi
+ */
+async function sendSmtfNotifications(requestId, requestData) {
+  try {
+    logger.group('ŞMTF Bildirim Gönderimi');
+    
+    if (!state.companyId) {
+      logger.warn('Company ID bulunamadı, bildirim gönderilemedi');
+      logger.end();
+      return;
+    }
+    
+    // Şirket kullanıcılarını al
+    const usersQuery = query(
+      collection(db, 'users'),
+      where('companyId', '==', state.companyId)
+    );
+    const usersSnapshot = await getDocs(usersQuery);
+    
+    // Depo/stok ve şantiye yetkililerini bul
+    const targetRoles = ['buyer:stok_depo', 'buyer:santiye_yetkilisi'];
+    const notifiedUsers = [];
+    
+    usersSnapshot.docs.forEach(userDoc => {
+      const userData = userDoc.data();
+      const userId = userDoc.id;
+      
+      // Kullanıcı aktif ve kabul edilmiş olmalı
+      if (userData.isActive === false || 
+          (userData.companyJoinStatus !== 'accepted' && userData.companyJoinStatus !== 'approved')) {
+        return;
+      }
+      
+      // Rol kontrolü: companyRoleKey veya companyRole
+      const userRole = userData.companyRoleKey || userData.companyRole || '';
+      
+      if (targetRoles.includes(userRole)) {
+        notifiedUsers.push({
+          userId,
+          role: userRole,
+          displayName: userData.displayName || userData.email || 'Kullanıcı'
+        });
+      }
+    });
+    
+    // Bildirim gönder
+    const notificationPromises = notifiedUsers.map(async (user) => {
+      try {
+        await createNotification({
+          userId: user.userId,
+          type: 'request_created',
+          title: 'Yeni ŞMTF Talebi',
+          message: `${requestData.title} başlıklı yeni bir şantiye malzeme talep formu oluşturuldu.`,
+          data: {
+            requestId,
+            requestType: 'ŞMTF',
+            requestTitle: requestData.title,
+            siteId: requestData.siteId,
+            siteName: requestData.siteName,
+            requesterName: requestData.requesterName,
+            actionUrl: `/pages/request-detail.html?id=${requestId}`
+          },
+          actionUrl: `/pages/request-detail.html?id=${requestId}`
+        });
+        logger.info('Bildirim gönderildi', { 
+          displayName: user.displayName, 
+          role: user.role 
+        });
+      } catch (error) {
+        logger.error(`Bildirim gönderme hatası: ${user.displayName}`, error);
+      }
+    });
+    
+    await Promise.all(notificationPromises);
+    
+    logger.info(`Toplam ${notifiedUsers.length} yetkiliye bildirim gönderildi`);
+    logger.end();
+    
+  } catch (error) {
+    logger.error('ŞMTF bildirim gönderme hatası', error);
+    logger.end();
   }
 }
 
@@ -710,10 +955,10 @@ function exportPDF() {
     const filename = `${qs('#reqTitle')?.value || 'smtf'}-${new Date().toISOString().split('T')[0]}.pdf`;
     pdf.save(filename);
     
-    console.log('✅ PDF exported:', filename);
+    logger.info('PDF exported', { filename });
     
   } catch (error) {
-    console.error('PDF export error:', error);
+    logger.error('PDF export error', error);
     alert('❌ PDF oluşturulamadı: ' + error.message);
   }
 }
@@ -787,10 +1032,10 @@ function exportExcel() {
     const filename = `${qs('#reqTitle')?.value || 'smtf'}-${new Date().toISOString().split('T')[0]}.xlsx`;
     XLSX.writeFile(wb, filename);
     
-    console.log('✅ Excel exported:', filename);
+    logger.info('Excel exported', { filename });
     
   } catch (error) {
-    console.error('Excel export error:', error);
+    logger.error('Excel export error', error);
     alert('❌ Excel oluşturulamadı: ' + error.message);
   }
 }
@@ -800,25 +1045,43 @@ qs('#btnExportExcel')?.addEventListener('click', exportExcel);
 
 // ====================
 // Initialize
+// Teklifbul Rule v1.0 - Page guard, state machine
 // ====================
 
 (async () => {
   try {
-    const user = await requireAuth();
-    
-    // Get user's companyId
-    const userDoc = await getDoc(doc(db, 'users', user.uid));
-    const userData = userDoc.exists() ? userDoc.data() : {};
-    state.companyId = userData.companyId;
-    
-    if (!state.companyId) {
-      alert('⚠️ Şirket bilgisi bulunamadı. Lütfen hesap ayarlarınızı kontrol edin.');
+    logger.group('ŞMTF Sayfası Başlatılıyor');
+
+    // Teklifbul Rule v1.0 - Page guard (auth + company + permission + plan)
+    const guardResult = await pageGuard({
+      requiredPerms: REQUEST_PERMS.view, // ŞMTF için stok görme yetkisi yeterli
+      requiredPlans: 'premium.inventoryModule',
+      redirectOnFail: true,
+      redirectTo: '/dashboard.html'
+    });
+
+    if (!guardResult.success) {
+      if (guardResult.errorType === 'permission') {
+        renderUIState('permissionDenied', qs('#requestForm'), {
+          permissionDeniedMessage: 'ŞMTF oluşturma yetkiniz yok'
+        });
+      } else if (guardResult.errorType === 'plan') {
+        renderUIState('premiumDenied', qs('#requestForm'), {
+          premiumDeniedMessage: 'ŞMTF için Premium plan gereklidir'
+        });
+      }
+      logger.end();
       return;
     }
-    
+
+    state.userId = guardResult.userId;
+    state.companyId = guardResult.companyId;
+
+    uiState.setState('loading');
+
     // Load sites
     state.sites = await listSites(state.companyId);
-    console.log(`✅ Loaded ${state.sites.length} sites`);
+    logger.info(`Şantiyeler yüklendi`, { count: state.sites.length });
     
     // Load inventory
     await loadInventory(state.companyId);
@@ -829,10 +1092,19 @@ qs('#btnExportExcel')?.addEventListener('click', exportExcel);
     attachInputListeners();
     updateActions();
     
-    console.log('✅ ŞMTF form initialized');
+    uiState.setState('ready');
+    logger.info('ŞMTF form başlatıldı');
+    logger.end();
     
   } catch (error) {
-    console.error('Initialization error:', error);
-    alert('❌ Form yüklenemedi: ' + error.message);
+    logger.error('ŞMTF initialization error', error);
+    uiState.setState('error');
+    
+    if (error.message === 'AUTH_REQUIRED' || error.message?.includes('AUTH_REQUIRED')) {
+      window.location.href = '/index.html';
+      return;
+    }
+    
+    toast.error(`Form yüklenemedi: ${error.message}`);
   }
 })();

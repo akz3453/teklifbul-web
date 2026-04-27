@@ -7,7 +7,6 @@
 
 const admin = require('firebase-admin');
 const readline = require('readline');
-/* eslint-disable @typescript-eslint/no-require-imports */
 
 // Initialize Firebase Admin
 if (!admin.apps.length) {

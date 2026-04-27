@@ -1,9 +1,18 @@
+// Teklifbul Rule v1.0
+import { toast } from '/src/shared/ui/toast.js';
+import { logger } from '/src/shared/log/logger.js';
+import { auth } from '/firebase.js';
+
 // Payment Module (vanilla JS, single-file)
 // Initializes itself when a section with id "payment-section" exists.
 
-(function(){
+(function () {
   const api = { init, setTotals, setRole, getPayload };
   let bound = false;
+  let paymentSaveAbortController = null;
+  let saveStatusNode = null;
+  let saveCancelButton = null;
+  let saveButtonOriginalText = null;
   let state = {
     role: 'buyer',
     paymentType: null,
@@ -130,6 +139,89 @@
     if ($('#summary')) $('#summary').innerHTML = renderSummary({ state });
   }
 
+  function ensureSaveStatus(host) {
+    if (!saveStatusNode && host) {
+      saveStatusNode = document.createElement('div');
+      saveStatusNode.id = 'paymentSaveStatus';
+      saveStatusNode.style.cssText = 'margin-top:8px;font-size:12px;color:#374151;';
+      host.insertAdjacentElement('afterend', saveStatusNode);
+    }
+    return saveStatusNode;
+  }
+
+  function ensureCancelButton(host) {
+    if (!host) return null;
+    if (!saveCancelButton) {
+      saveCancelButton = document.createElement('button');
+      saveCancelButton.type = 'button';
+      saveCancelButton.id = 'paymentSaveCancel';
+      saveCancelButton.className = 'btn btn-secondary';
+      saveCancelButton.style.cssText = 'margin-left:8px;display:none;';
+      saveCancelButton.textContent = 'İptal Et';
+      saveCancelButton.addEventListener('click', () => {
+        if (paymentSaveAbortController) {
+          paymentSaveAbortController.abort();
+        }
+      });
+      host.insertAdjacentElement('afterend', saveCancelButton);
+    }
+    return saveCancelButton;
+  }
+
+  function setSaveLoading(isLoading, message) {
+    const saveBtn = document.getElementById('savePayment');
+    const statusEl = ensureSaveStatus(saveBtn);
+    const cancelButton = ensureCancelButton(saveBtn);
+    if (saveBtn) {
+      if (!saveButtonOriginalText) {
+        saveButtonOriginalText = saveBtn.textContent || 'Kaydet';
+      }
+      saveBtn.disabled = isLoading;
+      saveBtn.textContent = isLoading ? 'Kaydediliyor...' : saveButtonOriginalText;
+    }
+    if (statusEl) {
+      statusEl.textContent = message || '';
+    }
+    if (cancelButton) {
+      cancelButton.style.display = isLoading ? 'inline-flex' : 'none';
+    }
+  }
+
+  async function getAuthToken() {
+    try {
+      if (!auth?.currentUser) {
+        return null;
+      }
+      return await auth.currentUser.getIdToken();
+    } catch (error) {
+      logger.warn('Auth token alınamadı', error);
+      return null;
+    }
+  }
+
+  async function savePaymentPreference(payload, signal) {
+    const token = await getAuthToken();
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+    const response = await fetch('/api/payment-preference', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+      signal
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      // Teklifbul Rule v1.0 - Firebase Admin SDK credentials hatası için özel mesaj
+      if (data?.error === 'firebase_config_error' || response.status === 503) {
+        throw new Error('Sunucu yapılandırma hatası: Firebase Admin SDK credentials eksik. Lütfen yöneticiye bildirin.');
+      }
+      throw new Error(data?.message || 'Ödeme tercihi kaydedilemedi');
+    }
+    return data;
+  }
+
   function renderSummary({ state }){
     const rows = [];
     rows.push(`<div><b>Ödeme Tipi:</b> ${state.paymentType ?? '—'}</div>`);
@@ -141,11 +233,46 @@
     return rows.join('');
   }
 
-  function onSave(){
+  async function onSave(){
+    if (paymentSaveAbortController) {
+      toast.info('Devam eden bir kayıt işlemi var. Lütfen bekleyin.');
+      return;
+    }
+    if (!state.paymentType) {
+      toast.error('Lütfen bir ödeme tipi seçin.');
+      return;
+    }
     const payload = getPayload();
-    const evt = new CustomEvent('payment:save', { detail: payload });
-    document.dispatchEvent(evt);
-    alert('Ödeme tercihleri kaydedildi.');
+    const preferenceBody = {
+      paymentMethodType: state.paymentType,
+      payload,
+      amount: Number(payload?.totals?.incl || state.totalIncl || 0),
+      currency: 'TRY',
+      status: 'draft'
+    };
+    const saveBtn = document.getElementById('savePayment');
+    setSaveLoading(true, 'Yükleniyor...');
+    paymentSaveAbortController = new AbortController();
+    logger.group('Ödeme tercihi kaydet');
+    try {
+      await savePaymentPreference(preferenceBody, paymentSaveAbortController.signal);
+      const evt = new CustomEvent('payment:save', { detail: payload });
+      document.dispatchEvent(evt);
+      toast.success('Ödeme tercihleri kaydedildi');
+      setSaveLoading(false, 'Kayıt başarılı.');
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        toast.info('Ödeme tercihi kaydı iptal edildi');
+        setSaveLoading(false, 'İşlem iptal edildi.');
+      } else {
+        logger.error('Ödeme tercihi kaydedilemedi', error);
+        toast.error('Ödeme tercihi kaydedilemedi: ' + error.message);
+        setSaveLoading(false, `Hata: ${error.message}`);
+      }
+    } finally {
+      paymentSaveAbortController = null;
+      logger.end();
+    }
   }
 
   function init(){ if (document.getElementById('payment-section') && !bound){ bind(); refresh(); } }

@@ -11,7 +11,7 @@
  * Or run in Firebase Console → Firestore → Run migration
  */
 
-/* eslint-disable @typescript-eslint/no-require-imports */
+ 
 
 const admin = require("firebase-admin");
 

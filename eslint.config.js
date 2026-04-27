@@ -231,6 +231,7 @@ export default [
         ...globals.node,
         ...globals.browser,
       },
+      parser: tseslint.parser,
       parserOptions: {
         ecmaVersion: 2020,
         sourceType: 'module',
@@ -243,6 +244,13 @@ export default [
       '@typescript-eslint/no-unused-vars': ['warn', {
         argsIgnorePattern: '^_',
         varsIgnorePattern: '^_',
+      }],
+      // Teklifbul Rule v1.0 - Migration/operasyon scriptleri tek seferlik calisir;
+      // any kullanimina izin verilir, kademeli olarak proper type'lara donusturulecek.
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/ban-ts-comment': ['warn', {
+        'ts-ignore': 'allow-with-description',
+        'ts-expect-error': 'allow-with-description',
       }],
     },
   },

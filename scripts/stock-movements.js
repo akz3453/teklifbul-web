@@ -1,25 +1,111 @@
 import { db, auth, requireAuth } from '/firebase.js';
 import { normalizeTRLower, matchesWildcard, normalizeTR } from '/scripts/lib/tr-utils.js';
 import { weightedAvgCost, allocateExtras } from '/scripts/inventory-cost.js';
+import { updateStockBalance } from '/scripts/inventory-balances.js'; // Teklifbul Rule v1.0 - Stock balance güncelleme
 import { collection, getDocs, query, where, orderBy, addDoc, updateDoc, doc, getDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
 import { toast } from '../src/shared/ui/toast.js';
+import { MESSAGES } from '../src/shared/constants/messages.js';
+import { logger } from '../src/shared/log/logger.js';
+import { requireCompanyContext } from '../assets/js/state/company-context.js';
+import { initPermissions, can, requirePerm, getStockPerms } from '../assets/js/state/permissions.js';
+import { fetchStockMovementsPage, iterateStockMovementsForExport } from '../assets/js/services/stock-movements-service.js';
+import { ensureXlsxLoaded } from '../assets/js/utils/xlsx-loader.js';
 
 const qs = s => document.querySelector(s);
 
 const state = {
   currentType: 'IN',
   selectedStock: null,
+  historySelectedStock: null,
   locations: [],
   stocks: [],
-  movements: []
+  movements: [],
+  history: {
+    pageSize: 50,
+    cursorDoc: null,
+    hasNext: false,
+    isLoading: false,
+    currentStockTotalQty: undefined,
+  },
+  export: {
+    cancelled: false,
+    inFlight: false,
+  }
 };
+
+const STOCK_PERMS = getStockPerms();
+
+// Teklifbul Rule v1.0 - Cache helpers
+const userNameCache = new Map();
+
+function shouldRequireExpiryFields(stock) {
+  if (!stock) return false;
+  return stock.hasExpiry === true || stock.stockTrackingType === 'lot';
+}
+
+function updateExpiryFieldsVisibility() {
+  const wrap = qs('#expiryFieldsWrap');
+  if (!wrap) return;
+  const isInTab = state.currentType === 'IN';
+  const required = shouldRequireExpiryFields(state.selectedStock);
+  wrap.style.display = isInTab && required ? 'grid' : 'none';
+}
+
+function formatMovementTypeTR(type) {
+  return (
+    {
+      IN: '📥 Giriş',
+      OUT: '📤 Çıkış',
+      TRANSFER: '🔄 Transfer',
+      ADJUST: '⚖️ Düzeltme',
+    }[type] || type || '-'
+  );
+}
+
+function formatRefTR(ref) {
+  if (!ref || !ref.kind) return '-';
+  const kind = ref.kind;
+  const map = {
+    INVOICE: 'Fatura/İrsaliye',
+    DELIVERY: 'Teslimat',
+    MANUAL: 'Manuel',
+    INTERNAL_REQUEST: 'ŞMTF',
+  };
+  const label = map[kind] || kind;
+  const id = ref.id ? String(ref.id) : '';
+  return id ? `${label} (${id})` : label;
+}
+
+async function resolveActorName(uid) {
+  if (!uid) return '-';
+  if (userNameCache.has(uid)) return userNameCache.get(uid);
+
+  try {
+    const snap = await getDoc(doc(db, 'users', uid));
+    const data = snap.exists() ? (snap.data() || {}) : {};
+    const name =
+      data.fullName ||
+      data.displayName ||
+      data.name ||
+      (data.firstName || data.lastName ? `${data.firstName || ''} ${data.lastName || ''}`.trim() : '') ||
+      data.email ||
+      '-';
+    userNameCache.set(uid, name);
+    return name;
+  } catch (e) {
+    logger.warn('Actor name lookup failed', { uid, error: e?.message || e });
+    const fallback = uid ? `${String(uid).slice(0, 8)}…` : '-';
+    userNameCache.set(uid, fallback);
+    return fallback;
+  }
+}
 
 // Initialize event listeners after DOM is ready
 function setupEventListeners() {
   // Tab switching
   const tabsElement = qs('.tabs');
   if (!tabsElement) {
-    console.error('Tabs element not found');
+    logger.error('Tabs element not found');
     return;
   }
   
@@ -31,6 +117,18 @@ function setupEventListeners() {
   tab.classList.add('active');
   
   state.currentType = tab.dataset.tab;
+
+  // Sections
+  const formCard = qs('#formCard');
+  const historyCard = qs('#historyCard');
+  if (state.currentType === 'HISTORY') {
+    if (formCard) formCard.classList.add('hidden');
+    if (historyCard) historyCard.classList.remove('hidden');
+    return;
+  } else {
+    if (historyCard) historyCard.classList.add('hidden');
+    if (formCard) formCard.classList.remove('hidden');
+  }
   
   // Hide all forms
   qs('#inForm').classList.add('hidden');
@@ -52,13 +150,24 @@ function setupEventListeners() {
   }
   
   qs('#formCard').classList.remove('hidden');
+  updateExpiryFieldsVisibility();
   });
 
   // Save button
   const btnSave = qs('#btnSave');
   if (!btnSave) {
-    console.error('Save button not found');
+    logger.error('Save button not found');
     return;
+  }
+  btnSave.addEventListener('click', handleSave);
+
+  // Cancel button (CSP-safe)
+  const btnCancel = qs('#btnCancel');
+  if (btnCancel) {
+    btnCancel.addEventListener('click', () => {
+      const card = qs('#formCard');
+      if (card) card.classList.add('hidden');
+    });
   }
   
   // Stock search input
@@ -136,6 +245,7 @@ function setupEventListeners() {
             qs('#mvStockSKU').value = stock.sku;
             qs('#mvUnit').value = stock.unit || 'ADT';
             results.style.display = 'none';
+            updateExpiryFieldsVisibility();
           });
           
           results.appendChild(div);
@@ -143,55 +253,29 @@ function setupEventListeners() {
       }, 300);
     });
     
-    // F6 tuşu ile arama
-    stockInput.addEventListener('keydown', (e) => {
-      if (e.key === 'F6') {
-        e.preventDefault();
-        const results = qs('#stockSearchResults');
-        if (results) {
-          if (stockInput.value.trim().length === 0) {
-            // Tüm stokları göster
-            const matches = state.stocks.slice(0, 50);
-            if (matches.length > 0) {
-              results.style.display = 'block';
-              results.innerHTML = '';
-              const header = document.createElement('div');
-              header.style.padding = '8px 12px';
-              header.style.background = '#f3f4f6';
-              header.style.borderBottom = '1px solid #e5e7eb';
-              header.style.fontSize = '12px';
-              header.style.fontWeight = '600';
-              header.style.color = '#374151';
-              header.textContent = `${state.stocks.length} stok bulundu (İlk 50 gösteriliyor)`;
-              results.appendChild(header);
-              
-              matches.forEach((stock, idx) => {
-                const div = document.createElement('div');
-                div.style.padding = '8px 12px';
-                div.style.cursor = 'pointer';
-                div.style.borderBottom = '1px solid #e5e7eb';
-                div.className = 'stock-result-item';
-                div.style.background = idx % 2 === 0 ? '#fff' : '#f9fafb';
-                div.innerHTML = `
-                  <div style="font-weight:600;color:#111827">${stock.sku}</div>
-                  <div style="font-size:12px;color:#6b7280;margin-top:2px">${stock.name}</div>
-                `;
-                div.addEventListener('click', () => {
-                  state.selectedStock = stock;
-                  stockInput.value = stock.sku;
-                  qs('#mvUnit').value = stock.unit || 'ADT';
-                  results.style.display = 'none';
-                });
-                results.appendChild(div);
-              });
-            }
-          } else {
-            // Mevcut aramayı göster
-            stockInput.dispatchEvent(new Event('input'));
-          }
-        }
-      }
-    });
+    // Teklifbul Rule v1.0 - Browser davranışı nedeniyle F6 ile arama kaldırıldı.
+  }
+
+  // History filter events
+  const btnHistorySearch = qs('#btnHistorySearch');
+  const btnHistoryClear = qs('#btnHistoryClear');
+  const btnHistoryLoadMore = qs('#btnHistoryLoadMore');
+  const btnHistoryExport = qs('#btnHistoryExport');
+
+  if (btnHistorySearch) {
+    btnHistorySearch.addEventListener('click', () => loadHistoryWithFilters({ reset: true }));
+  }
+
+  if (btnHistoryClear) {
+    btnHistoryClear.addEventListener('click', () => clearHistoryFilters());
+  }
+
+  if (btnHistoryLoadMore) {
+    btnHistoryLoadMore.addEventListener('click', () => loadHistoryWithFilters({ reset: false }));
+  }
+
+  if (btnHistoryExport) {
+    btnHistoryExport.addEventListener('click', () => exportHistoryToExcel());
   }
   
   // ESC tuşu ile dropdown kapat
@@ -199,10 +283,13 @@ function setupEventListeners() {
     if (e.key === 'Escape') {
       const results = qs('#stockSearchResults');
       if (results) results.style.display = 'none';
+      const historyResults = qs('#historyStockSearchResults');
+      if (historyResults) historyResults.style.display = 'none';
     }
   });
   
-  btnSave.addEventListener('click', async () => {
+}
+
 async function loadLocations() {
   try {
     // Teklifbul Rule v1.0 - Şirketin depo adreslerini göster
@@ -236,7 +323,7 @@ async function loadLocations() {
           }
         });
       } catch (sitesError) {
-        console.warn('Şirket depo adresleri yüklenemedi', sitesError);
+        logger.warn('Şirket depo adresleri yüklenemedi', sitesError);
       }
     }
     
@@ -271,20 +358,30 @@ async function loadLocations() {
     });
     
   } catch (error) {
-    console.error('Location load error:', error);
+    logger.error('Location load error', error);
   }
 }
 
 // Load all stocks for search
 async function loadStocks() {
   try {
-    const snap = await getDocs(collection(db, 'stocks'));
+    const ctx = await requireCompanyContext({ redirectOnPending: false });
+    const companyId = ctx?.companyId;
+    
+    let q;
+    if (companyId) {
+      q = query(collection(db, 'stocks'), where('companyId', '==', companyId));
+    } else {
+      q = collection(db, 'stocks');
+    }
+    
+    const snap = await getDocs(q);
     state.stocks = [];
     snap.forEach(doc => {
       state.stocks.push({ id: doc.id, ...doc.data() });
     });
   } catch (error) {
-    console.error('Stocks load error:', error);
+    logger.error('Stocks load error', error);
   }
 }
 
@@ -354,78 +451,492 @@ function searchStocks(query, limit = 50) {
 // Load movement history
 async function loadHistory() {
   try {
-    const snap = await getDocs(query(
-      collection(db, 'stock_movements'),
-      orderBy('createdAt', 'desc')
-    ));
-    
+    // Teklifbul Rule v1.0 - Yeni mimari: History artık ürün + tarih filtresi ile paginated yüklenir.
     state.movements = [];
-    snap.forEach(doc => {
-      state.movements.push({ id: doc.id, ...doc.data() });
-    });
-    
-    renderHistory();
+    await renderHistory(); // empty state
   } catch (error) {
-    console.error('History load error:', error);
+    logger.error('History load error', error);
   }
 }
 
-function renderHistory() {
+// Teklifbul Rule v1.0 - Lokasyon adını bul (site_ prefix ve siteId kontrolü ile)
+async function findLocationName(locationId) {
+  if (!locationId) return '-';
+  
+  // Önce state.locations içinde ara
+  let loc = state.locations.find(l => l.id === locationId);
+  if (loc) return loc.name;
+  
+  // site_ prefix'li ID kontrolü
+  if (locationId.startsWith('site_')) {
+    const siteId = locationId.replace('site_', '');
+    loc = state.locations.find(l => l.siteId === siteId || l.id === siteId);
+    if (loc) return loc.name;
+  }
+  
+  // siteId ile eşleşme (locationId siteId olabilir)
+  loc = state.locations.find(l => l.siteId === locationId);
+  if (loc) return loc.name;
+  
+  // Eşleşme bulunamadı, Firestore'dan direkt çek
+  try {
+    const { getDoc, doc: docFn } = await import('https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js');
+    const locationDoc = await getDoc(docFn(db, 'stock_locations', locationId));
+    if (locationDoc.exists()) {
+      const locationData = locationDoc.data();
+      // Bulunan lokasyonu state'e ekle (sonraki aramalar için)
+      if (!state.locations.find(l => l.id === locationId)) {
+        state.locations.push({ id: locationId, ...locationData });
+      }
+      return locationData.name || locationId;
+    }
+  } catch (error) {
+    logger.warn('Lokasyon bilgisi Firestore\'dan alınamadı', { locationId, error });
+  }
+  
+  // Hiçbir yerde bulunamadı, ID'yi göster
+  return locationId;
+}
+
+async function renderHistory(movements = state.movements) {
   const tbody = qs('#historyTable');
   tbody.innerHTML = '';
   
-  if (!state.movements.length) {
-    tbody.innerHTML = '<tr><td colspan="8">Henüz hareket yok.</td></tr>';
+  if (!movements.length) {
+    tbody.innerHTML = '<tr><td colspan="11">Ürün seçip tarih aralığı ile listeleyin.</td></tr>';
     return;
   }
   
-  state.movements.forEach(mv => {
+  // Teklifbul Rule v1.0 - Tüm lokasyon isimlerini önceden yükle (async)
+  const locationPromises = movements.map(async (mv) => {
+    const sourceLocation = await findLocationName(mv.locationId);
+    let targetLocation = '-';
+    if (mv.type === 'TRANSFER') {
+      if (mv.toSiteName) {
+        targetLocation = `🏗️ ${mv.toSiteName}`;
+      } else if (mv.toLocationId) {
+        targetLocation = await findLocationName(mv.toLocationId);
+      } else if (mv.ref && mv.ref.kind === 'INTERNAL_REQUEST') {
+        targetLocation = 'Şantiye (ŞMTF)';
+      }
+    }
+    const actorName =
+      mv.createdByName ||
+      (mv.createdBy ? await resolveActorName(mv.createdBy) : '-');
+    return { mv, sourceLocation, targetLocation, actorName };
+  });
+  
+  const movementsWithLocations = await Promise.all(locationPromises);
+  
+  movementsWithLocations.forEach(({ mv, sourceLocation, targetLocation, actorName }) => {
     const tr = document.createElement('tr');
     const date = mv.createdAt ? new Date(mv.createdAt.toDate()).toLocaleDateString('tr-TR') : '-';
     const typeBadge = `b-${mv.type}`;
-    const typeText = {
-      'IN': '📥 Giriş',
-      'OUT': '📤 Çıkış',
-      'TRANSFER': '🔄 Transfer',
-      'ADJUST': '⚖️ Düzelt'
-    }[mv.type] || mv.type;
+    const typeText = formatMovementTypeTR(mv.type);
+    
+    // Referans bilgisi (ŞMTF için)
+    let refInfo = '-';
+    if (mv.ref && mv.ref.kind === 'INTERNAL_REQUEST') {
+      refInfo = `📋 ŞMTF (${mv.ref.id ? String(mv.ref.id).slice(0, 8) : '-'})`;
+    } else {
+      refInfo = formatRefTR(mv.ref);
+    }
     
     tr.innerHTML = `
       <td>${date}</td>
       <td><span class="badge ${typeBadge}">${typeText}</span></td>
       <td>${mv.sku}</td>
       <td>${mv.stockName || ''}</td>
-      <td>${state.locations.find(l => l.id === mv.locationId)?.name || '-'}</td>
+      <td>${sourceLocation}</td>
+      ${mv.type === 'TRANSFER' ? `<td>${targetLocation}</td>` : '<td>-</td>'}
       <td>${mv.qty}</td>
-      <td>${mv.unitCost || 0}</td>
-      <td>${mv.totalCost || 0}</td>
+      <td>${(mv.unitCost || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺</td>
+      <td>${(mv.totalCost || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺</td>
+      <td>${refInfo}</td>
+      <td>${actorName || '-'}</td>
     `;
     tbody.appendChild(tr);
   });
+
+  // Teklifbul Rule v1.0 - Güncel stok satırı (seçili ürüne göre)
+  if (state.historySelectedStock && state.historySelectedStock.sku) {
+    const qty = state.history?.currentStockTotalQty;
+    const unit = state.historySelectedStock.unit || 'ADT';
+    if (typeof qty === 'number') {
+      const tr = document.createElement('tr');
+      tr.style.background = '#f8fafc';
+      tr.innerHTML = `
+        <td colspan="6"><strong>📦 Güncel Stok (Toplam)</strong> <span class="muted">(liste filtresinden bağımsız)</span></td>
+        <td><strong>${qty.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong> ${unit}</td>
+        <td colspan="4" class="muted">Bu satır, seçilen ürünün tüm lokasyonlardaki güncel toplam miktarını gösterir.</td>
+      `;
+      tbody.appendChild(tr);
+    }
+  }
+}
+
+function setHistoryStatus(text) {
+  const el = qs('#historyStatusText');
+  if (el) el.textContent = text || '';
+}
+
+function setHistoryProgress({ visible, text, indeterminate }) {
+  const wrap = qs('#historyProgressWrap');
+  const bar = qs('#historyProgressBar');
+  const t = qs('#historyProgressText');
+  if (!wrap || !bar || !t) return;
+  if (visible) wrap.classList.remove('hidden');
+  else wrap.classList.add('hidden');
+  if (indeterminate) {
+    bar.removeAttribute('max');
+    bar.removeAttribute('value');
+  } else {
+    bar.max = 100;
+    bar.value = 0;
+  }
+  t.textContent = text || '';
+}
+
+function getHistoryFilter() {
+  const startEl = qs('#historyStartDate');
+  const endEl = qs('#historyEndDate');
+  const locEl = qs('#historyLocationFilter');
+
+  const startVal = startEl?.value ? new Date(startEl.value) : null;
+  const endVal = endEl?.value ? new Date(endEl.value) : null;
+  const locValRaw = locEl?.value || 'ALL';
+
+  return {
+    stock: state.historySelectedStock,
+    startDate: startVal,
+    endDate: endVal,
+    locationId: locValRaw && locValRaw !== 'ALL' ? locValRaw : null,
+  };
+}
+
+async function resolveActualLocationIdForQuery(rawLocationId, companyId) {
+  if (!rawLocationId) return null;
+  if (!rawLocationId.startsWith('site_')) return rawLocationId;
+  try {
+    const siteId = rawLocationId.replace('site_', '');
+    const q = query(
+      collection(db, 'stock_locations'),
+      where('siteId', '==', siteId),
+      where('companyId', '==', companyId)
+    );
+    const snap = await getDocs(q);
+    if (!snap.empty) return snap.docs[0].id;
+    return rawLocationId; // site_* olarak kalabilir (eski veri / yeni depo)
+  } catch (e) {
+    logger.warn('resolveActualLocationIdForQuery failed', { rawLocationId, error: e?.message || e });
+    return rawLocationId;
+  }
+}
+
+function clearHistoryFilters() {
+  state.historySelectedStock = null;
+  const input = qs('#historyStockSearch');
+  const startEl = qs('#historyStartDate');
+  const endEl = qs('#historyEndDate');
+  const locEl = qs('#historyLocationFilter');
+  const results = qs('#historyStockSearchResults');
+  if (input) input.value = '';
+  if (startEl) startEl.value = '';
+  if (endEl) endEl.value = '';
+  if (locEl) locEl.value = 'ALL';
+  if (results) results.style.display = 'none';
+
+  state.history.cursorDoc = null;
+  state.history.hasNext = false;
+  state.movements = [];
+  renderHistory();
+  setHistoryStatus('');
+
+  const btnMore = qs('#btnHistoryLoadMore');
+  if (btnMore) btnMore.disabled = true;
+}
+
+async function loadHistoryWithFilters({ reset }) {
+  if (state.history.isLoading) return;
+  const { stock, startDate, endDate, locationId } = getHistoryFilter();
+
+  if (!stock) {
+    toast.error(MESSAGES.ERROR_PRODUCT_SELECT_REQUIRED || 'Ürün seçmeniz gerekiyor');
+    return;
+  }
+
+  // Listele için tarih opsiyonel: ürünün tüm hareketlerini görebilsin.
+  if ((startDate && !endDate) || (!startDate && endDate)) {
+    toast.error(MESSAGES.ERROR_DATE_RANGE_REQUIRED || 'Başlangıç ve bitiş tarihini birlikte seçin.');
+    return;
+  }
+
+  try {
+    state.history.isLoading = true;
+    const btnMore = qs('#btnHistoryLoadMore');
+    const btnSearch = qs('#btnHistorySearch');
+    if (btnSearch) btnSearch.disabled = true;
+    if (btnMore) btnMore.disabled = true;
+
+    toast.info(MESSAGES.INFO_PLEASE_WAIT || 'Lütfen bekleyin...');
+    setHistoryProgress({ visible: true, text: 'Yükleniyor...', indeterminate: true });
+    setHistoryStatus('');
+
+    if (reset) {
+      state.movements = [];
+      state.history.cursorDoc = null;
+      state.history.hasNext = false;
+      await renderHistory();
+    }
+
+    const ctx = await requireCompanyContext({ redirectOnPending: false });
+    const companyId = ctx?.companyId;
+    const actualLocationId = companyId ? await resolveActualLocationIdForQuery(locationId, companyId) : locationId;
+
+    const { items, nextCursorDoc } = await fetchStockMovementsPage({
+      stockId: stock.id,
+      startDate,
+      endDate,
+      locationId: actualLocationId,
+      pageSize: state.history.pageSize,
+      cursorDoc: reset ? null : state.history.cursorDoc,
+    });
+
+    state.history.cursorDoc = nextCursorDoc;
+    state.history.hasNext = !!nextCursorDoc && items.length === state.history.pageSize;
+    state.movements = reset ? items : state.movements.concat(items);
+
+    // Teklifbul Rule v1.0 - Güncel stok toplamını hesapla (stock_balances üzerinden)
+    try {
+      if (companyId && stock?.sku) {
+        const { getStockBalancesBySku } = await import('/scripts/inventory-balances.js');
+        const balances = await getStockBalancesBySku(companyId, stock.sku);
+        const totalQty = balances.reduce((acc, b) => acc + (Number(b.quantity) || 0), 0);
+        state.history.currentStockTotalQty = totalQty;
+      } else {
+        state.history.currentStockTotalQty = undefined;
+      }
+    } catch (e) {
+      logger.warn('Current stock total calculation failed', { error: e?.message || e });
+      state.history.currentStockTotalQty = undefined;
+    }
+
+    await renderHistory();
+
+    if (btnMore) btnMore.disabled = !state.history.hasNext;
+    setHistoryStatus(`${state.movements.length} kayıt gösteriliyor.`);
+    toast.success('İşlem tamamlandı');
+  } catch (err) {
+    logger.error('History filtered load error', err);
+    toast.error(`Hata: ${err?.message || err}`);
+    setHistoryStatus('Yükleme hatası.');
+  } finally {
+    state.history.isLoading = false;
+    const btnSearch = qs('#btnHistorySearch');
+    const btnMore = qs('#btnHistoryLoadMore');
+    if (btnSearch) btnSearch.disabled = false;
+    if (btnMore) btnMore.disabled = !state.history.hasNext;
+    setHistoryProgress({ visible: false, text: '', indeterminate: true });
+  }
+}
+
+async function exportHistoryToExcel() {
+  if (state.export.inFlight) return;
+  const { stock, startDate, endDate, locationId } = getHistoryFilter();
+
+  if (!stock) {
+    toast.error(MESSAGES.ERROR_PRODUCT_SELECT_REQUIRED || 'Ürün seçmeniz gerekiyor');
+    return;
+  }
+  // Tarih aralığı opsiyonel:
+  // - ikisi de boşsa: tüm hareketleri export et
+  // - sadece biri doluysa: kullanıcıya net uyarı ver
+  if ((startDate && !endDate) || (!startDate && endDate)) {
+    toast.error(MESSAGES.ERROR_DATE_RANGE_REQUIRED || 'Başlangıç ve bitiş tarihini birlikte seçin.');
+    return;
+  }
+
+  state.export.cancelled = false;
+  state.export.inFlight = true;
+
+  const btnExport = qs('#btnHistoryExport');
+  if (btnExport) btnExport.disabled = true;
+
+  try {
+    toast.info(MESSAGES.INFO_PLEASE_WAIT || 'Lütfen bekleyin...');
+    setHistoryProgress({
+      visible: true,
+      text: 'Excel hazırlanıyor... (Yükleniyor...)',
+      indeterminate: true,
+    });
+
+    const all = [];
+    const ctx = await requireCompanyContext({ redirectOnPending: false });
+    const companyId = ctx?.companyId;
+    const actualLocationId = companyId ? await resolveActualLocationIdForQuery(locationId, companyId) : locationId;
+
+    for await (const { items, total } of iterateStockMovementsForExport({
+      stockId: stock.id,
+      startDate,
+      endDate,
+      batchSize: 500,
+      isCancelled: () => state.export.cancelled,
+    })) {
+      // Lokasyon filtresi seçiliyse sadece o lokasyondaki hareketleri export et
+      const filtered = actualLocationId
+        ? items.filter((mv) => mv.locationId === actualLocationId)
+        : items;
+      all.push(...filtered);
+      setHistoryProgress({
+        visible: true,
+        text: `Excel hazırlanıyor... ${total} kayıt yüklendi`,
+        indeterminate: true,
+      });
+      if (state.export.cancelled) break;
+    }
+
+    if (state.export.cancelled) {
+      toast.info('İşlem iptal edildi.');
+      return;
+    }
+
+    if (!all.length) {
+      toast.warn('Seçilen aralıkta kayıt bulunamadı.');
+      return;
+    }
+
+    const XLSX = await ensureXlsxLoaded();
+
+    // Teklifbul Rule v1.0 - Lokasyon adlarını export için cache'le (async)
+    const locationIds = new Set();
+    all.forEach((mv) => {
+      if (mv.locationId) locationIds.add(mv.locationId);
+      const targetId =
+        mv.toLocationId || (mv.type === 'TRANSFER' ? (mv.ref?.id || null) : null);
+      if (targetId) locationIds.add(targetId);
+    });
+    const locationNameMap = new Map();
+    await Promise.all(
+      Array.from(locationIds).map(async (id) => {
+        try {
+          const name = await findLocationName(id);
+          locationNameMap.set(id, name);
+        } catch {
+          locationNameMap.set(id, id);
+        }
+      })
+    );
+
+    const toDateStr = (ts) => {
+      try {
+        const d = ts?.toDate ? ts.toDate() : ts instanceof Date ? ts : null;
+        return d ? d.toLocaleString('tr-TR') : '';
+      } catch {
+        return '';
+      }
+    };
+
+    const rows = all.map((mv) => ({
+      Tarih: toDateStr(mv.createdAt),
+      Tür: formatMovementTypeTR(mv.type),
+      SKU: mv.sku || '',
+      Ürün: mv.stockName || '',
+      KaynakLokasyon: mv.locationId ? (locationNameMap.get(mv.locationId) || mv.locationId) : '',
+      HedefLokasyon: (() => {
+        const targetId =
+          mv.toLocationId || (mv.type === 'TRANSFER' ? (mv.ref?.id || null) : null);
+        if (!targetId) return '';
+        return locationNameMap.get(targetId) || targetId;
+      })(),
+      Miktar: mv.qty ?? '',
+      Birim: mv.unit || '',
+      BirimMaliyet: mv.unitCost ?? 0,
+      Toplam: mv.totalCost ?? 0,
+      Referans: formatRefTR(mv.ref),
+      IslemiYapan: mv.createdByName || (mv.createdBy ? (userNameCache.get(mv.createdBy) || '') : ''),
+    }));
+
+    // Teklifbul Rule v1.0 - Excel en altına "Güncel Stok (Toplam)" satırı
+    try {
+      if (companyId && stock?.sku) {
+        const { getStockBalancesBySku } = await import('/scripts/inventory-balances.js');
+        const balances = await getStockBalancesBySku(companyId, stock.sku);
+        const totalQty = balances.reduce((acc, b) => acc + (Number(b.quantity) || 0), 0);
+        rows.push({
+          Tarih: '',
+          Tür: '',
+          SKU: stock.sku || '',
+          Ürün: '📦 Güncel Stok (Toplam)',
+          KaynakLokasyon: '',
+          HedefLokasyon: '',
+          Miktar: Number(totalQty || 0),
+          Birim: stock.unit || 'ADT',
+          BirimMaliyet: '',
+          Toplam: '',
+          Referans: '',
+          IslemiYapan: '',
+        });
+      }
+    } catch (e) {
+      logger.warn('Excel current stock total append failed', { error: e?.message || e });
+    }
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(rows);
+    XLSX.utils.book_append_sheet(wb, ws, 'Hareketler');
+
+    const filename = (() => {
+      const sku = stock.sku || stock.id;
+      if (!startDate || !endDate) return `stok-hareketleri_${sku}_tum-hareketler.xlsx`;
+      const startStr = startDate.toISOString().slice(0, 10);
+      const endStr = endDate.toISOString().slice(0, 10);
+      return `stok-hareketleri_${sku}_${startStr}_${endStr}.xlsx`;
+    })();
+
+    XLSX.writeFile(wb, filename);
+    toast.success('İşlem tamamlandı');
+  } catch (err) {
+    logger.error('Export to Excel error', err);
+    toast.error(`Hata: ${err?.message || err}`);
+  } finally {
+    state.export.inFlight = false;
+    const btnExport = qs('#btnHistoryExport');
+    if (btnExport) btnExport.disabled = false;
+    setHistoryProgress({ visible: false, text: '', indeterminate: true });
+  }
 }
 
 // Save movement
-qs('#btnSave').addEventListener('click', async () => {
+async function handleSave() {
   const user = await requireAuth();
   
   // Teklifbul Rule v1.0 - Company ID'yi al
   const userDoc = await getDoc(doc(db, 'users', user.uid));
   const userData = userDoc.exists() ? userDoc.data() : {};
   const companyId = userData.companyId;
+  const createdByName =
+    userData.fullName ||
+    userData.displayName ||
+    userData.name ||
+    user.displayName ||
+    user.email ||
+    null;
   
   if (!companyId) {
-    toast.error('Kullanıcı company ID bulunamadı!');
+    toast.error(MESSAGES.ERROR_COMPANY_ID_NOT_FOUND);
     return;
   }
   
   if (!state.selectedStock) {
-    toast.error('Lütfen bir ürün seçin!');
+    toast.error(MESSAGES.ERROR_PRODUCT_SELECT_REQUIRED);
     return;
   }
+
+  const savedStockId = state.selectedStock.id;
   
   const locationId = qs('#mvLocation').value;
   if (!locationId) {
-    toast.error('Lütfen bir lokasyon seçin!');
+    toast.error(MESSAGES.ERROR_LOCATION_SELECT_REQUIRED);
     return;
   }
   
@@ -446,16 +957,86 @@ qs('#btnSave').addEventListener('click', async () => {
   
   const qty = parseFloat(qs('#mvQty').value);
   if (!qty || qty <= 0) {
-    toast.error('Geçerli bir miktar girin!');
+    toast.error(MESSAGES.ERROR_VALID_QUANTITY_REQUIRED);
     return;
   }
   
   try {
+    // Permission Write Guard - Teklifbul Rule v1.0
+    // Önce genel movement use yetkisi, sonra mevcut hareket türü için spesifik key (varsa)
+    const mvPerms = STOCK_PERMS.movements || {};
+    const baseKey = mvPerms.use;
+    let specificKey = null;
+    if (state.currentType === 'IN') specificKey = mvPerms.in;
+    else if (state.currentType === 'OUT') specificKey = mvPerms.out;
+    else if (state.currentType === 'TRANSFER') specificKey = mvPerms.transfer;
+    else if (state.currentType === 'ADJUST') specificKey = mvPerms.adjust;
+
+    if (baseKey) {
+      const okUse = await requirePerm(baseKey, {
+        toastMessage:
+          MESSAGES.ERROR_PERMISSION_STOCK_MOVEMENTS ||
+          'Stok hareketi kaydetme yetkiniz yok.'
+      });
+      if (!okUse) {
+        logger.warn('Stock movements: movements.use yetkisi yok, kayıt engellendi', {
+          permKey: baseKey,
+          type: state.currentType,
+          companyId,
+          uid: user.uid
+        });
+        return;
+      }
+    }
+
+    if (specificKey) {
+      const okSpecific = await requirePerm(specificKey, {
+        toastMessage:
+          MESSAGES.ERROR_PERMISSION_STOCK_MOVEMENTS ||
+          'Bu tip stok hareketini kaydetme yetkiniz yok.'
+      });
+      if (!okSpecific) {
+        logger.warn('Stock movements: spesifik movement yetkisi yok, kayıt engellendi', {
+          permKey: specificKey,
+          type: state.currentType,
+          companyId,
+          uid: user.uid
+        });
+        return;
+      }
+    }
     if (state.currentType === 'IN') {
       const unitCost = parseFloat(qs('#mvUnitCost').value) || 0;
       const extras = parseFloat(qs('#mvExtras').value) || 0;
       const allocatedExtras = allocateExtras(extras, qty);
       const finalUnitCost = unitCost + allocatedExtras;
+      const lotNo = (qs('#mvLotNo')?.value || '').trim();
+      const expiryDateRaw = (qs('#mvExpiryDate')?.value || '').trim();
+      const expiryRequired = shouldRequireExpiryFields(state.selectedStock);
+
+      if (expiryRequired) {
+        if (!lotNo) {
+          toast.error('Lot takibi yapılan ürünlerde Lot No zorunludur.');
+          qs('#mvLotNo')?.focus();
+          return;
+        }
+        if (!expiryDateRaw) {
+          toast.error('SKT takibi yapılan ürünlerde Son Kullanım Tarihi zorunludur.');
+          qs('#mvExpiryDate')?.focus();
+          return;
+        }
+      }
+
+      let expiryDate = null;
+      if (expiryDateRaw) {
+        const parsed = new Date(`${expiryDateRaw}T00:00:00`);
+        if (Number.isNaN(parsed.getTime())) {
+          toast.error('Son Kullanım Tarihi geçersiz.');
+          qs('#mvExpiryDate')?.focus();
+          return;
+        }
+        expiryDate = parsed;
+      }
       
       // Teklifbul Rule v1.0 - locationId siteId formatında ise gerçek locationId'yi bul
       let actualLocationId = locationId;
@@ -478,6 +1059,7 @@ qs('#btnSave').addEventListener('click', async () => {
       
       // Create movement
       const movementRef = await addDoc(collection(db, 'stock_movements'), {
+        companyId: companyId,
         stockId: state.selectedStock.id,
         sku: state.selectedStock.sku,
         locationId: actualLocationId,
@@ -490,7 +1072,10 @@ qs('#btnSave').addEventListener('click', async () => {
         extras: [{ name: 'İlave', amount: extras }],
         ref: { kind: 'MANUAL', id: '' },
         stockName: state.selectedStock.name,
+        lotNo: lotNo || null,
+        expiryDate: expiryDate || null,
         createdBy: user.uid,
+        createdByName: createdByName,
         createdAt: serverTimestamp()
       });
       
@@ -543,12 +1128,39 @@ qs('#btnSave').addEventListener('click', async () => {
       const refKind = qs('#mvRefKind').value;
       const refId = qs('#mvRefId').value;
       
-      // Teklifbul Rule v1.0 - Stock balance'dan avgCost al
+      // Teklifbul Rule v1.0 - Stock balance'dan avgCost ve mevcut miktarı al
       const { getStockBalance: getStockBalanceForOut } = await import('/scripts/inventory-balances.js');
       const balanceForOut = await getStockBalanceForOut(companyId, state.selectedStock.sku, actualLocationId);
       const avgCost = balanceForOut?.avgCost || state.selectedStock.avgCost || 0;
+      const currentQty = balanceForOut?.quantity || 0;
+      
+      // Teklifbul Rule v1.0 - Şirket ayarını kontrol et (eksiye düşme izni)
+      const companyDoc = await getDoc(doc(db, 'companies', companyId));
+      const companyData = companyDoc.exists() ? companyDoc.data() : {};
+      const allowNegativeStock = companyData.allowNegativeStock === true;
+      
+      // Teklifbul Rule v1.0 - Stok miktarı kontrolü: 0 veya negatifse çıkış yapılamaz
+      if (currentQty <= 0) {
+        toast.error(`Bu lokasyonda stok miktarı ${currentQty.toFixed(2)} ${state.selectedStock.unit || 'ADT'}. Olmayan stoğun çıkışı yapılamaz.`);
+        return;
+      }
+      
+      // Teklifbul Rule v1.0 - Yetersiz stok kontrolü (eksiye düşme izni yoksa)
+      if (!allowNegativeStock && currentQty < qty) {
+        toast.error(`Yetersiz stok! Mevcut: ${currentQty.toFixed(2)} ${state.selectedStock.unit || 'ADT'}, İstenen: ${qty.toFixed(2)} ${state.selectedStock.unit || 'ADT'}. Çıkış yapılamaz.`);
+        return;
+      }
+      
+      // Teklifbul Rule v1.0 - Eksiye düşecekse uyarı ver (izin varsa)
+      if (allowNegativeStock && currentQty < qty) {
+        const willBeNegative = currentQty - qty;
+        if (!confirm(`⚠️ Uyarı: Bu işlem stok miktarını ${willBeNegative.toFixed(2)} ${state.selectedStock.unit || 'ADT'}'ye düşürecek (eksi). Devam etmek istiyor musunuz?`)) {
+          return;
+        }
+      }
       
       const movementRef = await addDoc(collection(db, 'stock_movements'), {
+        companyId: companyId,
         stockId: state.selectedStock.id,
         sku: state.selectedStock.sku,
         locationId: actualLocationId,
@@ -561,6 +1173,7 @@ qs('#btnSave').addEventListener('click', async () => {
         ref: { kind: refKind, id: refId },
         stockName: state.selectedStock.name,
         createdBy: user.uid,
+        createdByName: createdByName,
         createdAt: serverTimestamp()
       });
       
@@ -597,7 +1210,7 @@ qs('#btnSave').addEventListener('click', async () => {
     } else if (state.currentType === 'TRANSFER') {
       const toLocationIdRaw = qs('#mvToLocation').value;
       if (!toLocationIdRaw) {
-        toast.error('Hedef lokasyon seçin!');
+        toast.error(MESSAGES.ERROR_TARGET_LOCATION_REQUIRED);
         return;
       }
       
@@ -616,13 +1229,40 @@ qs('#btnSave').addEventListener('click', async () => {
         }
       }
       
-      // Teklifbul Rule v1.0 - Stock balance'dan avgCost al
+      // Teklifbul Rule v1.0 - Stock balance'dan avgCost ve mevcut miktarı al
       const { getStockBalance: getStockBalanceForTransfer } = await import('/scripts/inventory-balances.js');
       const balanceForTransfer = await getStockBalanceForTransfer(companyId, state.selectedStock.sku, actualLocationId);
       const avgCost = balanceForTransfer?.avgCost || state.selectedStock.avgCost || 0;
+      const currentQty = balanceForTransfer?.quantity || 0;
+      
+      // Teklifbul Rule v1.0 - Şirket ayarını kontrol et (eksiye düşme izni)
+      const companyDoc = await getDoc(doc(db, 'companies', companyId));
+      const companyData = companyDoc.exists() ? companyDoc.data() : {};
+      const allowNegativeStock = companyData.allowNegativeStock === true;
+      
+      // Teklifbul Rule v1.0 - Stok miktarı kontrolü: 0 veya negatifse transfer yapılamaz
+      if (currentQty <= 0) {
+        toast.error(`Bu lokasyonda stok miktarı ${currentQty.toFixed(2)} ${state.selectedStock.unit || 'ADT'}. Olmayan stoğun transferi yapılamaz.`);
+        return;
+      }
+      
+      // Teklifbul Rule v1.0 - Yetersiz stok kontrolü (eksiye düşme izni yoksa)
+      if (!allowNegativeStock && currentQty < qty) {
+        toast.error(`Yetersiz stok! Mevcut: ${currentQty.toFixed(2)} ${state.selectedStock.unit || 'ADT'}, İstenen: ${qty.toFixed(2)} ${state.selectedStock.unit || 'ADT'}. Transfer yapılamaz.`);
+        return;
+      }
+      
+      // Teklifbul Rule v1.0 - Eksiye düşecekse uyarı ver (izin varsa)
+      if (allowNegativeStock && currentQty < qty) {
+        const willBeNegative = currentQty - qty;
+        if (!confirm(`⚠️ Uyarı: Bu transfer işlemi stok miktarını ${willBeNegative.toFixed(2)} ${state.selectedStock.unit || 'ADT'}'ye düşürecek (eksi). Devam etmek istiyor musunuz?`)) {
+          return;
+        }
+      }
       
       // OUT movement (kaynak lokasyondan)
       const movementRef = await addDoc(collection(db, 'stock_movements'), {
+        companyId: companyId,
         stockId: state.selectedStock.id,
         sku: state.selectedStock.sku,
         locationId: actualLocationId,
@@ -633,8 +1273,10 @@ qs('#btnSave').addEventListener('click', async () => {
         unitCost: avgCost,
         totalCost: avgCost * qty,
         ref: { kind: 'MANUAL', id: actualToLocationId },
+        toLocationId: actualToLocationId,
         stockName: state.selectedStock.name,
         createdBy: user.uid,
+        createdByName: createdByName,
         createdAt: serverTimestamp()
       });
       
@@ -653,6 +1295,7 @@ qs('#btnSave').addEventListener('click', async () => {
       
     } else if (state.currentType === 'ADJUST') {
       const movementRef = await addDoc(collection(db, 'stock_movements'), {
+        companyId: companyId,
         stockId: state.selectedStock.id,
         sku: state.selectedStock.sku,
         locationId: actualLocationId,
@@ -665,6 +1308,7 @@ qs('#btnSave').addEventListener('click', async () => {
         ref: { kind: 'MANUAL', id: '' },
         stockName: state.selectedStock.name,
         createdBy: user.uid,
+        createdByName: createdByName,
         createdAt: serverTimestamp()
       });
       
@@ -681,7 +1325,7 @@ qs('#btnSave').addEventListener('click', async () => {
       });
     }
     
-    toast.success('Hareket kaydedildi!');
+    toast.success(MESSAGES.SUCCESS_MOVEMENT_SAVED);
     
     // Reset form
     qs('#mvStockSKU').value = '';
@@ -691,31 +1335,179 @@ qs('#btnSave').addEventListener('click', async () => {
     qs('#mvExtras').value = '';
     qs('#mvLocation').value = '';
     qs('#mvToLocation').value = '';
+    if (qs('#mvLotNo')) qs('#mvLotNo').value = '';
+    if (qs('#mvExpiryDate')) qs('#mvExpiryDate').value = '';
     state.selectedStock = null;
+    updateExpiryFieldsVisibility();
     qs('#formCard').classList.add('hidden');
     
-    await loadHistory();
+    // Teklifbul Rule v1.0 - Eğer filtre aktifse history'yi yenile
+    if (state.historySelectedStock && state.historySelectedStock.id === savedStockId) {
+      await loadHistoryWithFilters({ reset: true });
+    }
     
   } catch (error) {
-    console.error('Save error:', error);
-    toast.error('Hareket kaydedilemedi: ' + error.message);
+    logger.error('Save error', error);
+    toast.error(`${MESSAGES.ERROR_MOVEMENT_SAVE}: ${error.message}`);
   }
-  });
 }
 
 // Initialize when DOM is ready
+// Teklifbul Rule v1.0 - Lokasyonlar yüklendikten sonra history'yi yükle
+// Permission Pilot: Stok Hareketleri (URL guard + UI guard + query guard)
+async function initialize() {
+  try {
+    const ctx = await requireCompanyContext({ redirectOnPending: true });
+    if (!ctx || !ctx.companyId) {
+      logger.warn('Stock movements: company context alınamadı, sayfa başlatılmıyor', { ctx });
+      toast.error(
+        (MESSAGES.ERROR_COMPANY_ID_REQUIRED || 'Şirket bilgisi doğrulanamadı') +
+          '. Stok hareketleri yüklenemedi.'
+      );
+      return;
+    }
+
+    const permState = await initPermissions({ redirectOnPending: true });
+    if (!permState) {
+      logger.warn('Stock movements: initPermissions sonuç vermedi, sayfa başlatılmıyor');
+      return;
+    }
+
+    if (STOCK_PERMS.view && !can(STOCK_PERMS.view)) {
+      const msg =
+        MESSAGES.ERROR_PERMISSION_STOCK_VIEW ||
+        MESSAGES.ERROR_PERMISSION_DENIED ||
+        'Stok modülünü görüntüleme yetkiniz yok.';
+      toast.error(msg);
+      logger.warn('Stock movements: view yetkisi yok, URL guard tetiklendi', {
+        permKey: STOCK_PERMS.view,
+        companyId: permState.companyId,
+        roleKey: permState.roleKey
+      });
+      window.location.href = '/inventory-index.html';
+      return;
+    }
+
+    setupEventListeners();
+    // Default: hareket formu açık, geçmiş sekmesi kapalı
+    const historyCard = qs('#historyCard');
+    if (historyCard) historyCard.classList.add('hidden');
+
+    // UI guard - hareket kaydetme butonu
+    const btnSave = qs('#btnSave');
+    if (btnSave && STOCK_PERMS.movements.use && !can(STOCK_PERMS.movements.use)) {
+      btnSave.disabled = true;
+      btnSave.title =
+        MESSAGES.ERROR_PERMISSION_STOCK_MOVEMENTS ||
+        'Stok hareketi kaydetme yetkiniz yok.';
+    }
+
+    await loadLocations(); // Önce lokasyonları yükle
+    setupHistoryLocationFilter();
+    await loadStocks();
+    await setupHistoryStockSearch(); // Ürün arama UI
+    await loadHistory(); // empty state
+  } catch (error) {
+    logger.error('Stock movements initialize error', error);
+    toast.error(
+      (MESSAGES.ERROR_STOCK_MOVEMENTS_LOAD || 'Stok hareketleri yüklenirken hata oluştu') +
+        ': ' +
+        (error.message || error)
+    );
+  }
+}
+
+function setupHistoryLocationFilter() {
+  const sel = qs('#historyLocationFilter');
+  if (!sel) return;
+  sel.innerHTML = '';
+
+  const optAll = document.createElement('option');
+  optAll.value = 'ALL';
+  optAll.textContent = 'Tüm Lokasyonlar';
+  sel.appendChild(optAll);
+
+  // state.locations doluysa ekle
+  (state.locations || []).forEach((loc) => {
+    const o = document.createElement('option');
+    o.value = loc.id;
+    o.textContent = loc.name || loc.id;
+    sel.appendChild(o);
+  });
+}
+
+async function setupHistoryStockSearch() {
+  const input = qs('#historyStockSearch');
+  const results = qs('#historyStockSearchResults');
+  if (!input || !results) return;
+
+  let searchTimeout = null;
+
+  input.addEventListener('input', (e) => {
+    const q = e.target.value.trim();
+    clearTimeout(searchTimeout);
+
+    if (!q || q.length < 1) {
+      results.style.display = 'none';
+      state.historySelectedStock = null;
+      return;
+    }
+
+    searchTimeout = setTimeout(() => {
+      const matches = searchStocks(q, 50);
+      results.style.display = 'block';
+      results.innerHTML = '';
+
+      if (!matches.length) {
+        results.innerHTML = '<div style="padding:12px;text-align:center;color:#6b7280">Sonuç bulunamadı</div>';
+        state.historySelectedStock = null;
+        return;
+      }
+
+      const header = document.createElement('div');
+      header.style.padding = '8px 12px';
+      header.style.background = '#f3f4f6';
+      header.style.borderBottom = '1px solid #e5e7eb';
+      header.style.fontSize = '12px';
+      header.style.fontWeight = '600';
+      header.style.color = '#374151';
+      header.textContent = `${matches.length} sonuç bulundu (İlk 50 gösteriliyor)`;
+      results.appendChild(header);
+
+      matches.forEach((stock, idx) => {
+        const div = document.createElement('div');
+        div.style.padding = '8px 12px';
+        div.style.cursor = 'pointer';
+        div.style.borderBottom = '1px solid #e5e7eb';
+        div.style.transition = 'background 0.2s';
+        div.className = 'stock-result-item';
+        div.style.background = idx % 2 === 0 ? '#fff' : '#f9fafb';
+        div.innerHTML = `
+          <div style="font-weight:600;color:#111827">${stock.sku}</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px">${stock.name}</div>
+          <div style="font-size:11px;color:#9ca3af;margin-top:2px">Birim: ${stock.unit || 'ADT'}</div>
+        `;
+        div.addEventListener('mouseenter', () => (div.style.background = '#eff6ff'));
+        div.addEventListener('mouseleave', () => (div.style.background = idx % 2 === 0 ? '#fff' : '#f9fafb'));
+        div.addEventListener('click', () => {
+          state.historySelectedStock = stock;
+          input.value = stock.sku;
+          results.style.display = 'none';
+        });
+        results.appendChild(div);
+      });
+    }, 250);
+  });
+
+  // Teklifbul Rule v1.0 - Browser davranışı nedeniyle F6 ile arama kaldırıldı.
+}
+
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
-    setupEventListeners();
-    loadLocations();
-    loadStocks();
-    loadHistory();
+    initialize();
   });
 } else {
   // DOM already loaded
-  setupEventListeners();
-  loadLocations();
-  loadStocks();
-  loadHistory();
+  initialize();
 }
 

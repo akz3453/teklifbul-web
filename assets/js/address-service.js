@@ -45,14 +45,14 @@ export async function resolveIdsByNames(provinceName, districtName, neighborhood
       districtName: String(districtName || ''),
       neighborhoodName: String(neighborhoodName || '')
     });
-    
+
     const res = await fetch(`/api/addr/resolve-ids?${params.toString()}`);
     const json = await res.json();
-    
+
     if (json.ok && json.data) {
       return json.data; // { provinceId, districtId, neighborhoodId, defaultPostalCode? }
     }
-    
+
     // Teklifbul Rule v1.0 - Structured Logging
     logger.warn('[addr] ID resolution failed', { error: json.error || 'Unknown error' });
     return null;
@@ -72,51 +72,51 @@ export async function resolveIdsByNames(provinceName, districtName, neighborhood
  * @param {number} [params.districtIdFromState] - İlçe ID (varsa kullanılır)
  * @returns {Promise<Array>} Sokak listesi [{ id, name, postalCode? }]
  */
-export async function loadStreets({ 
-  provinceName, 
-  districtName, 
-  neighborhoodName, 
+export async function loadStreets({
+  provinceName,
+  districtName,
+  neighborhoodName,
   neighborhoodIdFromState,
-  districtIdFromState 
+  districtIdFromState
 }) {
   let neighborhoodId = neighborhoodIdFromState;
   let districtId = districtIdFromState;
-  
+
   // 0) ID'ler yoksa çözümle
   if (!neighborhoodId || !districtId) {
     const ids = await resolveIdsByNames(provinceName, districtName, neighborhoodName);
-    
+
     if (!ids) {
-      logger.info('[addr] streets empty → free-text (ID resolution failed)', { 
-        provinceName, 
-        districtName, 
-        neighborhoodName 
+      logger.info('[addr] streets empty → free-text (ID resolution failed)', {
+        provinceName,
+        districtName,
+        neighborhoodName
       });
       return [];
     }
-    
+
     neighborhoodId = ids.neighborhoodId || neighborhoodId;
     districtId = ids.districtId || districtId;
   }
-  
+
   if (!neighborhoodId) {
-    logger.info('[addr] streets empty → free-text (no neighborhoodId)', { 
-      provinceName, 
-      districtName, 
-      neighborhoodName 
+    logger.info('[addr] streets empty → free-text (no neighborhoodId)', {
+      provinceName,
+      districtName,
+      neighborhoodName
     });
     return [];
   }
-  
+
   // 1) Local JSON dene (sessizce, 404 normal)
   try {
     const assetPath = buildStreetAssetPath(districtId || 0, neighborhoodId);
     const localRes = await fetch(assetPath);
-    
+
     if (localRes.ok) {
       const localData = await localRes.json();
       const streets = Array.isArray(localData?.streets) ? localData.streets : [];
-      
+
       if (streets.length > 0) {
         logger.info('[addr] streets loaded from local JSON', { neighborhoodId, count: streets.length });
         return streets.map(s => ({
@@ -127,18 +127,19 @@ export async function loadStreets({
       }
     }
     // 404 sessizce geç (normal durum)
-  } catch (_localError) {
+  } catch {
+
     // Local fetch hatası sessizce geç
   }
-  
+
   // 2) Backend proxy (retry'li, CORS güvenli)
   try {
     const apiRes = await fetch(`/api/addr/streets?neighborhoodId=${neighborhoodId}`);
     const apiJson = await apiRes.json();
-    
+
     if (apiJson.ok && Array.isArray(apiJson.data) && apiJson.data.length > 0) {
       logger.info('[addr] streets loaded from API', { neighborhoodId, count: apiJson.data.length });
-      
+
       // Cache'e kaydet (opsiyonel)
       if (districtId) {
         try {
@@ -153,22 +154,23 @@ export async function loadStreets({
               streets: apiJson.data
             })
           });
-        } catch (_saveError) {
+        } catch {
+
           // Cache kaydetme hatası sessizce geç
         }
       }
-      
+
       return apiJson.data;
     }
-    
+
     logger.info('[addr] streets empty → free-text (API returned empty)', { neighborhoodId });
   } catch (apiError) {
-    logger.warn('[addr] streets API fail', { 
-      neighborhoodId, 
-      error: apiError.message || String(apiError) 
+    logger.warn('[addr] streets API fail', {
+      neighborhoodId,
+      error: apiError.message || String(apiError)
     });
   }
-  
+
   // 3) Free-text fallback (boş array döndür, UI free-text input'u açacak)
   return [];
 }
@@ -179,9 +181,9 @@ export async function loadStreets({
  */
 export function onStreetSelected(street, neighborhood, setPostalCodeFn) {
   if (!setPostalCodeFn) return;
-  
+
   const postalCode = street?.postalCode || neighborhood?.defaultPostalCode || '';
-  
+
   if (postalCode) {
     setPostalCodeFn(postalCode);
   }

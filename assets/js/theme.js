@@ -4,8 +4,6 @@
  * with persistent storage across pages
  */
 
-// Teklifbul Rule v1.0 - Structured Logging
-import { logger } from '../../src/shared/log/logger.js';
 
 document.addEventListener('DOMContentLoaded', function () {
   const STORAGE_KEY = 'tb_theme'; // 'dark' | 'light' | null
@@ -13,8 +11,14 @@ document.addEventListener('DOMContentLoaded', function () {
   const btn = document.getElementById('themeToggle');
 
   function apply(mode) {
-    root.classList.toggle('force-dark', mode === 'dark');
-    if (btn) btn.textContent = mode === 'dark' ? '☀️ Açık' : '🌙 Koyu';
+    const isDark = mode === 'dark';
+    root.classList.toggle('force-dark', isDark);
+    if (isDark) {
+      root.setAttribute('data-theme', 'dark');
+    } else {
+      root.removeAttribute('data-theme');
+    }
+    if (btn) btn.textContent = isDark ? '☀️ Açık' : '🌙 Koyu';
   }
 
   function preferred() {
@@ -42,5 +46,5 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
-  logger.info('Theme system initialized', { mode });
+  // Teklifbul Rule v1.0 - Gereksiz log kaldırıldı
 });

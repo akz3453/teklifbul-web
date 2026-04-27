@@ -26,7 +26,22 @@ export function handleError(error, options = {}) {
   // Extract meaningful error message
   let errorMessage = 'Beklenmeyen bir hata oluştu';
   
-  if (error.code) {
+  // Teklifbul Rule v1.0 - Network error handling
+  // Check for network/internet connection errors first
+  if (error.message && (
+    error.message.includes('Network Error') || 
+    error.message.includes('Failed to fetch') || 
+    error.message.includes('ECONNABORTED') ||
+    error.message.includes('timeout') ||
+    error.message.includes('ERR_NETWORK') ||
+    error.code === 'ECONNABORTED' ||
+    error.code === 'ERR_NETWORK'
+  )) {
+    errorMessage = 'İnternet bağlantısı hatası. Lütfen bağlantınızı kontrol edin ve tekrar deneyin.';
+  } else if (error.userMessage) {
+    // Use user-friendly message from API interceptor
+    errorMessage = error.userMessage;
+  } else if (error.code) {
     switch (error.code) {
       case 'permission-denied':
         errorMessage = 'Bu işlem için yetkiniz bulunmuyor';
@@ -304,13 +319,20 @@ export function showModal(title, content, buttons = []) {
   const existingModals = document.querySelectorAll('.modal-overlay');
   existingModals.forEach(modal => modal.remove());
 
+  // Teklifbul Rule v1.0 - A11Y: Unique ID for modal
+  const modalId = `modal-${Date.now()}`;
+  const titleId = `modal-title-${Date.now()}`;
+
   const modal = document.createElement('div');
   modal.className = 'modal-overlay';
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+  modal.setAttribute('aria-labelledby', titleId);
   modal.innerHTML = `
-    <div class="modal">
+    <div class="modal" id="${modalId}">
       <div class="modal-header">
-        <h3 class="modal-title">${title}</h3>
-        <button class="modal-close" onclick="closeModal()">×</button>
+        <h3 class="modal-title" id="${titleId}">${title}</h3>
+        <button class="modal-close" onclick="closeModal()" aria-label="Modalı kapat">×</button>
       </div>
       <div class="modal-content">
         ${content}
@@ -397,8 +419,58 @@ export function showModal(title, content, buttons = []) {
 
   document.body.appendChild(modal);
 
+  // Teklifbul Rule v1.0 - A11Y: Focus trap ve ESC tuşu desteği
+  const modalContent = modal.querySelector('.modal');
+  const focusableElements = modalContent.querySelectorAll(
+    'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+  );
+  const firstFocusable = focusableElements[0];
+  const lastFocusable = focusableElements[focusableElements.length - 1];
+
+  // İlk focusable element'e focus et
+  if (firstFocusable) {
+    setTimeout(() => firstFocusable.focus(), 100);
+  }
+
+  // ESC tuşu ile kapatma
+  const handleEsc = (e) => {
+    if (e.key === 'Escape') {
+      closeModal();
+      document.removeEventListener('keydown', handleEsc);
+    }
+  };
+  document.addEventListener('keydown', handleEsc);
+
+  // Tab tuşu ile focus trap
+  const handleTab = (e) => {
+    if (e.key !== 'Tab') return;
+
+    if (e.shiftKey) {
+      // Shift + Tab (geri)
+      if (document.activeElement === firstFocusable) {
+        e.preventDefault();
+        lastFocusable?.focus();
+      }
+    } else {
+      // Tab (ileri)
+      if (document.activeElement === lastFocusable) {
+        e.preventDefault();
+        firstFocusable?.focus();
+      }
+    }
+  };
+  modalContent.addEventListener('keydown', handleTab);
+
+  // Overlay tıklama ile kapatma
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      closeModal();
+    }
+  });
+
   // Make closeModal globally available
   window.closeModal = () => {
+    document.removeEventListener('keydown', handleEsc);
     modal.remove();
     delete window.closeModal;
   };

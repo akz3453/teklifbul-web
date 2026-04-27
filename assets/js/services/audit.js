@@ -168,15 +168,48 @@ export async function getAuditStats(demandId = null) {
 }
 
 /**
- * Create a manual audit log entry
+ * Create a manual audit log entry (Enterprise+ SaaS Edition)
  * @param {Object} logData - Audit log data
  * @returns {Promise<string>} Created log ID
  */
 export async function createAuditLog(logData) {
-  const docRef = await addDoc(collection(db, "auditLogs"), {
+  // Enforce required fields for Enterprise+ Audit Standard
+  const VALID_ACTIONS = ['CREATE', 'UPDATE', 'DELETE', 'APPROVE', 'CANCEL', 'LOGIN', 'LOGOUT'];
+  
+  const actionType = logData.action_type || logData.actionType || 'UPDATE';
+  if (!VALID_ACTIONS.includes(actionType)) {
+    logger.warn(`Invalid action_type provided to createAuditLog: ${actionType}. Defaulting to UPDATE.`);
+  }
+
+  // Get User Agent info
+  const userAgent = navigator?.userAgent || 'Unknown Device';
+  // Get IP address (Note: In pure frontend, IP is hard to get reliably without an API. Using placeholder until backend proxy is used)
+  const clientIp = window.localStorage?.getItem('lastClientIp') || '0.0.0.0';
+
+  // Make sure companyId exists (Multi-tenant isolation)
+  if (!logData.companyId) {
+    logger.error('CRITICAL: Audit log attempted without companyId', logData);
+    // In strict env, this could throw an error. For now, we proceed but log heavily.
+  }
+
+  const enrichedLog = {
     ...logData,
+    action_type: VALID_ACTIONS.includes(actionType) ? actionType : 'UPDATE',
+    userAgent: userAgent,
+    ipAddress: logData.ipAddress || clientIp,
     timestamp: new Date(),
-    createdAt: new Date()
-  });
-  return docRef.id;
+    createdAt: new Date(), // Enforce standard field
+    status: logData.status || 'draft' // Enforce standard field for schemas
+  };
+
+  try {
+    // Write to companyAuditLogs (the enterprise table) as well as legacy auditLogs
+    const docRef = await addDoc(collection(db, "companyAuditLogs"), enrichedLog);
+    // Keep backwards compatibility for old dashboard views
+    await addDoc(collection(db, "auditLogs"), enrichedLog);
+    return docRef.id;
+  } catch (error) {
+    logger.error('Failed to write Enterprise Audit Log (companyAuditLogs is Append-Only)', error);
+    throw error;
+  }
 }

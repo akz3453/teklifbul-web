@@ -1,7 +1,13 @@
 // RFQ Bid Form UI Component
+// Teklifbul Rule v1.0 - XSS Protection
+import DOMPurify from 'https://cdn.jsdelivr.net/npm/dompurify@3.2.2/+esm';
 import { createRFQBid, validateBidData, calculateBidTotal } from '../services/rfq-bids.js';
 // Teklifbul Rule v1.0 - Structured Logging
 import { logger } from '../../../src/shared/log/logger.js';
+// Teklifbul Rule v1.0 - Toast Bildirim Sistemi
+import { toast } from '../../../src/shared/ui/toast.js';
+import { MESSAGES } from '../../../src/shared/constants/messages.js';
+import { initPermissions, can, getBidPerms } from '../state/permissions.js';
 
 export class RFQBidForm {
   constructor(containerId, demandData, itemsData) {
@@ -13,6 +19,7 @@ export class RFQBidForm {
       currency: 'TRY',
       validityDays: 30,
       incoterm: 'DAP',
+      supplierVisibility: 'named',
       warrantyMonths: 12,
       paymentPlan: '30-days',
       deliveryAddress: '',
@@ -20,6 +27,7 @@ export class RFQBidForm {
       items: []
     };
     this.attachments = [];
+    this.perms = getBidPerms();
     
     this.init();
   }
@@ -27,6 +35,7 @@ export class RFQBidForm {
   init() {
     this.render();
     this.bindEvents();
+    this.applyPermissionGuards();
     this.loadDeliveryAddress();
   }
 
@@ -95,6 +104,13 @@ export class RFQBidForm {
             <div class="form-group full-width">
               <label for="bid-notes">Genel Notlar</label>
               <textarea id="bid-notes" rows="3" placeholder="Teklifinizle ilgili özel şartlar, açıklamalar..."></textarea>
+            </div>
+            <div class="form-group">
+              <label for="bid-supplier-visibility">Teklif Görünürlüğü</label>
+              <select id="bid-supplier-visibility" title="Diğer tedarikçilere firma adınızın görünüp görünmeyeceğini seçin">
+                <option value="named">Firma adım görünsün</option>
+                <option value="anonymous">Firma adım gizli kalsın (Anonim)</option>
+              </select>
             </div>
           </div>
         </div>
@@ -284,10 +300,29 @@ export class RFQBidForm {
     });
   }
 
+  async applyPermissionGuards() {
+    try {
+      // Permission init (cache'li, diğer sayfalarla paylaşımlı)
+      await initPermissions({ redirectOnPending: true });
+
+      // UI guard - Teklif Oluşturma
+      const submitBtn = this.container.querySelector('#submit-bid-btn');
+      if (submitBtn && this.perms.create && !can(this.perms.create)) {
+        submitBtn.disabled = true;
+        submitBtn.title =
+          MESSAGES.ERROR_PERMISSION_BIDS_CREATE ||
+          'Teklif oluşturma yetkiniz yok.';
+      }
+    } catch (error) {
+      logger.error('RFQBidForm permission init error', error);
+    }
+  }
+
   updateCommercialTerms() {
     this.bidData.currency = this.container.querySelector('#bid-currency').value;
     this.bidData.validityDays = parseInt(this.container.querySelector('#bid-validity').value);
     this.bidData.incoterm = this.container.querySelector('#bid-incoterm').value;
+    this.bidData.supplierVisibility = this.container.querySelector('#bid-supplier-visibility')?.value || 'named';
     this.bidData.warrantyMonths = parseInt(this.container.querySelector('#bid-warranty').value);
     this.bidData.paymentPlan = this.container.querySelector('#bid-payment').value;
     this.bidData.deliveryAddress = this.container.querySelector('#bid-delivery').value;
@@ -366,13 +401,21 @@ export class RFQBidForm {
 
   updateFileList() {
     const fileList = this.container.querySelector('#bid-file-list');
-    fileList.innerHTML = this.attachments.map((file, index) => `
+    // Teklifbul Rule v1.0 - XSS Protection
+    const filesHTML = this.attachments.map((file, index) => {
+      const safeFileName = DOMPurify.sanitize(file.name || '', { ALLOWED_TAGS: [] });
+      return `
       <div class="file-item">
-        <span class="file-name">${file.name}</span>
+        <span class="file-name">${safeFileName}</span>
         <span class="file-size">(${(file.size / 1024).toFixed(1)} KB)</span>
         <button class="remove-file" data-index="${index}">❌</button>
       </div>
-    `).join('');
+    `;
+    }).join('');
+    fileList.innerHTML = DOMPurify.sanitize(filesHTML, {
+      ALLOWED_TAGS: ['div', 'span', 'button'],
+      ALLOWED_ATTR: ['class', 'data-index']
+    });
     
     // Bind remove file events
     fileList.querySelectorAll('.remove-file').forEach(btn => {
@@ -425,7 +468,7 @@ export class RFQBidForm {
       // Validate
       const validation = validateBidData(this.bidData);
       if (!validation.isValid) {
-        alert('Lütfen aşağıdaki hataları düzeltin:\n' + validation.errors.join('\n'));
+        toast.error(`${MESSAGES.ERROR_RFQ_VALIDATION}:\n${validation.errors.join('\n')}`);
         return;
       }
       
@@ -433,13 +476,15 @@ export class RFQBidForm {
       const total = calculateBidTotal(this.bidData.items, this.bidData.currency);
       
       // Confirm submission
+      // Teklifbul Rule v1.0 - confirm() kullanıcı etkileşimli olduğu için izin verilir
       const confirmMsg = `Teklif Toplamı: ${total.formatted}\n\nTeklifi göndermek istediğinizden emin misiniz?`;
+      // eslint-disable-next-line no-alert
       if (!confirm(confirmMsg)) return;
       
-      // Submit
+      // Submit (createRFQBid içinde ek write guard var)
       const bidId = await createRFQBid(this.bidData);
       
-      alert('✅ Teklifiniz başarıyla gönderildi!');
+      toast.success(MESSAGES.SUCCESS_RFQ_BID_SENT);
       
       // Reset form
       this.resetForm();
@@ -448,7 +493,7 @@ export class RFQBidForm {
       
     } catch (error) {
       logger.error('Error submitting bid', error);
-      alert('❌ Teklif gönderilirken hata oluştu: ' + error.message);
+      toast.error(`${MESSAGES.ERROR_RFQ_BID_SEND}: ${error.message}`);
     }
   }
 
@@ -482,6 +527,7 @@ export class RFQBidForm {
       currency: 'TRY',
       validityDays: 30,
       incoterm: 'DAP',
+      supplierVisibility: 'named',
       warrantyMonths: 12,
       paymentPlan: '30-days',
       deliveryAddress: '',

@@ -209,6 +209,11 @@ export default [
       'no-undef': 'off',
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       '@typescript-eslint/no-explicit-any': 'off',
+      // Teklifbul Rule v1.1: alert/confirm/prompt yasak ama legacy assets/'da
+      // dosya bazinda exception kabul edilir; toast-based modale dönüsüm devam eden iste.
+      'no-alert': 'warn',
+      // Legacy code occasionally aliases this; not blocking
+      '@typescript-eslint/no-this-alias': 'warn',
     },
   },
   // Script dosyaları (browser ve Node.js globals)

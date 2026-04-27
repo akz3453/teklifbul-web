@@ -4,7 +4,14 @@
  */
 
 // Teklifbul Rule v1.0 - Structured Logging
+import DOMPurify from 'https://cdn.jsdelivr.net/npm/dompurify@3.2.2/+esm';
 import { logger } from '../../../src/shared/log/logger.js';
+// Teklifbul Rule v1.0 - Toast Bildirim Sistemi
+import { toast } from '../../../src/shared/ui/toast.js';
+import { MESSAGES } from '../../../src/shared/constants/messages.js';
+// Teklifbul Rule v1.0 - Auth + Firestore CRUD
+import { requireAuth } from '/firebase.js';
+import { listGroupsForUser, createGroup, updateGroup, deleteGroup } from '/assets/js/services/category-groups.js';
 
 // Categories embedded directly to avoid import issues
 const EMBEDDED_CATEGORIES = [
@@ -30,17 +37,36 @@ const EMBEDDED_CATEGORIES = [
 // Dynamic import for categories to handle missing file gracefully
 async function loadCategories() {
   try {
+    // Prefer new ID-based dictionary (29+ categories)
+    const svc = await import('/src/categories/category-service.js');
+    const cats = typeof svc.getAllCategories === 'function' ? svc.getAllCategories() : [];
+    const names = (cats || []).map(c => c?.name).filter(Boolean);
+    if (names.length > 0) {
+      logger.info('Categories loaded from category-service', { count: names.length });
+      return names;
+    }
+  } catch (e0) {
+    logger.warn('category-service yüklenemedi, fallback devreye girdi', e0);
+  }
+  try {
     // Try to load from external file first
     const mod = await import('../../../categories.js');
     logger.info('Categories loaded from file', { count: mod.CATEGORIES?.length });
-    return mod.CATEGORIES || EMBEDDED_CATEGORIES;
+    // categories.js may export objects; normalize to display names
+    const raw = mod.CATEGORIES || EMBEDDED_CATEGORIES;
+    return Array.isArray(raw)
+      ? raw.map(c => (typeof c === 'string' ? c : (c?.name || String(c)))).filter(Boolean)
+      : EMBEDDED_CATEGORIES;
   } catch (e) {
     logger.warn('categories.js yüklenemedi, embedded kategoriler kullanılıyor', e);
     try {
       // Fallback: absolute path
       const mod2 = await import('/categories.js');
       logger.info('Categories loaded (fallback)', { count: mod2.CATEGORIES?.length });
-      return mod2.CATEGORIES || EMBEDDED_CATEGORIES;
+      const raw2 = mod2.CATEGORIES || EMBEDDED_CATEGORIES;
+      return Array.isArray(raw2)
+        ? raw2.map(c => (typeof c === 'string' ? c : (c?.name || String(c)))).filter(Boolean)
+        : EMBEDDED_CATEGORIES;
     } catch (e2) {
       logger.warn('categories.js yüklenemedi, embedded kategoriler kullanılıyor', e2);
       // Use embedded categories as final fallback
@@ -60,15 +86,24 @@ function initCategoryGroupsModal() {
     existingModal.remove();
   }
   
-  // Create simple modal HTML
+  // Create simple modal HTML (Teklifbul Rule v1.0 - A11Y: ARIA attributes)
   const modalHTML = `
-    <div id="categoryGroupsModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+    <div id="categoryGroupsModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
       <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 24px; border-radius: 12px; max-width: 600px; width: 90%; max-height: 80%; overflow-y: auto;">
         
         <!-- Header -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
           <h2 id="modalTitle" style="margin: 0; color: #1f2937;">🏷️ Kategori Grubu Oluştur</h2>
-          <button id="closeModal" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #6b7280;">&times;</button>
+          <button id="closeModal" aria-label="Modalı kapat" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #6b7280;">&times;</button>
+        </div>
+        
+        <!-- Existing groups (manage) -->
+        <div id="existingGroupsBox" style="margin-bottom: 16px; padding: 12px; border: 1px solid #e5e7eb; border-radius: 10px;">
+          <div style="display:flex; justify-content: space-between; align-items:center; gap:10px;">
+            <div style="font-weight: 600; color:#111827;">Mevcut Gruplar</div>
+            <button id="refreshGroupsBtn" type="button" style="padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; cursor: pointer;">Yenile</button>
+          </div>
+          <div id="existingGroupsList" style="margin-top: 10px; display:flex; flex-direction:column; gap:8px;"></div>
         </div>
         
         <!-- Step 1: Group Name -->
@@ -131,6 +166,8 @@ function initCategoryGroupsModal() {
   const categorySearch = document.getElementById('categorySearch');
   const categoryList = document.getElementById('categoryList');
   const selectedCount = document.getElementById('selectedCount');
+  const existingGroupsList = document.getElementById('existingGroupsList');
+  const refreshGroupsBtn = document.getElementById('refreshGroupsBtn');
   
   logger.info('Modal element found', { modal: !!modal });
   
@@ -138,6 +175,8 @@ function initCategoryGroupsModal() {
   let currentStep = 1;
   let selectedCategories = new Set();
   let allCategories = [];
+  let editingGroupId = null;
+  let currentUser = null;
   
   // Event listeners
   closeBtn.addEventListener('click', closeModal);
@@ -161,25 +200,42 @@ function initCategoryGroupsModal() {
   
   saveGroupBtn.addEventListener('click', async () => {
     if (selectedCategories.size === 0) {
-      alert('En az bir kategori seçmelisiniz');
+      toast.warn(MESSAGES.WARN_VALIDATION || 'Dikkat: En az 1 kategori seçin');
       return;
     }
     
     const groupName = groupNameInput.value.trim();
-    const groupData = {
-      name: groupName,
-      categories: Array.from(selectedCategories),
-      createdAt: new Date().toISOString()
-    };
+    // Teklifbul Rule v1.0 - category.toLowerCase hatası düzeltildi
+    const normalizedCategories = Array.from(selectedCategories)
+      .map(category =>
+        typeof category === 'string'
+          ? category.trim()
+          : String(category || '').trim()
+      )
+      .filter(name => name.length > 0);
     
     try {
-      // Save group (you can implement this)
-      logger.info('Saving group', groupData);
-      alert(`Grup "${groupName}" başarıyla oluşturuldu!`);
+      toast.info(MESSAGES.INFO_SAVING || MESSAGES.INFO_WAIT);
+      saveGroupBtn.disabled = true;
+
+      if (!currentUser) currentUser = await requireAuth();
+      if (editingGroupId) {
+        await updateGroup(currentUser.uid, editingGroupId, { name: groupName, categories: normalizedCategories });
+        toast.success(MESSAGES.SUCCESS_UPDATE || 'İşlem tamamlandı');
+      } else {
+        await createGroup(currentUser.uid, { name: groupName, categories: normalizedCategories });
+        toast.success(MESSAGES.SUCCESS_SAVE || 'İşlem tamamlandı');
+      }
+
+      // Notify page to refresh groups
+      window.dispatchEvent(new CustomEvent('categoryGroups:changed'));
       closeModal();
+      await loadAndRenderGroups();
     } catch (error) {
       logger.error('Error saving group', error);
-      alert('Grup kaydedilirken hata oluştu');
+      toast.error(`${MESSAGES.ERROR_SAVE || 'Hata'}: ${error?.message || error}`);
+    } finally {
+      saveGroupBtn.disabled = false;
     }
   });
   
@@ -220,15 +276,27 @@ function initCategoryGroupsModal() {
     categoryList.innerHTML = '';
     
     // Filter categories based on search
-    const filteredCategories = allCategories.filter(category => 
-      category.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    // Teklifbul Rule v1.0 - category.toLowerCase hatası düzeltildi
+    const filteredCategories = allCategories.filter(category => {
+      const categoryName = typeof category === 'string' 
+        ? category.trim() 
+        : String(category?.name || category || '').trim();
+      return categoryName.toLowerCase().includes(searchTerm.toLowerCase());
+    });
     
     logger.info(`Showing ${filteredCategories.length} categories`);
     
     // Add each category
     filteredCategories.forEach(category => {
-      const isSelected = selectedCategories.has(category);
+      // Teklifbul Rule v1.0 - category.toLowerCase hatası düzeltildi
+      const categoryName = typeof category === 'string' 
+        ? category.trim() 
+        : String(category?.name || category || '').trim();
+      const categoryDisplay = typeof category === 'string' 
+        ? category 
+        : (category?.name || String(category || ''));
+      
+      const isSelected = selectedCategories.has(categoryName);
       
       const categoryDiv = document.createElement('div');
       categoryDiv.style.cssText = `
@@ -253,8 +321,8 @@ function initCategoryGroupsModal() {
       // Teklifbul Rule v1.0 - Kategori öneri sistemi: tooltip ve detay desteği
       categoryDiv.innerHTML = `
         <input type="checkbox" ${isSelected ? 'checked' : ''} style="margin-right: 12px; width: 20px; height: 20px; transform: scale(1.2);">
-        <span style="flex: 1; color: #1f2937;">${category}</span>
-        <span class="category-info-icon" data-category="${category}" 
+        <span style="flex: 1; color: #1f2937;">${categoryDisplay}</span>
+        <span class="category-info-icon" data-category="${categoryName}" 
               style="margin-left: 8px; cursor: pointer; color: #3b82f6; font-size: 18px;"
               title="Kategori bilgisi" aria-label="Kategori bilgisi">
           ⓘ
@@ -266,14 +334,14 @@ function initCategoryGroupsModal() {
       if (infoIcon) {
         infoIcon.addEventListener('click', (e) => {
           e.stopPropagation();
-          showCategoryInfo(category);
+          showCategoryInfo(categoryName);
         });
         
         // Hover tooltip (basit)
         let tooltipTimeout;
         infoIcon.addEventListener('mouseenter', () => {
           tooltipTimeout = setTimeout(() => {
-            loadCategoryTooltip(category, infoIcon);
+            loadCategoryTooltip(categoryName, infoIcon);
           }, 500);
         });
         infoIcon.addEventListener('mouseleave', () => {
@@ -282,25 +350,32 @@ function initCategoryGroupsModal() {
         });
       }
       
-      // Click handler
-      categoryDiv.addEventListener('click', (e) => {
-        if (e.target.type !== 'checkbox') {
-          const checkbox = categoryDiv.querySelector('input[type="checkbox"]');
-          checkbox.checked = !checkbox.checked;
-        }
-        
-        const checkbox = categoryDiv.querySelector('input[type="checkbox"]');
+      // Checkbox change handler - daha güvenilir
+      const checkbox = categoryDiv.querySelector('input[type="checkbox"]');
+      checkbox.addEventListener('change', (e) => {
+        e.stopPropagation();
         if (checkbox.checked) {
-          selectedCategories.add(category);
+          selectedCategories.add(categoryName);
           categoryDiv.style.backgroundColor = '#dbeafe';
           categoryDiv.style.borderColor = '#3b82f6';
         } else {
-          selectedCategories.delete(category);
+          selectedCategories.delete(categoryName);
           categoryDiv.style.backgroundColor = '#f8fafc';
           categoryDiv.style.borderColor = '#e5e7eb';
         }
-        
         updateSelectedCount();
+      });
+      
+      // Click handler - tüm div'e tıklanınca checkbox'ı toggle et
+      categoryDiv.addEventListener('click', (e) => {
+        // Checkbox veya info icon'a tıklanmışsa işlem yapma
+        if (e.target.type === 'checkbox' || e.target.classList.contains('category-info-icon')) {
+          return;
+        }
+        e.preventDefault();
+        e.stopPropagation();
+        checkbox.checked = !checkbox.checked;
+        checkbox.dispatchEvent(new Event('change', { bubbles: true }));
       });
       
       categoryList.appendChild(categoryDiv);
@@ -415,7 +490,7 @@ function initCategoryGroupsModal() {
       const details = await getCategoryDetails(categoryName);
       
       if (!details) {
-        alert(`"${categoryName}" kategorisi için detay bulunamadı.`);
+        toast.warn(`"${categoryName}" kategorisi için detay bulunamadı.`);
         return;
       }
       
@@ -474,42 +549,205 @@ function initCategoryGroupsModal() {
       
     } catch (error) {
       logger.error('Show category info failed', error);
-      alert('Kategori bilgisi yüklenirken hata oluştu.');
+      toast.error(MESSAGES.ERROR_CATEGORY_INFO_LOAD);
     }
   }
   
+  // Teklifbul Rule v1.0 - A11Y: ESC tuşu ve focus trap için değişkenler
+  let escHandler = null;
+  let tabHandler = null;
+  let previousActiveElement = null;
+
   function closeModal() {
     modal.style.display = 'none';
+    modal.setAttribute('aria-hidden', 'true');
+    
+    // Teklifbul Rule v1.0 - A11Y: Event listener'ları temizle
+    if (escHandler) {
+      document.removeEventListener('keydown', escHandler);
+      escHandler = null;
+    }
+    if (tabHandler && modal) {
+      const modalContent = modal.querySelector('div');
+      if (modalContent) {
+        modalContent.removeEventListener('keydown', tabHandler);
+      }
+      tabHandler = null;
+    }
+    
+    // Önceki focus'a geri dön
+    if (previousActiveElement instanceof HTMLElement) {
+      previousActiveElement.focus();
+      previousActiveElement = null;
+    }
+    
     // Reset form
     groupNameInput.value = '';
     nameError.style.display = 'none';
     selectedCategories.clear();
+    editingGroupId = null;
+    saveGroupBtn.textContent = 'Kaydet';
+    document.getElementById('modalTitle').textContent = '🏷️ Kategori Grubu Oluştur';
     showStep(1);
   }
   
   function showModal(group = null) {
     logger.info('showModal called with group', group);
     
+    // Teklifbul Rule v1.0 - A11Y: Önceki focus'u kaydet
+    previousActiveElement = document.activeElement;
+    
     if (group) {
       // Edit mode
       groupNameInput.value = group.name;
       selectedCategories = new Set(group.categories || []);
+      editingGroupId = group.id || null;
+      saveGroupBtn.textContent = 'Güncelle';
+      document.getElementById('modalTitle').textContent = '🛠️ Grup Düzenle';
       showStep(2);
     } else {
       // Create mode
       groupNameInput.value = '';
       selectedCategories.clear();
+      editingGroupId = null;
+      saveGroupBtn.textContent = 'Kaydet';
+      document.getElementById('modalTitle').textContent = '🏷️ Kategori Grubu Oluştur';
       showStep(1);
     }
     
     modal.style.display = 'block';
+    modal.setAttribute('aria-hidden', 'false');
     logger.info('Modal displayed');
+    
+    // Teklifbul Rule v1.0 - A11Y: Focus trap
+    const modalContent = modal.querySelector('div');
+    const focusableElements = modalContent.querySelectorAll(
+      'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    );
+    const firstFocusable = focusableElements[0] || groupNameInput;
+    const lastFocusable = focusableElements[focusableElements.length - 1] || groupNameInput;
+
+    // İlk focusable element'e focus et
+    setTimeout(() => {
+      firstFocusable.focus();
+    }, 100);
+
+    // ESC tuşu ile kapatma
+    escHandler = (e) => {
+      if (e.key === 'Escape') {
+        closeModal();
+      }
+    };
+    document.addEventListener('keydown', escHandler);
+
+    // Tab tuşu ile focus trap
+    tabHandler = (e) => {
+      if (e.key !== 'Tab') return;
+
+      if (e.shiftKey) {
+        // Shift + Tab (geri)
+        if (document.activeElement === firstFocusable) {
+          e.preventDefault();
+          lastFocusable?.focus();
+        }
+      } else {
+        // Tab (ileri)
+        if (document.activeElement === lastFocusable) {
+          e.preventDefault();
+          firstFocusable?.focus();
+        }
+      }
+    };
+    modalContent.addEventListener('keydown', tabHandler);
+    
+    // Overlay tıklama ile kapatma
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        closeModal();
+      }
+    });
   }
+
+  async function loadAndRenderGroups() {
+    if (!existingGroupsList) return;
+    try {
+      existingGroupsList.innerHTML = '';
+      if (!currentUser) currentUser = await requireAuth();
+      const groups = await listGroupsForUser(currentUser.uid);
+      if (!groups || groups.length === 0) {
+        existingGroupsList.textContent = 'Henüz grup yok';
+        return;
+      }
+
+      groups.forEach((g) => {
+        const row = document.createElement('div');
+        const count = Array.isArray(g.categories) ? g.categories.length : 0;
+        row.style.cssText = 'display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px; border:1px solid #e5e7eb; border-radius:10px;';
+
+        // Teklifbul Rule v1.0 - XSS koruma: g.name kullanici girdisi
+        const left = document.createElement('div');
+        left.style.cssText = 'min-width:0;';
+        const safeName = DOMPurify.sanitize(String(g.name || '-'), { ALLOWED_TAGS: [] });
+        const titleEl = document.createElement('div');
+        titleEl.style.cssText = 'font-weight:600; color:#111827; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
+        titleEl.innerHTML = safeName;
+        const countEl = document.createElement('div');
+        countEl.style.cssText = 'font-size:12px; color:#6b7280;';
+        countEl.textContent = `${Number(count) || 0} kategori`;
+        left.appendChild(titleEl);
+        left.appendChild(countEl);
+
+        const right = document.createElement('div');
+        right.style.cssText = 'display:flex; gap:8px; align-items:center;';
+
+        const editBtn = document.createElement('button');
+        editBtn.type = 'button';
+        editBtn.textContent = 'Düzenle';
+        editBtn.title = 'Grubu düzenle';
+        editBtn.setAttribute('aria-label', 'Grubu düzenle');
+        editBtn.style.cssText = 'padding:6px 10px; border:1px solid #d1d5db; border-radius:8px; background:#fff; cursor:pointer;';
+        editBtn.addEventListener('click', () => showModal(g));
+
+        const delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.textContent = 'Sil';
+        delBtn.title = 'Grubu sil';
+        delBtn.setAttribute('aria-label', 'Grubu sil');
+        delBtn.style.cssText = 'padding:6px 10px; border:1px solid #d1d5db; border-radius:8px; background:#fff; cursor:pointer;';
+        delBtn.addEventListener('click', async () => {
+          try {
+            const ok = window.confirm('Bu grup silinsin mi?');
+            if (!ok) return;
+            toast.info(MESSAGES.INFO_PROCESSING || MESSAGES.INFO_WAIT);
+            await deleteGroup(currentUser.uid, g.id);
+            toast.success(MESSAGES.SUCCESS_DELETE || 'İşlem tamamlandı');
+            window.dispatchEvent(new CustomEvent('categoryGroups:changed'));
+            await loadAndRenderGroups();
+          } catch (err) {
+            logger.error('Delete group failed', err);
+            toast.error(`${MESSAGES.ERROR_DELETE || 'Hata'}: ${err?.message || err}`);
+          }
+        });
+
+        right.append(editBtn, delBtn);
+        row.append(left, right);
+        existingGroupsList.appendChild(row);
+      });
+    } catch (err) {
+      logger.error('loadAndRenderGroups failed', err);
+      existingGroupsList.textContent = 'Gruplar yüklenemedi';
+    }
+  }
+
+  refreshGroupsBtn?.addEventListener('click', () => {
+    loadAndRenderGroups().catch((e) => logger.warn('refreshGroups failed', e));
+  });
   
   // Public API
   return {
     showModal,
-    showEditModal: (group) => showModal(group)
+    showEditModal: (group) => showModal(group),
+    refreshGroups: () => loadAndRenderGroups()
   };
 }
 

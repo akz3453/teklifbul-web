@@ -1,0 +1,84 @@
+/**
+ * Column Mapping Modal Styles
+ * Teklifbul Rule v1.0 - Akıllı Eşleştirme Sistemi
+ */
+
+#columnMappingModal {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+#columnMappingModal .field-select {
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+#columnMappingModal .field-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+#columnMappingModal .remove-mapping {
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+#columnMappingModal .remove-mapping:hover {
+  background-color: #dc2626;
+  transform: scale(1.05);
+}
+
+#columnMappingModal .remove-mapping:active {
+  transform: scale(0.95);
+}
+
+#columnMappingModal #confirmMapping {
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+#columnMappingModal #confirmMapping:hover {
+  background-color: #059669;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+#columnMappingModal #confirmMapping:active {
+  transform: translateY(0);
+}
+
+#columnMappingModal #cancelMapping {
+  transition: background-color 0.2s;
+}
+
+#columnMappingModal #cancelMapping:hover {
+  background-color: #4b5563;
+}
+
+#columnMappingModal table {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+#columnMappingModal tbody tr:hover {
+  background-color: #f9fafb;
+}
+
+#columnMappingModal tbody tr:last-child {
+  border-bottom: none;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  #columnMappingModal > div {
+    width: 95% !important;
+    max-width: 95% !important;
+    padding: 16px !important;
+  }
+  
+  #columnMappingModal table {
+    font-size: 12px;
+  }
+  
+  #columnMappingModal th,
+  #columnMappingModal td {
+    padding: 8px !important;
+  }
+}
+

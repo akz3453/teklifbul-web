@@ -2,10 +2,16 @@
 // Talep detayındaki items dizisini sırayla çizip teklif toplar.
 // Gerekli: sayfada <table id="bidTable"> ve bir Kaydet/İndir butonu.
 
+// Teklifbul Rule v1.0 - Toast Bildirim Sistemi
+import { toast } from '../src/shared/ui/toast.js';
+// Teklifbul Rule v1.0 - Structured Logging
+import { logger } from '../src/shared/log/logger.js';
+import { MESSAGES } from '../src/shared/constants/messages.js';
+
 export function renderBidTable(demand) {
   const tbody = document.querySelector("#bidTable tbody");
   if (!tbody) {
-    console.warn("bidTable tbody bulunamadı");
+    logger.warn("bidTable tbody bulunamadı");
     return;
   }
   
@@ -116,9 +122,9 @@ export async function exportComparisonExcel(payload){
     a.click(); 
     URL.revokeObjectURL(url);
     
-    console.log("✅ Excel dosyası indirildi:", `mukayese_tablo_${payload.stf_no||"STF"}.xlsx`);
+    logger.info("✅ Excel dosyası indirildi", { fileName: `mukayese_tablo_${payload.stf_no||"STF"}.xlsx` });
   } catch (error) {
-    console.error("❌ Excel indirme hatası:", error);
-    alert("Excel dosyası indirilemedi: " + error.message);
+    logger.error("❌ Excel indirme hatası", error);
+    toast.error(MESSAGES.ERROR_EXCEL_DOWNLOAD_BID.replace('{message}', error.message));
   }
 }

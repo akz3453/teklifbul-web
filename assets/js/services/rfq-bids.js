@@ -1,19 +1,63 @@
 // RFQ Bidding System Service
-import { db } from '../firebase.js';
+import { db, auth } from '../firebase.js';
 // Teklifbul Rule v1.0 - Structured Logging
 import { logger } from '../../../src/shared/log/logger.js';
+import { MESSAGES } from '../../../src/shared/constants/messages.js';
+import { toast } from '../../../src/shared/ui/toast.js';
+import { initPermissions, requirePerm, getBidPerms } from '../state/permissions.js';
 import {
   collection, doc, addDoc, updateDoc, deleteDoc, getDocs, getDoc,
-  query, where, orderBy, limit, serverTimestamp, arrayUnion, arrayRemove
+  query, where, orderBy, serverTimestamp, arrayUnion
 } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+
+const BID_PERMS = getBidPerms();
 
 /**
  * Create a new RFQ bid with commercial terms and item matrix
  */
 export async function createRFQBid(bidData) {
   try {
+    // Teklifbul Rule v1.0 - Permission Write Guard: Teklif Oluşturma
+    if (BID_PERMS.create) {
+      await initPermissions({ redirectOnPending: true });
+      const ok = await requirePerm(BID_PERMS.create, {
+        toastMessage:
+          MESSAGES.ERROR_PERMISSION_BIDS_CREATE ||
+          'Teklif oluşturma yetkiniz yok.'
+      });
+      if (!ok) {
+        logger.warn('createRFQBid: permissions denied (bids.create)', { permKey: BID_PERMS.create });
+        throw new Error(MESSAGES.ERROR_PERMISSION_BIDS_CREATE || 'Teklif oluşturma yetkiniz yok.');
+      }
+    }
+
+    // Calculate total price for server-side sorting
+    const total = calculateBidTotal(bidData.items || [], bidData.currency || 'TRY');
+
+    // Enrich with company IDs if missing - Teklifbul Rule v1.3
+    if (!bidData.supplierCompanyId && auth.currentUser) {
+      const uDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
+      if (uDoc.exists()) {
+        const u = uDoc.data();
+        bidData.supplierCompanyId = u.activeCompanyId || (u.companies && u.companies[0]) || null;
+        if (!bidData.supplierId) bidData.supplierId = auth.currentUser.uid;
+      }
+    }
+
+    if (!bidData.buyerCompanyId && bidData.demandId) {
+      const dDoc = await getDoc(doc(db, 'demands', bidData.demandId));
+      if (dDoc.exists()) {
+        const d = dDoc.data();
+        bidData.buyerCompanyId = d.creatorCompanyId || d.companyId || null;
+        if (!bidData.buyerId) bidData.buyerId = d.createdBy || d.creatorId || null;
+      }
+    }
+
     const bidRef = await addDoc(collection(db, 'bids'), {
       ...bidData,
+      supplierVisibility: bidData.supplierVisibility === 'anonymous' ? 'anonymous' : 'named',
+      totalPrice: total.amount, // Save total for sorting
+      involvedCompanyIds: [bidData.buyerCompanyId, bidData.supplierCompanyId].filter(Boolean), // For approved view
       status: 'draft',
       statusHistory: [{
         status: 'draft',
@@ -23,6 +67,22 @@ export async function createRFQBid(bidData) {
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
+
+    // Teklifbul Rule v1.3 - Update demand metadata for better sorting and metrics
+    if (bidData.demandId) {
+      try {
+        const { increment } = await import('https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js');
+        const demandRef = doc(db, 'demands', bidData.demandId);
+        await updateDoc(demandRef, {
+          bidCount: increment(1),
+          lastBidAt: serverTimestamp(),
+          updatedAt: serverTimestamp() // Ensure it bubbles up in "most recent" queries
+        });
+        logger.info('Demand metadata updated after bid creation', { demandId: bidData.demandId });
+      } catch (updateErr) {
+        logger.warn('Failed to update demand metadata (non-critical)', updateErr);
+      }
+    }
 
     // Create bid items subcollection
     if (bidData.items && bidData.items.length > 0) {
@@ -49,18 +109,40 @@ export async function createRFQBid(bidData) {
  */
 export async function updateRFQBid(bidId, bidData) {
   try {
+    // Teklifbul Rule v1.0 - Permission Write Guard: Teklif Düzenleme
+    if (BID_PERMS.edit) {
+      await initPermissions({ redirectOnPending: true });
+      const ok = await requirePerm(BID_PERMS.edit, {
+        toastMessage:
+          MESSAGES.ERROR_PERMISSION_BIDS_EDIT ||
+          'Teklif düzenleme yetkiniz yok.'
+      });
+      if (!ok) {
+        logger.warn('updateRFQBid: permissions denied (bids.edit)', { permKey: BID_PERMS.edit, bidId });
+        throw new Error(MESSAGES.ERROR_PERMISSION_BIDS_EDIT || 'Teklif düzenleme yetkiniz yok.');
+      }
+    }
+
     const bidRef = doc(db, 'bids', bidId);
     
+    // Calculate total price if items are updated
+    let totalPrice = bidData.totalPrice;
+    if (bidData.items) {
+      const total = calculateBidTotal(bidData.items, bidData.currency || 'TRY');
+      totalPrice = total.amount;
+    }
+
     // Update main bid document
     await updateDoc(bidRef, {
       ...bidData,
+      ...(totalPrice !== undefined ? { totalPrice } : {}),
       updatedAt: serverTimestamp()
     });
 
     // Update items if provided
     if (bidData.items) {
       // Delete existing items
-      const itemsSnapshot = await getDocs(collection(db, 'bids', bidId, 'items'));
+      const itemsSnapshot = await getDocs(query(collection(db, 'bids', bidId, 'items'), limit(1000))); // Teklifbul Rule v1.0 - Limit eklendi
       for (const itemDoc of itemsSnapshot.docs) {
         await deleteDoc(doc(db, 'bids', bidId, 'items', itemDoc.id));
       }
@@ -118,6 +200,23 @@ export async function getRFQBidWithItems(bidId) {
  */
 export async function getDemandBidsWithItems(demandId) {
   try {
+    // Teklifbul Rule v1.0 - Permission Guard: Teklifleri Görüntüleme
+    if (BID_PERMS.view) {
+      await initPermissions({ redirectOnPending: true });
+      const ok = await requirePerm(BID_PERMS.view, {
+        toastMessage:
+          MESSAGES.ERROR_PERMISSION_BIDS_VIEW ||
+          'Teklifleri görüntüleme yetkiniz yok.'
+      });
+      if (!ok) {
+        logger.warn('getDemandBidsWithItems: permissions denied (bids.view)', {
+          permKey: BID_PERMS.view,
+          demandId
+        });
+        return [];
+      }
+    }
+
     const bidsQuery = query(
       collection(db, 'bids'),
       where('demandId', '==', demandId),
@@ -156,6 +255,24 @@ export async function getDemandBidsWithItems(demandId) {
  */
 export async function updateBidStatus(bidId, newStatus, note = '') {
   try {
+    // Teklifbul Rule v1.0 - Permission Write Guard: Teklif Onay / Durum Değiştirme
+    if (BID_PERMS.approve) {
+      await initPermissions({ redirectOnPending: true });
+      const ok = await requirePerm(BID_PERMS.approve, {
+        toastMessage:
+          MESSAGES.ERROR_PERMISSION_BIDS_APPROVE ||
+          'Teklif onaylama yetkiniz yok.'
+      });
+      if (!ok) {
+        logger.warn('updateBidStatus: permissions denied (bids.approve)', {
+          permKey: BID_PERMS.approve,
+          bidId,
+          newStatus
+        });
+        throw new Error(MESSAGES.ERROR_PERMISSION_BIDS_APPROVE || 'Teklif onaylama yetkiniz yok.');
+      }
+    }
+
     const bidRef = doc(db, 'bids', bidId);
     
     await updateDoc(bidRef, {

@@ -1,14 +1,20 @@
 // assets/bid-form-import.js
 // Excel teklif formundan içe aktar (webten)
 
+// Teklifbul Rule v1.0 - Toast Bildirim Sistemi
+import { toast } from '../src/shared/ui/toast.js';
+// Teklifbul Rule v1.0 - Structured Logging
+import { logger } from '../src/shared/log/logger.js';
+import { MESSAGES } from '../src/shared/constants/messages.js';
+
 export async function importBidExcel(fileInput, onLoaded){
   const file = fileInput.files[0];
   if(!file) {
-    console.warn("Dosya seçilmedi");
+    logger.warn("Dosya seçilmedi");
     return;
   }
   
-  console.log("📁 Teklif Excel dosyası yükleniyor:", file.name);
+  logger.info("📁 Teklif Excel dosyası yükleniyor", { fileName: file.name });
   
   try {
     const fd = new FormData(); 
@@ -25,21 +31,21 @@ export async function importBidExcel(fileInput, onLoaded){
     }
     
     const bid = await res.json(); // {firma_adi, fiyatlar[], items[]...}
-    console.log("✅ Teklif Excel başarıyla okundu:", bid);
+    logger.info("✅ Teklif Excel başarıyla okundu", bid);
     
     onLoaded?.(bid);
     
     return bid;
   } catch (error) {
-    console.error("❌ Teklif Excel okuma hatası:", error);
-    alert("Teklif Excel dosyası okunamadı: " + error.message);
+    logger.error("❌ Teklif Excel okuma hatası", error);
+    toast.error(MESSAGES.ERROR_EXCEL_READ_BID.replace('{message}', error.message));
     throw error;
   }
 }
 
 // Yardımcı fonksiyon: Teklif verilerini mevcut tabloya uygula
 export function applyBidToTable(bid) {
-  console.log("📝 Teklif verileri tabloya uygulanıyor:", bid);
+  logger.info("📝 Teklif verileri tabloya uygulanıyor", bid);
   
   // Fiyatları inputlara yerleştir
   document.querySelectorAll("#bidTable tbody tr").forEach((tr, i)=>{
@@ -54,12 +60,12 @@ export function applyBidToTable(bid) {
     }
   });
   
-  console.log("✅ Teklif fiyatları tabloya uygulandı");
+  logger.info("✅ Teklif fiyatları tabloya uygulandı");
 }
 
 // Yardımcı fonksiyon: Teklif bilgilerini form alanlarına doldur
 export function fillBidFormFromExcel(bid) {
-  console.log("📝 Teklif formu dolduruluyor:", bid);
+  logger.info("📝 Teklif formu dolduruluyor", bid);
   
   // Firma bilgileri
   const firmaAdiEl = document.getElementById("firmaAdi");
@@ -93,5 +99,5 @@ export function fillBidFormFromExcel(bid) {
     stfNoEl.value = bid.stf_no;
   }
   
-  console.log("✅ Teklif formu başarıyla dolduruldu");
+  logger.info("✅ Teklif formu başarıyla dolduruldu");
 }

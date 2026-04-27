@@ -5,6 +5,8 @@
 
 import { db, auth } from '../firebase.js';
 import { doc, getDoc, collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+// Teklifbul Rule v1.0 - Structured Logging
+import { logger } from '../../../src/shared/log/logger.js';
 
 const LS_KEY = 'activeCompanyId';
 const PROFILE_KEYS = ['companyName', 'company_name', 'company_title']; // robust keys

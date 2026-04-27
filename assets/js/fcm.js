@@ -3,7 +3,7 @@
  * Teklifbul Rule v1.0 - Push notification support
  */
 
-import { app, db, auth } from '/firebase.js';
+import { app, db, auth } from '../../firebase.js';
 // Teklifbul Rule v1.0 - Structured Logging
 import { logger } from '../../src/shared/log/logger.js';
 import { getApp, getApps } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js';
@@ -14,7 +14,7 @@ import { doc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs
 // Teklifbul Rule v1.0 - FCM Push Notifications
 // VAPID key format: Base64 URL-safe encoded, usually 87-88 characters
 // Firebase Console → Project Settings → Cloud Messaging → Web Push certificates → Key pair → Public key
-const VAPID_PUBLIC_KEY = window.FCM_VAPID_KEY || process.env.VITE_FCM_VAPID_KEY || '';
+const VAPID_PUBLIC_KEY = window.FCM_VAPID_KEY || (typeof import.meta !== 'undefined' && import.meta.env?.VITE_FCM_VAPID_KEY) || '';
 
 let messagingInstance = null;
 let currentToken = null;
@@ -192,24 +192,36 @@ function handleForegroundMessage(payload) {
 }
 
 /**
- * Service worker'ı kaydeder ve FCM'i başlatır
+ * Service worker'ları temizler ve FCM'i devre dışı bırakır
+ * Teklifbul Rule v1.0 - Eski service worker kayıtlarını kaldırarak cache kaynaklı eski UI riskini engeller
  */
 export async function initFCM() {
-  if (!('serviceWorker' in navigator)) {
-    logger.warn('Service Worker desteklenmiyor');
-    return null;
-  }
-
   try {
-    // Service worker'ı kaydet
-    const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-    logger.info('Service Worker kaydedildi', { scope: registration.scope });
+    if (!('serviceWorker' in navigator)) {
+      logger.warn('Service Worker desteklenmiyor');
+      return null;
+    }
 
-    // FCM'i başlat
-    const token = await setupMessaging(registration);
-    return token;
+    // Mevcut tüm service worker kayıtlarını kaldır
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    if (registrations && registrations.length > 0) {
+      logger.info('Mevcut Service Worker kayıtları temizleniyor', { count: registrations.length });
+      await Promise.all(
+        registrations.map(async (reg) => {
+          try {
+            const result = await reg.unregister();
+            logger.info('Service Worker unregister sonucu', { scope: reg.scope, result });
+          } catch (unregError) {
+            logger.warn('Service Worker unregister hatası', { scope: reg.scope, error: unregError });
+          }
+        })
+      );
+    }
+
+    logger.info('FCM ve Service Worker devre dışı bırakıldı (push bildirimleri kapalı)');
+    return null;
   } catch (error) {
-    logger.error('FCM init hatası', error);
+    logger.error('FCM devre dışı bırakma hatası', error);
     return null;
   }
 }
@@ -226,17 +238,7 @@ export function getCurrentToken() {
  * Token'ı yeniler (kullanıcı değiştiğinde vs.)
  */
 export async function refreshToken() {
-  if (!messagingInstance) {
-    await initFCM();
-    return;
-  }
-
-  try {
-    const registration = await navigator.serviceWorker.ready;
-    const token = await setupMessaging(registration);
-    return token;
-  } catch (error) {
-    logger.error('Token yenileme hatası', error);
-  }
+  logger.warn('FCM token yenileme devre dışı (Service Worker kapalı)');
+  return null;
 }
 

@@ -1,0 +1,36 @@
+<svg width="540" height="380" viewBox="0 0 540 380" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="540" height="380" rx="32" fill="url(#bg)" />
+  <rect x="36" y="32" width="468" height="52" rx="16" fill="white" opacity="0.9" />
+  <circle cx="72" cy="58" r="10" fill="#3B82F6" />
+  <rect x="100" y="46" width="140" height="24" rx="12" fill="#E0EDFF" />
+  <rect x="252" y="46" width="100" height="24" rx="12" fill="#E0EDFF" opacity="0.6" />
+  <rect x="368" y="46" width="80" height="24" rx="12" fill="#2563EB" opacity="0.4" />
+
+  <rect x="36" y="108" width="220" height="100" rx="18" fill="white" opacity="0.95" />
+  <text x="54" y="140" font-family="Inter, Arial" font-size="13" fill="#6B7280">Gelen Talepler</text>
+  <text x="54" y="176" font-family="Inter, Arial" font-size="34" font-weight="600" fill="#111827">14</text>
+
+  <rect x="284" y="108" width="220" height="100" rx="18" fill="white" opacity="0.9" />
+  <text x="302" y="140" font-family="Inter, Arial" font-size="13" fill="#6B7280">Gönderilen Talepler</text>
+  <text x="302" y="176" font-family="Inter, Arial" font-size="34" font-weight="600" fill="#111827">2</text>
+
+  <rect x="36" y="224" width="468" height="124" rx="20" fill="white" opacity="0.98" />
+  <text x="54" y="252" font-family="Inter, Arial" font-size="15" font-weight="600" fill="#111827">Son Taleplerim</text>
+  <rect x="54" y="266" width="432" height="1" fill="#E5E7EB" />
+  <text x="54" y="292" font-family="Inter, Arial" font-size="12" fill="#6B7280">SATFK-20251117-9SZ1</text>
+  <text x="54" y="322" font-family="Inter, Arial" font-size="12" fill="#6B7280">SATFK-20251116-ASVM</text>
+  <text x="220" y="292" font-family="Inter, Arial" font-size="12" fill="#1F2937">DENEME BASLIK</text>
+  <text x="220" y="322" font-family="Inter, Arial" font-size="12" fill="#1F2937">DENEME BASLIK</text>
+  <rect x="400" y="280" width="70" height="22" rx="11" fill="#D1FAE5" />
+  <text x="410" y="295" font-family="Inter, Arial" font-size="11" fill="#047857">Onaylandı</text>
+  <rect x="400" y="310" width="70" height="22" rx="11" fill="#D1FAE5" />
+  <text x="410" y="325" font-family="Inter, Arial" font-size="11" fill="#047857">Onaylandı</text>
+
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="540" y2="380" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E0EDFF"/>
+      <stop offset="1" stop-color="#FDF2F8"/>
+    </linearGradient>
+  </defs>
+</svg>
+

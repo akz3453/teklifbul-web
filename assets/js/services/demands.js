@@ -127,7 +127,7 @@ export async function updateDemand(demandId, updateData, userId, itemsData = [])
   });
   
   // Update items: delete old and add new
-  const oldItems = await getDocs(collection(db, "demands", demandId, "items"));
+  const oldItems = await getDocs(query(collection(db, "demands", demandId, "items"), limit(1000))); // Teklifbul Rule v1.0 - Limit eklendi
   await Promise.all(oldItems.docs.map(d => deleteDoc(doc(db, "demands", demandId, "items", d.id))));
   
   for (const item of itemsData) {
@@ -176,9 +176,10 @@ export async function publishDemand(demandId, userId) {
         viewerIds: Array.from(new Set([userId, ...supplierUids])) 
       });
       
-      // Log demand recipients
+      // Log demand recipients and create notifications - Teklifbul Rule v1.2.15
       for (const supplierUid of supplierUids) {
         try {
+          // Create demand recipient record
           await addDoc(collection(db, "demandRecipients"), {
             demandId: demandId,
             supplierId: supplierUid,
@@ -187,6 +188,28 @@ export async function publishDemand(demandId, userId) {
             categories: demandData.categoryTags,
             status: 'matched'
           });
+          
+          // Create notification for supplier - Teklifbul Rule v1.2.15
+          try {
+            await addDoc(collection(db, "notifications"), {
+              userId: supplierUid,
+              type: "demand_published",
+              title: "Yeni Talep Yayınlandı",
+              message: `"${demandData.title || demandData.satfk || 'Yeni talep'}" adlı talep kategorilerinize uygun ve size gönderildi.`,
+              body: `"${demandData.title || demandData.satfk || 'Yeni talep'}" adlı talep kategorilerinize uygun ve size gönderildi.`,
+              read: false,
+              createdAt: serverTimestamp(),
+              data: {
+                demandId: demandId,
+                type: "demand_published",
+                title: demandData.title || demandData.satfk || 'Yeni talep',
+                actionUrl: `./demand-detail.html?id=${demandId}`
+              }
+            });
+          } catch (notifError) {
+            logger.warn("Bildirim oluşturulamadı", { supplierUid, error: notifError.message });
+            // Bildirim hatası demand recipient kaydını engellemez
+          }
         } catch (logError) {
           logger.warn("Could not log unmatched demand", logError.message);
         }

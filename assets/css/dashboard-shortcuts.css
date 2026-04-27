@@ -1,0 +1,155 @@
+.nav-card-wrapper {
+  position: relative;
+}
+
+.edit-shortcuts-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  width: auto;
+  min-width: fit-content;
+}
+
+.edit-shortcuts-btn:hover {
+  background: #2563eb;
+}
+
+.edit-mode .nav-card {
+  position: relative;
+  cursor: move;
+}
+
+.edit-mode .nav-card::after {
+  content: '⋮⋮';
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  color: #9ca3af;
+  font-size: 18px;
+}
+
+.remove-shortcut-btn {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 24px;
+  height: 24px;
+  background: #ef4444;
+  color: white;
+  border-radius: 50%;
+  border: 2px solid white;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  cursor: pointer;
+  z-index: 20;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.edit-mode .remove-shortcut-btn {
+  display: flex;
+}
+
+.add-shortcut-card {
+  display: none;
+  border: 2px dashed #d1d5db;
+  background: transparent;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  min-height: 118px;
+  border-radius: 12px;
+  color: #6b7280;
+  transition: all 0.2s;
+}
+
+.edit-mode .add-shortcut-card {
+  display: flex;
+}
+
+.add-shortcut-card:hover {
+  border-color: #3b82f6;
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.05);
+}
+
+/* Modal styles */
+.shortcut-modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+}
+
+.shortcut-modal-content {
+  background-color: white;
+  margin: 10% auto;
+  padding: 24px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 600px;
+  box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+}
+
+html[data-theme="dark"] .shortcut-modal-content {
+  background-color: #1f2937;
+  color: white;
+}
+
+.shortcut-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 16px;
+  max-height: 500px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+@media (max-width: 600px) {
+  .shortcut-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+.shortcut-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: white;
+}
+
+html[data-theme="dark"] .shortcut-item {
+  border-color: rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.03);
+}
+
+.shortcut-item:hover {
+  background: #f9fafb;
+  border-color: #3b82f6;
+  transform: translateY(-1px);
+}
+
+.shortcut-item.selected {
+  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.05);
+}

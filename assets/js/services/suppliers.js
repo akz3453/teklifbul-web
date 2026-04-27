@@ -43,27 +43,47 @@ export async function getAllSuppliers(limitCount = 100) {
  */
 export async function findMatchingSuppliers(demandData) {
   const matchingSupplierUids = new Set();
-  const demandCategories = demandData.categoryTags || [];
   
-  if (demandCategories.length === 0) {
+  // Normalize demand categories (both IDs and Names/Tags)
+  const categoryIds = demandData.categoryIds || [];
+  const categoryTags = demandData.categoryTags || [];
+  const allSearchCategories = Array.from(new Set([...categoryIds, ...categoryTags]));
+  
+  if (allSearchCategories.length === 0) {
     logger.info("No categories specified for demand, no suppliers matched.");
     return [];
   }
   
-  // Query for suppliers whose supplierCategories array contains any of the demand's categories
-  const q = query(
-    collection(db, 'users'),
-    where('isSupplier', '==', true),
-    where('isActive', '==', true),
-    where('supplierCategories', 'array-contains-any', demandCategories)
-  );
+  // Query for suppliers matching via ID-based system
+  // Using chunks of 10 for array-contains-any limit
+  for (let i = 0; i < allSearchCategories.length; i += 10) {
+    const chunk = allSearchCategories.slice(i, i + 10);
+    
+    // First try: match supplierCategoryIds
+    const q1 = query(
+      collection(db, 'users'),
+      where('isSupplier', '==', true),
+      where('isActive', '==', true),
+      where('supplierCategoryIds', 'array-contains-any', chunk)
+    );
+    const snap1 = await getDocs(q1);
+    snap1.forEach(doc => matchingSupplierUids.add(doc.id));
+    
+    // Second try: match legacy supplierCategories (which contain names/slugs)
+    const q2 = query(
+      collection(db, 'users'),
+      where('isSupplier', '==', true),
+      where('isActive', '==', true),
+      where('supplierCategories', 'array-contains-any', chunk)
+    );
+    const snap2 = await getDocs(q2);
+    snap2.forEach(doc => matchingSupplierUids.add(doc.id));
+  }
   
-  const snapshot = await getDocs(q);
-  snapshot.forEach(doc => {
-    matchingSupplierUids.add(doc.id);
+  logger.info(`Found ${matchingSupplierUids.size} matching suppliers for categories`, { 
+    ids: categoryIds.join(','), 
+    tags: categoryTags.join(',') 
   });
-  
-  logger.info(`Found ${matchingSupplierUids.size} matching suppliers for demand categories`, { categories: demandCategories.join(', ') });
   return Array.from(matchingSupplierUids);
 }
 

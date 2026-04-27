@@ -6,23 +6,10 @@
 
 // Teklifbul Rule v1.0 - Structured Logging
 import { logger } from '../../../src/shared/log/logger.js';
+// Teklifbul Rule v1.0 - Bundle Size: Use shared debounce utility
+import { debounce } from '../utils/debounce.js';
 
 const API_BASE = window.API_URL || 'http://localhost:5174';
-
-/**
- * Debounce helper
- */
-function debounce(func, wait) {
-  let timeout;
-  return function executedFunction(...args) {
-    const later = () => {
-      clearTimeout(timeout);
-      func(...args);
-    };
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait);
-  };
-}
 
 /**
  * Suggest categories based on text

@@ -4,7 +4,9 @@
 // Each category has a unique ID (e.g., CAT.LOJISTIK) that avoids Turkish character issues
 // IDs are used for matching, names are used for display
 
-export const CATEGORIES = [
+import { CATEGORY_RULES } from './category-rules.js';
+
+const BASE_CATEGORIES = [
   { id: 'CAT.SACMETAL', name: 'Sac/Metal' },
   { id: 'CAT.ELEKTRIK', name: 'Elektrik' },
   { id: 'CAT.ELEKTRONIK', name: 'Elektronik' },
@@ -29,8 +31,19 @@ export const CATEGORIES = [
   { id: 'CAT.RULMAN', name: 'Rulman & Güç Aktarım' },
   { id: 'CAT.HVAC', name: 'HVAC' },
   { id: 'CAT.YANGIN', name: 'Yangın Güvenliği' },
-  { id: 'CAT.KIRALAMA', name: 'Ekipman Kiralama' }
+  { id: 'CAT.KIRALAMA', name: 'Ekipman Kiralama' },
+  { id: 'CAT.PEYZAJ', name: 'Peyzaj & Bahçe' },
+  { id: 'CAT.TESISAT', name: 'Tesisat' },
+  { id: 'CAT.MARANGOZ', name: 'Marangoz & Ahşap İşleri' },
+  { id: 'CAT.AKARYAKIT', name: 'Akaryakıt & Yağlar' }
 ];
+
+export const CATEGORIES = BASE_CATEGORIES.map(cat => ({
+  ...cat,
+  materialTags: CATEGORY_RULES[cat.id]?.materialTags || [],
+  blockedTags: CATEGORY_RULES[cat.id]?.blockedTags || [],
+  requiredAttributes: CATEGORY_RULES[cat.id]?.requiredAttributes || []
+}));
 
 // Helper functions
 export function getCategoryById(id) {
@@ -57,3 +70,5 @@ export function getAllCategoryNames() {
 
 // Legacy support: export names array for backward compatibility
 export const CATEGORY_NAMES = CATEGORIES.map(cat => cat.name);
+
+export { CATEGORY_RULES };

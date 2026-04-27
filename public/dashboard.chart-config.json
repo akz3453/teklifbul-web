@@ -1,0 +1,22 @@
+{
+  "version": "1.0.0",
+  "colors": {
+    "success": "#10b981",
+    "failed": "#ef4444",
+    "running": "#3b82f6",
+    "cancelled": "#6b7280",
+    "primary": "#3b82f6",
+    "secondary": "#8b5cf6",
+    "warning": "#f59e0b",
+    "info": "#06b6d4"
+  },
+  "defaults": {
+    "timeRangeDays": 30,
+    "lineTension": 0.3,
+    "showLegend": true,
+    "animation": true,
+    "responsive": true,
+    "maintainAspectRatio": false
+  }
+}
+

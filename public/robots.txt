@@ -1,0 +1,29 @@
+User-agent: *
+Allow: /
+
+# Disallow admin pages
+Disallow: /admin/
+Disallow: /pages/admin/
+
+# Disallow test pages
+Disallow: /test/
+Disallow: /test-fixtures/
+
+# Disallow API endpoints
+Disallow: /api/
+
+# Disallow private pages
+Disallow: /settings.html
+Disallow: /company-join-waiting.html
+
+# Allow public pages
+Allow: /index.html
+Allow: /login.html
+Allow: /signup.html
+Allow: /register-buyer.html
+
+# Sitemap
+Sitemap: https://teklifbul.com/sitemap.xml
+
+# Crawl delay (optional)
+Crawl-delay: 1

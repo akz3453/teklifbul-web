@@ -1,3 +1,8 @@
+// Teklifbul Rule v1.0 - Toast Bildirim Sistemi
+import { toast } from '../../src/shared/ui/toast.js';
+// Teklifbul Rule v1.0 - Structured Logging
+import { logger } from '../../src/shared/log/logger.js';
+
 const $ = s => document.querySelector(s);
 const file = $('#file');
 const btnPreview = $('#btnPreview');
@@ -13,7 +18,7 @@ const resultBox = $('#resultBox');
 let LAST = null;
 
 btnPreview?.addEventListener('click', async () => {
-  if (!file.files[0]) { alert('Dosya seçin'); return; }
+  if (!file.files[0]) { toast.warn('Dosya seçin'); return; }
   
   // Loading state
   btnPreview.disabled = true;
@@ -23,7 +28,7 @@ btnPreview?.addEventListener('click', async () => {
     const fd = new FormData(); 
     fd.append('file', file.files[0]);
     
-    console.log('[Import] Sending file:', file.files[0].name, file.files[0].size, 'bytes');
+    logger.info('[Import] Sending file', { name: file.files[0].name, size: file.files[0].size });
     
     const r = await fetch('/api/import/preview', { 
       method: 'POST', 
@@ -36,18 +41,18 @@ btnPreview?.addEventListener('click', async () => {
       j = await r.json(); 
     } catch(e) { 
       j = null; 
-      console.error('[Import] JSON parse error:', e);
+      logger.error('[Import] JSON parse error', e);
     }
     
     if (!r.ok) {
       const errorMsg = j?.details || j?.error || 'Önizleme hatası';
       const errorCode = j?.error || 'unknown_error';
-      console.error('[Import] Error:', errorCode, j);
-      alert(`❌ Hata: ${errorMsg}\n\nKod: ${errorCode}`);
+      logger.error('[Import] Error', { errorCode, details: j });
+      toast.error(`❌ Hata: ${errorMsg}\n\nKod: ${errorCode}`);
       return;
     }
     
-    console.log('[Import] Success:', j);
+    logger.info('[Import] Success', j);
     LAST = j;
     preview.style.display = '';
     meta.innerHTML = `profil: <b>${j.profileHint}</b> • başlık satırı: <b>${j.headerRow}</b> • güven: <b class="${j.confidence>=80?'ok':j.confidence>=60?'warn':'err'}">${j.confidence}%</b>`;
@@ -164,7 +169,7 @@ btnPreview?.addEventListener('click', async () => {
 });
 
 btnCommit?.addEventListener('click', async () => {
-  if (!LAST) { alert('Önce önizleme yapın'); return; }
+  if (!LAST) { toast.warn('Önce önizleme yapın'); return; }
   
   // Teklifbul Rule v1.0 - Seçili kategorileri topla
   const itemsWithCategories = LAST.items.map((item: any, idx: number) => {
@@ -191,7 +196,7 @@ btnCommit?.addEventListener('click', async () => {
   
   const r = await fetch('/api/import/commit', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
   const j = await r.json();
-  if (!r.ok) { alert(j.error || 'Commit hatası'); return; }
+  if (!r.ok) { toast.error(j.error || 'Commit hatası'); return; }
   result.style.display = ''; resultBox.textContent = JSON.stringify(j, null, 2);
 });
 

@@ -254,15 +254,16 @@ export default [
       }],
     },
   },
-  // Jest test dosyaları
+  // Jest/Vitest test dosyaları (test/ ve tests/)
   {
-    files: ['test/**/*.{ts,js}', '**/*.test.{ts,js}', '**/*.spec.{ts,js}', 'src/__tests__/**/*.{ts,js}'],
+    files: ['test/**/*.{ts,js}', 'tests/**/*.{ts,js}', '**/*.test.{ts,js}', '**/*.spec.{ts,js}', 'src/__tests__/**/*.{ts,js}'],
     languageOptions: {
       ecmaVersion: 2020,
       globals: {
         ...globals.node,
         ...globals.jest,
       },
+      parser: tseslint.parser,
       parserOptions: {
         ecmaVersion: 2020,
         sourceType: 'module',
@@ -275,6 +276,43 @@ export default [
         argsIgnorePattern: '^_',
         varsIgnorePattern: '^_',
       }],
+      // Test dosyalarinda mock/stub icin any pragmatik kullanilir
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-require-imports': 'off',
+    },
+  },
+  // Root-level legacy CommonJS/JS dosyalari (HTML'lerden direkt import edilen
+  // global script'ler ve tek-seferlik migration utility'leri)
+  {
+    files: [
+      '*.js',
+      '*.cjs',
+      'approveCompanyJoinRequest.js',
+      'validateCompanyCodeFunction.js',
+      'signup_with_company_code.js',
+      'test_company_join_flow.js',
+      'migrate.js',
+      'migrate_fix_company_join.js',
+      'loadActiveCompanyUsers_safe.js',
+      'category-rules.js',
+      'categories.js',
+      'firebase.js',
+      'header.js',
+      'get-coordinates.js',
+    ],
+    languageOptions: {
+      ecmaVersion: 2020,
+      globals: {
+        ...globals.node,
+        ...globals.browser,
+      },
+    },
+    rules: {
+      'no-console': 'off',
+      'no-undef': 'off',
+      '@typescript-eslint/no-require-imports': 'off',
+      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      'no-alert': 'warn',
     },
   },
 ]

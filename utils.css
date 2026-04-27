@@ -1,3 +1,73 @@
+/* ====== CSS VARIABLES / TOKENS ====== */
+:root {
+  /* Colors */
+  --primary: #2563EB;
+  --primary-dark: #1E40AF;
+  --error: #DC2626;
+  --success: #10B981;
+  --warning: #F59E0B;
+
+  /* Text */
+  --text: #1F2937;
+  --text-muted: #6B7280;
+
+  /* Background */
+  --card-bg: #FFFFFF;
+  --bg-light: #F9FAFB;
+  --hover-bg: #F3F4F6;
+
+  /* Border */
+  --border: #E5E7EB;
+
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
+  --spacing-3xl: 64px;
+
+  /* Font sizes */
+  --font-size-xs: 12px;
+  --font-size-sm: 14px;
+  --font-size-base: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 24px;
+
+  /* Border radius */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+
+  /* Focus ring */
+  --focus-ring: 0 0 0 3px rgba(37, 99, 235, 0.1);
+
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-base: 0.2s ease;
+}
+
+/* Dark theme overrides */
+html.force-dark,
+html[data-theme="dark"] {
+  --text: #FFFFFF;
+  --text-muted: #D1D5DB;
+  --card-bg: #1F2937;
+  --bg-light: #111827;
+  --hover-bg: #374151;
+  --border: rgba(255, 255, 255, 0.1);
+  background-color: #111827;
+}
+
 /* ====== THEMED COMPONENTS ====== */
 
 /* Typography */
@@ -6,6 +76,14 @@ h1, h2, h3, h4, h5, h6 {
   margin: 8px 0 16px;
   font-weight: 600;
   line-height: 1.25;
+}
+html.force-dark h1, html[data-theme="dark"] h1,
+html.force-dark h2, html[data-theme="dark"] h2,
+html.force-dark h3, html[data-theme="dark"] h3,
+html.force-dark h4, html[data-theme="dark"] h4,
+html.force-dark h5, html[data-theme="dark"] h5,
+html.force-dark h6, html[data-theme="dark"] h6 {
+  color: #ffffff;
 }
 
 h1 { 
@@ -112,6 +190,14 @@ a:hover {
   color: var(--primary-dark);
   text-decoration: underline;
 }
+html.force-dark a:not(.btn-primary):not(.btn-danger):not(.btn-success):not(.btn-warning),
+html[data-theme="dark"] a:not(.btn-primary):not(.btn-danger):not(.btn-success):not(.btn-warning) {
+  color: #ffffff !important;
+}
+html.force-dark a:hover:not(.btn-primary):not(.btn-danger):not(.btn-success):not(.btn-warning),
+html[data-theme="dark"] a:hover:not(.btn-primary):not(.btn-danger):not(.btn-success):not(.btn-warning) {
+  color: rgba(255,255,255,0.8) !important;
+}
 
 /* Navigation Links */
 .nav {
@@ -129,6 +215,10 @@ a:hover {
   background: var(--surface);
   padding: 6px 12px;
   border-radius: 6px;
+}
+html.force-dark .nav.active,
+html[data-theme="dark"] .nav.active {
+  color: #ffffff !important;
 }
 
 /* Cards and Sections */
@@ -254,23 +344,23 @@ section:hover, .card:hover, .section:hover {
 @media (prefers-color-scheme: dark) {
   :root {
     /* Background Colors */
-    --bg: #0f172a;
-    --card-bg: #1e293b;
-    --surface: #334155;
+    --bg: #111827;
+    --card-bg: #111827;
+    --surface: #111827;
     
     /* Primary Colors */
-    --primary: #3b82f6;
-    --primary-dark: #60a5fa;
+    --primary: #60a5fa;
+    --primary-dark: #93c5fd;
     --primary-light: #93c5fd;
     
     /* Text Colors */
-    --text: #e2e8f0;
-    --text-muted: #94a3b8;
-    --text-light: #64748b;
+    --text: #ffffff;
+    --text-muted: rgba(255,255,255,0.7);
+    --text-light: rgba(255,255,255,0.5);
     
     /* Border & Shadow */
-    --border: #334155;
-    --border-light: #475569;
+    --border: rgba(255,255,255,0.25);
+    --border-light: rgba(255,255,255,0.15);
     --shadow: rgba(0, 0, 0, 0.3);
     --shadow-lg: rgba(0, 0, 0, 0.4);
     
@@ -281,27 +371,28 @@ section:hover, .card:hover, .section:hover {
     --info: #60a5fa;
     
     /* Interactive States */
-    --hover-bg: #334155;
-    --active-bg: #475569;
+    --hover-bg: rgba(255,255,255,0.05);
+    --active-bg: rgba(255,255,255,0.1);
     --focus-ring: 0 0 0 3px rgba(96, 165, 250, 0.2);
   }
 }
 
 /* MANUEL DARK (öncelik için sonda) */
-html.force-dark {
-  --bg: #0f172a !important;
-  --card-bg: #1e293b !important;
-  --surface: #334155 !important;
-  --text: #e2e8f0 !important;
-  --text-muted: #94a3b8 !important;
-  --text-light: #64748b !important;
+html.force-dark,
+html[data-theme="dark"] {
+  --bg: #111827 !important;
+  --card-bg: #111827 !important;
+  --surface: #111827 !important;
+  --text: #ffffff !important;
+  --text-muted: rgba(255,255,255,0.7) !important;
+  --text-light: rgba(255,255,255,0.5) !important;
+  --border: rgba(255,255,255,0.25) !important;
+  --border-light: rgba(255,255,255,0.15) !important;
 
-  --primary: #3b82f6 !important;
-  --primary-dark: #60a5fa !important;
+  --primary: #60a5fa !important;
+  --primary-dark: #93c5fd !important;
   --primary-light: #93c5fd !important;
 
-  --border: #334155 !important;
-  --border-light: #475569 !important;
   --shadow: 0 1px 4px rgba(0,0,0,0.3) !important;
   --shadow-lg: 0 4px 6px rgba(0,0,0,0.4) !important;
 
@@ -310,8 +401,8 @@ html.force-dark {
   --error: #f87171 !important;
   --info: #60a5fa !important;
 
-  --hover-bg: #334155 !important;
-  --active-bg: #475569 !important;
+  --hover-bg: rgba(255,255,255,0.05) !important;
+  --active-bg: rgba(255,255,255,0.1) !important;
   --focus-ring: 0 0 0 3px rgba(96, 165, 250, 0.2) !important;
 }
 
@@ -334,8 +425,10 @@ html, body {
   
   /* Theme Application */
   background: var(--bg);
-  color: var(--text);
-  transition: background-color 0.3s ease, color 0.3s ease;
+}
+html[data-theme="dark"] body {
+  background: #111827 !important;
+  color: #ffffff !important;
 }
 *, *::before, *::after { box-sizing: inherit; }
 
@@ -614,35 +707,17 @@ html, body { overflow-x: hidden; }
   color: var(--text-muted);
   margin: 0;
 }
-
-.breadcrumb a {
-  color: var(--primary);
-  text-decoration: none;
-  transition: color 0.2s ease;
-}
-
-.breadcrumb a:hover {
-  color: var(--primary-dark);
-  text-decoration: underline;
-}
-
-.breadcrumb .separator {
-  color: var(--text-light);
-  margin: 0 4px;
-}
-
-.breadcrumb .current {
-  color: var(--text);
-  font-weight: 500;
-}
-
-/* Page Title */
-.page-title {
-  font-size: 24px;
-  font-weight: 600;
-  color: var(--text);
-  margin: 0;
-  line-height: 1.2;
+html.force-dark .breadcrumb,
+html[data-theme="dark"] .breadcrumb,
+html.force-dark .breadcrumb a,
+html[data-theme="dark"] .breadcrumb a,
+html.force-dark .breadcrumb .separator,
+html[data-theme="dark"] .breadcrumb .separator,
+html.force-dark .breadcrumb .current,
+html[data-theme="dark"] .breadcrumb .current,
+html.force-dark .page-title,
+html[data-theme="dark"] .page-title {
+  color: #ffffff !important;
 }
 
 /* Company Chip */

@@ -59,6 +59,22 @@ __pycache__/
 # env.local: yerel ortam degerleri (sadece env.local.example commitlenir)
 env.local
 .env.local
+# Geliştirme sırasında olusan gecici dosyalar (root)
+tmp_*.js
+tmp_*.mjs
+tmp-*.js
+tmp-*.mjs
+.git-status.tmp
+.commit-msg-tmp.txt
+# Yerel error/log/list dump'lari
+*-error.txt
+*-error*.txt
+server_error.txt
+eslint_output.txt
+csp.txt
+*_list.txt
+functions_list.txt
+list.txt
 
 # Firestore emulator/test outputs
 firebase-debug.log

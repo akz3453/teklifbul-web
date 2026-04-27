@@ -15,8 +15,9 @@
     {
       "alias": "Birim",
       "field": "unit",
-      "confidence": 0.5547499999999999,
-      "seen": 10
+      "confidence": 0.5643181818181817,
+      "seen": 11,
+      "filenamePattern": "Satin_Alma_Talep_Formu_Sablonu_2025-11-11 (6).xlsx"
     },
     {
       "alias": "Ödeme Şartları",
@@ -81,8 +82,8 @@
     {
       "alias": "Depodaki Miktar",
       "field": "qty",
-      "confidence": 0.6041666666666665,
-      "seen": 8
+      "confidence": 0.6055555555555554,
+      "seen": 9
     },
     {
       "alias": "Ürünle ilgili açıklama kısmı buraya yazılır ürün sırasına göre açıklama yeri aşağıya gidebilir",
@@ -106,7 +107,7 @@
       "alias": "Birim",
       "field": "unitPriceExcl",
       "confidence": 0.66,
-      "seen": 5
+      "seen": 6
     },
     {
       "alias": "Sipariş\nMiktarı",
@@ -215,6 +216,199 @@
       "field": "currency",
       "confidence": 0.6,
       "seen": 1
+    },
+    {
+      "alias": "Birim *",
+      "field": "unitPriceExcl",
+      "confidence": 0.66,
+      "seen": 3
+    },
+    {
+      "alias": "Stok Kodu",
+      "field": "sku",
+      "confidence": 0.5492592592592593,
+      "seen": 1
+    },
+    {
+      "alias": "Sıra No",
+      "field": "brand",
+      "confidence": 0.5142857142857142,
+      "seen": 1
+    },
+    {
+      "alias": "Malzeme Tanımı *",
+      "field": "itemName",
+      "confidence": 0.45232142857142854,
+      "seen": 2,
+      "filenamePattern": "Satin_Alma_Talep_Formu_Sablonu_2025-11-11 (6).xlsx"
+    },
+    {
+      "alias": "Ödeme Şartları:",
+      "field": "title",
+      "confidence": 0.3860714285714286,
+      "seen": 1
+    },
+    {
+      "alias": "Şantiye:",
+      "field": "siteName",
+      "confidence": 0.6347486772486775,
+      "seen": 27,
+      "filenamePattern": "Satin_Alma_Talep_Formu_Sablonu_2025-11-11 (6).xlsx"
+    },
+    {
+      "alias": "Kategoriler:",
+      "field": "purchaseLocation",
+      "confidence": 0.5634090909090909,
+      "seen": 20,
+      "filenamePattern": "Satin_Alma_Talep_Formu_Sablonu_2025-11-11 (6).xlsx"
+    },
+    {
+      "alias": "Kategoriler:",
+      "field": "categories",
+      "confidence": 0.8635227272727275,
+      "seen": 26,
+      "filenamePattern": "Satin_Alma_Talep_Formu_Sablonu_2025-11-11 (6).xlsx"
+    },
+    {
+      "alias": "Öncelik *:",
+      "field": "priority",
+      "confidence": 0.5202248677248679,
+      "seen": 27,
+      "filenamePattern": "Satin_Alma_Talep_Formu_Sablonu_2025-11-11 (6).xlsx"
+    },
+    {
+      "alias": "Para Birimi *:",
+      "field": "currency",
+      "confidence": 0.7762689393939394,
+      "seen": 30,
+      "filenamePattern": "Satin_Alma_Talep_Formu_Sablonu_2025-11-11 (6).xlsx"
+    },
+    {
+      "alias": "Talep Tipi:",
+      "field": "biddingMode",
+      "confidence": 0.4606144781144784,
+      "seen": 27,
+      "filenamePattern": "Satin_Alma_Talep_Formu_Sablonu_2025-11-11 (6).xlsx"
+    },
+    {
+      "alias": "Talep Oluşturma Tarihi:",
+      "field": "phaseStart",
+      "confidence": 0.6109659090909091,
+      "seen": 20,
+      "filenamePattern": "Satin_Alma_Talep_Formu_Sablonu_2025-11-11 (6).xlsx"
+    },
+    {
+      "alias": "Termin:",
+      "field": "phaseEnd",
+      "confidence": 0.57,
+      "seen": 20,
+      "filenamePattern": "Satin_Alma_Talep_Formu_Sablonu_2025-11-11 (6).xlsx"
+    },
+    {
+      "alias": "Ödeme Şartları:",
+      "field": "paymentTerms",
+      "confidence": 0.5833928571428574,
+      "seen": 27,
+      "filenamePattern": "Satin_Alma_Talep_Formu_Sablonu_2025-11-11 (6).xlsx"
+    },
+    {
+      "alias": "Teslim Şekli *:",
+      "field": "deliveryMethod",
+      "confidence": 0.5829034391534397,
+      "seen": 27,
+      "filenamePattern": "Satin_Alma_Talep_Formu_Sablonu_2025-11-11 (6).xlsx"
+    },
+    {
+      "alias": "Teslimat Adresi:",
+      "field": "deliveryAddress",
+      "confidence": 0.65546096743295,
+      "seen": 29,
+      "filenamePattern": "Satin_Alma_Talep_Formu_Sablonu_2025-11-11 (6).xlsx"
+    },
+    {
+      "alias": "Ödeme Şartları:",
+      "field": "invoiceAddress",
+      "confidence": 0.3389285714285714,
+      "seen": 1
+    },
+    {
+      "alias": "Onaylayan:",
+      "field": "approver",
+      "confidence": 0.5040046296296298,
+      "seen": 27,
+      "filenamePattern": "Satin_Alma_Talep_Formu_Sablonu_2025-11-11 (6).xlsx"
+    },
+    {
+      "alias": "Ödeme Şartları:",
+      "field": "requester",
+      "confidence": 0.4148809523809522,
+      "seen": 19
+    },
+    {
+      "alias": "Termin:",
+      "field": "demandDate",
+      "confidence": 0.6047368421052631,
+      "seen": 19
+    },
+    {
+      "alias": "Termin:",
+      "field": "dueDate",
+      "confidence": 0.7360221674876847,
+      "seen": 29,
+      "filenamePattern": "Satin_Alma_Talep_Formu_Sablonu_2025-11-11 (6).xlsx"
+    },
+    {
+      "alias": "Ödeme Şartları:",
+      "field": "note",
+      "confidence": 0.3960714285714285,
+      "seen": 1
+    },
+    {
+      "alias": "Birim *",
+      "field": "unit",
+      "confidence": 0.66,
+      "seen": 3,
+      "filenamePattern": "Satin_Alma_Talep_Formu_Sablonu_2025-11-11 (6).xlsx"
+    },
+    {
+      "alias": "Teslimat Adresi:",
+      "field": "title",
+      "confidence": 0.4755555555555554,
+      "seen": 19,
+      "filenamePattern": "Satin_Alma_Talep_Formu_Sablonu_2025-11-11 (6).xlsx"
+    },
+    {
+      "alias": "Teslimat Adresi:",
+      "field": "invoiceAddress",
+      "confidence": 0.4351190476190476,
+      "seen": 1
+    },
+    {
+      "alias": "Şantiye:",
+      "field": "note",
+      "confidence": 0.4603571428571429,
+      "seen": 18
+    },
+    {
+      "alias": "Fatura Adresi:",
+      "field": "invoiceAddress",
+      "confidence": 0.6084175824175828,
+      "seen": 25,
+      "filenamePattern": "Satin_Alma_Talep_Formu_Sablonu_2025-11-11 (6).xlsx"
+    },
+    {
+      "alias": "Talep Oluşturma Tarihi:",
+      "field": "demandDate",
+      "confidence": 0.7311761363636364,
+      "seen": 10,
+      "filenamePattern": "Satin_Alma_Talep_Formu_Sablonu_2025-11-11 (6).xlsx"
+    },
+    {
+      "alias": "Başlık *:",
+      "field": "title",
+      "confidence": 1,
+      "seen": 3,
+      "filenamePattern": "Satin_Alma_Talep_Formu_Sablonu_2025-11-11 (6).xlsx"
     }
   ]
 }

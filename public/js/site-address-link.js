@@ -2,6 +2,10 @@
 // Talep ekranında Şantiye seçimini Alım Yeri ve Teslimat adresine bağlar.
 
 import { slugTR } from '/utils/slug-tr.js';
+// Teklifbul Rule v1.0 - Toast Bildirim Sistemi
+import { toast } from '/src/shared/ui/toast.js';
+// Teklifbul Rule v1.0 - Structured Logging
+import { logger } from '/src/shared/log/logger.js';
 
 const qs  = s => document.querySelector(s);
 
@@ -23,7 +27,7 @@ export function initSiteAddressLink() {
   const el = Object.fromEntries(Object.entries(ids).map(([k, sel]) => [k, qs(sel)]));
 
   if (!el.selSite) {
-    console.warn('[site-address-link] Şantiye select bulunamadı:', ids.selSite);
+    logger.warn('[site-address-link] Şantiye select bulunamadı', { selector: ids.selSite });
     return;
   }
 
@@ -89,7 +93,7 @@ export function initSiteAddressLink() {
     const site = getSiteById(el.selSite.value);
     if (el.chkNakliye.checked) {
       if (!site) {
-        alert('Nakliye dahil için önce bir şantiye seçiniz.');
+        toast.warn('Nakliye dahil için önce bir şantiye seçiniz.');
         el.chkNakliye.checked = false;
         return;
       }

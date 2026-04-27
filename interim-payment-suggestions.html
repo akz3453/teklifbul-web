@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>NEFISOFT — Hakediş Önerileri</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  
+  <!-- PWA Meta Tags -->
+  <meta name="theme-color" content="#2563EB" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="NEFISOFT" />
+  <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+  <link rel="manifest" href="/manifest.json" />
+  
+  <!-- Teklifbul Rule v1.0 - Tema standardı: tb_theme key, FOUC önleme -->
+  <script src="/assets/js/theme-init.js"></script>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%233b82f6' rx='6'/%3E%3Ctext x='16' y='22' font-family='Arial' font-size='18' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/utils.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <style>
+    body { margin: 0; font-family: system-ui, Arial; }
+    .page-heading { margin: 20px 0; }
+    .page-title-chip { display: flex; align-items: center; gap: 12px; }
+    .page-title-icon { font-size: 32px; }
+    .page-title-text h1 { margin: 0; font-size: 24px; font-weight: 600; color: var(--text, #1f2937); }
+    html[data-theme="dark"] .page-title-text h1 { color: #ffffff; }
+    .page-title-caption { margin: 4px 0 0 0; font-size: 14px; color: var(--text-muted, #6b7280); }
+    html[data-theme="dark"] .page-title-caption { color: rgba(255,255,255,0.7); }
+    
+    .card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; background: white; margin-bottom: 20px; }
+    html[data-theme="dark"] .card { background: #111827; border: 1px solid rgba(255,255,255,0.25); color: #ffffff; }
+    
+    .info-box { background: #eff6ff; border-left: 4px solid #3b82f6; padding: 16px; margin-bottom: 20px; border-radius: 6px; }
+    html[data-theme="dark"] .info-box { background: #1e3a8a; border-left-color: #60a5fa; }
+    .info-box p { margin: 0; color: #1e40af; font-size: 14px; }
+    html[data-theme="dark"] .info-box p { color: #93c5fd; }
+    
+    .table-container { overflow-x: auto; }
+    .table { width: 100%; border-collapse: collapse; }
+    .table th, .table td { border-bottom: 1px solid #e5e7eb; padding: 12px; text-align: left; font-size: 14px; }
+    html[data-theme="dark"] .table th, html[data-theme="dark"] .table td { border-bottom: 1px solid rgba(255,255,255,0.25); color: #ffffff; }
+    .table th { background: #f9fafb; font-weight: 600; color: #374151; }
+    html[data-theme="dark"] .table th { background: #111827; color: #ffffff; }
+    .table tbody tr:hover { background: #f9fafb; }
+    html[data-theme="dark"] .table tbody tr:hover { background: #1f2937; }
+    
+    .btn { padding: 8px 16px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .btn-primary { background: #3b82f6; color: white; }
+    .btn-primary:hover { background: #2563eb; }
+    
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted, #6b7280); }
+    html[data-theme="dark"] .empty-state { color: rgba(255,255,255,0.7); }
+    
+    .premium-required { text-align: center; padding: 60px 20px; }
+    .premium-required h2 { margin: 0 0 16px 0; color: var(--text, #1f2937); }
+    html[data-theme="dark"] .premium-required h2 { color: #ffffff; }
+    .premium-required p { color: var(--text-muted, #6b7280); margin: 8px 0; }
+    html[data-theme="dark"] .premium-required p { color: rgba(255,255,255,0.7); }
+  </style>
+</head>
+<body>
+  <!-- Common Header -->
+  <header id="app-header"></header>
+
+  <main class="container--wide" style="padding:20px 0">
+    <div class="page-heading">
+      <div class="page-title-chip" role="presentation">
+        <span class="page-title-icon" aria-hidden="true">💡</span>
+        <div class="page-title-text">
+          <h1>Hakediş Önerileri</h1>
+          <p class="page-title-caption">Otomatik Tespit Edilen Fırsatlar</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Premium Plus Kontrolü -->
+    <div id="premium-required" class="premium-required" style="display:none;">
+      <h2>Premium Plus Gerekli</h2>
+      <p>Bu özellik Premium Plus paketine özeldir.</p>
+      <p>Planınızı yükselterek hakediş hesaplama modülünü kullanabilirsiniz.</p>
+      <a href="./settings.html#premium" class="btn btn-primary" style="margin-top: 16px;">Planı Yükselt</a>
+    </div>
+    
+    <!-- Ana İçerik -->
+    <div id="main-content" style="display:none;">
+      <!-- Bilgilendirme -->
+      <div class="info-box">
+        <p><strong>💡 Bilgi:</strong> Son hakediş tarihinden sonra yeni metraj, stok veya gider hareketi oluşan projeler için sistem tarafından önerilen hakediş taslaklarını görebilirsiniz.</p>
+      </div>
+      
+      <!-- Tablo -->
+      <div class="card">
+        <div class="table-container">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Proje / Şantiye</th>
+                <th>Sözleşme</th>
+                <th>Son Hakediş Tarihi</th>
+                <th>Önerilen Dönem Başlangıç</th>
+                <th>Önerilen Dönem Bitiş</th>
+                <th>Tahmini Hakediş Tutarı</th>
+                <th>Gider Tutarı</th>
+                <th>İşlem</th>
+              </tr>
+            </thead>
+            <tbody id="suggestions-table-body">
+              <tr>
+                <td colspan="8" class="empty-state">Yükleniyor...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    // Teklifbul Rule v1.0
+    import { initGlobalHeader } from './assets/js/ui/header.js';
+    import { auth, waitAuthReady } from './firebase.js';
+    import { logger } from './src/shared/log/logger.js';
+    import { toast } from './src/shared/ui/toast.js';
+    import { getActiveCompanyId, resolveActiveCompany, setActiveCompanyId } from './assets/js/state/company.js';
+    import { requireCompanyContext } from './assets/js/state/company-context.js';
+    import { initPermissions, can as canPermission, requirePerm, getInterimPerms } from './assets/js/state/permissions.js';
+    
+    // getCurrentUser helper
+    async function getCurrentUser() {
+      if (auth.currentUser) return auth.currentUser;
+      const user = await waitAuthReady();
+      if (!user) {
+        throw new Error('not signed in');
+      }
+      return user;
+    }
+    
+    // Premium Plus kontrolü (company-bazlı, tek kaynak: companies/{companyId}.planId)
+    async function checkPremiumPlus() {
+      try {
+        const ctx = await requireCompanyContext({ redirectOnPending: true });
+        if (!ctx || !ctx.companyId) {
+          logger.warn('Hakediş Önerileri: company context alınamadı', { ctx });
+          return false;
+        }
+
+        const { getCompanyPlan, isPremiumPlus } = await import('./assets/js/state/company-plan.js');
+        const plan = await getCompanyPlan(ctx.companyId);
+        const isPlus = isPremiumPlus(plan.planId);
+
+        logger.info('Hakediş Önerileri Premium Plus kontrolü', {
+          companyId: ctx.companyId,
+          planId: plan.planId,
+          planSource: plan.planSource,
+          isPremiumPlus: isPlus
+        });
+
+        return isPlus;
+      } catch (error) {
+        logger.error('Premium Plus kontrolü başarısız', error);
+        return false;
+      }
+    }
+    
+    // Önerileri yükle
+    async function loadSuggestions() {
+      try {
+        const user = await getCurrentUser();
+        if (!user) return;
+        
+        // Teklifbul Rule v1.0 - Aktif şirket ID'sini çöz
+        let companyId = await getActiveCompanyId();
+        if (!companyId && user?.uid) {
+          logger.group('Hakediş Önerileri: Company Resolve');
+          logger.info('Active company missing, resolving from memberships', { uid: user.uid });
+          const resolved = await resolveActiveCompany(user.uid);
+          if (resolved) {
+            companyId = resolved;
+            setActiveCompanyId(resolved);
+            logger.info('Active company resolved', { companyId: resolved });
+          }
+          logger.end();
+        }
+
+        if (!companyId) {
+          logger.error('companyId bulunamadı (Hakediş Önerileri)');
+          toast.error('Şirket bulunamadı, lütfen firma seçin');
+          document.getElementById('suggestions-table-body').innerHTML = 
+            '<tr><td colspan="8" class="empty-state">Şirket bulunamadı, lütfen firma seçin.</td></tr>';
+          return;
+        }
+
+        const token = await user.getIdToken();
+        const params = new URLSearchParams({ companyId });
+        const response = await fetch(`/api/interim-payments/suggestions?${params.toString()}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        const data = await response.json();
+
+        if (!response.ok) {
+          logger.error('Öneriler API hatası', { status: response.status, body: data });
+          const message = data?.error || 'Öneriler yüklenemedi';
+          throw new Error(message);
+        }
+
+        const items = Array.isArray(data.items) ? data.items : (data.suggestions || []);
+        const tbody = document.getElementById('suggestions-table-body');
+        
+        if (!items || items.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" class="empty-state">Henüz öneri bulunmuyor</td></tr>';
+          return;
+        }
+        
+        tbody.innerHTML = items.map(s => `
+          <tr>
+            <td>${s.siteName || '-'}</td>
+            <td>${s.contractName || '-'}</td>
+            <td>${s.lastPaymentDate ? new Date(s.lastPaymentDate).toLocaleDateString('tr-TR') : 'İlk hakediş'}</td>
+            <td>${new Date(s.suggestedPeriodStart).toLocaleDateString('tr-TR')}</td>
+            <td>${new Date(s.suggestedPeriodEnd).toLocaleDateString('tr-TR')}</td>
+            <td>${s.estimatedAmount ? s.estimatedAmount.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' }) : '-'}</td>
+            <td>${s.costAmount ? s.costAmount.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' }) : '-'}</td>
+            <td>
+              <button class="btn btn-primary" onclick="createDraft('${s.siteId}', '${s.contractId}', '${s.suggestedPeriodStart}', '${s.suggestedPeriodEnd}')">
+                Taslak Hakediş Oluştur
+              </button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (error) {
+        logger.error('Öneriler yüklenirken hata', error);
+        toast.error('Öneriler yüklenirken hata oluştu: ' + (error?.message || 'Bilinmeyen hata'));
+        document.getElementById('suggestions-table-body').innerHTML = 
+          '<tr><td colspan="8" class="empty-state">Hata: Öneriler yüklenemedi</td></tr>';
+      }
+    }
+    
+    // Taslak hakediş oluştur
+    window.createDraft = function(siteId, contractId, periodStart, periodEnd) {
+      const interimPerms = getInterimPerms();
+      const manageKey = interimPerms.manage;
+      if (manageKey) {
+        // Not: requirePerm async olduğu için createDraft içinde sync kullanmıyoruz;
+        // hakediş taslağı oluşturma zaten edit sayfasındaki interim.manage guard'ına takılacak.
+        // Burada sadece ileride UI guard eklemek istersek hazır dursun.
+      }
+      const params = new URLSearchParams({
+        siteId,
+        contractId,
+        periodStart,
+        periodEnd
+      });
+      window.location.href = `./interim-payment-edit.html?${params.toString()}`;
+    };
+    
+    // Sayfa yükleme
+    async function init() {
+      // Header'ı başlat
+      await initGlobalHeader({ mount: '#app-header', activeRoute: 'interim-payment-suggestions' });
+      
+      // Premium Plus kontrolü
+      const hasAccess = await checkPremiumPlus();
+      if (!hasAccess) {
+        document.getElementById('premium-required').style.display = 'block';
+        document.getElementById('main-content').style.display = 'none';
+        return;
+      }
+
+      // Role-based permission init (Hakediş İşlem - interim.manage)
+      const permState = await initPermissions({ redirectOnPending: true });
+      if (!permState) {
+        const msg =
+          (MESSAGES?.ERROR_PERMISSION_INTERIM_MANAGE ||
+            MESSAGES?.ERROR_PERMISSION_DENIED ||
+            MESSAGES?.ERROR_PERMISSION) ??
+          'Hakediş işlemi yapma yetkiniz yok.';
+        toast.error(msg);
+        logger.warn('Hakediş Önerileri: permission state alınamadı, sayfa kapatılıyor');
+        window.location.href = './interim-payments.html';
+        return;
+      }
+
+      const interimPerms = getInterimPerms();
+      const manageKey = interimPerms.manage;
+      const canManageInterim = !manageKey || canPermission(manageKey);
+
+      if (!canManageInterim) {
+        const msg =
+          (MESSAGES?.ERROR_PERMISSION_INTERIM_MANAGE ||
+            MESSAGES?.ERROR_PERMISSION_DENIED ||
+            MESSAGES?.ERROR_PERMISSION) ??
+          'Hakediş işlemi yapma yetkiniz yok.';
+        toast.error(msg);
+        logger.warn('Hakediş Önerileri: interim.manage izni yok, sayfa kapatılıyor', {
+          permKey: manageKey,
+          companyId: permState.companyId,
+          roleKey: permState.roleKey
+        });
+        window.location.href = './interim-payments.html';
+        return;
+      }
+      
+      document.getElementById('premium-required').style.display = 'none';
+      document.getElementById('main-content').style.display = 'block';
+      
+      // Önerileri yükle
+      await loadSuggestions();
+      
+      logger.info('Hakediş önerileri sayfası yüklendi');
+    }
+    
+    init().catch(error => {
+      logger.error('Sayfa yükleme hatası', error);
+      toast.error('Sayfa yüklenirken hata oluştu');
+    });
+  </script>
+</body>
+</html>
+

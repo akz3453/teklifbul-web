@@ -6,43 +6,479 @@
   <title>Rol Seçimi</title>
   <link rel="stylesheet" href="./utils.css" />
   <style>
-    body { font-family: system-ui, Arial; max-width: 720px; margin: 40px auto; padding: 0 20px; }
-    .role-buttons { display: flex; gap: 12px; margin: 20px 0; }
-    .role-btn { flex: 1; padding: 20px; cursor: pointer; border: 2px solid #ddd; border-radius: 8px; background: white; transition: all 0.2s; }
-    .role-btn:hover { border-color: #3b82f6; background: #eff6ff; }
-    .role-btn.selected { border-color: #3b82f6; background: #dbeafe; }
-    .form-section { display: none; margin-top: 24px; padding: 24px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; }
-    .form-section.visible { display: block; }
-    .form-group { margin-bottom: 16px; }
-    label { display: block; font-weight: 600; font-size: 14px; margin-bottom: 6px; color: #374151; }
-    input[type="text"], input[type="email"], input[type="tel"], input[type="url"], textarea {
-      width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;
+    /* ═══════════════════════════════════════════════════════════ */
+    /* Role Select Page - Premium UI                              */
+    /* ═══════════════════════════════════════════════════════════ */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    
+    * { box-sizing: border-box; }
+    
+    body { 
+      margin: 0; 
+      font-family: 'Inter', system-ui, -apple-system, sans-serif; 
+      background: linear-gradient(160deg, #f0f4ff 0%, #e8edf5 40%, #f5f3ff 100%);
+      min-height: 100vh;
+      color: #1e293b;
     }
-    .chip-input { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; min-height: 42px; background: white; }
-    .chip-input input { border: none; outline: none; flex: 1; min-width: 150px; }
-    .badge { display: inline-block; padding: 6px 10px; background: #3b82f6; color: white; border-radius: 16px; font-size: 12px; cursor: pointer; }
-    .badge:hover { background: #2563eb; }
-    .checkbox-group { display: flex; align-items: start; gap: 8px; margin: 12px 0; }
-    .checkbox-group input[type="checkbox"] { margin-top: 3px; }
+    
+    .page-wrapper {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    /* ─── Brand Header ─── */
+    .brand-header {
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(226,232,240,0.6);
+      padding: 14px 24px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    
+    .brand-header-content {
+      max-width: 900px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 20px;
+      font-weight: 800;
+      color: #0f172a;
+      text-decoration: none;
+      letter-spacing: -0.5px;
+    }
+    .brand-logo:hover { color: #3b82f6; }
+    
+    .header-login {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: #64748b;
+    }
+    .header-login a {
+      color: #3b82f6;
+      text-decoration: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .header-login a:hover {
+      background: #eff6ff;
+      transform: translateY(-1px);
+    }
+    
+    /* ─── Main Content ─── */
+    main {
+      flex: 1;
+      padding: 28px 20px 60px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+    
+    /* ─── Central Card ─── */
+    .card {
+      max-width: 820px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 0;
+      border-radius: 20px;
+      background: #ffffff;
+      box-shadow: 
+        0 1px 3px rgba(15,23,42,0.04),
+        0 8px 24px rgba(15,23,42,0.06),
+        0 24px 48px rgba(15,23,42,0.04);
+      overflow: hidden;
+    }
+    
+    /* Card-content: single column centered */
+    .card-content {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    
+    /* ─── Step Indicator ─── */
+    .step-indicator {
+      padding: 28px 36px 0;
+      margin-bottom: 0;
+    }
+    .step {
+      font-size: 12px;
+      padding: 5px 14px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #eff6ff, #dbeafe);
+      color: #1d4ed8;
+      font-weight: 600;
+      display: inline-block;
+      letter-spacing: 0.3px;
+    }
+    
+    /* ─── Typography ─── */
+    h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #0f172a;
+      margin: 0 0 6px 0;
+      padding: 20px 36px 0;
+      letter-spacing: -0.5px;
+    }
+    .subtitle {
+      font-size: 15px;
+      color: #64748b;
+      margin: 0;
+      padding: 0 36px 24px;
+      line-height: 1.5;
+    }
+    h2 { font-size: 18px; font-weight: 700; color: #0f172a; margin: 0 0 16px; }
+    h3 { font-size: 16px; font-weight: 700; color: #0f172a; margin: 0 0 10px; }
+    h4 { font-size: 15px; font-weight: 600; margin: 0 0 8px; }
+    
+    /* ─── Info Block (embedded as banner) ─── */
+    .info-block {
+      background: linear-gradient(135deg, #f0f9ff 0%, #eff6ff 50%, #f5f3ff 100%);
+      border-radius: 0;
+      padding: 20px 36px;
+      border-top: 1px solid #e2e8f0;
+      border-bottom: 1px solid #e2e8f0;
+      position: static;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      align-items: flex-start;
+    }
+    .info-block h3 {
+      width: 100%;
+      font-size: 14px;
+      font-weight: 700;
+      color: #334155;
+      margin: 0 0 4px 0;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+    .info-block p {
+      font-size: 13px;
+      color: #475569;
+      line-height: 1.5;
+      margin: 0;
+      flex: 1;
+      min-width: 200px;
+    }
+    .info-block ul { display: none; }
+    .info-block li { display: none; }
+    
+    /* ─── Form Column ─── */
+    .form-column {
+      padding: 28px 36px 36px;
+    }
+    
+    /* ─── Role Buttons ─── */
+    .role-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 0 0 12px;
+    }
+    .role-btn {
+      padding: 22px 20px;
+      cursor: pointer;
+      border: 2px solid #e2e8f0;
+      border-radius: 14px;
+      background: #ffffff;
+      transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .role-btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, #3b82f6, #6366f1);
+      opacity: 0;
+      transition: opacity 0.25s;
+      border-radius: 12px;
+    }
+    .role-btn:hover {
+      border-color: #93c5fd;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(59,130,246,0.12);
+    }
+    .role-btn.selected {
+      border-color: #3b82f6;
+      background: linear-gradient(135deg, #eff6ff, #dbeafe);
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+    }
+    .role-btn h3 { position: relative; z-index: 1; }
+    .role-btn p { position: relative; z-index: 1; }
+    
+    /* ─── Form Sections ─── */
+    .form-section {
+      display: none;
+      margin-top: 20px;
+      padding: 0;
+      border: none;
+      border-radius: 0;
+      background: transparent;
+    }
+    .form-section.visible { display: block; }
+    
+    /* Section dividers */
+    .form-section h2 {
+      padding: 20px 0 16px;
+      margin: 0;
+      border-bottom: 2px solid #e2e8f0;
+      font-size: 18px;
+    }
+    .form-section h3 {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 16px 0 12px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #334155;
+    }
+    
+    /* ─── Form Groups ─── */
+    .form-group {
+      margin-bottom: 18px;
+    }
+    label {
+      display: block;
+      font-weight: 600;
+      font-size: 13px;
+      margin-bottom: 6px;
+      color: #334155;
+      letter-spacing: 0.2px;
+    }
+    input[type="text"], input[type="email"], input[type="tel"], input[type="url"], textarea, select {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      font-size: 14px;
+      font-family: inherit;
+      color: #1e293b;
+      background: #ffffff;
+      transition: all 0.2s;
+      outline: none;
+    }
+    input[type="text"]:focus, input[type="email"]:focus, input[type="tel"]:focus, input[type="url"]:focus, textarea:focus, select:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+    }
+    input[type="text"]::placeholder, input[type="email"]::placeholder, input[type="tel"]::placeholder, input[type="url"]::placeholder, textarea::placeholder {
+      color: #94a3b8;
+    }
+    
+    /* ─── Chip Input ─── */
+    .chip-input {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 10px 12px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      min-height: 46px;
+      background: white;
+      transition: all 0.2s;
+      align-items: center;
+    }
+    .chip-input:focus-within {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+    }
+    .chip-input input {
+      border: none !important;
+      outline: none;
+      flex: 1;
+      min-width: 150px;
+      padding: 4px 0 !important;
+      box-shadow: none !important;
+      font-size: 14px;
+      background: transparent;
+    }
+    
+    /* ─── Badges/Chips ─── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 5px 12px;
+      background: linear-gradient(135deg, #3b82f6, #6366f1);
+      color: white;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .badge:hover {
+      background: linear-gradient(135deg, #2563eb, #4f46e5);
+      transform: scale(1.05);
+    }
+    
+    /* ─── Category Actions ─── */
+    .category-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .category-action-btn {
+      padding: 8px 18px;
+      border: none;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .category-action-btn.primary {
+      background: linear-gradient(135deg, #3b82f6, #6366f1);
+      color: white;
+      box-shadow: 0 4px 14px rgba(59,130,246,0.3);
+    }
+    .category-action-btn.primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(59,130,246,0.4);
+    }
+    .category-action-btn.secondary {
+      background: #fef2f2;
+      color: #dc2626;
+      border: 1px solid #fecaca;
+    }
+    .category-action-btn.secondary:hover {
+      background: #fecaca;
+    }
+    
+    /* ─── Category Visual Grid ─── */
+    .category-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+      padding: 16px;
+      background: rgba(255, 255, 255, 0.6);
+      border: 1.5px solid #e2e8f0;
+      border-radius: 12px;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+    }
+    .category-pill {
+      padding: 8px 16px;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #475569;
+      background: #ffffff;
+      cursor: pointer;
+      transition: all 0.2s;
+      user-select: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    }
+    .category-pill:hover {
+      border-color: #94a3b8;
+      background: #f8fafc;
+      transform: translateY(-1px);
+    }
+    .category-pill.selected {
+      background: linear-gradient(135deg, #eff6ff, #dbeafe);
+      border-color: #3b82f6;
+      color: #1d4ed8;
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(59,130,246,0.15);
+    }
+    .category-pill.selected svg {
+      color: #3b82f6;
+    }
+
+    
+    /* ─── Consent ─── */
+    .consent-wrapper {
+      margin-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .consent-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      border: 1.5px solid #e2e8f0;
+      padding: 14px 18px;
+      border-radius: 12px;
+      background: #fafbfc;
+      transition: all 0.2s;
+    }
+    .consent-item:hover {
+      border-color: #cbd5e1;
+      background: #f8fafc;
+    }
+    .consent-item input {
+      width: 18px;
+      height: 18px;
+      margin-top: 2px;
+      accent-color: #3b82f6;
+      flex-shrink: 0;
+    }
+    .consent-item label {
+      margin: 0;
+      line-height: 1.5;
+      color: #475569;
+      font-weight: 400;
+      font-size: 13px;
+    }
+    
+    /* ─── Checkbox Groups ─── */
+    .checkbox-group {
+      display: flex;
+      align-items: start;
+      gap: 8px;
+      margin: 12px 0;
+    }
+    .checkbox-group input[type="checkbox"] {
+      margin-top: 3px;
+      accent-color: #3b82f6;
+    }
     .checkbox-group label { margin: 0; font-weight: 400; }
+    
     .required { color: #ef4444; }
+    
+    /* ─── KVKK ─── */
     .kvkk-text { 
       font-size: 13px; 
-      color: #374151; 
-      padding: 16px; 
-      background: #f9fafb; 
-      border: 1px solid #e5e7eb;
-      border-radius: 8px; 
+      color: #475569; 
+      padding: 18px 20px; 
+      background: #f8fafc; 
+      border: 1.5px solid #e2e8f0;
+      border-radius: 12px; 
       margin: 16px 0; 
-      line-height: 1.7; 
-      text-align: left;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      line-height: 1.7;
     }
     .kvkk-text strong {
       display: block;
       font-size: 14px;
       font-weight: 600;
-      color: #1f2937;
+      color: #1e293b;
       margin-bottom: 8px;
     }
     .kvkk-text a { 
@@ -50,21 +486,139 @@
       text-decoration: none; 
       font-weight: 500;
     }
-    .kvkk-text a:hover { 
-      text-decoration: underline; 
+    .kvkk-text a:hover { text-decoration: underline; }
+    
+    /* ─── Buttons ─── */
+    .btn-primary {
+      background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+      color: white;
+      border: none;
+      padding: 14px 28px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 700;
+      font-family: inherit;
+      letter-spacing: 0.3px;
+      transition: all 0.25s;
+      box-shadow: 0 4px 14px rgba(59,130,246,0.3);
     }
-    .btn-primary { background: #3b82f6; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; }
-    .btn-primary:hover { background: #2563eb; }
-    .btn-primary:disabled { background: #9ca3af; cursor: not-allowed; }
-    .file-upload { padding: 12px; border: 2px dashed #d1d5db; border-radius: 6px; background: white; cursor: pointer; }
-    .file-upload:hover { border-color: #3b82f6; background: #eff6ff; }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(59,130,246,0.4);
+    }
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+    .btn-primary:disabled {
+      background: #94a3b8;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    
+    /* ─── File Upload ─── */
+    .file-upload {
+      padding: 16px;
+      border: 2px dashed #cbd5e1;
+      border-radius: 12px;
+      background: #fafbfc;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .file-upload:hover {
+      border-color: #3b82f6;
+      background: #f0f7ff;
+    }
+    
+    /* ─── Section Separators (hr) ─── */
+    hr {
+      margin: 24px 0 !important;
+      border: none !important;
+      border-top: 1.5px solid #f1f5f9 !important;
+    }
+    
+    /* ─── Responsive ─── */
+    @media (max-width: 768px) {
+      .card {
+        border-radius: 0;
+        box-shadow: none;
+      }
+      main {
+        padding: 0;
+      }
+      h1 {
+        font-size: 22px;
+        padding: 20px 20px 0;
+      }
+      .subtitle {
+        padding: 0 20px 20px;
+      }
+      .step-indicator {
+        padding: 20px 20px 0;
+      }
+      .form-column {
+        padding: 20px;
+      }
+      .info-block {
+        padding: 16px 20px;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .role-buttons {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    /* ─── Select styling ─── */
+    .role-select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 36px;
+    }
   </style>
 </head>
 <body>
-  <h1>Profil Oluştur</h1>
-  <p style="color:#6b7280; margin-bottom:24px;">Teklifbul'da nasıl devam edeceksiniz?</p>
-  
-  <div class="role-buttons">
+  <div class="page-wrapper">
+    <!-- Brand Header -->
+    <header class="brand-header">
+      <div class="brand-header-content">
+        <a href="./index.html" class="brand-logo">
+          <span>📋</span>
+          <span>NEFISOFT</span>
+        </a>
+        <div class="header-login">
+          <span>Zaten hesabınız var mı?</span>
+          <a href="./login.html">Giriş yap</a>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+      <div class="card">
+        <!-- Step Indicator -->
+        <div class="step-indicator">
+          <span class="step">Adım 2 / 3 – Rol ve Şirket</span>
+        </div>
+
+        <h1>Profilinizi Oluşturun</h1>
+        <p class="subtitle">NEFISOFT'ta alıcı mı, tedarikçi mi olacaksınız? İsterseniz ikisini de seçebilirsiniz.</p>
+
+        <div class="card-content">
+          <!-- Info Banner -->
+          <div class="info-block">
+            <h3>Rol Bilgileri</h3>
+            <p><strong>Alıcı:</strong> İç talep ve satın alma süreçlerinizi yönetin.</p>
+            <p><strong>Tedarikçi:</strong> Müşterilerden gelen taleplere teklif verin.</p>
+            <p style="font-size: 12px; color: #64748b; min-width: 100%;">Şirket kodu ile katılan kullanıcılar, şirket yöneticisinin onayıyla aktif olur.</p>
+          </div>
+
+          <!-- Form -->
+          <div class="form-column">
+            <div class="role-buttons">
     <button class="role-btn" id="buyerBtn" type="button">
       <h3 style="margin:0 0 8px 0;">🛒 Alıcı</h3>
       <p style="margin:0; font-size:13px; color:#6b7280;">Talep oluştur ve teklif al</p>
@@ -108,28 +662,8 @@
         </div>
         <div class="form-group">
           <label for="joinRoleSelect">Şirket İçindeki Rolünüz <span class="required">*</span></label>
-          <select id="joinRoleSelect" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:6px; font-size:14px;">
+          <select id="joinRoleSelect" class="role-select" data-default="" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:6px; font-size:14px;">
             <option value="">Rol seçin</option>
-            <optgroup label="Alıcı Rolleri">
-              <option value="buyer:satinalma_yetkilisi">Satın Alma Yetkilisi</option>
-              <option value="buyer:santiye_yetkilisi">Şantiye Yetkilisi</option>
-              <option value="buyer:stok_depo">Stok / Depo Yetkilisi</option>
-              <option value="buyer:muhasebe">Muhasebe</option>
-              <option value="buyer:alici">Alıcı</option>
-              <option value="buyer:genel_mudur">Genel Müdür</option>
-              <option value="buyer:genel_mudur_yardimcisi">Genel Müdür Yardımcısı</option>
-              <option value="buyer:yonetim_kurulu_baskani">Yönetim Kurulu Başkanı</option>
-              <option value="buyer:isveren">İşveren (Şirket Sahibi)</option>
-              <option value="buyer:ceo">CEO</option>
-            </optgroup>
-            <optgroup label="Tedarikçi Rolleri">
-              <option value="supplier:satis_personeli">Satış Personeli</option>
-              <option value="supplier:pazarlama_muduru">Pazarlama Müdürü</option>
-              <option value="supplier:genel_mudur">Genel Müdür</option>
-              <option value="supplier:yonetim_kurulu_baskani">Yönetim Kurulu Başkanı</option>
-              <option value="supplier:ceo">CEO</option>
-              <option value="supplier:sirket_sahibi">Şirket Sahibi</option>
-            </optgroup>
           </select>
         </div>
       </div>
@@ -148,18 +682,8 @@
         <div id="newCompanyBuyerRoleSection" style="display:none; margin-bottom:16px; padding-bottom:16px; border-bottom:1px solid #e5e7eb;">
           <div class="form-group">
             <label for="newCompanyBuyerRoleSelect">Alıcı Rolünüz - Şirket İçindeki Rolünüz <span class="required">*</span></label>
-            <select id="newCompanyBuyerRoleSelect" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:6px; font-size:14px;">
+            <select id="newCompanyBuyerRoleSelect" class="role-select" data-default="buyer:isveren" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:6px; font-size:14px;">
               <option value="">Rol seçin</option>
-              <option value="buyer:satinalma_yetkilisi">Satın Alma Yetkilisi</option>
-              <option value="buyer:santiye_yetkilisi">Şantiye Yetkilisi</option>
-              <option value="buyer:stok_depo">Stok / Depo Yetkilisi</option>
-              <option value="buyer:muhasebe">Muhasebe</option>
-              <option value="buyer:alici">Alıcı</option>
-              <option value="buyer:genel_mudur">Genel Müdür</option>
-              <option value="buyer:genel_mudur_yardimcisi">Genel Müdür Yardımcısı</option>
-              <option value="buyer:yonetim_kurulu_baskani">Yönetim Kurulu Başkanı</option>
-              <option value="buyer:isveren" selected>İşveren (Şirket Sahibi)</option>
-              <option value="buyer:ceo">CEO</option>
             </select>
           </div>
         </div>
@@ -168,14 +692,8 @@
         <div id="newCompanySupplierRoleSection" style="display:none;">
           <div class="form-group">
             <label for="newCompanySupplierRoleSelect">Tedarikçi Rolünüz - Şirket İçindeki Rolünüz <span class="required">*</span></label>
-            <select id="newCompanySupplierRoleSelect" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:6px; font-size:14px;">
+            <select id="newCompanySupplierRoleSelect" class="role-select" data-default="supplier:sirket_sahibi" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:6px; font-size:14px;">
               <option value="">Rol seçin</option>
-              <option value="supplier:satis_personeli">Satış Personeli</option>
-              <option value="supplier:pazarlama_muduru">Pazarlama Müdürü</option>
-              <option value="supplier:genel_mudur">Genel Müdür</option>
-              <option value="supplier:yonetim_kurulu_baskani">Yönetim Kurulu Başkanı</option>
-              <option value="supplier:ceo">CEO</option>
-              <option value="supplier:sirket_sahibi" selected>Şirket Sahibi</option>
             </select>
           </div>
         </div>
@@ -234,7 +752,22 @@
       </div>
       <div class="form-group" style="margin-bottom:0;">
         <label for="mobilePhone">Cep Telefonu</label>
-        <input type="text" id="mobilePhone" placeholder="Örn: 0 (5XX) 555 00 00" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:6px; font-size:14px;" />
+        <div style="display:flex; gap:8px;">
+          <select id="mobilePhoneCode" style="width:100px; padding:10px; border:1px solid #d1d5db; border-radius:6px; font-size:14px; background-color:white; cursor:pointer;" title="Ülke Kodu">
+            <option value="+90" selected>🇹🇷 +90</option>
+            <option value="+1">🇺🇸 +1</option>
+            <option value="+44">🇬🇧 +44</option>
+            <option value="+49">🇩🇪 +49</option>
+            <option value="+33">🇫🇷 +33</option>
+            <option value="+39">🇮🇹 +39</option>
+            <option value="+7">🇷🇺 +7</option>
+            <option value="+971">🇦🇪 +971</option>
+            <option value="+966">🇸🇦 +966</option>
+            <option value="+86">🇨🇳 +86</option>
+            <option value="+91">🇮🇳 +91</option>
+          </select>
+          <input type="tel" id="mobilePhone" placeholder="5XX 555 00 00" style="flex:1; padding:10px; border:1px solid #d1d5db; border-radius:6px; font-size:14px; min-width: 0;" />
+        </div>
       </div>
     </div>
     
@@ -386,14 +919,13 @@
         <h4 style="margin:16px 0 8px 0; color:#3b82f6;">🛒 Alıcı Kategorileri</h4>
         <p style="font-size:13px; color:#6b7280; margin-bottom:12px;">Hangi alanlarda talep oluşturacaksınız?</p>
         
-        <div style="margin-bottom:16px;">
-          <button type="button" id="selectAllBuyer" style="padding:6px 12px; background:#e5e7eb; border:none; border-radius:4px; cursor:pointer; font-size:12px; margin-right:8px;">Tümünü Seç</button>
-          <button type="button" id="clearAllBuyer" style="padding:6px 12px; background:#fee2e2; border:none; border-radius:4px; cursor:pointer; font-size:12px;">Tümünü Temizle</button>
+        <div class="category-actions">
+          <button type="button" id="selectAllBuyer" class="category-action-btn primary">Tümünü Seç</button>
+          <button type="button" id="clearAllBuyer" class="category-action-btn secondary">Tümünü Temizle</button>
         </div>
         
-        <div class="chip-input" id="buyerCategoryChipInput" style="min-height:60px; max-height:120px; overflow-y:auto;">
-          <input type="text" id="buyerCategoryInput" placeholder="Kategori ekle veya seç..." list="buyerCategoryList" autocomplete="off" />
-          <datalist id="buyerCategoryList"></datalist>
+        <div class="category-grid" id="buyerCategoryGrid">
+          <!-- Kategoriler görsel olarak JavaScript ile buraya yüklenecek -->
         </div>
       </div>
       
@@ -402,14 +934,13 @@
         <h4 style="margin:16px 0 8px 0; color:#dc2626;">Tedarikçi Kategorileri</h4>
         <p style="font-size:13px; color:#6b7280; margin-bottom:12px;">Hangi alanlarda teklif vereceksiniz?</p>
         
-        <div style="margin-bottom:16px;">
-          <button type="button" id="selectAllSupplier" style="padding:6px 12px; background:#e5e7eb; border:none; border-radius:4px; cursor:pointer; font-size:12px; margin-right:8px;">Tümünü Seç</button>
-          <button type="button" id="clearAllSupplier" style="padding:6px 12px; background:#fee2e2; border:none; border-radius:4px; cursor:pointer; font-size:12px;">Tümünü Temizle</button>
+        <div class="category-actions">
+          <button type="button" id="selectAllSupplier" class="category-action-btn primary">Tümünü Seç</button>
+          <button type="button" id="clearAllSupplier" class="category-action-btn secondary">Tümünü Temizle</button>
         </div>
         
-        <div class="chip-input" id="supplierCategoryChipInput" style="min-height:60px; max-height:120px; overflow-y:auto;">
-          <input type="text" id="supplierCategoryInput" placeholder="Kategori ekle veya seç..." list="supplierCategoryList" autocomplete="off" />
-          <datalist id="supplierCategoryList"></datalist>
+        <div class="category-grid" id="supplierCategoryGrid">
+          <!-- Kategoriler görsel olarak JavaScript ile buraya yüklenecek -->
         </div>
       </div>
       
@@ -435,26 +966,34 @@
     
     <div class="kvkk-text">
       <strong>KVKK Aydınlatma ve Açık Rıza:</strong> Teklifbul Bilişim A.Ş. tarafından sunulan hizmetler kapsamında, kimlik ve iletişim bilgilerim ile firma bilgilerimin; tedarikçi eşleştirme, talep iletimi, teklif süreç yönetimi ve yasal yükümlülüklerin yerine getirilmesi amaçlarıyla işlenmesini; yurt içi/yurt dışı hizmet sağlayıcılarına aktarılmasını kabul ediyorum. 
-      <a href="#" target="_blank">Detaylı Aydınlatma Metni</a>
+      <a href="legal/kvkk-aydinlatma.html" target="_blank" rel="noopener noreferrer">Detaylı Aydınlatma Metni</a>
     </div>
     
-    <div class="checkbox-group">
-      <input type="checkbox" id="kvkkConsent" required />
-      <label for="kvkkConsent">KVKK Aydınlatma Metni'ni okudum ve Açık Rıza veriyorum. <span class="required">*</span></label>
-    </div>
-    
-    <div class="checkbox-group">
-      <input type="checkbox" id="marketingConsent" />
-      <label for="marketingConsent">Ticari elektronik ileti almayı kabul ediyorum.</label>
+    <div class="consent-wrapper">
+      <div class="consent-item">
+        <input type="checkbox" id="kvkkConsent" required />
+        <label for="kvkkConsent">KVKK Aydınlatma Metni'ni okudum ve Açık Rıza veriyorum. <span class="required">*</span></label>
+      </div>
+      <div class="consent-item">
+        <input type="checkbox" id="marketingConsent" />
+        <label for="marketingConsent">Ticari elektronik ileti almayı kabul ediyorum.</label>
+      </div>
     </div>
     
     <button class="btn-primary" id="saveBtn" style="width:100%; margin-top:20px;">Kaydet ve Devam Et</button>
   </div>
   
-  <p style="margin-top:24px;"><a href="./index.html">← Giriş sayfasına dön</a></p>
+          </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
 
   <script type="module">
-    import { auth, db, app } from "./firebase.js";
+    // Teklifbul Rule v1.0 - XSS Protection
+    import DOMPurify from 'https://cdn.jsdelivr.net/npm/dompurify@3.2.2/+esm';
+    import { auth, db, app, logout, authStateReady } from "./firebase.js";
     // Teklifbul Rule v1.0 - Structured Logging
     import { logger } from './src/shared/log/logger.js';
     // Teklifbul Rule v1.0 - Toast Notification System
@@ -469,16 +1008,101 @@
       normalizeToIds 
     } from "./src/categories/category-service.js";
     import {
-      doc, getDoc, setDoc, updateDoc, addDoc, serverTimestamp, collection, query, where, getDocs
+      doc, getDoc, setDoc, updateDoc, addDoc, serverTimestamp, collection, query, where, getDocs, limit
     } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
     import {
       getStorage, ref, uploadBytes
     } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-storage.js";
+    import {
+      sendEmailVerification
+    } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
 
     const storage = getStorage(app);
     let selectedRole = null;
     let bankAccounts = []; // Bank account storage
     let generatedCompanyCode = null; // Generated company code
+    
+    const BASE_BUYER_ROLES = [
+      { key: 'genel_mudur', label: 'Genel Müdür' },
+      { key: 'genel_mudur_yardimcisi', label: 'Genel Müdür Yardımcısı' },
+      { key: 'ceo', label: 'CEO' },
+      { key: 'isveren', label: 'İşveren (Şirket Sahibi)' },
+      { key: 'yonetim_kurulu_baskani', label: 'Yönetim Kurulu Başkanı' },
+      { key: 'yonetim_kurulu_uyesi', label: 'Yönetim Kurulu Üyesi' },
+      { key: 'satinalma_muduru', label: 'Satın Alma Müdürü' },
+      { key: 'satinalma_yetkilisi', label: 'Satın Alma Yetkilisi' },
+      { key: 'satinalma_uzmani', label: 'Satın Alma Uzmanı' },
+      { key: 'satinalma_uzman_yardimcisi', label: 'Satın Alma Uzman Yardımcısı' },
+      { key: 'santiye_yetkilisi', label: 'Şantiye Yetkilisi' },
+      { key: 'stok_depo', label: 'Stok / Depo Yetkilisi' },
+      { key: 'muhasebe', label: 'Muhasebe' },
+      { key: 'idari_isler', label: 'İdari İşler' },
+      { key: 'sekreter', label: 'Sekreter' },
+      { key: 'proje_yoneticisi', label: 'Proje Yöneticisi' }
+    ];
+    
+    const BASE_SUPPLIER_ROLES = [
+      { key: 'satici', label: 'Satıcı' },
+      { key: 'satis_muduru', label: 'Satış Müdürü' },
+      { key: 'satis_yoneticisi', label: 'Satış Yöneticisi' },
+      { key: 'pazarlama_muduru', label: 'Pazarlama Müdürü' },
+      { key: 'satis_personeli', label: 'Satış Personeli' },
+      { key: 'sirket_sahibi', label: 'Şirket Sahibi' }
+    ];
+    
+    const ROLE_GROUPS = [
+      { label: 'Alıcı Rolleri', prefix: 'buyer', roles: BASE_BUYER_ROLES },
+      { label: 'Tedarikçi Rolleri', prefix: 'supplier', roles: BASE_SUPPLIER_ROLES }
+    ];
+    
+    const DEFAULT_BUYER_ROLE_OPTIONS = [
+      ...BASE_BUYER_ROLES.map(role => ({ value: `buyer:${role.key}`, label: role.label })),
+      ...BASE_SUPPLIER_ROLES.map(role => ({ value: `buyer:${role.key}`, label: role.label }))
+    ];
+    
+    const DEFAULT_SUPPLIER_ROLE_OPTIONS = [
+      ...BASE_SUPPLIER_ROLES.map(role => ({ value: `supplier:${role.key}`, label: role.label })),
+      ...BASE_BUYER_ROLES.map(role => ({ value: `supplier:${role.key}`, label: role.label }))
+    ];
+    
+    function buildRoleOptionsHTML(selectedValue = '') {
+      // Teklifbul Rule v1.0 - XSS Protection: Sanitize selectedValue
+      const safeSelectedValue = DOMPurify.sanitize(selectedValue || '', { ALLOWED_TAGS: [] });
+      let html = '<option value="">Rol seçin</option>';
+      ROLE_GROUPS.forEach(group => {
+        const safeGroupLabel = DOMPurify.sanitize(group.label || '', { ALLOWED_TAGS: [] });
+        html += `<optgroup label="${safeGroupLabel}">`;
+        group.roles.forEach(role => {
+          const value = `${group.prefix}:${role.key}`;
+          const safeRoleLabel = DOMPurify.sanitize(role.label || '', { ALLOWED_TAGS: [] });
+          const selected = value === safeSelectedValue ? 'selected' : '';
+          html += `<option value="${value}" ${selected}>${safeRoleLabel}</option>`;
+        });
+        html += '</optgroup>';
+      });
+      return html;
+    }
+    
+    function hydrateRoleSelects() {
+      document.querySelectorAll('.role-select').forEach(select => {
+        const currentValue = select.dataset.default || select.value || '';
+        // Teklifbul Rule v1.0 - XSS Protection: Sanitize role options HTML
+        const roleOptionsHTML = buildRoleOptionsHTML(currentValue);
+        select.innerHTML = DOMPurify.sanitize(roleOptionsHTML, {
+          ALLOWED_TAGS: ['option', 'optgroup'],
+          ALLOWED_ATTR: ['value', 'selected', 'label']
+        });
+        if (currentValue) {
+          select.value = currentValue;
+        }
+      });
+    }
+    
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', hydrateRoleSelects);
+    } else {
+      hydrateRoleSelects();
+    }
     
     // === Tax Office Management ===
     // Teklifbul Rule v1.0 - Vergi dairesi sistemi (settings.html'den entegre edildi)
@@ -551,7 +1175,7 @@
     async function fetchTaxOfficesFromFirestore() {
       try {
         console.debug("🔄 Vergi dairesi listesi Firestore'dan yükleniyor...");
-        const snap = await getDocs(collection(db, "taxOffices"));
+        const snap = await getDocs(query(collection(db, "taxOffices"), limit(1000))); // Teklifbul Rule v1.0 - Limit eklendi
         const list = [];
         snap.forEach(d => {
           const name = d.data()?.name;
@@ -569,10 +1193,18 @@
       if (!sel) return;
 
       sel.innerHTML = "";
+      
+      // Teklifbul Rule v1.0 - Her zaman eklenmesi gereken özel vergi daireleri
+      const specialOffices = ["Kurumlar Vergi Dairesi", "Büyük Mükellefler Vergi Dairesi"];
+      
+      // Gelen listeye özel daireleri ekle ve tekrarları filtrele
+      const combined = [...list, ...specialOffices];
+      const uniqueList = Array.from(new Set(combined)).filter(Boolean);
+
       const opts = [
         { v: "", t: "Vergi Dairesi Seçin" },
-        ...list.map(n => ({ v: n, t: n })),
-        { v: "__MANUAL__", t: "Elle yaz" }
+        ...uniqueList.map(n => ({ v: n, t: n })),
+        { v: "__MANUAL__", t: "Elle yaz (Listede Yok)" }
       ];
 
       for (const o of opts) {
@@ -585,7 +1217,9 @@
 
     async function buildTaxOfficeSelect() {
       // İl seçimi varsa il bazlı yükle
-      const invoiceIl = document.getElementById('inv_il')?.value || document.getElementById('invoiceIl')?.value;
+      const invIlSel = document.getElementById('inv_il') || document.getElementById('invoiceIl');
+      const invoiceIl = invIlSel?.value;
+      const invoiceIlName = invIlSel?.options[invIlSel.selectedIndex]?.text?.trim()?.toUpperCase() || '';
       
       if (invoiceIl) {
         const result = await fetchTaxOfficesFromAPI(invoiceIl);
@@ -604,6 +1238,20 @@
         console.debug("ℹ️ API ve Firestore'dan veri alınamadı, yerel liste kullanılıyor (normal durum)");
         list = LOCAL_TAX_OFFICES;
       }
+      
+      // Teklifbul Rule v1.0 - İl bazlı statik yerel liste filtrelemesi
+      if (list === LOCAL_TAX_OFFICES && invoiceIlName) {
+         if (invoiceIlName === "İSTANBUL" || invoiceIlName === "ISTANBUL") {
+             list = LOCAL_TAX_OFFICES.slice(0, 12);
+         } else if (invoiceIlName === "ANKARA") {
+             list = LOCAL_TAX_OFFICES.slice(12, 17);
+         } else if (invoiceIlName === "İZMİR" || invoiceIlName === "IZMIR") {
+             list = LOCAL_TAX_OFFICES.slice(17, 20);
+         } else {
+             list = []; // Diğer iller için lokal listeyi boşalt (Sadece özel daireler görünecek)
+         }
+      }
+      
       populateTaxOfficeSelect(list);
     }
     
@@ -694,7 +1342,11 @@
           // Yükleniyor göstergesi
           if (taxOfficeSelect) {
             taxOfficeSelect.disabled = true;
-            taxOfficeSelect.innerHTML = '<option value="">⏳ Yükleniyor...</option>';
+            // Teklifbul Rule v1.0 - XSS Protection: Sanitize loading message
+            taxOfficeSelect.innerHTML = DOMPurify.sanitize('<option value="">⏳ Yükleniyor...</option>', {
+              ALLOWED_TAGS: ['option'],
+              ALLOWED_ATTR: ['value']
+            });
           }
           
           // 300ms bekle (debounce)
@@ -982,7 +1634,10 @@
       
       const row = document.createElement('div');
       row.style.cssText = 'display:grid; grid-template-columns: 2fr 3fr 2fr 1fr auto; gap:8px; align-items:end; margin-bottom:12px; padding:12px; background:#f9fafb; border-radius:6px;';
-      row.innerHTML = `
+      // Teklifbul Rule v1.0 - XSS Protection: Sanitize company name
+      const companyNameEl = document.getElementById('companyName');
+      const safeCompanyName = DOMPurify.sanitize(companyNameEl?.value || '', { ALLOWED_TAGS: [] });
+      row.innerHTML = DOMPurify.sanitize(`
         <div>
           <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Banka Adı</label>
           <input type="text" class="bank-name" placeholder="Banka adı" style="width:100%; padding:8px; border:1px solid #d1d5db; border-radius:4px; font-size:13px;" />
@@ -993,7 +1648,7 @@
         </div>
         <div>
           <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Hesap Adı</label>
-          <input type="text" class="bank-account-name" placeholder="Hesap sahibi adı" style="width:100%; padding:8px; border:1px solid #d1d5db; border-radius:4px; font-size:13px;" value="${document.getElementById('companyName')?.value || ''}" />
+          <input type="text" class="bank-account-name" placeholder="Hesap sahibi adı" style="width:100%; padding:8px; border:1px solid #d1d5db; border-radius:4px; font-size:13px;" value="${safeCompanyName}" />
         </div>
         <div>
           <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Para Birimi</label>
@@ -1007,7 +1662,10 @@
         <div>
           <button type="button" class="remove-bank" style="padding:8px 12px; background:#ef4444; color:white; border:none; border-radius:4px; cursor:pointer; font-size:12px;">✕</button>
         </div>
-      `;
+      `, {
+        ALLOWED_TAGS: ['div', 'label', 'input', 'select', 'option', 'button'],
+        ALLOWED_ATTR: ['style', 'class', 'type', 'placeholder', 'value', 'maxlength']
+      });
       
       row.querySelector('.remove-bank').addEventListener('click', () => {
         row.remove();
@@ -1068,23 +1726,15 @@
       return name.toLowerCase().trim().replace(/\s+/g, '-');
     }
     
-    // Populate category datalists with new ID-based system
-    const buyerDataList = document.getElementById("buyerCategoryList");
-    const supplierDataList = document.getElementById("supplierCategoryList");
+    // Populate category visuals with new ID-based system
+    const buyerCategoryGrid = document.getElementById("buyerCategoryGrid");
+    const supplierCategoryGrid = document.getElementById("supplierCategoryGrid");
     const allCategories = getAllCategories();
-    allCategories.forEach(cat => {
-      const categoryName = cat.name; // Display name
-      
-      const buyerOption = document.createElement("option"); 
-      buyerOption.value = categoryName; 
-      buyerOption.dataset.categoryId = cat.id; // Store ID for later
-      buyerDataList.appendChild(buyerOption);
-      
-      const supplierOption = document.createElement("option"); 
-      supplierOption.value = categoryName; 
-      supplierOption.dataset.categoryId = cat.id; // Store ID for later
-      supplierDataList.appendChild(supplierOption);
-    });
+    
+    // We will render them visually instead of in a datalist.
+    function createCheckmarkIcon() {
+      return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+    }
     
     // Multi-role selection system - Teklifbul Rule v1.0
     let selectedRoles = new Set(); // Array yerine Set kullanıyoruz
@@ -1248,85 +1898,87 @@
       }
     });
     
-    // Buyer Category chip input
-    const buyerCategoryInput = document.getElementById("buyerCategoryInput");
-    const buyerCategoryChipInput = document.getElementById("buyerCategoryChipInput");
-    
-    function renderBuyerCatChips() {
-      const existing = buyerCategoryChipInput.querySelectorAll(".badge");
-      existing.forEach(el => el.remove());
+    // Buyer Category visual grid
+    function renderBuyerCatGrid() {
+      if (!buyerCategoryGrid) return;
+      buyerCategoryGrid.innerHTML = "";
       
-      [...buyerCatChips].forEach(v => {
-        const span = document.createElement("span");
-        span.className = "badge";
-        span.textContent = v + " ✕";
-        span.onclick = () => { buyerCatChips.delete(v); renderBuyerCatChips(); };
-        buyerCategoryChipInput.insertBefore(span, buyerCategoryInput);
+      allCategories.forEach(cat => {
+        const isSelected = buyerCatChips.has(cat.name);
+        const pill = document.createElement("div");
+        pill.className = `category-pill ${isSelected ? 'selected' : ''}`;
+        
+        let content = '';
+        if (isSelected) content += createCheckmarkIcon();
+        content += `<span>${DOMPurify.sanitize(cat.name)}</span>`;
+        
+        pill.innerHTML = content;
+        
+        pill.onclick = () => { 
+          if (isSelected) {
+            buyerCatChips.delete(cat.name);
+          } else {
+            buyerCatChips.add(cat.name);
+          }
+          renderBuyerCatGrid(); 
+        };
+        buyerCategoryGrid.appendChild(pill);
       });
     }
     
-    buyerCategoryInput.addEventListener("keydown", e => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        const v = e.target.value.trim();
-        if (v) {
-          buyerCatChips.add(v);
-          renderBuyerCatChips();
-          e.target.value = "";
-        }
-      }
-    });
+    // Initial Render
+    renderBuyerCatGrid();
     
-    // Supplier Category chip input
-    const supplierCategoryInput = document.getElementById("supplierCategoryInput");
-    const supplierCategoryChipInput = document.getElementById("supplierCategoryChipInput");
-    
-    function renderSupplierCatChips() {
-      const existing = supplierCategoryChipInput.querySelectorAll(".badge");
-      existing.forEach(el => el.remove());
+    // Supplier Category visual grid
+    function renderSupplierCatGrid() {
+      if (!supplierCategoryGrid) return;
+      supplierCategoryGrid.innerHTML = "";
       
-      [...supplierCatChips].forEach(v => {
-        const span = document.createElement("span");
-        span.className = "badge";
-        span.textContent = v + " ✕";
-        span.onclick = () => { supplierCatChips.delete(v); renderSupplierCatChips(); };
-        supplierCategoryChipInput.insertBefore(span, supplierCategoryInput);
+      allCategories.forEach(cat => {
+        const isSelected = supplierCatChips.has(cat.name);
+        const pill = document.createElement("div");
+        pill.className = `category-pill ${isSelected ? 'selected' : ''}`;
+        
+        let content = '';
+        if (isSelected) content += createCheckmarkIcon();
+        content += `<span>${DOMPurify.sanitize(cat.name)}</span>`;
+        
+        pill.innerHTML = content;
+        
+        pill.onclick = () => { 
+          if (isSelected) {
+            supplierCatChips.delete(cat.name);
+          } else {
+            supplierCatChips.add(cat.name);
+          }
+          renderSupplierCatGrid(); 
+        };
+        supplierCategoryGrid.appendChild(pill);
       });
     }
     
-    supplierCategoryInput.addEventListener("keydown", e => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        const v = e.target.value.trim();
-        if (v) {
-          supplierCatChips.add(v);
-          renderSupplierCatChips();
-          e.target.value = "";
-        }
-      }
-    });
+    // Initial Render
+    renderSupplierCatGrid();
     
     // Bulk selection buttons
     document.getElementById("selectAllBuyer").onclick = () => {
-      const allCategories = getAllCategories();
       allCategories.forEach(cat => buyerCatChips.add(cat.name)); // Store display names
-      renderBuyerCatChips();
+      renderBuyerCatGrid();
     };
     
     document.getElementById("clearAllBuyer").onclick = () => {
       buyerCatChips.clear();
-      renderBuyerCatChips();
+      renderBuyerCatGrid();
     };
     
     document.getElementById("selectAllSupplier").onclick = () => {
-      const allCategories = getAllCategories();
       allCategories.forEach(cat => supplierCatChips.add(cat.name)); // Store display names
-      renderSupplierCatChips();
+      renderSupplierCatGrid();
     };
     
     document.getElementById("clearAllSupplier").onclick = () => {
       supplierCatChips.clear();
-      renderSupplierCatChips();
+      renderSupplierCatGrid();
     };
     
     // File upload trigger
@@ -1422,7 +2074,11 @@
           }
           
           mahSel.disabled = true; 
-          mahSel.innerHTML = '<option value="">Yükleniyor...</option>';
+          // Teklifbul Rule v1.0 - XSS Protection: Sanitize loading message
+          mahSel.innerHTML = DOMPurify.sanitize('<option value="">Yükleniyor...</option>', {
+            ALLOWED_TAGS: ['option'],
+            ALLOWED_ATTR: ['value']
+          });
           
           try {
             const data = await __loadNeighborhoods(ilSel.value, ilceSel.value);
@@ -1457,7 +2113,11 @@
             return; 
           }
           sokSel.disabled = true; 
-          sokSel.innerHTML = '<option value="">Yükleniyor...</option>';
+          // Teklifbul Rule v1.0 - XSS Protection: Sanitize loading message
+          sokSel.innerHTML = DOMPurify.sanitize('<option value="">Yükleniyor...</option>', {
+            ALLOWED_TAGS: ['option'],
+            ALLOWED_ATTR: ['value']
+          });
           try {
             const data = await __loadStreets(ilSel.value, ilceSel.value, neighborhoodId);
             const streets = (data?.streets||[]).map(s=>({id:s.id ?? s.code ?? s.name, name:s.name}));
@@ -1535,6 +2195,7 @@
               invSokManual.value = '';
             }
             composeInvoiceAddress();
+            buildTaxOfficeSelect();
             return;
           }
           
@@ -1552,6 +2213,7 @@
           }
           
           composeInvoiceAddress();
+          buildTaxOfficeSelect();
         });
         
         invIlceSel?.addEventListener('change', async ()=>{
@@ -1571,7 +2233,11 @@
           }
           
           invMahSel.disabled = true; 
-          invMahSel.innerHTML = '<option value="">Yükleniyor...</option>';
+          // Teklifbul Rule v1.0 - XSS Protection: Sanitize loading message
+          invMahSel.innerHTML = DOMPurify.sanitize('<option value="">Yükleniyor...</option>', {
+            ALLOWED_TAGS: ['option'],
+            ALLOWED_ATTR: ['value']
+          });
           
           try {
             const data = await __loadNeighborhoods(invIlSel.value, invIlceSel.value);
@@ -1611,7 +2277,11 @@
           }
           
           invSokSel.disabled = true; 
-          invSokSel.innerHTML = '<option value="">Yükleniyor...</option>';
+          // Teklifbul Rule v1.0 - XSS Protection: Sanitize loading message
+          invSokSel.innerHTML = DOMPurify.sanitize('<option value="">Yükleniyor...</option>', {
+            ALLOWED_TAGS: ['option'],
+            ALLOWED_ATTR: ['value']
+          });
           invSokSel.style.display = '';
           if (invSokManual) {
             invSokManual.style.display = 'none';
@@ -1705,7 +2375,17 @@
       
       // Get additional contact info - Teklifbul Rule v1.0
       const companyPhone = document.getElementById("companyPhone")?.value.trim() || null;
-      const mobilePhone = document.getElementById("mobilePhone")?.value.trim() || null;
+      
+      let mobilePhone = document.getElementById("mobilePhone")?.value.trim();
+      const mobilePhoneCode = document.getElementById("mobilePhoneCode")?.value || '+90';
+      if (mobilePhone) {
+        if (!mobilePhone.startsWith('+')) {
+          mobilePhone = mobilePhoneCode + ' ' + mobilePhone;
+        }
+      } else {
+        mobilePhone = null;
+      }
+      
       const whatsappPhone = document.getElementById("whatsappPhone")?.value.trim() || null;
       
       // Get invoice address - Teklifbul Rule v1.0
@@ -2417,13 +3097,33 @@
           ? `\n\n🎁 Referans Kodu: ${referralCodeId}\nBu kod ile kayıt oldunuz. Referans veren şirket bilgileriniz kaydedildi.`
           : '';
         
-        // Merkezi mesaj sistemine alındı - dinamik kod ve referral mesajı replace ile ekleniyor
-        toast.success(
-          MESSAGES.SUCCESS_PROFILE_COMPANY_SAVED
-            .replace('{code}', finalCompanyCode)
-            .replace('{referral}', referralMsg)
-        );
-        location.href = "./demands.html";
+        // Şirket kaydı tamamlandı - Şimdi email doğrulama gönder ve login'e yönlendir
+        // Email doğrulanmamış kullanıcı için (yeni kayıt akışı)
+        if (!user.emailVerified) {
+          try {
+            await sendEmailVerification(user);
+            logger.info("Email doğrulama mesajı gönderildi (şirket kaydı sonrası)", { email: user.email });
+          } catch (verifyErr) {
+            logger.warn("Email doğrulama mesajı gönderilemedi", verifyErr);
+          }
+          
+          // Kullanıcıyı çıkış yaptır ve login sayfasına yönlendir
+          try { await logout(); } catch(e) { logger.warn('Logout hatası', e); }
+          sessionStorage.setItem('emailVerificationRequired', 'true');
+          
+          toast.success(
+            `Şirket ve profil bilgileriniz kaydedildi! Şirket Kodunuz: ${finalCompanyCode}. Lütfen e-posta kutunuzu kontrol edin ve doğrulama linkine tıklayın.`
+          );
+          location.href = "./login.html";
+        } else {
+          // Email zaten doğrulanmış (ör: Google login ile kayıt olan kullanıcılar)
+          toast.success(
+            MESSAGES.SUCCESS_PROFILE_COMPANY_SAVED
+              .replace('{code}', finalCompanyCode)
+              .replace('{referral}', referralMsg)
+          );
+          location.href = "./demands.html";
+        }
       } catch (e) {
         logger.error("Profile save error", e);
         toast.error(MESSAGES.ERROR_GENERAL + ": " + (e.message || e));
@@ -2524,11 +3224,30 @@
     }
     
     // Check if user already has a profile
-    auth.onAuthStateChanged(async user => {
-      if (!user) {
+    // Teklifbul Rule v1.0 - Memory Leak Prevention: Listener cleanup
+    // Teklifbul Rule v1.0 - Use authStateReady for more robust initial auth check
+    // This prevents premature redirection to index.html before session hydration
+    let initialAuthChecked = false;
+    let authUnsubscribe = null;
+    
+    const initAuth = async () => {
+      const initialUser = await authStateReady;
+      initialAuthChecked = true;
+      
+      if (!initialUser) {
+        logger.info("No user found on authStateReady, redirecting to index.html");
         location.href = "./index.html";
         return;
       }
+      
+      // Initial user check passed, now set up the listener for subsequent changes
+      authUnsubscribe = auth.onAuthStateChanged(async user => {
+        if (!user && initialAuthChecked) {
+          location.href = "./index.html";
+          return;
+        }
+        
+        if (!user) return;
       
       // Teklifbul Rule v1.0 - Kullanıcının email adresini otomatik olarak doldur
       if (user.email && emailInput) {
@@ -2622,6 +3341,15 @@
         logger.warn("User profile check error", e);
         logger.warn("Error details", { code: e.code, name: e.name, stack: e.stack });
       }
+      });
+    };
+    
+    // Initialize Auth Wait
+    initAuth();
+    
+    // Teklifbul Rule v1.0 - Memory Leak Prevention: Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+      if (authUnsubscribe) authUnsubscribe();
     });
   </script>
 </body>

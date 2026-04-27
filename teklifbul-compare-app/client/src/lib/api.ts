@@ -1,4 +1,6 @@
 import axios from 'axios';
+// Teklifbul Rule v1.0 - Structured Logging
+import { logger } from '../../../src/shared/log/logger.js';
 import type { 
   Product, 
   Offer, 
@@ -25,11 +27,11 @@ const api = axios.create({
 // Request interceptor
 api.interceptors.request.use(
   (config) => {
-    console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`);
+    logger.info(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`);
     return config;
   },
   (error) => {
-    console.error('❌ API Request Error:', error);
+    logger.error('❌ API Request Error', error);
     return Promise.reject(error);
   }
 );
@@ -37,11 +39,48 @@ api.interceptors.request.use(
 // Response interceptor
 api.interceptors.response.use(
   (response) => {
-    console.log(`✅ API Response: ${response.status} ${response.config.url}`);
+    logger.info(`✅ API Response: ${response.status} ${response.config.url}`);
     return response;
   },
   (error) => {
-    console.error('❌ API Response Error:', error.response?.data || error.message);
+    // Teklifbul Rule v1.0 - Network error handling
+    let errorMessage = 'Beklenmeyen bir hata oluştu';
+    
+    // Network/Internet connection errors
+    if (!error.response) {
+      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        errorMessage = 'İstek zaman aşımına uğradı. Lütfen internet bağlantınızı kontrol edin.';
+        logger.error('❌ API Timeout Error', { url: error.config?.url, message: error.message });
+      } else if (error.code === 'ERR_NETWORK' || error.message?.includes('Network Error') || error.message?.includes('Failed to fetch')) {
+        errorMessage = 'İnternet bağlantısı hatası. Lütfen bağlantınızı kontrol edin ve tekrar deneyin.';
+        logger.error('❌ API Network Error', { url: error.config?.url, message: error.message });
+      } else {
+        errorMessage = 'Sunucuya bağlanılamıyor. Lütfen internet bağlantınızı kontrol edin.';
+        logger.error('❌ API Connection Error', { url: error.config?.url, message: error.message, code: error.code });
+      }
+    } else {
+      // HTTP error responses
+      const status = error.response.status;
+      if (status >= 500) {
+        errorMessage = 'Sunucu hatası. Lütfen daha sonra tekrar deneyin.';
+      } else if (status === 404) {
+        errorMessage = 'İstenen kaynak bulunamadı.';
+      } else if (status === 403) {
+        errorMessage = 'Bu işlem için yetkiniz bulunmuyor.';
+      } else if (status === 401) {
+        errorMessage = 'Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.';
+      } else {
+        errorMessage = error.response.data?.message || `HTTP ${status} hatası`;
+      }
+      logger.error('❌ API Response Error', { 
+        status, 
+        url: error.config?.url, 
+        data: error.response?.data 
+      });
+    }
+    
+    // Attach user-friendly message to error
+    error.userMessage = errorMessage;
     return Promise.reject(error);
   }
 );

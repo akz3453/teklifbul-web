@@ -1,0 +1,1563 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Giriş Yap — NEFISOFT</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%233b82f6' rx='6'/%3E%3Ctext x='16' y='22' font-family='Arial' font-size='18' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  <link rel="stylesheet" href="/css/ui-standard.css" />
+  <style>
+    /* Teklifbul Rule v1.0 - Modern Login Page Styles */
+    
+    * {
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary: #2563EB;
+      --primary-dark: #1E40AF;
+      --text-dark: #111827;
+      --text-muted: #6B7280;
+      --border: #E5E7EB;
+      --bg-light: #F3F4F6;
+      --error: #DC2626;
+      --success: #10B981;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 50%, #BFDBFE 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .login-wrapper {
+      width: 100%;
+      max-width: 1100px;
+    }
+
+    .login-container {
+      width: 100%;
+      max-width: 1100px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+      overflow: hidden;
+      min-height: 600px;
+    }
+
+    /* Sol Panel - Logo ve Bilgiler */
+    .login-left {
+      background: linear-gradient(135deg, #2563EB 0%, #1E40AF 100%);
+      color: white;
+      padding: 60px 50px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .login-left::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+      animation: pulse 20s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 0.5; }
+      50% { transform: scale(1.1); opacity: 0.3; }
+    }
+
+    .logo-container {
+      margin-bottom: 40px;
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 300px;
+    }
+
+    .logo-container img {
+      max-width: 100%;
+      width: 320px;
+      height: auto;
+      display: block;
+      object-fit: contain;
+      margin-bottom: 20px;
+    }
+
+    .brand-slogan {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: white;
+      text-align: center;
+    }
+
+    .brand-description {
+      font-size: 1rem;
+      color: rgba(255, 255, 255, 0.9);
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    .brand-title {
+      display: none;
+    }
+
+    .brand-slogan {
+      font-size: 20px;
+      font-weight: 500;
+      margin: 24px 0 12px 0;
+      opacity: 0.95;
+      position: relative;
+      z-index: 1;
+      text-align: center;
+    }
+
+    .brand-description {
+      font-size: 16px;
+      line-height: 1.6;
+      opacity: 0.9;
+      margin: 0;
+      position: relative;
+      z-index: 1;
+      text-align: center;
+    }
+
+    .features-list {
+      margin-top: 80px;
+      list-style: none;
+      padding: 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .features-list li {
+      padding: 12px 0;
+      font-size: 15px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .features-list li::before {
+      content: '✓';
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    /* Sağ Panel - Login Form */
+    .login-right {
+      padding: 60px 50px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .form-header {
+      margin-bottom: 40px;
+    }
+
+    .form-title {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text-dark);
+      margin: 0 0 8px 0;
+    }
+
+    .form-subtitle {
+      font-size: 15px;
+      color: var(--text-muted);
+      margin: 0;
+    }
+
+    .form-group {
+      margin-bottom: 24px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-dark);
+      margin-bottom: 8px;
+    }
+
+    .input-wrapper {
+      position: relative;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 14px 16px;
+      font-size: 15px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      background: white;
+      color: var(--text-dark);
+      transition: all 0.2s ease;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+    }
+
+    .form-input.error {
+      border-color: var(--error);
+    }
+
+    .password-toggle {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 18px;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.2s;
+    }
+
+    .password-toggle:hover {
+      color: var(--primary);
+    }
+
+    .error-message {
+      display: none;
+      font-size: 13px;
+      color: var(--error);
+      margin-top: 6px;
+    }
+
+    .error-message.show {
+      display: block;
+    }
+
+    .remember-forgot {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      font-size: 14px;
+    }
+
+    .remember-me {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .remember-me input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      accent-color: var(--primary);
+    }
+
+    .remember-me label {
+      cursor: pointer;
+      color: var(--text-dark);
+      user-select: none;
+    }
+
+    .forgot-link {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    .forgot-link:hover {
+      color: var(--primary-dark);
+      text-decoration: underline;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      margin-bottom: 16px;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+
+    .btn-primary:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
+
+    .btn-google {
+      background: white;
+      color: var(--text-dark);
+      border: 2px solid var(--border);
+    }
+
+    .btn-google:hover:not(:disabled) {
+      background: var(--bg-light);
+      border-color: var(--primary);
+    }
+
+    .btn-google:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
+
+    .divider {
+      text-align: center;
+      margin: 24px 0;
+      color: var(--text-muted);
+      font-size: 14px;
+      position: relative;
+    }
+
+    .divider::before,
+    .divider::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      width: 45%;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .divider::before {
+      left: 0;
+    }
+
+    .divider::after {
+      right: 0;
+    }
+
+    .signup-link {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .signup-link a {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .signup-link a:hover {
+      text-decoration: underline;
+    }
+
+    #status {
+      margin-top: 16px;
+      font-size: 13px;
+      color: var(--text-muted);
+      text-align: center;
+      min-height: 20px;
+    }
+
+    #logoutBtn {
+      display: none;
+      margin-top: 16px;
+    }
+
+    /* Shake Animation for Errors */
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+      20%, 40%, 60%, 80% { transform: translateX(5px); }
+    }
+
+    .login-container.shake {
+      animation: shake 0.5s;
+    }
+
+    /* Footer */
+    .login-footer {
+      margin-top: 40px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+      text-align: center;
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .footer-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 13px;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover {
+      color: var(--primary);
+    }
+
+    .footer-copyright {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin: 0;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 968px) {
+      .login-container {
+        grid-template-columns: 1fr;
+        max-width: 500px;
+      }
+
+      .login-left {
+        padding: 40px 30px;
+        text-align: center;
+      }
+
+      .logo-container img {
+        margin: 0 auto 20px;
+      }
+
+      .brand-title {
+        font-size: 28px;
+      }
+
+      .brand-slogan {
+        font-size: 18px;
+      }
+
+      .features-list {
+        display: none;
+      }
+
+      .login-right {
+        padding: 40px 30px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 10px;
+      }
+
+      .login-container {
+        border-radius: 12px;
+        min-height: auto;
+      }
+
+      .login-left {
+        padding: 30px 20px;
+      }
+
+      .login-right {
+        padding: 30px 20px;
+      }
+
+      .logo-container {
+        min-height: 200px;
+      }
+      
+      .logo-container img {
+        width: 200px;
+        max-width: 100%;
+      }
+
+      .form-title {
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="login-wrapper">
+    <div class="login-container" id="loginContainer">
+    <!-- Sol Panel - Logo ve Bilgiler -->
+    <div class="login-left">
+      <div class="logo-container">
+        <p class="brand-slogan">Teklif ve stok yönetim platformu</p>
+        <p class="brand-description">
+          Tedarik, teklif, sipariş ve stok süreçlerinizi tek ekrandan yönetin.
+        </p>
+      </div>
+      <ul class="features-list">
+        <li>Tedarikçiler ve alıcılar için merkezi yönetim paneli</li>
+        <li>Çoklu firma, çoklu depo ve stok takibi desteği</li>
+        <li>Teklif karşılaştırma ve analiz araçları</li>
+        <li>Güvenli ve hızlı iş akışı yönetimi</li>
+      </ul>
+    </div>
+
+    <!-- Sağ Panel - Login Form -->
+    <div class="login-right">
+      <div class="form-header">
+        <h2 class="form-title" data-i18n="login.title">Giriş Yap</h2>
+        <p class="form-subtitle" data-i18n="login.subtitle">Hesabınıza giriş yaparak devam edin</p>
+      </div>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="email" class="form-label" data-i18n="login.email">E-posta</label>
+          <div class="input-wrapper">
+            <input 
+              id="email" 
+              type="email" 
+              class="form-input" 
+              placeholder="ornek@email.com" 
+              autocomplete="username"
+              required
+            />
+          </div>
+          <div class="error-message" id="emailError"></div>
+        </div>
+
+        <div class="form-group">
+          <label for="password" class="form-label" data-i18n="login.password">Şifre</label>
+          <div class="input-wrapper">
+            <input 
+              id="password" 
+              type="password" 
+              class="form-input" 
+              placeholder="••••••••" 
+              autocomplete="current-password"
+              required
+            />
+            <button 
+              type="button" 
+              class="password-toggle" 
+              id="passwordToggle"
+              aria-label="Şifreyi göster/gizle"
+            >
+              👁️
+            </button>
+          </div>
+          <div class="error-message" id="passwordError"></div>
+        </div>
+
+        <div class="remember-forgot">
+          <div class="remember-me">
+            <input type="checkbox" id="rememberMe" />
+            <label for="rememberMe" data-i18n="login.remember">Beni hatırla</label>
+          </div>
+          <a href="#" class="forgot-link" id="forgotPassword" data-i18n="login.forgot">Şifremi Unuttum</a>
+        </div>
+
+        <button type="submit" id="loginBtn" class="btn btn-primary" data-i18n="login.title">
+          Giriş Yap
+        </button>
+
+        <div class="divider">veya</div>
+
+
+        <button type="button" id="googleBtn" class="btn btn-google">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/>
+            <path d="M9 18c2.43 0 4.467-.806 5.965-2.184l-2.908-2.258c-.806.54-1.837.86-3.057.86-2.35 0-4.34-1.587-5.053-3.72H.957v2.331C2.438 15.983 5.482 18 9 18z" fill="#34A853"/>
+            <path d="M3.943 10.698c-.18-.54-.282-1.117-.282-1.698s.102-1.158.282-1.698V4.971H.957C.348 6.175 0 7.55 0 9s.348 2.825.957 4.029l2.986-2.331z" fill="#FBBC05"/>
+            <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.971L3.943 7.302C4.656 5.167 6.646 3.58 9 3.58z" fill="#EA4335"/>
+          </svg>
+          <span data-i18n="login.google">Google ile Giriş</span>
+        </button>
+
+        <div class="signup-link">
+          <span data-i18n="login.noAccount">Hesabın yok mu?</span> <a href="./signup.html" data-i18n="login.signup">Kayıt ol</a>
+        </div>
+
+        <div id="status" style="display: none;">Oturum kapalı.</div>
+        <button id="logoutBtn" class="btn btn-primary" style="display:none">Çıkış Yap</button>
+
+      </form>
+    </div>
+  </div>
+
+  <script type="module">
+    // Initialize i18n only
+    import { initI18n } from '/assets/js/i18n.js';
+    initI18n('tr');
+  </script>
+  
+  <script type="module">
+    // Teklifbul Rule v1.0 - Login akışı (toast + logger ile)
+    import { login, loginWithGoogle, logout, watchAuth, checkGoogleRedirect, auth, db } from "./firebase.js";
+    import {
+      signInWithEmailAndPassword,
+      sendEmailVerification,
+      onAuthStateChanged,
+      getMultiFactorResolver,
+      PhoneAuthProvider,
+      PhoneMultiFactorGenerator,
+      RecaptchaVerifier,
+      TotpMultiFactorGenerator,
+    } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+    import { doc, getDoc, setDoc, updateDoc, addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+    // Teklifbul Rule v1.0 - Merkezi debug helper
+    
+    import { toast } from "/src/shared/ui/toast.js";
+    // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
+    import { MESSAGES } from '/src/shared/constants/messages.js';
+    import { logger } from "/src/shared/log/logger.js";
+    // Teklifbul Rule v1.0 - Auth guard (giriş sonrası yönlendirme için)
+    import { initAuthGuard } from './assets/js/auth-guard.js';
+
+    const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5174';
+
+    // Teklifbul Rule v1.0 - Eğer email doğrulama gerekli uyarısı ile yönlendirilmişse banner göster
+    if (sessionStorage.getItem('emailVerificationRequired') === 'true') {
+      sessionStorage.removeItem('emailVerificationRequired');
+      // Sayfa yüklendiğinde uyarı banner'ı göster
+      const banner = document.createElement('div');
+      banner.id = 'emailVerificationBanner';
+      banner.innerHTML = `
+        <div style="
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          z-index: 10000;
+          background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+          color: #fff;
+          padding: 16px 24px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 12px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        ">
+          <span style="font-size: 24px;">📧</span>
+          <div style="flex: 1; max-width: 600px;">
+            <div style="font-weight: 700; font-size: 15px; margin-bottom: 2px;">E-posta Doğrulaması Gerekli</div>
+            <div style="font-size: 13px; opacity: 0.95;">Hesabınıza giriş yapabilmek için e-posta adresinizi doğrulamanız gerekmektedir. Lütfen e-posta kutunuzu kontrol edin ve doğrulama linkine tıklayın.</div>
+          </div>
+          <button onclick="this.closest('#emailVerificationBanner').remove()" style="
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: #fff;
+            border-radius: 6px;
+            padding: 6px 14px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            white-space: nowrap;
+          ">Tamam</button>
+        </div>
+      `;
+      document.body.prepend(banner);
+    }
+
+    const emailEl = document.getElementById("email");
+    const passEl = document.getElementById("password");
+    const loginBtn = document.getElementById("loginBtn");
+    const googleBtn = document.getElementById("googleBtn");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const statusEl = document.getElementById("status");
+    const loginForm = document.getElementById("loginForm");
+    const passwordToggle = document.getElementById("passwordToggle");
+    const loginContainer = document.getElementById("loginContainer");
+    const emailError = document.getElementById("emailError");
+    const passwordError = document.getElementById("passwordError");
+
+    // Şifre göster/gizle toggle
+    passwordToggle.addEventListener("click", () => {
+      const type = passEl.getAttribute("type") === "password" ? "text" : "password";
+      passEl.setAttribute("type", type);
+      passwordToggle.textContent = type === "password" ? "👁️" : "🙈";
+    });
+
+    // Form validasyonu
+    function validateEmail(email) {
+      const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return re.test(email);
+    }
+
+    function showError(element, message) {
+      element.textContent = message;
+      element.classList.add("show");
+      element.previousElementSibling.querySelector(".form-input").classList.add("error");
+    }
+
+    function clearError(element) {
+      element.textContent = "";
+      element.classList.remove("show");
+      const input = element.previousElementSibling.querySelector(".form-input");
+      if (input) input.classList.remove("error");
+    }
+
+    function clearAllErrors() {
+      clearError(emailError);
+      clearError(passwordError);
+      loginContainer.classList.remove("shake");
+    }
+
+    // Input validasyonu (real-time)
+    emailEl.addEventListener("blur", () => {
+      const email = emailEl.value.trim();
+      if (email && !validateEmail(email)) {
+        showError(emailError, "Geçerli bir e-posta adresi girin");
+      } else {
+        clearError(emailError);
+      }
+    });
+
+    emailEl.addEventListener("input", () => {
+      if (emailError.classList.contains("show")) {
+        clearError(emailError);
+      }
+    });
+
+    passEl.addEventListener("input", () => {
+      if (passwordError.classList.contains("show")) {
+        clearError(passwordError);
+      }
+    });
+
+    // Form submit handler
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      clearAllErrors();
+
+      const email = emailEl.value.trim();
+      const password = passEl.value.trim();
+      let hasError = false;
+
+      if (!email) {
+        showError(emailError, "E-posta adresi gereklidir");
+        hasError = true;
+      } else if (!validateEmail(email)) {
+        showError(emailError, "Geçerli bir e-posta adresi girin");
+        hasError = true;
+      }
+
+      if (!password) {
+        showError(passwordError, "Şifre gereklidir");
+        hasError = true;
+      } else if (password.length < 6) {
+        showError(passwordError, "Şifre en az 6 karakter olmalıdır");
+        hasError = true;
+      }
+
+      if (hasError) {
+        loginContainer.classList.add("shake");
+        setTimeout(() => loginContainer.classList.remove("shake"), 500);
+        return;
+      }
+
+      await handleEmailLogin(email, password);
+    });
+
+    // Check for Google redirect result on page load
+    const isEmailVerified = (authUser, dbUser) => {
+      const dbVerified = dbUser?.emailVerified === true;
+      return authUser?.emailVerified === true || dbVerified === true;
+    };
+
+    // Join Request Promotion Handler - Email'i doğrulanmış kullanıcıyı başvuru aşamasına geçirir
+    async function checkAndPromoteJoinRequest(user, userData) {
+      if (userData?.companyJoinStatus === 'email_unverified' && isEmailVerified(user, userData)) {
+        try {
+          const companyId = userData.requestedCompanyId;
+          const joinCode = userData.companyCode;
+          const joinRole = userData.requestedCompanyRole;
+          const requestedRoleSimple = joinRole?.includes('supplier') ? 'supplier' : 'buyer';
+          
+          if (!companyId) throw new Error("Şirket ID bulunamadı");
+
+          // 1. Kullanıcı dokümanını pending yap
+          const userRef = doc(db, 'users', user.uid);
+          await updateDoc(userRef, {
+            companyJoinStatus: 'pending',
+            emailVerified: true, // Teklifbul Rule v1.x - Email doğrulamasını DB'ye yansıt
+            updatedAt: serverTimestamp()
+          });
+          console.log("PROMOTION DEBUG: 1. User document updated to pending");
+
+          // 2. İşverene Request gönder
+          await addDoc(collection(db, 'companyJoinRequests'), {
+            companyCode: joinCode,
+            companyId: companyId,
+            userId: user.uid,
+            userEmail: user.email,
+            requestedRole: requestedRoleSimple,
+            requestedCompanyRole: joinRole,
+            status: 'pending',
+            createdAt: serverTimestamp()
+          });
+          console.log("PROMOTION DEBUG: 2. companyJoinRequest created");
+          
+          // 3. Bildirim ve Pending Members
+          let employerId = 'SYSTEM';
+          try {
+            const companyDocRef = doc(db, 'companies', companyId);
+            const companyDocSnap = await getDoc(companyDocRef);
+            if (companyDocSnap.exists()) {
+              employerId = companyDocSnap.data()?.ownerId || 'SYSTEM';
+              console.log("PROMOTION DEBUG: 3. Employer found:", employerId);
+            } else {
+              console.log("PROMOTION DEBUG: 3. Company NOT found");
+            }
+          } catch(err) {
+            logger.warn('Bildirim zili için şirket sahibi bulunamadı', err);
+          }
+          
+          const notificationPayload = {
+            type: 'pending_member_request',
+            userId: employerId, // employer'ın ziline (header.js) düşmesi için OwnerID olmalı
+            senderId: user.uid,
+            userEmail: user.email,
+            requestedRole: joinRole,
+            message: `${user.email} şirketinize katılmak için onay bekliyor.`,
+            createdAt: serverTimestamp(),
+            read: false
+          };
+          
+          // Şirket içi lokal bildirim dizini (geriye dönük uyumluluk, eski admin UI)
+          const notificationRef = doc(collection(db, 'companies', companyId, 'notifications'));
+          await setDoc(notificationRef, {
+             ...notificationPayload,
+             userId: user.uid // Geriye dönük uyumluluk: eskiden burası user.uid kullanıyordu
+          });
+          
+          // Global bildirim dizini (Zilin çalıştığı asıl yer)
+          if (employerId && employerId !== 'SYSTEM') {
+             try {
+               console.log("PROMOTION DEBUG: Sending notification to employer...");
+               await addDoc(collection(db, 'notifications'), notificationPayload);
+               console.log("PROMOTION DEBUG: 4. Global notification created");
+             } catch (nErr) {
+               console.warn("Global notification skipped (permission issues):", nErr);
+             }
+          }
+          
+          const pendingRequestRef = doc(db, 'companies', companyId, 'pendingMembers', user.uid);
+          await setDoc(pendingRequestRef, {
+            userId: user.uid,
+            userEmail: user.email,
+            requestedRole: joinRole,
+            requestedAt: serverTimestamp(),
+            status: 'pending'
+          });
+          console.log("PROMOTION DEBUG: 5. pendingMember created");
+
+          toast.success("E-postanız doğrulandı. Şirket yöneticinize katılım isteğiniz başarıyla iletildi!");
+          logger.info("Email unverified statüsünden pending statüsüne geçiş tamamlandı", { uid: user.uid, companyId });
+          
+          // Güncel auth ve state i yansıtmak için oturumu tekrarla
+          await logout();
+          return true; // Promoted and logged out
+        } catch (e) {
+          logger.error("Katılım isteği onaylanırken hata", e);
+          return false;
+        }
+      }
+      return false; // Not promoted
+    }
+
+    checkGoogleRedirect()
+      .then(async user => {
+        if (!user) {
+          logger.info("Google redirect sonucu user yok (null)", { path: location.pathname, referrer: document.referrer });
+          return;
+        }
+        logger.group("Google Redirect Login");
+        logger.info("Google redirect login başarılı", { email: user.email });
+        
+        // Admin kontrolü - admin kullanıcılar email doğrulaması kontrolünden muaf
+        let isAdmin = false;
+        let userData = null;
+        try {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (userDoc.exists()) {
+            userData = userDoc.data();
+            isAdmin = userData?.isAdmin === true || userData?.isOps === true || userData?.role === 'admin' || userData?.role === 'ops';
+          }
+        } catch (e) {
+          logger.warn("Admin kontrolü başarısız", e);
+        }
+        
+        // Email doğrulaması kontrolü (admin değilse ve Google login'de genellikle otomatik doğrulanır ama kontrol edelim)
+        if (!isAdmin && !isEmailVerified(user, userData)) {
+          logger.warn("Google login - Email doğrulanmamış", { email: user.email });
+          await logout();
+          toast.error("E-posta adresiniz doğrulanmamış. Lütfen e-posta kutunuzu kontrol edin.");
+          showError(emailError, "E-posta adresiniz doğrulanmamış. Lütfen e-posta kutunuzu kontrol edin.");
+          logger.end();
+          return;
+        }
+        
+        // Eğer email_unverified -> pending promosyonu gerçekleşirse, fonksiyon true dönüp logout yapar
+        const wasPromoted = await checkAndPromoteJoinRequest(user, userData);
+        if (wasPromoted) {
+          logger.end();
+          return;
+        }
+
+        // Teklifbul Rule v1.x - Database senkronizasyonu
+        if (user.emailVerified && userData && userData.emailVerified !== true) {
+          try {
+            await updateDoc(doc(db, 'users', user.uid), { emailVerified: true });
+          } catch(e) { logger.warn("EmailVerified senkronizasyon hatası", e); }
+        }
+
+        toast.success(MESSAGES.SUCCESS_LOGIN);
+        
+        // Teklifbul Rule v1.0 - Pending login timestamp (requireAuth için 8sn timeout)
+        try {
+          sessionStorage.setItem('pendingLoginTs', Date.now().toString());
+        } catch (e) {
+          logger.warn('sessionStorage pendingLoginTs yazılamadı', e);
+        }
+        
+        logger.end();
+        // onAuthStateChanged yönlendirir
+      })
+      .catch(async (error) => {
+        logger.error("Google redirect sonucu hata", error);
+      });
+
+    // Email/Password login handler
+    async function handleEmailLogin(email, password) {
+      // Teklifbul Rule v1.0 - Log seviyesini azalt: Sadece hata durumlarında detaylı log
+      logger.group("Email Login - handleEmailLogin başladı");
+      logger.info("handleEmailLogin çağrıldı", { email });
+      try {
+        loginBtn.disabled = true;
+        loginBtn.innerHTML = "Giriş yapılıyor...";
+        clearAllErrors();
+
+        // Auth guard'ın işlemi kesmesini engelle
+        sessionStorage.setItem('manualLoginInProgress', 'true');
+
+        logger.info("signInWithEmailAndPassword çağrılıyor");
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        logger.info("signInWithEmailAndPassword başarılı", { uid: user.uid, email: user.email });
+        
+        // Admin kontrolü - admin kullanıcılar email doğrulaması kontrolünden muaf
+        let isAdmin = false;
+        let userData = null;
+        try {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (userDoc.exists()) {
+            userData = userDoc.data();
+            isAdmin = userData?.isAdmin === true || userData?.isOps === true || userData?.role === 'admin' || userData?.role === 'ops';
+            logger.info("Firestore userData yüklendi", { 
+              uid: user.uid, 
+              isAdmin, 
+            });
+          } else {
+            logger.warn("Firestore'da user document bulunamadı", { uid: user.uid });
+          }
+        } catch (e) {
+          logger.warn("Admin kontrolü başarısız", e);
+        }
+        
+        // Giriş kontrolü email doğrulaması sonrası yapılır
+        
+        // Email doğrulaması kontrolü (admin değilse)
+        if (!isAdmin && !isEmailVerified(user, userData)) {
+          logger.group("Email Login - Email Not Verified");
+          logger.warn("Email doğrulanmamış kullanıcı giriş denemesi", { email: user.email });
+          
+          // Email doğrulama mesajı gönder (kullanıcı hala giriş yapmış durumda)
+          try {
+            await sendEmailVerification(user);
+            logger.info("Email doğrulama mesajı gönderildi", { email: user.email });
+          } catch (verifyErr) {
+            logger.error("Email doğrulama gönderilirken hata", verifyErr);
+          }
+          
+          // Kullanıcıyı çıkış yaptır
+          await logout();
+          
+          toast.error("E-posta adresiniz doğrulanmamış. Lütfen e-posta kutunuzu kontrol edin ve doğrulama linkine tıklayın.");
+          showError(emailError, "E-posta adresiniz doğrulanmamış. Lütfen e-posta kutunuzu kontrol edin.");
+          loginContainer.classList.add("shake");
+          setTimeout(() => loginContainer.classList.remove("shake"), 500);
+          logger.end();
+          return;
+        }
+
+        // Email doğrulandıktan sonra eğer ilk girişiyse companyJoinRequests'i oluştur
+        const wasPromoted = await checkAndPromoteJoinRequest(user, userData);
+        if (wasPromoted) {
+          // checkAndPromoteJoinRequest başarıyla çalışırsa ve logout yaparsa burada kesiyoruz
+          loginBtn.disabled = false;
+          loginBtn.innerHTML = '<span data-i18n="login.title">Giriş Yap</span>';
+          logger.end();
+          return;
+        }
+
+        // Teklifbul Rule v1.x - Database senkronizasyonu
+        if (user.emailVerified && userData && userData.emailVerified !== true) {
+          try {
+            await updateDoc(doc(db, 'users', user.uid), { emailVerified: true });
+          } catch(e) { logger.warn("EmailVerified senkronizasyon hatası", e); }
+        }
+
+        toast.success(MESSAGES.SUCCESS_LOGIN);
+        logger.info("Normal login başarılı, dashboard'a yönlendiriliyor", { uid: user.uid });
+        
+        // Teklifbul Rule v1.0 - Pending login timestamp (requireAuth için 8sn timeout)
+        try {
+          sessionStorage.setItem('pendingLoginTs', Date.now().toString());
+        } catch (e) {
+          logger.warn('sessionStorage pendingLoginTs yazılamadı', e);
+        }
+        
+        // Yönlendirme yapılacağını işaretle (finally bloğunda buton resetlenmesin)
+        window.__LOGIN_REDIRECTING = true;
+        
+        // Auth guard bypass'ını kaldır ve manuel yönlendir
+        sessionStorage.removeItem('manualLoginInProgress');
+
+        // Kısa bir delay ile yönlendirme yap (toast mesajının görünmesi için)
+        setTimeout(() => {
+          window.location.replace('/dashboard.html');
+        }, 300);
+        
+        // Yönlendirme yapıldığı için finally bloğuna girmemek için return
+        return;
+      } catch (err) {
+        sessionStorage.removeItem('manualLoginInProgress');
+        logger.group("Email Login");
+        logger.error("Giriş hatası", err);
+
+        // Teklifbul Rule v1.2 - MFA login: SMS OTP / Authenticator
+        if (err?.code === "auth/multi-factor-auth-required") {
+          try {
+            await handleMfaLogin(err, { email });
+            logger.end();
+            return;
+          } catch (mfaErr) {
+            logger.error("MFA login akışı başarısız", mfaErr);
+            toast.error((mfaErr && mfaErr.message) ? mfaErr.message : "Giriş onayı başarısız");
+            logger.end();
+            return;
+          }
+        }
+
+        // Hata mesajlarını kullanıcı dostu hale getir
+        let errorMessage = MESSAGES.ERROR_LOGIN;
+        if (err.code === "auth/user-not-found") {
+          errorMessage = "Bu e-posta adresi ile kayıtlı kullanıcı bulunamadı";
+        } else if (err.code === "auth/wrong-password") {
+          errorMessage = "Şifre hatalı";
+          showError(passwordError, "Şifre hatalı");
+        } else if (err.code === "auth/invalid-email") {
+          errorMessage = "Geçersiz e-posta adresi";
+          showError(emailError, "Geçersiz e-posta adresi");
+        } else if (err.code === "auth/too-many-requests") {
+          errorMessage = "Çok fazla başarısız deneme. Lütfen daha sonra tekrar deneyin";
+        }
+        
+        toast.error(errorMessage);
+        loginContainer.classList.add("shake");
+        setTimeout(() => loginContainer.classList.remove("shake"), 500);
+      } finally {
+        // Yönlendirme yapılıyorsa buton resetlenmesin
+        if (window.__LOGIN_REDIRECTING) {
+          logger.end();
+          return;
+        }
+        loginBtn.disabled = false;
+        loginBtn.innerHTML = '<span data-i18n="login.title">Giriş Yap</span>';
+        logger.end();
+      }
+    }
+
+    // Teklifbul Rule v1.2 - MFA (multi-factor) login helper (SMS OTP)
+    let __mfaLoginState = {
+      resolver: null,
+      selectedHint: null,
+      verificationId: null,
+      recaptcha: null,
+      email: null,
+    };
+
+    function ensureMfaModal() {
+      let modal = document.getElementById("mfaLoginModal");
+      if (modal) return modal;
+
+      modal = document.createElement("div");
+      modal.id = "mfaLoginModal";
+      modal.style.position = "fixed";
+      modal.style.inset = "0";
+      modal.style.background = "rgba(0,0,0,0.45)";
+      modal.style.display = "none";
+      modal.style.alignItems = "center";
+      modal.style.justifyContent = "center";
+      modal.style.zIndex = "9999";
+      modal.innerHTML = `
+        <div style="width:min(520px, 92vw); background:white; border-radius:12px; border:1px solid #e5e7eb; box-shadow:0 12px 30px rgba(0,0,0,0.18); padding:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+            <div style="font-weight:800; font-size:16px; color:#111827;">Giriş Onayı (OTP)</div>
+            <button type="button" id="btnMfaClose" style="border:none; background:transparent; cursor:pointer; font-size:18px; line-height:1;">✕</button>
+          </div>
+          <div class="muted" style="margin-top:8px; font-size:12px; color:#6b7280;">
+            Bu hesaba giriş için ikinci doğrulama gereklidir.
+          </div>
+
+          <div id="mfaHintBlock" style="margin-top:14px; padding:12px; background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px;">
+            <div style="font-weight:700; font-size:13px; color:#111827; margin-bottom:8px;">Doğrulama yöntemi</div>
+            <div id="mfaHints" style="display:flex; flex-direction:column; gap:8px;"></div>
+          </div>
+
+          <div id="mfaOtpBlock" style="display:none; margin-top:14px; padding:12px; background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px;">
+            <div id="mfaOtpHelp" class="muted" style="font-size:12px; margin-bottom:10px;">Doğrulama kodunu girin.</div>
+            <div id="mfaRecaptchaBlock" style="display:none;">
+              <div id="mfaRecaptcha" style="min-height:48px;"></div>
+            </div>
+            <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;">
+              <div style="flex:1; min-width:220px;">
+                <label for="mfaOtpCode" id="mfaOtpLabel" style="font-weight:700; font-size:12px; color:#374151;">Kod</label>
+                <input id="mfaOtpCode" type="text" inputmode="numeric" placeholder="123456" style="margin-top:6px; width:100%; padding:10px; border:1px solid #d1d5db; border-radius:8px;" />
+              </div>
+              <button type="button" class="btn btn-primary" id="btnMfaVerify" style="padding:10px 14px; font-size:13px;">Onayla</button>
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px;">
+              <button type="button" class="btn btn-secondary" id="btnMfaBack" style="padding:8px 12px; font-size:13px;">Geri</button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      // Handlers
+      modal.querySelector("#btnMfaClose")?.addEventListener("click", () => hideMfaModal());
+      modal.addEventListener("click", (e) => {
+        if (e.target === modal) hideMfaModal();
+      });
+      modal.querySelector("#btnMfaBack")?.addEventListener("click", () => {
+        const hintBlock = modal.querySelector("#mfaHintBlock");
+        const otpBlock = modal.querySelector("#mfaOtpBlock");
+        if (hintBlock) hintBlock.style.display = "block";
+        if (otpBlock) otpBlock.style.display = "none";
+      });
+      modal.querySelector("#btnMfaVerify")?.addEventListener("click", async () => {
+        try {
+          await verifyMfaOtpAndSignIn();
+        } catch (e) {
+          toast.error(e?.message || "OTP doğrulama başarısız");
+        }
+      });
+
+      return modal;
+    }
+
+    function showMfaModal() {
+      const modal = ensureMfaModal();
+      modal.style.display = "flex";
+    }
+
+    function hideMfaModal() {
+      const modal = document.getElementById("mfaLoginModal");
+      if (modal) modal.style.display = "none";
+      __mfaLoginState = { resolver: null, selectedHint: null, verificationId: null, recaptcha: null, email: null };
+    }
+
+    async function handleMfaLogin(err, { email }) {
+      __mfaLoginState.email = email || null;
+      const resolver = getMultiFactorResolver(auth, err);
+      __mfaLoginState.resolver = resolver;
+
+      const modal = ensureMfaModal();
+      const hintsEl = modal.querySelector("#mfaHints");
+      const hintBlock = modal.querySelector("#mfaHintBlock");
+      const otpBlock = modal.querySelector("#mfaOtpBlock");
+      if (!hintsEl) throw new Error("MFA UI yüklenemedi");
+
+      // Render hints
+      hintsEl.innerHTML = "";
+      const hints = resolver.hints || [];
+      if (!hints.length) {
+        throw new Error("Bu hesap için doğrulama yöntemi bulunamadı");
+      }
+
+      const showOtpForHint = async (h) => {
+        __mfaLoginState.selectedHint = h;
+        const factorId = h.factorId || "unknown";
+        const otpHelp = document.getElementById("mfaOtpHelp");
+        const otpLabel = document.getElementById("mfaOtpLabel");
+        const recaptchaBlock = document.getElementById("mfaRecaptchaBlock");
+        const hintBlock = modal.querySelector("#mfaHintBlock");
+        const otpBlock = modal.querySelector("#mfaOtpBlock");
+
+        // reset input
+        const otpInput = document.getElementById("mfaOtpCode");
+        if (otpInput) otpInput.value = "";
+
+        if (factorId === "phone") {
+          if (otpHelp) otpHelp.textContent = "Telefonunuza gelen SMS kodunu girin.";
+          if (otpLabel) otpLabel.textContent = "SMS Kodu";
+          if (recaptchaBlock) recaptchaBlock.style.display = "block";
+          await sendMfaSmsCode();
+        } else if (factorId === "totp") {
+          if (otpHelp) otpHelp.textContent = "Authenticator uygulamanızdaki 6 haneli kodu girin.";
+          if (otpLabel) otpLabel.textContent = "Authenticator Kodu";
+          if (recaptchaBlock) recaptchaBlock.style.display = "none";
+        } else {
+          throw new Error("Bu doğrulama tipi henüz desteklenmiyor.");
+        }
+
+        if (hintBlock) hintBlock.style.display = "none";
+        if (otpBlock) otpBlock.style.display = "block";
+
+        // Teklifbul Rule v1.0 - Enter tuşu ile OTP doğrulama
+        if (otpInput) {
+          // Önceki event listener'ları temizle
+          const newOtpInput = otpInput.cloneNode(true);
+          otpInput.parentNode?.replaceChild(newOtpInput, otpInput);
+          
+          // Enter tuşu event listener'ı ekle
+          newOtpInput.addEventListener("keydown", async (e) => {
+            if (e.key === "Enter" && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+              e.preventDefault();
+              const btn = document.getElementById("btnMfaVerify");
+              if (btn && !btn.disabled) {
+                btn.click();
+              }
+            }
+          });
+          
+          // OTP ekranı açıldığında input'a focus ver
+          setTimeout(() => {
+            newOtpInput.focus();
+          }, 100);
+        }
+      };
+
+      // Eğer tek yöntem varsa direkt OTP ekranına geç (UX iyileştirmesi)
+      if (hints.length === 1) {
+        await showOtpForHint(hints[0]);
+        showMfaModal();
+        return;
+      }
+
+      hints.forEach((h) => {
+        const factorId = h.factorId || "unknown";
+        const label =
+          factorId === "phone"
+            ? `SMS (${h.phoneNumber || "telefon"})`
+            : factorId === "totp"
+              ? "Google Authenticator (TOTP)"
+              : `MFA (${factorId})`;
+
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "btn btn-primary";
+        btn.style.padding = "10px 12px";
+        btn.style.fontSize = "13px";
+        btn.textContent = label;
+
+        btn.addEventListener("click", async () => {
+          try {
+            await showOtpForHint(h);
+          } catch (e) {
+            toast.error(e?.message || "OTP ekranı açılamadı");
+          }
+        });
+
+        hintsEl.appendChild(btn);
+      });
+
+      showMfaModal();
+    }
+
+    async function sendMfaSmsCode() {
+      const resolver = __mfaLoginState.resolver;
+      const hint = __mfaLoginState.selectedHint;
+      if (!resolver || !hint) throw new Error("MFA oturumu bulunamadı");
+
+      const modal = document.getElementById("mfaLoginModal");
+      const recaptchaHost = modal?.querySelector("#mfaRecaptcha");
+      if (!recaptchaHost) throw new Error("reCAPTCHA alanı bulunamadı");
+
+      // Recreate recaptcha each time (safe)
+      recaptchaHost.innerHTML = "";
+      const recaptchaId = `mfaRecaptcha_${Date.now()}`;
+      const recaptchaDiv = document.createElement("div");
+      recaptchaDiv.id = recaptchaId;
+      recaptchaHost.appendChild(recaptchaDiv);
+
+      let verifier = null;
+      try {
+        verifier = new RecaptchaVerifier(auth, recaptchaId, { size: "invisible" });
+      } catch (e1) {
+        try {
+          verifier = new RecaptchaVerifier(recaptchaId, { size: "invisible" }, auth);
+        } catch (e2) {
+          throw new Error("reCAPTCHA başlatılamadı");
+        }
+      }
+      __mfaLoginState.recaptcha = verifier;
+
+      const phoneProvider = new PhoneAuthProvider(auth);
+      const verificationId = await phoneProvider.verifyPhoneNumber(
+        { multiFactorHint: hint, session: resolver.session },
+        verifier
+      );
+      __mfaLoginState.verificationId = verificationId;
+      toast.success("SMS kodu gönderildi.");
+    }
+
+    async function verifyMfaOtpAndSignIn() {
+      const resolver = __mfaLoginState.resolver;
+      const verificationId = __mfaLoginState.verificationId;
+      const hint = __mfaLoginState.selectedHint;
+      if (!resolver || !hint) throw new Error("MFA oturumu bulunamadı");
+
+      const code = String(document.getElementById("mfaOtpCode")?.value || "").trim();
+      if (!code) throw new Error("SMS kodu gerekli");
+
+      let assertion;
+      if (hint.factorId === "phone") {
+        if (!verificationId) throw new Error("Önce SMS kodu gönderin");
+        const cred = PhoneAuthProvider.credential(verificationId, code);
+        assertion = PhoneMultiFactorGenerator.assertion(cred);
+      } else if (hint.factorId === "totp") {
+        if (!TotpMultiFactorGenerator || typeof TotpMultiFactorGenerator.assertionForSignIn !== "function") {
+          throw new Error("Authenticator (TOTP) login bu ortamda desteklenmiyor");
+        }
+        // Firebase uses the enrolled factor uid for TOTP sign-in assertions
+        assertion = await TotpMultiFactorGenerator.assertionForSignIn(hint.uid, code);
+      } else {
+        throw new Error("Bu doğrulama tipi henüz desteklenmiyor");
+      }
+
+      const userCredential = await resolver.resolveSignIn(assertion);
+
+      // Login complete; let auth guard handle redirect or do immediate redirect
+      toast.success(MESSAGES.SUCCESS_LOGIN);
+      try {
+        sessionStorage.setItem("pendingLoginTs", Date.now().toString());
+      } catch {}
+      window.__LOGIN_REDIRECTING = true;
+      hideMfaModal();
+
+      setTimeout(() => {
+        window.location.replace("/dashboard.html");
+      }, 300);
+
+      return userCredential;
+    }
+
+    // Google login handler
+    googleBtn.addEventListener("click", async () => {
+      logger.group("Google Login");
+      try {
+        googleBtn.disabled = true;
+        googleBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.965-2.184l-2.908-2.258c-.806.54-1.837.86-3.057.86-2.35 0-4.34-1.587-5.053-3.72H.957v2.331C2.438 15.983 5.482 18 9 18z" fill="#34A853"/><path d="M3.943 10.698c-.18-.54-.282-1.117-.282-1.698s.102-1.158.282-1.698V4.971H.957C.348 6.175 0 7.55 0 9s.348 2.825.957 4.029l2.986-2.331z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.971L3.943 7.302C4.656 5.167 6.646 3.58 9 3.58z" fill="#EA4335"/></svg> Giriş yapılıyor...';
+        clearAllErrors();
+
+        // reCAPTCHA v3 - App Check kullanıldığı için reCAPTCHA v3 gereksiz
+        // getAndVerifyRecaptcha fonksiyonu tanımlı değil, App Check koruması yeterli
+        const googleRecaptchaToken = null;
+        window.__pendingRecaptchaToken = googleRecaptchaToken;
+        
+        // Auth guard'ın işlemi kesmesini engelle
+        sessionStorage.setItem('manualLoginInProgress', 'true');
+        
+        const user = await loginWithGoogle();
+        
+        
+        // Admin kontrolü - admin kullanıcılar email doğrulaması kontrolünden muaf
+        let isAdmin = false;
+        let userData = null; // Teklifbul Rule v1.0 - Scope düzeltmesi: userData'yı dışarıda tanımla
+        if (user) {
+          try {
+            const userDoc = await getDoc(doc(db, 'users', user.uid));
+            if (userDoc.exists()) {
+              userData = userDoc.data(); // Teklifbul Rule v1.0 - const yerine atama yap
+              isAdmin = userData?.isAdmin === true || userData?.isOps === true || userData?.role === 'admin' || userData?.role === 'ops';
+            }
+          } catch (e) {
+            logger.warn("Admin kontrolü başarısız", e);
+          }
+        }
+        
+        // Email doğrulaması kontrolü (admin değilse ve Google login'de genellikle otomatik doğrulanır ama kontrol edelim)
+        if (user && !isAdmin && !isEmailVerified(user, userData)) {
+          logger.warn("Google login - Email doğrulanmamış", { email: user.email });
+          await logout();
+          toast.error("E-posta adresiniz doğrulanmamış. Lütfen e-posta kutunuzu kontrol edin.");
+          showError(emailError, "E-posta adresiniz doğrulanmamış. Lütfen e-posta kutunuzu kontrol edin.");
+          loginContainer.classList.add("shake");
+          setTimeout(() => loginContainer.classList.remove("shake"), 500);
+          googleBtn.disabled = false;
+          googleBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.965-2.184l-2.908-2.258c-.806.54-1.837.86-3.057.86-2.35 0-4.34-1.587-5.053-3.72H.957v2.331C2.438 15.983 5.482 18 9 18z" fill="#34A853"/><path d="M3.943 10.698c-.18-.54-.282-1.117-.282-1.698s.102-1.158.282-1.698V4.971H.957C.348 6.175 0 7.55 0 9s.348 2.825.957 4.029l2.986-2.331z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.971L3.943 7.302C4.656 5.167 6.646 3.58 9 3.58z" fill="#EA4335"/></svg> Google ile Giriş';
+          logger.end();
+          return;
+        }
+        
+        
+        if (!user) {
+          logger.warn("Google login returned null user - redirect may have occurred");
+          googleBtn.disabled = false;
+          googleBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.965-2.184l-2.908-2.258c-.806.54-1.837.86-3.057.86-2.35 0-4.34-1.587-5.053-3.72H.957v2.331C2.438 15.983 5.482 18 9 18z" fill="#34A853"/><path d="M3.943 10.698c-.18-.54-.282-1.117-.282-1.698s.102-1.158.282-1.698V4.971H.957C.348 6.175 0 7.55 0 9s.348 2.825.957 4.029l2.986-2.331z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.971L3.943 7.302C4.656 5.167 6.646 3.58 9 3.58z" fill="#EA4335"/></svg> Google ile Giriş';
+          logger.end();
+          return;
+        }
+        
+        toast.success(MESSAGES.SUCCESS_LOGIN_GOOGLE);
+        logger.info("Google login başarılı");
+        
+        // Teklifbul Rule v1.0 - Google login flag'i (auth guard için)
+        try {
+          sessionStorage.setItem('googleLoginSuccess', 'true');
+          sessionStorage.setItem('pendingLoginTs', Date.now().toString());
+        } catch (e) {
+          logger.warn('sessionStorage yazılamadı', e);
+        }
+        
+        // Teklifbul Rule v1.0 - Auth state'in stabilize olmasını bekle
+        // Google login popup kapanırken auth state değişikliği biraz gecikebilir
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        // Auth state'in gerçekten güncellendiğinden emin ol
+        const { watchAuth, getUser } = await import('./firebase.js');
+        let authStabilized = false;
+        
+        await new Promise((resolve) => {
+          // Önce mevcut user'ı kontrol et
+          const currentUser = getUser();
+          if (currentUser && currentUser.uid === user.uid) {
+            authStabilized = true;
+            resolve();
+            return;
+          }
+          
+          // watchAuth ile auth state değişikliğini dinle
+          const unsubscribe = watchAuth((currentUser) => {
+            if (currentUser && currentUser.uid === user.uid) {
+              authStabilized = true;
+              unsubscribe();
+              resolve();
+            }
+          });
+          
+          // Timeout: 3 saniye sonra devam et
+          setTimeout(() => {
+            unsubscribe();
+            resolve();
+          }, 3000);
+        });
+        
+        if (authStabilized) {
+          logger.info("Auth state stabilize oldu, manuel yönlendiriliyor");
+          // Auth guard bypass'ını kaldır ve manuel yönlendir
+          sessionStorage.removeItem('manualLoginInProgress');
+          window.location.replace('/dashboard.html');
+        } else {
+          logger.warn("Auth state stabilize olmadı, manuel redirect yapılıyor");
+          // Fallback: manuel redirect
+          sessionStorage.removeItem('manualLoginInProgress');
+          window.location.replace('/dashboard.html');
+        }
+      } catch (e) {
+        sessionStorage.removeItem('manualLoginInProgress');
+        
+        // Diğer hatalar için error logla
+        logger.error("Google login hatası", e);
+        
+        // "The requested action is invalid" hatası için özel mesaj
+        let errorMessage = e.message || "Bilinmeyen hata";
+        if (errorMessage.includes("invalid") || e?.code === 'auth/unauthorized-domain' || e?.code === 'auth/operation-not-allowed') {
+          errorMessage = "Google girişi yapılandırılmamış. Lütfen Firebase Console'da Google sign-in method'unu etkinleştirin.";
+        }
+        
+        toast.error(MESSAGES.ERROR_LOGIN_GOOGLE + ": " + errorMessage);
+        googleBtn.disabled = false;
+        googleBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.965-2.184l-2.908-2.258c-.806.54-1.837.86-3.057.86-2.35 0-4.34-1.587-5.053-3.72H.957v2.331C2.438 15.983 5.482 18 9 18z" fill="#34A853"/><path d="M3.943 10.698c-.18-.54-.282-1.117-.282-1.698s.102-1.158.282-1.698V4.971H.957C.348 6.175 0 7.55 0 9s.348 2.825.957 4.029l2.986-2.331z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.971L3.943 7.302C4.656 5.167 6.646 3.58 9 3.58z" fill="#EA4335"/></svg> Google ile Giriş';
+        loginContainer.classList.add("shake");
+        setTimeout(() => loginContainer.classList.remove("shake"), 500);
+      } finally {
+        logger.end();
+      }
+    });
+
+    logoutBtn.onclick = () => logout();
+
+    // Auth listener with cleanup - Teklifbul Rule v1.0
+    const authUnsubscribe = watchAuth(u => {
+      statusEl.textContent = u ? ("Oturum açık: " + (u.email || u.uid)) : "Oturum kapalı.";
+      logoutBtn.style.display = u ? "block" : "none";
+    });
+    
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+      if (authUnsubscribe) {
+        authUnsubscribe();
+      }
+    });
+
+    // Şifremi Unuttum link handler (placeholder)
+    document.getElementById("forgotPassword").addEventListener("click", (e) => {
+      e.preventDefault();
+      toast.info("Şifre sıfırlama özelliği yakında eklenecek");
+    });
+
+    // Teklifbul Rule v1.0 - Auth guard başlat (giriş sonrası yönlendirme için)
+    initAuthGuard().catch(err => {
+      logger.warn("Auth guard başlatılamadı", err);
+    });
+  </script>
+  
+  <style>
+    @media (max-width: 768px) {
+      .login-container {
+        grid-template-columns: 1fr;
+      }
+      
+      .login-left {
+        display: none;
+      }
+    }
+  </style>
+</body>
+</html>
+

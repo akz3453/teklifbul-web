@@ -7,22 +7,28 @@ import html from 'eslint-plugin-html'
 
 export default [
   // Teklifbul Rule v1.1 - Ignore patterns
+  // NOT: Flat config'de ignore desenleri leading slash ile baslayamaz; globs cwd-relative.
   {
     ignores: [
-      '/dist/',
-      '/node_modules/',
-      '/coverage/',
-      '/public/vendor/',
-      '/public/libs/',
-      '/**/vendor/',
-      '/**/jspdf.umd.min.js',
-      '/**/xlsx.full.min.js',
-      '/**/openstreetmap-helper.js',
-      '/**/teklifbul-compare-app/',
+      'dist/**',
+      'node_modules/**',
+      'coverage/**',
+      'public/vendor/**',
+      'public/libs/**',
+      '**/vendor/**',
+      '**/jspdf.umd.min.js',
+      '**/xlsx.full.min.js',
+      '**/openstreetmap-helper.js',
+      // Alt-uygulama kendi tooling'i ile lint edilir; ana repo build'inde dis tutulur.
+      'teklifbul-compare-app/**',
       // Large generated or data folders that produce noise during lint
-      '/public/assets/',
-      '/seed/',
-      '/test-fixtures/',
+      'public/assets/**',
+      'seed/**',
+      'test-fixtures/**',
+      // Build outputs
+      'functions/dist/**',
+      'functions/lib/**',
+      'functions/excel-export/lib/**',
     ],
   },
 
@@ -195,7 +201,7 @@ export default [
   },
   // Lightweight overrides for public and assets folders to reduce noise
   {
-    files: ['public/**/*', 'assets/**/*', 'seed/**', 'test-fixtures/**'],
+    files: ['public/**/*', 'assets/**/*', 'pages/**/*', 'seed/**', 'test-fixtures/**'],
     languageOptions: {
       ecmaVersion: 2020,
       globals: {

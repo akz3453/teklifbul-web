@@ -4,6 +4,8 @@
   <meta charset="utf-8" />
   <title>SKU Birleştirme</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Teklifbul Rule v1.0 - FOUC önleme: Tema hemen uygulanmalı -->
+  <script src="/assets/js/theme-init.js"></script>
   <link rel="stylesheet" href="/utils.css" />
   <link rel="stylesheet" href="/assets/css/layout.css" />
   <style>
@@ -31,14 +33,134 @@
     .preview-value{font-weight:600;color:#1f2937;font-size:14px}
     .error{color:#ef4444;font-size:13px;margin-top:4px}
     .success{color:#10b981;font-size:13px;margin-top:4px}
-    .search-results{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #d1d5db;border-radius:6px;max-height:400px;overflow-y:auto;z-index:1000;box-shadow:0 4px 6px rgba(0,0,0,0.1);margin-top:4px}
-    .search-result-item{padding:8px 12px;cursor:pointer;border-bottom:1px solid #f3f4f6;transition:background 0.15s}
-    .search-result-item:hover,.search-result-item:focus{background:#f9fafb;outline:none}
-    .search-result-item:last-child{border-bottom:none}
-    .search-result-item[tabindex="0"]:focus{background:#e0e7ff;border-left:3px solid #3b82f6}
-    .stock-info{display:flex;justify-content:space-between;align-items:center}
+    .search-results{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #d1d5db;border-radius:6px;max-height:500px;overflow-y:auto;z-index:1000;box-shadow:0 4px 6px rgba(0,0,0,0.1);margin-top:4px}
+    .search-results table{width:100%;border-collapse:collapse}
+    .search-results th{background:#f9fafb;font-weight:600;color:#374151;padding:10px 12px;text-align:left;font-size:12px;border-bottom:2px solid #e5e7eb;position:sticky;top:0;z-index:10}
+    .search-results td{padding:10px 12px;border-bottom:1px solid #f3f4f6;font-size:13px}
+    .search-results tr{cursor:pointer;transition:background 0.15s}
+    .search-results tr:hover{background:#f9fafb}
+    .search-results tr.selected{background:#e0e7ff;border-left:3px solid #3b82f6}
     .stock-sku{font-weight:600;color:#1f2937}
-    .stock-name{color:#6b7280;font-size:13px}
+    .stock-name{color:#6b7280}
+    .badge{display:inline-block;padding:4px 8px;border-radius:4px;font-size:11px;font-weight:600}
+    .badge-active{background:#dcfce7;color:#065f46}
+    
+    /* Koyu Mod Düzenlemeleri */
+    html[data-theme="dark"] body,
+    html.force-dark body {
+      background:#111827;
+      color:#ffffff;
+    }
+    html[data-theme="dark"] .card,
+    html.force-dark .card {
+      background:#111827;
+      border:1px solid rgba(255,255,255,0.1);
+      color:#ffffff;
+    }
+    html[data-theme="dark"] label,
+    html.force-dark label {
+      color:#d1d5db;
+    }
+    html[data-theme="dark"] input,
+    html[data-theme="dark"] select,
+    html.force-dark input,
+    html.force-dark select {
+      background:#111827;
+      border:1px solid rgba(255,255,255,0.1);
+      color:#ffffff;
+    }
+    html[data-theme="dark"] input:focus,
+    html[data-theme="dark"] select:focus,
+    html.force-dark input:focus,
+    html.force-dark select:focus {
+      border-color:rgba(255,255,255,0.3);
+    }
+    html[data-theme="dark"] .muted,
+    html.force-dark .muted {
+      color:#9ca3af;
+    }
+    html[data-theme="dark"] .preview-section,
+    html.force-dark .preview-section {
+      background:#111827 !important;
+      border:1px solid rgba(255,255,255,0.1) !important;
+    }
+    html[data-theme="dark"] .preview-section h3,
+    html.force-dark .preview-section h3 {
+      color:#ffffff !important;
+    }
+    html[data-theme="dark"] .preview-row,
+    html.force-dark .preview-row {
+      border-bottom:1px solid rgba(255,255,255,0.1);
+    }
+    html[data-theme="dark"] .preview-label,
+    html.force-dark .preview-label {
+      color:#9ca3af !important;
+    }
+    html[data-theme="dark"] .preview-value,
+    html.force-dark .preview-value {
+      color:#ffffff !important;
+    }
+    /* Teklifbul Rule v1.0 - Preview section özel stilleri (mavi arka plan) koyu modda override et */
+    html[data-theme="dark"] .preview-section[style*="background:#f0f9ff"],
+    html.force-dark .preview-section[style*="background:#f0f9ff"] {
+      background:#111827 !important;
+      border-color:rgba(255,255,255,0.1) !important;
+    }
+    html[data-theme="dark"] .preview-section[style*="background:#f0f9ff"] h3,
+    html.force-dark .preview-section[style*="background:#f0f9ff"] h3 {
+      color:#ffffff !important;
+    }
+    html[data-theme="dark"] .preview-section[style*="background:#f0f9ff"] .preview-value,
+    html.force-dark .preview-section[style*="background:#f0f9ff"] .preview-value {
+      color:#ffffff !important;
+    }
+    html[data-theme="dark"] .preview-section[style*="background:#f0f9ff"] .preview-value[style*="color:#2563eb"],
+    html.force-dark .preview-section[style*="background:#f0f9ff"] .preview-value[style*="color:#2563eb"] {
+      color:#60a5fa !important; /* Koyu modda mavi yerine açık mavi */
+    }
+    html[data-theme="dark"] .preview-section[style*="background:#f0f9ff"] .preview-value[style*="color:#ef4444"],
+    html.force-dark .preview-section[style*="background:#f0f9ff"] .preview-value[style*="color:#ef4444"] {
+      color:#f87171 !important; /* Koyu modda kırmızı yerine açık kırmızı */
+    }
+    html[data-theme="dark"] .search-results,
+    html.force-dark .search-results {
+      background:#111827;
+      border:1px solid rgba(255,255,255,0.1);
+    }
+    html[data-theme="dark"] .search-results th,
+    html.force-dark .search-results th {
+      background:#111827;
+      color:#ffffff;
+      border-bottom:1px solid rgba(255,255,255,0.1);
+    }
+    html[data-theme="dark"] .search-results td,
+    html.force-dark .search-results td {
+      color:#ffffff;
+      border-bottom:1px solid rgba(255,255,255,0.1);
+    }
+    html[data-theme="dark"] .search-results tr:hover,
+    html.force-dark .search-results tr:hover {
+      background:#1f2937;
+    }
+    html[data-theme="dark"] .search-results tr.selected,
+    html.force-dark .search-results tr.selected {
+      background:#1e3a8a;
+      border-left:3px solid #60a5fa;
+    }
+    html[data-theme="dark"] .stock-sku,
+    html.force-dark .stock-sku {
+      color:#ffffff;
+    }
+    html[data-theme="dark"] .stock-name,
+    html.force-dark .stock-name {
+      color:#d1d5db;
+    }
+    html[data-theme="dark"] h1,
+    html[data-theme="dark"] h2,
+    html.force-dark h1,
+    html.force-dark h2 {
+      color:#ffffff;
+    }
   </style>
 </head>
 <body>
@@ -72,15 +194,15 @@
       
       <div class="row">
         <div style="position:relative">
-          <label for="sourceSku">Kaynak SKU (Birleştirilecek) <span style="color:#6b7280;font-size:12px;font-weight:normal">(F6 ile liste aç)</span></label>
-          <input id="sourceSku" placeholder="SKU veya ürün adı ara... (*çim* gibi)" autocomplete="off" title="F6 tuşu ile tüm stokları listeleyebilirsiniz. Yıldız (*) ile wildcard arama yapabilirsiniz." />
+          <label for="sourceSku">Kaynak SKU (Birleştirilecek)</label>
+          <input id="sourceSku" type="text" placeholder="SKU veya ürün adı ara... (*çim* gibi wildcard arama yapabilirsiniz)" autocomplete="off" />
           <div id="sourceSearchResults" class="search-results" style="display:none"></div>
           <div id="sourceError" class="error" style="display:none"></div>
         </div>
         
         <div style="position:relative">
-          <label for="targetSku">Hedef SKU (Birleştirilecek) <span style="color:#6b7280;font-size:12px;font-weight:normal">(F6 ile liste aç)</span></label>
-          <input id="targetSku" placeholder="SKU veya ürün adı ara... (*çim* gibi)" autocomplete="off" title="F6 tuşu ile tüm stokları listeleyebilirsiniz. Yıldız (*) ile wildcard arama yapabilirsiniz." />
+          <label for="targetSku">Hedef SKU (Birleştirilecek)</label>
+          <input id="targetSku" type="text" placeholder="SKU veya ürün adı ara... (*çim* gibi wildcard arama yapabilirsiniz)" autocomplete="off" />
           <div id="targetSearchResults" class="search-results" style="display:none"></div>
           <div id="targetError" class="error" style="display:none"></div>
         </div>
@@ -112,6 +234,17 @@
   </script>
   <!-- Main -->
   <script type="module" src="/scripts/sku-merge-ui.js"></script>
+  
+  <!-- Migration Script (Development) -->
+  <script type="module">
+    // Teklifbul Rule v1.0 - Migration script'i global scope'a ekle
+    import { migrateStocksCompanyId } from '/scripts/migrate-stocks-companyid.js';
+    window.migrateStocksCompanyId = migrateStocksCompanyId;
+    
+    // Kullanım:
+    // Konsolda: await migrateStocksCompanyId(null, true) // Dry run
+    // Konsolda: await migrateStocksCompanyId(null, false) // Gerçek güncelleme
+  </script>
 </body>
 </html>
 

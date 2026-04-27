@@ -3,13 +3,60 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Alıcı Kayıt - Teklifbul</title>
+  <title>Alıcı Kayıt - NEFISOFT</title>
   <link rel="stylesheet" href="./utils.css" />
   <style>
-    body { margin: 0; font-family: system-ui, Arial; background: #f9fafb; }
-    .container { max-width: 900px; margin: 0 auto; padding: 20px; }
-    .header { background: white; padding: 16px 20px; border-bottom: 1px solid #e5e7eb; margin-bottom: 24px; }
-    .card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    body { 
+      margin: 0; 
+      font-family: system-ui, Arial; 
+      background: linear-gradient(135deg, #eef2ff, #f9fafb);
+      min-height: 100vh;
+    }
+    .container { max-width: 960px; margin: 0 auto; padding: 32px 20px 40px; }
+    .header { 
+      background: white; 
+      padding: 16px 24px; 
+      border-bottom: 1px solid #e5e7eb; 
+    }
+    .header-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 20px;
+      font-weight: 700;
+      color: #1f2937;
+      text-decoration: none;
+    }
+    .brand-logo:hover {
+      color: #3b82f6;
+    }
+    /* Step indicator */
+    .step-indicator {
+      margin-bottom: 24px;
+    }
+    .step {
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      font-weight: 500;
+      display: inline-block;
+    }
+    .card { 
+      background: white; 
+      border-radius: 16px; 
+      padding: 32px; 
+      margin-bottom: 20px; 
+      box-shadow: 0 20px 40px rgba(15,23,42,0.08); 
+    }
     .card h2 { margin: 0 0 20px 0; font-size: 20px; color: #1f2937; border-bottom: 2px solid #e5e7eb; padding-bottom: 12px; }
     .card h3 { margin: 0 0 16px 0; font-size: 16px; color: #374151; }
     .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
@@ -46,13 +93,21 @@
 </head>
 <body>
   <div class="header">
-    <div style="max-width:900px; margin:0 auto; display:flex; justify-content:space-between; align-items:center;">
-      <strong style="font-size:18px; color:#1f2937;">Teklifbul - Alıcı Kaydı</strong>
+    <div class="header-content">
+      <a href="./index.html" class="brand-logo">
+        <span>📋</span>
+        <span>NEFISOFT</span>
+      </a>
       <span id="userEmail" style="font-size:13px; color:#6b7280;"></span>
     </div>
   </div>
 
   <div class="container">
+    <!-- Step Indicator -->
+    <div class="step-indicator">
+      <span class="step">Adım 2 / 3 – Alıcı Firma Kurulumu</span>
+    </div>
+    
     <div class="info-box">
       <strong>ℹ️ Hoş Geldiniz!</strong> Alıcı olarak kayıt oluyorsunuz. Formun tamamını doldurun ve talepnizi oluşturmaya başlayın.
     </div>
@@ -272,7 +327,7 @@
         Teklifbul platformu tarafından sunulan hizmetler kapsamında, kimlik ve iletişim bilgilerim ile firma bilgilerimin; 
         tedarikçi eşleştirme, talep iletimi, teklif süreç yönetimi ve yasal yükümlülüklerin yerine getirilmesi amaçlarıyla 
         işlenmesini; yurt içi/yurt dışı hizmet sağlayıcılarına aktarılmasını kabul ediyorum.
-        <a href="#" target="_blank">Detaylı Aydınlatma Metni</a>
+        <a href="legal/kvkk-aydinlatma.html" target="_blank" rel="noopener noreferrer">Detaylı Aydınlatma Metni</a>
       </div>
       
       <div class="checkbox-group">
@@ -323,6 +378,18 @@
       getNameById,
       normalizeToIds 
     } from "./src/categories/category-service.js";
+
+    // Telefon numarası normalizasyonu (örn: 0532 123 4567 -> +905321234567)
+    const normalizePhone = (p) => {
+      let cleaned = p.replace(/\D/g, ''); // Sadece rakamlar
+      if (cleaned.length === 11 && cleaned.startsWith('0')) {
+        cleaned = cleaned.substring(1);
+      } else if (cleaned.length === 12 && cleaned.startsWith('90')) {
+        cleaned = cleaned.substring(2);
+      }
+      if (cleaned.length === 10) return '+90' + cleaned;
+      return p.startsWith('+') ? p : '+' + cleaned;
+    };
 
     // ==== Populate category datalist ====
     // Company mode UI toggle
@@ -400,7 +467,9 @@
         { key: 'buyer:santiye_yetkilisi', value: 'santiye_yetkilisi', label: 'Şantiye Yetkilisi', multi: true },
         { key: 'buyer:stok_depo', value: 'stok_depo', label: 'Stok / Depo Yetkilisi', multi: true },
         { key: 'buyer:muhasebe', value: 'muhasebe', label: 'Muhasebe', multi: true },
-        { key: 'buyer:alici', value: 'alici', label: 'Alıcı', multi: true },
+        { key: 'buyer:idari_isler', value: 'idari_isler', label: 'İdari İşler', multi: true },
+        { key: 'buyer:sekreter', value: 'sekreter', label: 'Sekreter', multi: true },
+        { key: 'buyer:proje_yoneticisi', value: 'proje_yoneticisi', label: 'Proje Yöneticisi', multi: true },
         { key: 'buyer:genel_mudur', value: 'genel_mudur', label: 'Genel Müdür', multi: false },
         { key: 'buyer:genel_mudur_yardimcisi', value: 'genel_mudur_yardimcisi', label: 'Genel Müdür Yardımcısı', multi: false },
         { key: 'buyer:yonetim_kurulu_baskani', value: 'yonetim_kurulu_baskani', label: 'Yönetim Kurulu Başkanı', multi: false },
@@ -755,10 +824,30 @@
         const allEmails = [user.email];
         emailChips.forEach(e => allEmails.push(e));
         
-        const allPhones = [];
-        const mainPhone = document.getElementById("phone").value.trim();
-        if (mainPhone) allPhones.push(mainPhone);
-        phoneChips.forEach(p => allPhones.push(p));
+        const allPhonesRaw = [];
+        const mainPhoneRaw = document.getElementById("phone").value.trim();
+        if (mainPhoneRaw) allPhonesRaw.push(mainPhoneRaw);
+        phoneChips.forEach(p => allPhonesRaw.push(p));
+
+        // Normalize and check uniqueness for each phone number
+        const allPhonesNormalized = allPhonesRaw.map(p => normalizePhone(p));
+        
+        // Multi-check for uniqueness
+        if (allPhonesNormalized.length > 0) {
+          for (const normalizedPhone of allPhonesNormalized) {
+            const phoneQuery = query(
+              collection(db, 'users'), 
+              where('contactPhones', 'array-contains', normalizedPhone)
+            );
+            const phoneSnap = await getDocs(phoneQuery);
+            
+            // Eğer numara başka bir kullanıcıda varsa hata ver
+            const otherUserFound = phoneSnap.docs.some(doc => doc.id !== user.uid);
+            if (otherUserFound) {
+              throw new Error(`"${normalizedPhone}" numarası zaten başka bir hesapta kullanılıyor.`);
+            }
+          }
+        }
 
         // Prepare payload (compatible with multi-role system)
         const payload = {
@@ -779,7 +868,7 @@
 
           // Contact info
           contactEmails: allEmails.filter(e => e),
-          contactPhones: allPhones.filter(p => p),
+          contactPhones: allPhonesNormalized.filter(p => p),
           
           // CRITICAL: Convert category names to IDs using new system
           buyerCategoryIds: normalizeToIds([...catChips]),
@@ -794,16 +883,16 @@
           }).filter(Boolean),
           supplierCategories: [], // Will be filled in settings if supplier role active
           supplierCategoryIds: [] // Will be filled in settings if supplier role active
-          
-          // KVKK consents
-          kvkkConsent: true,
-          contractConsent: true,
-          marketingConsent: document.getElementById("marketingConsent").checked || false,
-          consentAt: serverTimestamp(),
-          
-          // Timestamps
-          updatedAt: serverTimestamp()
-        };
+        }; // Added missing closing brace for the object
+
+        // KVKK consents
+        payload.kvkkConsent = document.getElementById("kvkkConsent").checked || false;
+        payload.contractConsent = document.getElementById("contractConsent").checked || false;
+        payload.marketingConsent = document.getElementById("marketingConsent").checked || false;
+        payload.consentAt = serverTimestamp();
+        
+        // Timestamps
+        payload.updatedAt = serverTimestamp();
 
         // Company create/join
         const mode = document.getElementById('companyMode').value;
@@ -822,7 +911,7 @@
           });
           companyId = cdoc.id;
           companyRole = 'isveren';
-          companyJoinStatus = 'approved';
+          companyJoinStatus = 'accepted'; // Teklifbul Rule v1.0 - 'approved' yerine 'accepted' kullan
           payload.companyId = companyId;
           payload.companyRole = companyRole;
           payload.companyJoinStatus = companyJoinStatus;
@@ -830,29 +919,68 @@
           payload.companyRoleType = 'buyer';
           payload.companyRoleKey = 'buyer:isveren';
         } else if (mode === 'join') {
+          // Teklifbul Rule v1.0 - Şirket kodu ile kayıt: companyId KESINLIKLE set edilmez, sadece companyJoinRequest oluşturulur
           const codeRaw = (document.getElementById('companyJoinCode').value || '').trim().toUpperCase();
           if (!codeRaw) throw new Error('Şirket kodu zorunludur.');
+          
+          // Şirketi kontrol et ve companyId'yi al (ama kullanıcıya kaydetme!)
           const company = await findCompanyByCode(codeRaw);
           if (!company) throw new Error('Geçersiz şirket kodu.');
-          companyId = company.id;
+          companyId = company.id; // Sadece companyJoinRequest için kullanılacak
+          
+          // Şirket ayarlarını kontrol et - autoApproveJoinRequests flag'i
+          const companyDoc = await getDoc(doc(db, 'companies', companyId));
+          const companyData = companyDoc.exists() ? companyDoc.data() : {};
+          const autoApprove = companyData.autoApproveJoinRequests === true;
+          
+          // Eğer otomatik onay aktifse, uyarı ver ama yine de pending olarak başlat
+          if (autoApprove) {
+            logger.warn('Şirket otomatik onay aktif, ancak güvenlik için pending olarak başlatılıyor', { companyId });
+          }
+          
           const roleMeta = getDesiredRoleMeta();
           if (!roleMeta) throw new Error('Lütfen geçerli bir rol seçin.');
+          
+          // CRITICAL: companyId KESINLIKLE payload'a eklenmez - sadece companyJoinStatus: 'pending'
           companyJoinStatus = 'pending';
-          payload.companyId = companyId;
-          payload.companyName = company.name || payload.companyName || '';
-          payload.companyCode = company.code || codeRaw;
-          payload.companyRole = null;
-          payload.companyRoleType = null;
-          payload.companyRoleKey = null;
-          payload.companyJoinStatus = companyJoinStatus;
+          // payload.companyId = companyId; // ❌ KALDIRILDI - Onaylanana kadar companyId set edilmez
+          payload.companyCode = company.code || codeRaw; // Sadece kod kaydedilir
+          payload.companyJoinStatus = companyJoinStatus; // Pending durumu
           payload.requestedCompanyRoleKey = roleMeta.key;
           payload.requestedCompanyRole = roleMeta.value;
           payload.requestedRoleType = roleMeta.type;
+          
+          // companyRole, companyRoleType, companyRoleKey KESINLIKLE null/undefined kalır
+          payload.companyRole = null;
+          payload.companyRoleType = null;
+          payload.companyRoleKey = null;
+          
           if (roleMeta.type === 'supplier' && !roles.includes('supplier')) {
             roles.push('supplier');
           }
+          
           ['companyName','taxNumber','taxOffice','mersisNo','website'].forEach((field) => {
             if (!payload[field]) delete payload[field];
+          });
+          
+          // companyJoinRequests koleksiyonuna istek oluştur
+          const { collection: collectionFn, addDoc: addDocFn, serverTimestamp: serverTimestampFn } = await getFirestoreModules();
+          await addDocFn(collectionFn(db, 'companyJoinRequests'), {
+            userId: user.uid,
+            userEmail: payload.email || user.email || '',
+            companyCode: codeRaw,
+            companyId: companyId, // Sadece request'te, kullanıcı dokümanında değil
+            requestedRole: roleMeta.type, // buyer veya supplier
+            requestedCompanyRole: roleMeta.value, // buyer:satinalma_yetkilisi gibi
+            status: 'pending',
+            createdAt: serverTimestampFn()
+          });
+          
+          logger.info('Company join request created', { 
+            userId: user.uid, 
+            companyCode: codeRaw, 
+            companyId, 
+            requestedRole: roleMeta.value 
           });
         }
 
@@ -867,6 +995,16 @@
         await setDoc(userRef, payload, { merge: true });
 
         logger.info("User profile saved", { uid: user.uid });
+        
+        // Teklifbul Rule v1.0 - Şirket kodu ile kayıt durumunda özel mesaj
+        if (mode === 'join' && companyJoinStatus === 'pending') {
+          toast.success("Başvurunuz alınmıştır. Tam yetkili kullanıcı onayı bekleniyor.");
+          // Bekleme sayfasına yönlendir
+          setTimeout(() => {
+            location.href = './company-join-waiting.html';
+          }, 2000);
+          return;
+        }
         
         toast.success(MESSAGES.SUCCESS_REGISTER);
         

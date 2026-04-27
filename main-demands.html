@@ -2,14 +2,17 @@
 <html lang="tr">
 <head>
   <meta charset="utf-8" />
-  <title>Ana Talep Ekranı - Teklifbul</title>
+  <title>Ana Talep Ekranı - NEFISOFT</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Teklifbul Rule v1.0 - Tema standardı: tb_theme key, FOUC önleme -->
+  <script src="/assets/js/theme-init.js"></script>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%233b82f6' rx='6'/%3E%3Ctext x='16' y='22' font-family='Arial' font-size='18' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E" />
   <link rel="stylesheet" href="/utils.css" />
   <link rel="stylesheet" href="/assets/css/company-selector.css" />
   <link rel="stylesheet" href="/assets/css/layout.css" />
   <style>
     body { margin: 0; font-family: system-ui, Arial; background: #f9fafb; }
+    html[data-theme="dark"] body { background: #111827; color: #ffffff; }
     
     /* Header */
     .page-header { 
@@ -18,6 +21,12 @@
       padding: 24px; 
       margin-bottom: 24px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      border: 1px solid #e5e7eb;
+    }
+    html[data-theme="dark"] .page-header { 
+      background: #111827; 
+      border: 1px solid rgba(255,255,255,0.25);
+      color: #ffffff;
     }
     .page-header h1 {
       margin: 0 0 8px 0;
@@ -25,11 +34,13 @@
       color: #1f2937;
       font-weight: 700;
     }
+    html[data-theme="dark"] .page-header h1 { color: #ffffff; }
     .page-header p {
       margin: 0;
       color: #6b7280;
       font-size: 16px;
     }
+    html[data-theme="dark"] .page-header p { color: #ffffff; }
 
     /* Filters */
     .filters {
@@ -42,6 +53,12 @@
       gap: 16px;
       align-items: center;
       flex-wrap: wrap;
+      border: 1px solid #e5e7eb;
+    }
+    html[data-theme="dark"] .filters {
+      background: #111827;
+      border: 1px solid rgba(255,255,255,0.25);
+      color: #ffffff;
     }
     .filter-group {
       display: flex;
@@ -53,6 +70,7 @@
       color: #6b7280;
       font-weight: 500;
     }
+    html[data-theme="dark"] .filter-group label { color: #ffffff; }
     .filter-group select,
     .filter-group input {
       padding: 8px 12px;
@@ -60,6 +78,18 @@
       border-radius: 6px;
       font-size: 14px;
       min-width: 150px;
+      background: #fff;
+      color: #111827;
+    }
+    html[data-theme="dark"] .filter-group select,
+    html[data-theme="dark"] .filter-group input {
+      background: #111827;
+      border: 1px solid rgba(255,255,255,0.25);
+      color: #ffffff;
+    }
+    html[data-theme="dark"] .filter-group select::placeholder,
+    html[data-theme="dark"] .filter-group input::placeholder {
+      color: rgba(255,255,255,0.6);
     }
     .filter-group input[type="text"] {
       min-width: 200px;
@@ -68,7 +98,7 @@
     /* Product Grid */
     .products-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
       gap: 20px;
       margin-bottom: 40px;
     }
@@ -80,6 +110,12 @@
       box-shadow: 0 1px 3px rgba(0,0,0,0.1);
       transition: all 0.2s;
       cursor: pointer;
+      border: 1px solid #e5e7eb;
+    }
+    html[data-theme="dark"] .product-card {
+      background: #111827;
+      border: 1px solid rgba(255,255,255,0.25);
+      color: #ffffff;
     }
     .product-card:hover {
       transform: translateY(-2px);
@@ -120,6 +156,7 @@
       margin: 0 0 8px 0;
       line-height: 1.4;
     }
+    html[data-theme="dark"] .product-title { color: #ffffff; }
     .product-category {
       font-size: 13px;
       color: #3b82f6;
@@ -128,6 +165,12 @@
       border-radius: 4px;
       display: inline-block;
       margin-bottom: 8px;
+      border: 1px solid #dbeafe;
+    }
+    html[data-theme="dark"] .product-category {
+      background: #111827;
+      color: #ffffff;
+      border: 1px solid rgba(255,255,255,0.25);
     }
     .product-details {
       display: flex;
@@ -141,10 +184,12 @@
       display: flex;
       justify-content: space-between;
     }
+    html[data-theme="dark"] .product-detail { color: #ffffff; }
     .product-detail strong {
       color: #374151;
       width: 208.6px;
     }
+    html[data-theme="dark"] .product-detail strong { color: #ffffff; }
     
     .product-meta {
       display: flex;
@@ -154,15 +199,18 @@
       padding-top: 12px;
       border-top: 1px solid #e5e7eb;
     }
+    html[data-theme="dark"] .product-meta { border-top-color: rgba(255,255,255,0.25); }
     .product-price {
       font-size: 18px;
       font-weight: 700;
       color: #059669;
     }
+    html[data-theme="dark"] .product-price { color: #ffffff; }
     .product-deadline {
       font-size: 13px;
       color: #6b7280;
     }
+    html[data-theme="dark"] .product-deadline { color: #ffffff; }
     
     .premium-badge {
       position: absolute;
@@ -182,6 +230,7 @@
       padding: 60px 20px;
       color: #6b7280;
     }
+    html[data-theme="dark"] .empty-state { color: #ffffff; }
     .empty-state svg {
       width: 64px;
       height: 64px;
@@ -193,10 +242,12 @@
       font-size: 18px;
       color: #374151;
     }
+    html[data-theme="dark"] .empty-state h3 { color: #ffffff; }
     .empty-state p {
       margin: 0;
       font-size: 14px;
     }
+    html[data-theme="dark"] .empty-state p { color: #ffffff; }
 
     /* Loading */
     .loading {
@@ -204,6 +255,7 @@
       padding: 40px;
       color: #6b7280;
     }
+    html[data-theme="dark"] .loading { color: #ffffff; }
   </style>
 </head>
 <body>
@@ -212,9 +264,14 @@
 
   <div class="container--wide">
     <!-- Page Header -->
-    <div class="page-header">
-      <h1>🛍️ Ana Talep Ekranı</h1>
-      <p>Tüm yayınlanmış talepleri görüntüleyin - tedarikçiler için genel talep listesi</p>
+    <div class="page-heading">
+      <div class="page-title-chip" role="presentation">
+        <span class="page-title-icon" aria-hidden="true">🛍️</span>
+        <div class="page-title-text">
+          <h1>Ana Talep Ekranı</h1>
+          <p class="page-title-caption">Tüm yayınlanmış talepleri görüntüleyin — tedarikçiler için genel talep listesi</p>
+        </div>
+      </div>
     </div>
 
     <!-- Filters -->
@@ -229,28 +286,38 @@
         <label for="searchInput">Ara</label>
         <input type="text" id="searchInput" placeholder="SATFK, ürün adı, marka, model...">
       </div>
-      <div class="filter-group">
-        <label for="priceRange">Fiyat Aralığı</label>
-        <select id="priceRange">
-          <option value="">Tüm Fiyatlar</option>
-          <option value="0-1000">0 - 1.000 ₺</option>
-          <option value="1000-5000">1.000 - 5.000 ₺</option>
-          <option value="5000-10000">5.000 - 10.000 ₺</option>
-          <option value="10000+">10.000 ₺ ve üzeri</option>
-        </select>
-      </div>
+      <!-- Fiyat aralığı filtresi kaldırıldı - listing'de fiyat bilgisi yok -->
       <div class="filter-group">
         <label for="locationFilter">Teslim Yeri</label>
         <input type="text" id="locationFilter" placeholder="Şehir, ilçe...">
       </div>
       <div class="filter-group">
-        <button id="clearFilters" class="btn-secondary">Filtreleri Temizle</button>
+        <label for="f-pageSize">İlan Sayısı</label>
+        <select id="f-pageSize">
+          <option value="15" selected>15</option>
+          <option value="30">30</option>
+          <option value="45">45</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <button id="clearFilters" class="btn-secondary" style="margin-top:20px; padding:8px 16px;">Filtreleri Temizle</button>
       </div>
     </div>
 
     <!-- Products Grid -->
     <div id="productsGrid" class="products-grid">
       <!-- Products will be loaded here -->
+    </div>
+
+    <!-- Pagination Controls (Shared) -->
+    <div id="pagination-controls" style="display:none; justify-content:center; align-items:center; gap:16px; margin:20px auto; max-width:600px;">
+      <button id="btnPrev" class="btn btn-outline" style="padding:8px 16px; font-size:13px; font-weight:600; flex:0 0 auto; height:40px;">← Geri</button>
+      <div style="display:flex; align-items:center; gap:12px; color:#0f172a; white-space:nowrap; background:white; padding:8px 20px; border-radius:12px; border:1px solid #e5e7eb; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); height:40px;">
+        <span id="pageInfo" style="font-size:13px; font-weight:700;">Sayfa 1</span>
+        <span style="color:#cbd5e1;">|</span>
+        <span id="totalItemsInfo" style="font-size:12px; color:#64748b;">Toplam: 0</span>
+      </div>
+      <button id="btnNext" class="btn btn-outline" style="padding:8px 16px; font-size:13px; font-weight:600; flex:0 0 auto; height:40px;">İleri →</button>
     </div>
 
     <!-- Empty State -->
@@ -275,15 +342,67 @@
     
     import { initGlobalHeader } from './assets/js/ui/header.js';
     import { db, auth, requireAuth } from "./firebase.js";
+    // Teklifbul Rule v1.0 - Auth Guard (middle click desteği ile)
+    import { initAuthGuard } from './assets/js/auth-guard.js';
+    
+    // Initialize auth guard (middle click desteği ile)
+    initAuthGuard().catch(err => {
+      logger.error('Auth guard init failed', err);
+    });
     
     // Initialize global header
     initGlobalHeader({ mount: '#app-header', activeRoute: 'main' });
     import { handleError, renderEmptyState, showLoadingState, withErrorHandling } from "./assets/js/ui/errors.js";
-    import { getPublicDemands } from "./assets/js/services/demands.js";
-    import { findMatchingSuppliers } from "./assets/js/services/suppliers.js";
+    import { collection, query, where, orderBy, limit, getDocs, startAfter, getCountFromServer } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
     
-    // Setup common header functionality
-    const user = await requireAuth();
+    const PAGING = {
+      pageSize: 15,
+      currentPage: 1,
+      lastVisible: null,
+      pageHistory: [null],
+      totalItems: 0,
+      hasMore: false
+    };
+
+    // Teklifbul Rule v1.0 - public_listings koleksiyonundan aktif ilanları getir
+    async function getPublicListings(reset = true) {
+      try {
+        if (reset) {
+          PAGING.currentPage = 1;
+          PAGING.lastVisible = null;
+          PAGING.pageHistory = [null];
+          
+          const countQ = query(collection(db, "public_listings"), where("status", "==", "active"));
+          const countSnap = await getCountFromServer(countQ);
+          PAGING.totalItems = countSnap.data().count;
+        }
+
+        let qConstraints = [
+          where("status", "==", "active"),
+          orderBy("createdAt", "desc"),
+          limit(PAGING.pageSize + 1)
+        ];
+
+        if (PAGING.currentPage > 1 && PAGING.lastVisible) {
+          qConstraints.splice(qConstraints.length - 1, 0, startAfter(PAGING.lastVisible));
+        }
+
+        const q = query(collection(db, "public_listings"), ...qConstraints);
+        
+        const snap = await getDocs(q);
+        const listings = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        logger.info("Public listings loaded", { count: listings.length });
+        return listings;
+      } catch (error) {
+        logger.error("Failed to load public listings", error);
+        // Index hatası olabilir, boş array döndür
+        if (error.message && error.message.includes('index')) {
+          logger.warn("Firestore index required for public_listings", { error: error.message });
+          return [];
+        }
+        throw error;
+      }
+    }
 
     // Load categories for filter
     async function loadCategories() {
@@ -304,7 +423,7 @@
     }
 
     // Load main demands with error handling
-    const loadMainDemands = withErrorHandling(async () => {
+    const loadMainDemands = withErrorHandling(async (reset = true) => {
       const productsGrid = document.getElementById("productsGrid");
       const emptyState = document.getElementById("emptyState");
       const loadingState = document.getElementById("loadingState");
@@ -312,60 +431,56 @@
       loadingState.style.display = "block";
       productsGrid.innerHTML = "";
       emptyState.style.display = "none";
+      document.getElementById("pagination-controls").style.display = "none";
 
-      logger.info("Loading main demands...");
+      logger.info("Loading public listings...");
 
-      // Get all published public demands using service
-      const demands = await getPublicDemands(50);
+      // Teklifbul Rule v1.0 - public_listings koleksiyonundan aktif ilanları getir
+      const listings = await getPublicListings(reset);
       
-      logger.info("Found public demands", { count: demands.length, data: demands });
+      logger.info("Found public listings", { count: listings.length });
 
-      if (demands.length === 0) {
+      if (listings.length === 0) {
         showEmptyState();
+        loadingState.style.display = "none";
+        updatePagerUI();
         return;
       }
 
-      // Filter demands based on current filters
-      const filteredDemands = filterDemands(demands);
+      // Filter listings based on current filters
+      const filteredListings = filterListings(listings);
       
-      if (filteredDemands.length === 0) {
+      if (filteredListings.length === 0) {
         showEmptyState();
+        loadingState.style.display = "none";
         return;
       }
 
-      // Sort by premium status first, then by date
-      filteredDemands.sort((a, b) => {
-        // Premium demands first (simplified check)
-        const aIsPremium = a.createdBy === user.uid;
-        const bIsPremium = b.createdBy === user.uid;
-        
-        if (aIsPremium && !bIsPremium) return -1;
-        if (!aIsPremium && bIsPremium) return 1;
-        
-        // Then by date (newest first) - handle both timestamp and date formats
+      // Sort by date (newest first)
+      filteredListings.sort((a, b) => {
         const aDate = a.createdAt?.toDate?.() || new Date(a.createdAt || 0);
         const bDate = b.createdAt?.toDate?.() || new Date(b.createdAt || 0);
         return bDate - aDate;
       });
 
-      // Render demands as product cards
-      renderProductCards(filteredDemands);
+      // Render listings as product cards
+      renderProductCards(filteredListings);
       loadingState.style.display = "none";
+      updatePagerUI();
     }, document.getElementById("productsGrid"), {
       context: "Main demands loading",
       loadingMessage: "Talep verileri yükleniyor..."
     });
 
-    // Filter demands based on current filter values
-    function filterDemands(demands) {
+    // Teklifbul Rule v1.0 - Filter listings based on current filter values
+    function filterListings(listings) {
       const categoryFilter = document.getElementById("categoryFilter").value;
       const searchInput = document.getElementById("searchInput").value.toLowerCase();
-      const priceRange = document.getElementById("priceRange").value;
       const locationFilter = document.getElementById("locationFilter").value.toLowerCase();
 
-      return demands.filter(demand => {
+      return listings.filter(listing => {
         // Category filter
-        if (categoryFilter && !demand.categoryTags?.includes(categoryFilter)) {
+        if (categoryFilter && !listing.categoryTags?.includes(categoryFilter)) {
           return false;
         }
 
@@ -373,30 +488,21 @@
         if (searchInput) {
           // Check if it's a SATFK search (exact match)
           if (searchInput.match(/^SATFK-\d{8}-[0-9A-Z]+$/)) {
-            if (demand.satfk !== searchInput) {
+            if (listing.satfk !== searchInput) {
               return false;
             }
           } else {
-            // Regular text search
-            const searchText = `${demand.title || ""} ${demand.description || ""} ${demand.satfk || ""}`.toLowerCase();
+            // Regular text search - listing.title + satfk
+            const searchText = `${listing.title || ""} ${listing.satfk || ""}`.toLowerCase();
             if (!searchText.includes(searchInput)) {
               return false;
             }
           }
         }
 
-        // Price range filter
-        if (priceRange && demand.targetPrice) {
-          const price = parseFloat(demand.targetPrice);
-          if (priceRange === "0-1000" && (price < 0 || price > 1000)) return false;
-          if (priceRange === "1000-5000" && (price < 1000 || price > 5000)) return false;
-          if (priceRange === "5000-10000" && (price < 5000 || price > 10000)) return false;
-          if (priceRange === "10000+" && price < 10000) return false;
-        }
-
         // Location filter
-        if (locationFilter && demand.deliveryLocation) {
-          if (!demand.deliveryLocation.toLowerCase().includes(locationFilter)) {
+        if (locationFilter && listing.deliveryLocation) {
+          if (!listing.deliveryLocation.toLowerCase().includes(locationFilter)) {
             return false;
           }
         }
@@ -405,42 +511,97 @@
       });
     }
 
-    // Render product cards
-    function renderProductCards(demands) {
+    // Teklifbul Rule v1.0 - Render product cards from listings
+    function renderProductCards(listings) {
       const grid = document.getElementById("productsGrid");
       grid.innerHTML = "";
 
-      demands.forEach(demand => {
-        const card = createProductCard(demand);
+      listings.forEach(listing => {
+        const card = createProductCard(listing);
         grid.appendChild(card);
       });
     }
 
-    // Create product card element
-    function createProductCard(demand) {
+    // Teklifbul Rule v1.0 - Create product card element from listing
+    function createProductCard(listing) {
       const card = document.createElement("div");
       card.className = "product-card";
-      card.onclick = () => location.href = `./demand-detail.html?id=${demand.id}`;
+      // Kart tıklanınca demand-detail sayfasına git
+      // Teklifbul Rule v1.0 - Middle click / new tab intent desteği
+      card.addEventListener('click', async (event) => {
+        // Teklifbul Rule v1.0 - Direkt middle click kontrolü (import bağımsız)
+        const isMiddleClickDirect = event.type === 'auxclick' || event.button === 1 || event.which === 2 || (event.buttons !== undefined && (event.buttons & 4) === 4);
+        const isNewTabIntent = isMiddleClickDirect || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey;
+        if (isNewTabIntent) {
+          const tempLink = document.createElement('a');
+          tempLink.href = `./demand-detail.html?id=${listing.demandId}`;
+          tempLink.target = '_blank';
+          tempLink.style.display = 'none';
+          document.body.appendChild(tempLink);
+          tempLink.click();
+          document.body.removeChild(tempLink);
+          return;
+        }
+        // Fallback: shouldSkipPreventDefault kontrolü
+        try {
+          const { shouldSkipPreventDefault } = await import('./assets/js/utils/link-handler.js');
+          if (shouldSkipPreventDefault && shouldSkipPreventDefault(event)) {
+            const tempLink = document.createElement('a');
+            tempLink.href = `./demand-detail.html?id=${listing.demandId}`;
+            tempLink.target = '_blank';
+            tempLink.style.display = 'none';
+            document.body.appendChild(tempLink);
+            tempLink.click();
+            document.body.removeChild(tempLink);
+            return;
+          }
+        } catch (err) {
+          // Import başarısız, devam et
+        }
+        location.href = `./demand-detail.html?id=${listing.demandId}`;
+      });
 
-      const category = demand.categoryTags?.[0] || "Genel";
-      const deadline = demand.deadline ? new Date(demand.deadline).toLocaleDateString("tr-TR") : "Belirtilmemiş";
-      const deliveryLocation = demand.deliveryLocation || "Belirtilmemiş";
-      const totalQuantity = demand.items?.reduce((sum, item) => sum + (item.qty || 0), 0) || 0;
-
-      // Check if user is premium (simplified check)
-      const isPremium = demand.createdBy === user.uid; // Simplified for demo
+      const category = listing.categoryTags?.[0] || "Genel";
+      // Normalize deadline: Timestamp veya string olabilir
+      let deadline = "Belirtilmemiş";
+      if (listing.deadline) {
+        try {
+          const deadlineDate = listing.deadline?.toDate?.() || new Date(listing.deadline);
+          if (!isNaN(deadlineDate.getTime())) {
+            deadline = deadlineDate.toLocaleDateString("tr-TR");
+          }
+        } catch (e) {
+          logger.warn("Deadline parse error", { deadline: listing.deadline, error: e.message });
+        }
+      }
+      
+      const deliveryLocation = listing.deliveryLocation || "Belirtilmemiş";
+      // Normalize qty: listing.qty zaten normalize edilmiş olmalı
+      const qty = listing.qty || 0;
+      const unit = listing.unit || "adet";
+      
+      // Normalize createdAt
+      let createdAtText = "Tarih yok";
+      try {
+        const createdAt = listing.createdAt?.toDate?.() || new Date(listing.createdAt || 0);
+        if (!isNaN(createdAt.getTime())) {
+          createdAtText = createdAt.toLocaleDateString("tr-TR");
+        }
+      } catch (e) {
+        logger.warn("CreatedAt parse error", { createdAt: listing.createdAt, error: e.message });
+      }
 
       card.innerHTML = `
         <div class="product-info">
-          <h3 class="product-title">${demand.title || "Başlıksız Talep"}</h3>
+          <h3 class="product-title">${listing.title || "Başlıksız Talep"}</h3>
           <div class="product-code" style="font-size: 12px; color: #6b7280; margin: 4px 0;">
-            <strong>SATFK:</strong> ${demand.satfk || "Kod yok"}
+            <strong>SATFK:</strong> ${listing.satfk || "Kod yok"}
           </div>
           <span class="product-category">${category}</span>
           <div class="product-details">
             <div class="product-detail">
               <span>Miktar:</span>
-              <strong>${totalQuantity} adet</strong>
+              <strong>${qty} ${unit}</strong>
             </div>
             <div class="product-detail">
               <span>Teslim Yeri:</span>
@@ -452,7 +613,7 @@
             </div>
           </div>
           <div class="product-meta">
-            <div class="product-deadline">${demand.createdAt?.toDate?.()?.toLocaleDateString("tr-TR") || "Tarih yok"}</div>
+            <div class="product-deadline">${createdAtText}</div>
           </div>
         </div>
       `;
@@ -469,17 +630,54 @@
       emptyState.style.display = "block";
     }
 
+    function updatePagerUI() {
+      const pageInfo = document.getElementById('pageInfo');
+      const totalInfo = document.getElementById('totalItemsInfo');
+      const btnPrev = document.getElementById('btnPrev');
+      const btnNext = document.getElementById('btnNext');
+      const pagerCont = document.getElementById('pagination-controls');
+
+      if (pagerCont) {
+        pagerCont.style.display = (PAGING.totalItems > 0) ? 'flex' : 'none';
+      }
+
+      if (pageInfo) pageInfo.textContent = `Sayfa ${PAGING.currentPage}`;
+      if (totalInfo) totalInfo.textContent = `Toplam: ${PAGING.totalItems}`;
+
+      if (btnPrev) btnPrev.disabled = PAGING.currentPage === 1;
+      if (btnNext) btnNext.disabled = !PAGING.hasMore;
+    }
+
     // Event listeners
-    document.getElementById("categoryFilter").addEventListener("change", loadMainDemands);
-    document.getElementById("searchInput").addEventListener("input", loadMainDemands);
-    document.getElementById("priceRange").addEventListener("change", loadMainDemands);
-    document.getElementById("locationFilter").addEventListener("input", loadMainDemands);
+    document.getElementById("categoryFilter").addEventListener("change", () => loadMainDemands(true));
+    document.getElementById("searchInput").addEventListener("input", () => loadMainDemands(true));
+    document.getElementById("locationFilter").addEventListener("input", () => loadMainDemands(true));
+    document.getElementById("f-pageSize").addEventListener("change", (e) => {
+      PAGING.pageSize = parseInt(e.target.value, 10);
+      loadMainDemands(true);
+    });
+
+    document.getElementById("btnPrev").addEventListener("click", () => {
+      if (PAGING.currentPage > 1) {
+        PAGING.currentPage--;
+        PAGING.lastVisible = PAGING.pageHistory[PAGING.currentPage - 1];
+        loadMainDemands(false);
+      }
+    });
+
+    document.getElementById("btnNext").addEventListener("click", () => {
+      if (PAGING.hasMore) {
+        PAGING.pageHistory[PAGING.currentPage] = PAGING.lastVisible;
+        PAGING.currentPage++;
+        loadMainDemands(false);
+      }
+    });
+
     document.getElementById("clearFilters").addEventListener("click", () => {
       document.getElementById("categoryFilter").value = "";
       document.getElementById("searchInput").value = "";
-      document.getElementById("priceRange").value = "";
       document.getElementById("locationFilter").value = "";
-      loadMainDemands();
+      loadMainDemands(true);
     });
 
     // Initialize

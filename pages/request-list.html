@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>Talep Listesi</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Teklifbul Rule v1.0 - FOUC önleme: Tema hemen uygulanmalı -->
+  <script src="/assets/js/theme-init.js"></script>
+  <link rel="stylesheet" href="/utils.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <style>
+    body{font-family:system-ui, Arial; background:#f8fafc; color:#111827; margin:0}
+    .container{max-width:1200px;margin:0 auto;padding:20px}
+    h1{margin:0 0 8px 0}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin:12px 0}
+    table{width:100%;border-collapse:collapse; margin-top:12px}
+    th,td{border-bottom:1px solid #e5e7eb;padding:12px;text-align:left;font-size:13px}
+    th{background:#f9fafb;font-weight:600}
+    .badge{display:inline-block;border-radius:14px;padding:4px 8px;font-size:12px;font-weight:600}
+    .b-draft{background:#f3f4f6;color:#374151}
+    .b-sent{background:#dbeafe;color:#1e40af}
+    .b-approved{background:#dcfce7;color:#065f46}
+    .b-rejected{background:#fee2e2;color:#991b1b}
+    .muted{color:#6b7280;font-size:12px}
+    .btn{padding:8px 16px;border:0;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px;text-decoration:none;display:inline-block}
+    .btn-primary{background:#2563eb;color:#fff}
+    .btn-secondary{background:#6b7280;color:#fff}
+    .btn-success{background:#10b981;color:#fff;padding:6px 12px;font-size:12px}
+    .btn-danger{background:#ef4444;color:#fff;padding:6px 12px;font-size:12px}
+    .btn:hover{opacity:0.9}
+    .btn-group{display:flex;gap:4px}
+    .btn-group .btn{margin:0}
+    
+    /* Koyu Mod Düzenlemeleri */
+    html[data-theme="dark"] body,
+    html.force-dark body {
+      background:#111827;
+      color:#ffffff;
+    }
+    html[data-theme="dark"] .card,
+    html.force-dark .card {
+      background:#111827;
+      border:1px solid rgba(255,255,255,0.1);
+      color:#ffffff;
+    }
+    html[data-theme="dark"] table,
+    html.force-dark table {
+      background:#111827;
+    }
+    html[data-theme="dark"] th,
+    html.force-dark th {
+      background:#111827;
+      color:#ffffff;
+      border-bottom:1px solid rgba(255,255,255,0.1);
+    }
+    html[data-theme="dark"] td,
+    html.force-dark td {
+      color:#ffffff;
+      border-bottom:1px solid rgba(255,255,255,0.1);
+    }
+    html[data-theme="dark"] .muted,
+    html.force-dark .muted {
+      color:#9ca3af;
+    }
+    html[data-theme="dark"] h1,
+    html.force-dark h1 {
+      color:#ffffff;
+    }
+  </style>
+</head>
+<body>
+  <!-- Common Header -->
+  <header id="app-header"></header>
+
+  <div class="container">
+    <!-- Breadcrumb Navigation -->
+    <div class="tb-breadcrumb" id="breadcrumb">
+      <span class="tb-crumb">
+        <span class="ico">🏠</span>
+        <a href="/dashboard.html">Ana Sayfa</a>
+      </span>
+      <span class="tb-sep">›</span>
+      <span class="tb-crumb">
+        <span class="ico">📦</span>
+        <a href="/inventory-index.html">Stok Takip</a>
+      </span>
+      <span class="tb-sep">›</span>
+      <span class="tb-crumb">
+        <span class="ico">📄</span>
+        <span>Talep Listesi</span>
+      </span>
+    </div>
+    
+    <h1>Talep Listesi (İşlem Merkezi)</h1>
+    <p class="muted">Oluşturulan tüm transfer taleplerini yanıtlayın, düzenleyin veya yönetin.</p>
+
+    <div class="card">
+      <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+        <div style="flex:1;min-width:200px">
+          <input id="searchInput" type="text" placeholder="Başlık, talep eden veya şantiye ara..." style="width:100%;padding:8px 12px;border:1px solid #e5e7eb;border-radius:6px;font-size:14px" />
+        </div>
+        <div>
+          <select id="filterStatus" style="padding:8px 12px;border:1px solid #e5e7eb;border-radius:6px;font-size:14px">
+            <option value="">Tüm Durumlar</option>
+            <option value="DRAFT">Taslak</option>
+            <option value="SENT">Gönderildi</option>
+            <option value="APPROVED">Onaylandı</option>
+            <option value="REJECTED">Reddedildi</option>
+          </select>
+        </div>
+        <div>
+          <select id="filterType" style="padding:8px 12px;border:1px solid #e5e7eb;border-radius:6px;font-size:14px">
+            <option value="">Tüm Tipler</option>
+            <option value="ŞMTF">ŞMTF</option>
+            <option value="IMTF">IMTF</option>
+            <option value="DMTF">DMTF</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap">
+        <div style="padding:12px;background:#f9fafb;border-radius:6px;flex:1;min-width:120px">
+          <div style="font-size:12px;color:#6b7280;margin-bottom:4px">Toplam</div>
+          <div id="statTotal" style="font-size:20px;font-weight:600">0</div>
+        </div>
+        <div style="padding:12px;background:#f9fafb;border-radius:6px;flex:1;min-width:120px">
+          <div style="font-size:12px;color:#6b7280;margin-bottom:4px">Gösterilen</div>
+          <div id="statShown" style="font-size:20px;font-weight:600">0</div>
+        </div>
+        <div style="padding:12px;background:#dbeafe;border-radius:6px;flex:1;min-width:120px">
+          <div style="font-size:12px;color:#1e40af;margin-bottom:4px">Gönderildi</div>
+          <div id="statSent" style="font-size:20px;font-weight:600;color:#1e40af">0</div>
+        </div>
+        <div style="padding:12px;background:#dcfce7;border-radius:6px;flex:1;min-width:120px">
+          <div style="font-size:12px;color:#065f46;margin-bottom:4px">Onaylandı</div>
+          <div id="statApproved" style="font-size:20px;font-weight:600;color:#065f46">0</div>
+        </div>
+      </div>
+
+      <h2 style="margin:0 0 12px 0;font-size:18px">Talepler</h2>
+      <table id="requestsTable">
+        <thead>
+          <tr>
+            <th>Başlık</th>
+            <th>Tip</th>
+            <th>Talep Eden</th>
+            <th>Şantiye/Lokasyon</th>
+            <th>Durum</th>
+            <th>Oluşturulma</th>
+            <th>İşlemler</th>
+          </tr>
+        </thead>
+        <tbody id="requestsBody">
+          <tr>
+            <td colspan="7" style="text-align:center;padding:40px;color:#6b7280">Yükleniyor...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Firebase -->
+  <script type="module" src="/firebase.js"></script>
+  <!-- Header -->
+  <script type="module">
+    import { initGlobalHeader } from '../assets/js/ui/header.js';
+    initGlobalHeader({ mount: '#app-header', activeRoute: 'inventory' });
+  </script>
+  <!-- Main -->
+  <script type="module">
+    // Teklifbul Rule v1.0 - Talep Listesi İyileştirmeleri
+    // Teklifbul Rule v1.0 - XSS Protection
+    import DOMPurify from 'https://cdn.jsdelivr.net/npm/dompurify@3.2.2/+esm';
+    import { db, requireAuth } from '/firebase.js';
+    import { collection, getDocs, query, where, orderBy, doc, getDoc, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+    import { toast } from '/src/shared/ui/toast.js';
+    import { MESSAGES } from '/src/shared/constants/messages.js';
+    import { logger } from '/src/shared/log/logger.js';
+
+    const qs = s => document.querySelector(s);
+
+    const state = {
+      allRequests: [],
+      filteredRequests: [],
+      searchQuery: '',
+      filterStatus: '',
+      filterType: '',
+      companyId: null,
+      user: null
+    };
+
+    async function loadRequests() {
+      logger.group('Talep Listesi Yükleme');
+      try {
+        state.user = await requireAuth();
+        logger.info('Kullanıcı doğrulandı', { uid: state.user.uid });
+        
+        // Get user's companyId
+        const userDoc = await getDoc(doc(db, 'users', state.user.uid));
+        const userData = userDoc.exists() ? userDoc.data() : {};
+        state.companyId = userData.companyId;
+        
+        if (!state.companyId) {
+          logger.error('Şirket bilgisi bulunamadı');
+          // Teklifbul Rule v1.0 - XSS Protection: Sanitize empty state HTML
+          qs('#requestsBody').innerHTML = DOMPurify.sanitize('<tr><td colspan="7" style="text-align:center;padding:40px;color:#6b7280">Şirket bilgisi bulunamadı.</td></tr>', {
+            ALLOWED_TAGS: ['tr', 'td'],
+            ALLOWED_ATTR: ['colspan', 'style']
+          });
+          toast.error(MESSAGES.ERROR_REQUEST_COMPANY_INFO_NOT_FOUND);
+          logger.end();
+          return;
+        }
+
+        logger.info('Şirket bilgisi alındı', { companyId: state.companyId });
+
+        // Load all internal requests (ŞMTF, IMTF, DMTF) for the company
+        // Teklifbul Rule v1.0 - En yetkili kişi tüm talepleri görebilir
+        // Önce şirket kullanıcılarını al
+        const companyUsersQuery = query(
+          collection(db, 'users'),
+          where('companyId', '==', state.companyId)
+        );
+        const companyUsersSnap = await getDocs(companyUsersQuery);
+        const companyUserIds = companyUsersSnap.docs.map(doc => doc.id);
+        
+        logger.info('Şirket kullanıcıları alındı', { count: companyUserIds.length });
+        
+        // Şirket içindeki tüm talepleri al
+        const allRequestsQuery = query(
+          collection(db, 'internal_requests'),
+          orderBy('createdAt', 'desc')
+        );
+        
+        const allRequestsSnap = await getDocs(allRequestsQuery);
+        state.allRequests = [];
+        
+        allRequestsSnap.forEach(doc => {
+          const data = doc.data();
+          // Şirket kullanıcılarından biri tarafından oluşturulmuş talepleri filtrele
+          if (companyUserIds.includes(data.requesterUserId)) {
+            state.allRequests.push({ id: doc.id, ...data });
+          }
+        });
+
+        logger.info('Talepler yüklendi', { count: state.allRequests.length });
+        applyFilters();
+        logger.end();
+        
+      } catch (error) {
+        logger.error('Talep yükleme hatası', error);
+        // Teklifbul Rule v1.0 - XSS Protection: Sanitize error message
+        const safeErrorMessage = DOMPurify.sanitize(error.message || 'Bilinmeyen hata', { ALLOWED_TAGS: [] });
+        qs('#requestsBody').innerHTML = DOMPurify.sanitize(`<tr><td colspan="7" style="text-align:center;padding:40px;color:#dc2626">Yükleme hatası: ${safeErrorMessage}</td></tr>`, {
+          ALLOWED_TAGS: ['tr', 'td'],
+          ALLOWED_ATTR: ['colspan', 'style']
+        });
+        toast.error(MESSAGES.ERROR_REQUEST_LOAD.replace('{message}', error.message));
+        logger.end();
+      }
+    }
+
+    function applyFilters() {
+      logger.group('Talep Filtreleme');
+      
+      let filtered = [...state.allRequests];
+      
+      // Arama filtresi
+      if (state.searchQuery.trim()) {
+        const query = state.searchQuery.toLowerCase();
+        filtered = filtered.filter(req => {
+          const title = (req.title || '').toLowerCase();
+          const requester = (req.requesterName || '').toLowerCase();
+          const site = ((req.siteName || req.locationName) || '').toLowerCase();
+          return title.includes(query) || requester.includes(query) || site.includes(query);
+        });
+        logger.info('Arama filtresi uygulandı', { query: state.searchQuery, count: filtered.length });
+      }
+      
+      // Durum filtresi
+      if (state.filterStatus) {
+        filtered = filtered.filter(req => req.status === state.filterStatus);
+        logger.info('Durum filtresi uygulandı', { status: state.filterStatus, count: filtered.length });
+      }
+      
+      // Tip filtresi
+      if (state.filterType) {
+        filtered = filtered.filter(req => (req.type || 'ŞMTF') === state.filterType);
+        logger.info('Tip filtresi uygulandı', { type: state.filterType, count: filtered.length });
+      }
+      
+      state.filteredRequests = filtered;
+      renderRequests(filtered);
+      updateStats();
+      logger.end();
+    }
+
+    function updateStats() {
+      const total = state.allRequests.length;
+      const shown = state.filteredRequests.length;
+      const sent = state.allRequests.filter(r => r.status === 'SENT').length;
+      const approved = state.allRequests.filter(r => r.status === 'APPROVED').length;
+      
+      qs('#statTotal').textContent = total;
+      qs('#statShown').textContent = shown;
+      qs('#statSent').textContent = sent;
+      qs('#statApproved').textContent = approved;
+    }
+
+    function renderRequests(requests) {
+      const tbody = qs('#requestsBody');
+      
+      if (requests.length === 0) {
+        // Teklifbul Rule v1.0 - XSS Protection: Sanitize empty state HTML
+        tbody.innerHTML = DOMPurify.sanitize('<tr><td colspan="7" style="text-align:center;padding:40px;color:#6b7280">Henüz talep bulunamadı.</td></tr>', {
+          ALLOWED_TAGS: ['tr', 'td'],
+          ALLOWED_ATTR: ['colspan', 'style']
+        });
+        return;
+      }
+
+      // Teklifbul Rule v1.0 - XSS Protection: Sanitize request data
+      const sanitizedRequests = requests.map(req => {
+        const safeTitle = DOMPurify.sanitize(req.title || '-', { ALLOWED_TAGS: [] });
+        const safeRequesterName = DOMPurify.sanitize(req.requesterName || '-', { ALLOWED_TAGS: [] });
+        const safeSiteName = DOMPurify.sanitize(req.siteName || req.locationName || '-', { ALLOWED_TAGS: [] });
+        const safeId = DOMPurify.sanitize(req.id || '', { ALLOWED_TAGS: [] });
+        return { ...req, title: safeTitle, requesterName: safeRequesterName, siteName: safeSiteName, id: safeId };
+      });
+      tbody.innerHTML = DOMPurify.sanitize(sanitizedRequests.map(req => {
+        const date = req.createdAt ? new Date(req.createdAt.toDate()).toLocaleDateString('tr-TR') : '-';
+        const statusBadge = getStatusBadge(req.status);
+        const typeText = req.type || 'ŞMTF';
+        const canApprove = req.status === 'SENT';
+        
+        return `
+          <tr>
+            <td><strong>${req.title}</strong></td>
+            <td>${typeText}</td>
+            <td>${req.requesterName}</td>
+            <td>${req.siteName}</td>
+            <td>${statusBadge}</td>
+            <td>${date}</td>
+            <td>
+              <div class="btn-group">
+                <a href="/pages/request-detail.html?id=${req.id}" class="btn btn-primary">Detay</a>
+                ${canApprove ? `
+                  <button class="btn btn-success" onclick="handleApprove('${req.id}')" title="Onayla">✓</button>
+                  <button class="btn btn-danger" onclick="handleReject('${req.id}')" title="Reddet">✗</button>
+                ` : ''}
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join(''), {
+        ALLOWED_TAGS: ['tr', 'td', 'strong', 'div', 'a', 'button'],
+        ALLOWED_ATTR: ['class', 'href', 'onclick', 'title', 'style']
+      });
+    }
+
+    // Global functions for onclick handlers
+    window.handleApprove = async function(requestId) {
+      logger.group('Talep Onay İşlemi');
+      
+      if (!confirm('Bu talep onaylanacak. Detay sayfasına yönlendirileceksiniz. Devam edilsin mi?')) {
+        logger.info('Onay işlemi iptal edildi');
+        logger.end();
+        return;
+      }
+      
+      try {
+        logger.info('Talep onaylanıyor', { requestId });
+        toast.info(MESSAGES.INFO_REQUEST_APPROVING);
+        
+        // Detay sayfasına yönlendir (orada tam onay işlemi yapılacak)
+        window.location.href = `/pages/request-detail.html?id=${requestId}`;
+        
+      } catch (error) {
+        logger.error('Onay işlemi hatası', error);
+        toast.error(MESSAGES.ERROR_REQUEST_APPROVE.replace('{message}', error.message));
+        logger.end();
+      }
+    };
+
+    window.handleReject = async function(requestId) {
+      logger.group('Talep Red İşlemi');
+      
+      const reason = prompt('Red sebebi:');
+      if (!reason || !reason.trim()) {
+        logger.info('Red işlemi iptal edildi (sebep girilmedi)');
+        logger.end();
+        return;
+      }
+      
+      try {
+        logger.info('Talep reddediliyor', { requestId, reason });
+        toast.info(MESSAGES.INFO_REQUEST_REJECTING);
+        
+        await updateDoc(doc(db, 'internal_requests', requestId), {
+          status: 'REJECTED',
+          rejectedAt: serverTimestamp(),
+          rejectedBy: state.user.uid,
+          rejectedByName: state.user.displayName || state.user.email,
+          rejectionReason: reason.trim()
+        });
+        
+        logger.info('Talep başarıyla reddedildi', { requestId });
+        toast.success(MESSAGES.SUCCESS_REQUEST_REJECTED);
+        
+        // Listeyi yenile
+        await loadRequests();
+        logger.end();
+        
+      } catch (error) {
+        logger.error('Red işlemi hatası', error);
+        toast.error(MESSAGES.ERROR_REQUEST_REJECT.replace('{message}', error.message));
+        logger.end();
+      }
+    };
+
+    function getStatusBadge(status) {
+      const badges = {
+        'DRAFT': '<span class="badge b-draft">Taslak</span>',
+        'SENT': '<span class="badge b-sent">Gönderildi</span>',
+        'APPROVED': '<span class="badge b-approved">Onaylandı</span>',
+        'REJECTED': '<span class="badge b-rejected">Reddedildi</span>'
+      };
+      return badges[status] || `<span class="badge b-draft">${status || '-'}</span>`;
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Event listeners
+    async function setupEventListeners() {
+      // Teklifbul Rule v1.0 - Debounce utility import
+      const { debounce } = await import('/assets/js/utils/debounce.js');
+      
+      // Debounced search (Teklifbul Rule v1.0)
+      const debouncedSearch = debounce((query) => {
+        state.searchQuery = query.trim();
+        applyFilters();
+      }, 300);
+      
+      qs('#searchInput').addEventListener('input', (e) => {
+        debouncedSearch(e.target.value);
+      });
+      
+      qs('#filterStatus').addEventListener('change', (e) => {
+        state.filterStatus = e.target.value;
+        applyFilters();
+      });
+      
+      qs('#filterType').addEventListener('change', (e) => {
+        state.filterType = e.target.value;
+        applyFilters();
+      });
+    }
+
+    // Initialize
+    (async () => {
+      await loadRequests();
+      setupEventListeners();
+    })();
+  </script>
+</body>
+</html>
+

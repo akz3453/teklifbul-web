@@ -1,0 +1,596 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>NEFISOFT — Sözleşme Detayı</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  
+  <!-- Teklifbul Rule v1.0 - Tema standardı -->
+  <script src="/assets/js/theme-init.js"></script>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%233b82f6' rx='6'/%3E%3Ctext x='16' y='22' font-family='Arial' font-size='18' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/utils.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <style>
+    body { margin: 0; font-family: system-ui, Arial; }
+    .page-heading { margin: 20px 0; }
+    .page-title-chip { display: flex; align-items: center; gap: 12px; }
+    .page-title-icon { font-size: 32px; }
+    .page-title-text h1 { margin: 0; font-size: 24px; font-weight: 600; color: var(--text, #1f2937); }
+    html[data-theme="dark"] .page-title-text h1 { color: #ffffff; }
+    
+    .card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; background: white; margin-bottom: 20px; }
+    html[data-theme="dark"] .card { background: #111827; border: 1px solid rgba(255,255,255,0.25); color: #ffffff; }
+    
+    .tabs { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid #e5e7eb; }
+    html[data-theme="dark"] .tabs { border-bottom-color: rgba(255,255,255,0.25); }
+    .tab { padding: 10px 16px; border: none; background: transparent; cursor: pointer; font-weight: 600; color: #6b7280; border-bottom: 2px solid transparent; }
+    html[data-theme="dark"] .tab { color: rgba(255,255,255,0.7); }
+    .tab.active { color: #2563eb; border-bottom-color: #2563eb; }
+    html[data-theme="dark"] .tab.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+    .tab:hover { color: #2563eb; }
+    html[data-theme="dark"] .tab:hover { color: #3b82f6; }
+    
+    .hidden { display: none; }
+    
+    .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 16px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group label { font-size: 13px; font-weight: 600; color: var(--text, #1f2937); }
+    html[data-theme="dark"] .form-group label { color: #ffffff; }
+    .form-group input,
+    .form-group select { padding: 10px; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 14px; background: white; color: #1f2937; }
+    html[data-theme="dark"] .form-group input,
+    html[data-theme="dark"] .form-group select { background: #1f2937; border: 1px solid rgba(255,255,255,0.25); color: #ffffff; }
+    
+    .action-buttons { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+    .btn { padding: 10px 20px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .btn-primary { background: #3b82f6; color: white; }
+    .btn-primary:hover { background: #2563eb; }
+    .btn-success { background: #10b981; color: white; }
+    .btn-success:hover { background: #059669; }
+    .btn-danger { background: #ef4444; color: white; }
+    .btn-danger:hover { background: #dc2626; }
+    .btn-outline { background: transparent; border: 1px solid #e5e7eb; color: var(--text, #1f2937); }
+    html[data-theme="dark"] .btn-outline { border-color: rgba(255,255,255,0.25); color: #ffffff; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+    
+    .table-container { overflow-x: auto; }
+    .table { width: 100%; border-collapse: collapse; }
+    .table th, .table td { border-bottom: 1px solid #e5e7eb; padding: 12px; text-align: left; font-size: 14px; }
+    html[data-theme="dark"] .table th, html[data-theme="dark"] .table td { border-bottom: 1px solid rgba(255,255,255,0.25); color: #ffffff; }
+    .table th { background: #f9fafb; font-weight: 600; color: #374151; }
+    html[data-theme="dark"] .table th { background: #111827; color: #ffffff; }
+    .table tbody tr:hover { background: #f9fafb; }
+    html[data-theme="dark"] .table tbody tr:hover { background: #1f2937; }
+    
+    .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); }
+    .modal-content { background: white; margin: 5% auto; padding: 20px; border-radius: 8px; max-width: 600px; max-height: 90vh; overflow-y: auto; }
+    html[data-theme="dark"] .modal-content { background: #111827; border: 1px solid rgba(255,255,255,0.25); color: #ffffff; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .modal-header h3 { margin: 0; }
+    .close-modal { background: none; border: none; font-size: 24px; cursor: pointer; color: #6b7280; }
+    html[data-theme="dark"] .close-modal { color: #ffffff; }
+    
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted, #6b7280); }
+    html[data-theme="dark"] .empty-state { color: rgba(255,255,255,0.7); }
+    
+    .badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+    .badge.active { background: #d1fae5; color: #065f46; }
+    .badge.passive { background: #fee2e2; color: #991b1b; }
+    html[data-theme="dark"] .badge.active { background: #064e3b; color: #34d399; }
+    html[data-theme="dark"] .badge.passive { background: #7f1d1d; color: #fca5a5; }
+  </style>
+</head>
+<body>
+  <!-- Common Header -->
+  <header id="app-header"></header>
+
+  <main class="container--wide" style="padding:20px 0">
+    <div class="page-heading">
+      <div class="page-title-chip" role="presentation">
+        <span class="page-title-icon" aria-hidden="true">📄</span>
+        <div class="page-title-text">
+          <h1 id="page-title">Sözleşme Detayı</h1>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Ana İçerik -->
+    <div id="main-content">
+      <!-- Butonlar -->
+      <div class="action-buttons">
+        <button class="btn btn-primary" id="btn-edit">Düzenle</button>
+        <a href="./contracts.html" class="btn btn-outline">← Listeye Dön</a>
+      </div>
+      
+      <!-- Tabs -->
+      <div class="tabs" role="tablist">
+        <button id="tab-info" class="tab active" role="tab" aria-controls="panel-info" aria-selected="true">Bilgiler</button>
+        <button id="tab-items" class="tab" role="tab" aria-controls="panel-items" aria-selected="false">Pozlar</button>
+      </div>
+      
+      <!-- Tab Panels -->
+      <!-- Sekme 1: Bilgiler -->
+      <div id="panel-info" role="tabpanel" aria-labelledby="tab-info">
+        <div class="card">
+          <h2 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 600;">Sözleşme Bilgileri</h2>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label>Sözleşme No</label>
+              <input type="text" id="contract-no" readonly />
+            </div>
+            <div class="form-group">
+              <label>Sözleşme Adı</label>
+              <input type="text" id="contract-name" readonly />
+            </div>
+            <div class="form-group">
+              <label>Proje / Şantiye</label>
+              <input type="text" id="site-name" readonly />
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label>Başlangıç Tarihi</label>
+              <input type="text" id="start-date" readonly />
+            </div>
+            <div class="form-group">
+              <label>Bitiş Tarihi</label>
+              <input type="text" id="end-date" readonly />
+            </div>
+            <div class="form-group">
+              <label>Sözleşme Tutarı</label>
+              <input type="text" id="contract-value" readonly />
+            </div>
+          </div>
+          
+          <h3 style="margin: 24px 0 16px 0; font-size: 16px; font-weight: 600;">Varsayılan Oranlar</h3>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label>KDV Oranı (%)</label>
+              <input type="text" id="kdv-rate" readonly />
+            </div>
+            <div class="form-group">
+              <label>Stopaj Oranı (%)</label>
+              <input type="text" id="stopaj-rate" readonly />
+            </div>
+            <div class="form-group">
+              <label>Teminat Oranı (%)</label>
+              <input type="text" id="guarantee-rate" readonly />
+            </div>
+            <div class="form-group">
+              <label>Avans Oranı (%)</label>
+              <input type="text" id="advance-rate" readonly />
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label>Durum</label>
+              <span id="status-badge"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Sekme 2: Pozlar -->
+      <div id="panel-items" role="tabpanel" aria-labelledby="tab-items" class="hidden">
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h2 style="margin: 0; font-size: 18px; font-weight: 600;">Pozlar</h2>
+            <button class="btn btn-primary btn-sm" id="btn-add-item">+ Poz Ekle</button>
+          </div>
+          
+          <div class="table-container">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Poz No</th>
+                  <th>Açıklama</th>
+                  <th>Birim</th>
+                  <th>Birim Fiyat</th>
+                  <th>Sözleşme Miktarı</th>
+                  <th>İşlemler</th>
+                </tr>
+              </thead>
+              <tbody id="items-table-body">
+                <tr>
+                  <td colspan="6" class="empty-state">Yükleniyor...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  
+  <!-- Poz Ekle/Düzenle Modal -->
+  <div id="item-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="item-modal-title">Poz Ekle</h3>
+        <button class="close-modal" id="close-item-modal">&times;</button>
+      </div>
+      <form id="item-form">
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label>Poz No <span style="color: #ef4444;">*</span></label>
+          <input type="text" id="item-code" required />
+        </div>
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label>Açıklama <span style="color: #ef4444;">*</span></label>
+          <input type="text" id="item-description" required />
+        </div>
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label>Birim <span style="color: #ef4444;">*</span></label>
+          <input type="text" id="item-unit" required />
+        </div>
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label>Birim Fiyat (₺)</label>
+          <input type="number" id="item-unit-price" min="0" step="0.01" value="0" />
+        </div>
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label>Sözleşme Miktarı</label>
+          <input type="number" id="item-qty-limit" min="0" step="0.01" />
+        </div>
+        <div class="action-buttons" style="margin-top: 20px;">
+          <button type="submit" class="btn btn-primary">Kaydet</button>
+          <button type="button" class="btn btn-outline" id="cancel-item-form">İptal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module">
+    // Teklifbul Rule v1.0 - Auth Guard
+    import { initAuthGuard } from './assets/js/auth-guard.js';
+    import { initGlobalHeader } from './assets/js/ui/header.js';
+    import { switchTab } from './assets/js/ui/tabs.js';
+    import { auth, waitAuthReady, db } from './firebase.js';
+    import { logger } from './src/shared/log/logger.js';
+    import { toast } from './src/shared/ui/toast.js';
+    import DOMPurify from 'https://cdn.jsdelivr.net/npm/dompurify@3.2.2/+esm';
+    
+    initAuthGuard().catch(err => {
+      console.error('Auth guard init failed', err);
+    });
+    
+    async function authFetch(url, options = {}) {
+      const { authFetch: commonAuthFetch } = await import('/assets/js/utils/api-helpers.js');
+      return await commonAuthFetch(url, options);
+    }
+    
+    async function getCurrentUser() {
+      if (auth.currentUser) return auth.currentUser;
+      const user = await waitAuthReady();
+      if (!user) throw new Error('not signed in');
+      return user;
+    }
+    
+    let currentContractId = null;
+    let editingItemId = null;
+    
+    // Tab switching
+    function initTabs() {
+      const tabs = document.querySelectorAll('.tabs .tab');
+      tabs.forEach(tab => {
+        tab.addEventListener('click', (e) => {
+          e.preventDefault();
+          const tabId = tab.id;
+          switchTab(tabId, '.tabs');
+        });
+      });
+    }
+    
+    // Sayfa yükleme
+    async function init() {
+      try {
+        logger.group('Sözleşme Detay Sayfası Yükleme');
+        await initGlobalHeader({ mount: '#app-header', activeRoute: 'contracts' });
+        
+        // Tab'ları başlat
+        initTabs();
+        
+        // Event listener'ları ekle
+        document.getElementById('btn-edit')?.addEventListener('click', () => {
+          if (currentContractId) {
+            window.location.href = `./contract-edit.html?id=${currentContractId}`;
+          }
+        });
+        
+        document.getElementById('btn-add-item')?.addEventListener('click', () => {
+          editingItemId = null;
+          document.getElementById('item-modal-title').textContent = 'Poz Ekle';
+          document.getElementById('item-form').reset();
+          document.getElementById('item-modal').style.display = 'block';
+        });
+        
+        document.getElementById('close-item-modal')?.addEventListener('click', () => {
+          document.getElementById('item-modal').style.display = 'none';
+        });
+        
+        document.getElementById('cancel-item-form')?.addEventListener('click', () => {
+          document.getElementById('item-modal').style.display = 'none';
+        });
+        
+        document.getElementById('item-form')?.addEventListener('submit', saveItem);
+        
+        // URL parametrelerini kontrol et
+        const params = new URLSearchParams(window.location.search);
+        const contractId = params.get('id');
+        
+        if (!contractId) {
+          toast.error('Sözleşme ID bulunamadı');
+          window.location.href = './contracts.html';
+          return;
+        }
+        
+        currentContractId = contractId;
+        await loadContract(contractId);
+        await loadItems(contractId);
+        
+        logger.info('Sözleşme detay sayfası yüklendi');
+        logger.end();
+      } catch (error) {
+        logger.error('Sayfa yükleme hatası', error);
+        logger.end();
+        toast.error('Sayfa yüklenirken hata oluştu: ' + (error.message || 'Bilinmeyen hata'));
+      }
+    }
+    
+    // Sözleşmeyi yükle
+    async function loadContract(contractId) {
+      try {
+        logger.group('Sözleşme Yükleniyor');
+        const user = await getCurrentUser();
+        if (!user) return;
+        
+        const response = await authFetch(`/api/contracts/${contractId}`);
+        if (!response.ok) {
+          throw new Error('Sözleşme yüklenemedi');
+        }
+        
+        const contract = await response.json();
+        
+        // Form alanlarını doldur
+        document.getElementById('page-title').textContent = contract.contractName || 'Sözleşme Detayı';
+        document.getElementById('contract-no').value = contract.contractNo || '-';
+        document.getElementById('contract-name').value = contract.contractName || '-';
+        document.getElementById('site-name').value = contract.siteName || '-';
+        document.getElementById('start-date').value = contract.startDate ? new Date(contract.startDate).toLocaleDateString('tr-TR') : '-';
+        document.getElementById('end-date').value = contract.endDate ? new Date(contract.endDate).toLocaleDateString('tr-TR') : '-';
+        document.getElementById('contract-value').value = (contract.contractValue || 0).toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' });
+        document.getElementById('kdv-rate').value = (contract.kdvRate || 20) + '%';
+        document.getElementById('stopaj-rate').value = (contract.stopajRate || 5) + '%';
+        document.getElementById('guarantee-rate').value = (contract.guaranteeRate || 6) + '%';
+        document.getElementById('advance-rate').value = (contract.advanceRate || 10) + '%';
+        
+        const status = contract.status || 'active';
+        const statusBadge = document.getElementById('status-badge');
+        // Teklifbul Rule v1.0 - XSS Protection
+        const safeStatus = DOMPurify.sanitize(status || '', { ALLOWED_TAGS: [] });
+        const statusText = safeStatus === 'active' ? 'Aktif' : 'Pasif';
+        statusBadge.innerHTML = DOMPurify.sanitize(`<span class="badge ${safeStatus}">${statusText}</span>`, {
+          ALLOWED_TAGS: ['span'],
+          ALLOWED_ATTR: ['class']
+        });
+        
+        logger.info('Sözleşme yüklendi', { contractId });
+        logger.end();
+      } catch (error) {
+        logger.error('Sözleşme yükleme hatası', error);
+        logger.end();
+        toast.error('Sözleşme yüklenemedi: ' + (error.message || 'Bilinmeyen hata'));
+      }
+    }
+    
+    // Pozları yükle
+    async function loadItems(contractId) {
+      try {
+        logger.group('Pozlar Yükleniyor');
+        const user = await getCurrentUser();
+        if (!user) return;
+        
+        const response = await authFetch(`/api/contracts/${contractId}/items`);
+        if (!response.ok) {
+          throw new Error('Pozlar yüklenemedi');
+        }
+        
+        const data = await response.json();
+        const items = data.items || [];
+        
+        renderItemsTable(items);
+        logger.info('Pozlar yüklendi', { count: items.length });
+        logger.end();
+      } catch (error) {
+        logger.error('Pozlar yükleme hatası', error);
+        logger.end();
+        toast.error('Pozlar yüklenemedi');
+        const tbody = document.getElementById('items-table-body');
+        if (tbody) {
+          // Teklifbul Rule v1.0 - XSS Protection
+          tbody.innerHTML = DOMPurify.sanitize('<tr><td colspan="6" class="empty-state">Hata oluştu</td></tr>', {
+            ALLOWED_TAGS: ['tr', 'td'],
+            ALLOWED_ATTR: ['colspan', 'class']
+          });
+        }
+      }
+    }
+    
+    // Pozlar tablosunu render et
+    function renderItemsTable(items) {
+      const tbody = document.getElementById('items-table-body');
+      if (!tbody) return;
+      
+      if (items.length === 0) {
+        // Teklifbul Rule v1.0 - XSS Protection
+        tbody.innerHTML = DOMPurify.sanitize('<tr><td colspan="6" class="empty-state">Henüz poz bulunmuyor</td></tr>', {
+          ALLOWED_TAGS: ['tr', 'td'],
+          ALLOWED_ATTR: ['colspan', 'class']
+        });
+        return;
+      }
+      
+      const sanitize = (str) => DOMPurify.sanitize(String(str || ''), { ALLOWED_TAGS: [] });
+      const sanitizeAttr = (str) => DOMPurify.sanitize(String(str || ''), { ALLOWED_TAGS: [] });
+      
+      const html = items.map(item => {
+        const safeId = sanitizeAttr(item.id);
+        const safeCode = sanitize(item.code || '-');
+        const safeDescription = sanitize(item.description || '-');
+        const safeUnit = sanitize(item.unit || '-');
+        const safeUnitPrice = (item.unitPrice || 0).toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' });
+        const safeQtyLimit = item.contractQtyLimit ? item.contractQtyLimit.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) : '-';
+        
+        return `
+          <tr>
+            <td>${safeCode}</td>
+            <td>${safeDescription}</td>
+            <td>${safeUnit}</td>
+            <td>${safeUnitPrice}</td>
+            <td>${safeQtyLimit}</td>
+            <td>
+              <button class="btn btn-outline btn-sm" onclick="editItem('${safeId}')">Düzenle</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteItem('${safeId}')">Sil</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+      
+      tbody.innerHTML = DOMPurify.sanitize(html, {
+        ALLOWED_TAGS: ['tr', 'td', 'button'],
+        ALLOWED_ATTR: ['class', 'onclick']
+      });
+    }
+    
+    // Poz kaydet
+    async function saveItem(e) {
+      e.preventDefault();
+      try {
+        logger.group('Poz Kaydediliyor');
+        const user = await getCurrentUser();
+        if (!user) return;
+        
+        const code = document.getElementById('item-code').value.trim();
+        const description = document.getElementById('item-description').value.trim();
+        const unit = document.getElementById('item-unit').value.trim();
+        
+        if (!code || !description || !unit) {
+          toast.error('Poz kodu, açıklama ve birim zorunludur');
+          return;
+        }
+        
+        const itemData = {
+          code,
+          description,
+          unit,
+          unitPrice: parseFloat(document.getElementById('item-unit-price').value) || 0,
+          contractQtyLimit: document.getElementById('item-qty-limit').value ? parseFloat(document.getElementById('item-qty-limit').value) : null,
+        };
+        
+        let response;
+        if (editingItemId) {
+          // Güncelleme
+          response = await authFetch(`/api/contracts/${currentContractId}/items/${editingItemId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(itemData)
+          });
+        } else {
+          // Yeni oluşturma
+          response = await authFetch(`/api/contracts/${currentContractId}/items`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(itemData)
+          });
+        }
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Poz kaydedilemedi');
+        }
+        
+        toast.success(editingItemId ? 'Poz güncellendi' : 'Poz eklendi');
+        logger.info('Poz kaydedildi', { itemId: editingItemId });
+        logger.end();
+        
+        document.getElementById('item-modal').style.display = 'none';
+        await loadItems(currentContractId);
+      } catch (error) {
+        logger.error('Poz kaydetme hatası', error);
+        logger.end();
+        toast.error('Poz kaydedilemedi: ' + (error.message || 'Bilinmeyen hata'));
+      }
+    }
+    
+    // Global fonksiyonlar
+    window.editItem = async function(itemId) {
+      try {
+        logger.group('Poz Düzenleme');
+        const user = await getCurrentUser();
+        if (!user) return;
+        
+        const response = await authFetch(`/api/contracts/${currentContractId}/items`);
+        if (!response.ok) return;
+        
+        const data = await response.json();
+        const item = data.items.find(i => i.id === itemId);
+        if (!item) return;
+        
+        editingItemId = itemId;
+        document.getElementById('item-modal-title').textContent = 'Poz Düzenle';
+        document.getElementById('item-code').value = item.code || '';
+        document.getElementById('item-description').value = item.description || '';
+        document.getElementById('item-unit').value = item.unit || '';
+        document.getElementById('item-unit-price').value = item.unitPrice || 0;
+        document.getElementById('item-qty-limit').value = item.contractQtyLimit || '';
+        document.getElementById('item-modal').style.display = 'block';
+        
+        logger.info('Poz düzenleme modu açıldı', { itemId });
+        logger.end();
+      } catch (error) {
+        logger.error('Poz düzenleme hatası', error);
+        logger.end();
+        toast.error('Poz yüklenemedi');
+      }
+    };
+    
+    window.deleteItem = async function(itemId) {
+      if (!confirm('Bu pozu silmek istediğinize emin misiniz?')) {
+        return;
+      }
+      
+      try {
+        logger.group('Poz Silme');
+        const user = await getCurrentUser();
+        if (!user) return;
+        
+        const response = await authFetch(`/api/contracts/${currentContractId}/items/${itemId}`, {
+          method: 'DELETE'
+        });
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Poz silinemedi');
+        }
+        
+        toast.success('Poz başarıyla silindi');
+        logger.info('Poz silindi', { itemId });
+        logger.end();
+        
+        await loadItems(currentContractId);
+      } catch (error) {
+        logger.error('Poz silme hatası', error);
+        logger.end();
+        toast.error('Poz silinemedi: ' + (error.message || 'Bilinmeyen hata'));
+      }
+    };
+    
+    init().catch(error => {
+      logger.error('Sayfa yükleme hatası', error);
+      toast.error('Sayfa yüklenirken hata oluştu');
+    });
+  </script>
+</body>
+</html>

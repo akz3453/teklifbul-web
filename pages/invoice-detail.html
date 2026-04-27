@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>Fatura Detayı</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Teklifbul Rule v1.0 - FOUC önleme: Tema hemen uygulanmalı -->
+  <script src="/assets/js/theme-init.js"></script>
+  <link rel="stylesheet" href="/utils.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <style>
+    body{font-family:system-ui, Arial; background:#f8fafc; color:#111827; margin:0}
+    .container{max-width:1400px;margin:0 auto;padding:20px}
+    h1{margin:0 0 8px 0}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:20px;margin:16px 0}
+    .badge{display:inline-block;padding:4px 8px;border-radius:4px;font-size:11px;font-weight:600}
+    .badge-draft{background:#e5e7eb;color:#374151}
+    .badge-sent{background:#dbeafe;color:#1e40af}
+    .badge-paid{background:#dcfce7;color:#065f46}
+    .badge-cancelled{background:#fee2e2;color:#991b1b}
+    .badge-unpaid{background:#fee2e2;color:#991b1b}
+    .badge-partial{background:#fef3c7;color:#92400e}
+    .muted{color:#6b7280;font-size:12px}
+    .btn{padding:10px 20px;border:0;border-radius:6px;cursor:pointer;font-weight:600;font-size:14px;margin-right:8px;text-decoration:none;display:inline-block}
+    .btn-primary{background:#2563eb;color:#fff}
+    .btn-primary:hover{background:#1d4ed8}
+    .btn-secondary{background:#6b7280;color:#fff}
+    .btn-secondary:hover{background:#4b5563}
+    table{width:100%;border-collapse:collapse;margin-top:16px;background:#fff}
+    th,td{border-bottom:1px solid #e5e7eb;padding:12px;text-align:left;font-size:13px}
+    th{background:#f9fafb;font-weight:600;color:#374151}
+    tr:hover{background:#f9fafb}
+    .info-row{display:grid;grid-template-columns:200px 1fr;gap:12px;padding:8px 0;border-bottom:1px solid #e5e7eb}
+    .info-row:last-child{border-bottom:none}
+    .info-label{font-weight:600;color:#374151}
+    .summary-card{background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:16px;margin-top:16px}
+    .summary-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #bae6fd}
+    .summary-row:last-child{border-bottom:none;font-weight:700;font-size:16px}
+    .payment-form{background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:16px;margin-top:16px}
+    .form-group{margin-bottom:12px}
+    .form-group label{display:block;margin-bottom:4px;font-size:12px;font-weight:600;color:#374151}
+    .form-group input,.form-group select{width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;box-sizing:border-box}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    
+    /* Koyu Mod */
+    html[data-theme="dark"] body,
+    html.force-dark body {
+      background:#111827;
+      color:#ffffff;
+    }
+    html[data-theme="dark"] .card,
+    html.force-dark .card {
+      background:#1f2937;
+      border:1px solid rgba(255,255,255,0.1);
+    }
+    html[data-theme="dark"] .payment-form,
+    html.force-dark .payment-form {
+      background:#1f2937;
+      border:1px solid rgba(255,255,255,0.1);
+    }
+  </style>
+</head>
+<body>
+  <!-- Common Header -->
+  <header id="app-header"></header>
+
+  <div class="container">
+    <!-- Breadcrumb Navigation -->
+    <div class="tb-breadcrumb" id="breadcrumb">
+      <span class="tb-crumb">
+        <span class="ico">🏠</span>
+        <a href="/dashboard.html">Ana Sayfa</a>
+      </span>
+      <span class="tb-sep">›</span>
+      <span class="tb-crumb">
+        <span class="ico">🧾</span>
+        <span>Fatura Detayı</span>
+      </span>
+    </div>
+    
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div>
+        <h1 style="margin:0">🧾 Fatura Detayı</h1>
+        <p class="muted" style="margin:4px 0 0 0">Fatura No: <span id="invoiceNumber">-</span></p>
+      </div>
+      <div id="invoiceActions" style="display:flex; gap:8px;">
+        <!-- Aksiyon butonları buraya eklenecek -->
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-top:0">Genel Bilgiler</h2>
+      
+      <div class="info-row">
+        <div class="info-label">Fatura Numarası:</div>
+        <div id="invoiceNumberDetail">-</div>
+      </div>
+      <div class="info-row">
+        <div class="info-label">Müşteri:</div>
+        <div id="customerName">-</div>
+      </div>
+      <div class="info-row">
+        <div class="info-label">Fatura Durumu:</div>
+        <div id="invoiceStatus">-</div>
+      </div>
+      <div class="info-row">
+        <div class="info-label">Ödeme Durumu:</div>
+        <div id="paymentStatus">-</div>
+      </div>
+      <div class="info-row">
+        <div class="info-label">Fatura Tarihi:</div>
+        <div id="invoiceDate">-</div>
+      </div>
+      <div class="info-row">
+        <div class="info-label">Vade Tarihi:</div>
+        <div id="dueDate">-</div>
+      </div>
+      <div class="info-row">
+        <div class="info-label">Para Birimi:</div>
+        <div id="currency">-</div>
+      </div>
+      <div class="info-row" id="exchangeRateRow" style="display:none">
+        <div class="info-label">Döviz Kuru:</div>
+        <div id="exchangeRate">-</div>
+      </div>
+      <div class="info-row" id="efaturaRow" style="display:none">
+        <div class="info-label">E-Fatura Durumu:</div>
+        <div id="efaturaStatus">-</div>
+      </div>
+      <div class="info-row" id="efaturaUUIDRow" style="display:none">
+        <div class="info-label">E-Fatura UUID:</div>
+        <div id="efaturaUUID">-</div>
+      </div>
+    </div>
+
+    <!-- Teklifbul Rule v1.0 - Snapshot Gösterimi -->
+    <div class="card" id="snapshotCard" style="display:none">
+      <h2 style="margin-top:0">📸 Snapshot (Oluşturulduğu Anki Durum)</h2>
+      
+      <!-- Gönderici Bilgileri -->
+      <div style="margin-bottom:24px; padding:16px; background:#f9fafb; border-radius:6px; border:1px solid #e5e7eb">
+        <h3 style="margin:0 0 12px 0; font-size:16px; font-weight:600; color:#374151">Gönderici (Satıcı)</h3>
+        <div id="sellerSnapshot" style="font-size:14px; color:#1f2937; line-height:1.8">
+          <!-- Snapshot seller bilgileri buraya eklenecek -->
+        </div>
+      </div>
+
+      <!-- Alıcı Bilgileri -->
+      <div style="margin-bottom:24px; padding:16px; background:#f9fafb; border-radius:6px; border:1px solid #e5e7eb">
+        <h3 style="margin:0 0 12px 0; font-size:16px; font-weight:600; color:#374151">Alıcı (Müşteri)</h3>
+        <div id="buyerSnapshot" style="font-size:14px; color:#1f2937; line-height:1.8">
+          <!-- Snapshot buyer bilgileri buraya eklenecek -->
+        </div>
+      </div>
+
+      <!-- Snapshot Items -->
+      <div style="margin-bottom:24px">
+        <h3 style="margin:0 0 12px 0; font-size:16px; font-weight:600; color:#374151">Fatura Kalemleri (Snapshot)</h3>
+        <table style="width:100%; border-collapse:collapse; background:#fff">
+          <thead>
+            <tr style="background:#f9fafb">
+              <th style="padding:12px; text-align:left; border-bottom:1px solid #e5e7eb; font-weight:600">SKU</th>
+              <th style="padding:12px; text-align:left; border-bottom:1px solid #e5e7eb; font-weight:600">Ürün Adı</th>
+              <th style="padding:12px; text-align:right; border-bottom:1px solid #e5e7eb; font-weight:600">Miktar</th>
+              <th style="padding:12px; text-align:left; border-bottom:1px solid #e5e7eb; font-weight:600">Birim</th>
+              <th style="padding:12px; text-align:right; border-bottom:1px solid #e5e7eb; font-weight:600">Birim Fiyat</th>
+              <th style="padding:12px; text-align:right; border-bottom:1px solid #e5e7eb; font-weight:600">KDV %</th>
+              <th style="padding:12px; text-align:right; border-bottom:1px solid #e5e7eb; font-weight:600">Tutar</th>
+            </tr>
+          </thead>
+          <tbody id="snapshotItemsTableBody">
+            <tr>
+              <td colspan="7" style="text-align:center; padding:20px; color:#6b7280">Yükleniyor...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Snapshot Totals -->
+      <div style="padding:16px; background:#f0f9ff; border-radius:6px; border:1px solid #bae6fd">
+        <h3 style="margin:0 0 12px 0; font-size:16px; font-weight:600; color:#374151">Finansal Özet (Snapshot)</h3>
+        <div id="snapshotTotals" style="font-size:14px; color:#1f2937; line-height:1.8">
+          <!-- Snapshot totals buraya eklenecek -->
+        </div>
+      </div>
+
+      <!-- Snapshot Dates -->
+      <div style="margin-top:16px; padding:16px; background:#f9fafb; border-radius:6px; border:1px solid #e5e7eb">
+        <h3 style="margin:0 0 12px 0; font-size:16px; font-weight:600; color:#374151">Tarihler (Snapshot)</h3>
+        <div id="snapshotDates" style="font-size:14px; color:#1f2937; line-height:1.8">
+          <!-- Snapshot dates buraya eklenecek -->
+        </div>
+      </div>
+    </div>
+    
+    <!-- E-Fatura Actions -->
+    <div class="card" id="efaturaActionsCard" style="display:none">
+      <h2 style="margin-top:0">E-Fatura İşlemleri</h2>
+      <button type="button" class="btn btn-primary" id="btnSendEFatura">📤 E-Fatura Gönder</button>
+      <p class="muted" style="margin-top:8px;font-size:12px">E-fatura gönderimi için GIB entegrasyonu gereklidir.</p>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-top:0">Fatura Kalemleri</h2>
+      
+      <table id="invoiceItemsTable">
+        <thead>
+          <tr>
+            <th>SKU</th>
+            <th>Ürün Adı</th>
+            <th>Miktar</th>
+            <th>Birim</th>
+            <th>Birim Fiyat</th>
+            <th>KDV %</th>
+            <th>Tutar</th>
+          </tr>
+        </thead>
+        <tbody id="invoiceItemsTableBody">
+          <tr>
+            <td colspan="7" style="text-align:center;padding:40px;color:#6b7280">Yükleniyor...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-top:0">Finansal Özet</h2>
+      
+      <div class="summary-card">
+        <div class="summary-row">
+          <span>Ara Toplam (KDV Hariç):</span>
+          <span id="subtotal">0,00 TRY</span>
+        </div>
+        <div class="summary-row">
+          <span>Toplam KDV:</span>
+          <span id="totalVat">0,00 TRY</span>
+        </div>
+        <div class="summary-row">
+          <span>Genel Toplam:</span>
+          <span id="totalAmount">0,00 TRY</span>
+        </div>
+        <div class="summary-row">
+          <span>Ödenen:</span>
+          <span id="totalPaid">0,00 TRY</span>
+        </div>
+        <div class="summary-row">
+          <span>Kalan:</span>
+          <span id="remainingAmount">0,00 TRY</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-top:0">Ödeme Kayıtları</h2>
+      
+      <div class="payment-form">
+        <h3 style="margin-top:0;font-size:16px">Yeni Ödeme Kaydı</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="paymentAmount">Tutar</label>
+            <input type="number" id="paymentAmount" step="0.01" min="0" placeholder="0.00" />
+          </div>
+          <div class="form-group">
+            <label for="paymentDate">Tarih</label>
+            <input type="date" id="paymentDate" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="paymentMethod">Ödeme Yöntemi</label>
+            <select id="paymentMethod">
+              <option value="nakit">Nakit</option>
+              <option value="havale">Havale</option>
+              <option value="kredi_karti">Kredi Kartı</option>
+              <option value="cek">Çek</option>
+              <option value="senet">Senet</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="paymentReference">Referans (Opsiyonel)</label>
+            <input type="text" id="paymentReference" placeholder="Havale no, çek no vb." />
+          </div>
+        </div>
+        <button type="button" class="btn btn-primary" id="btnRecordPayment">Ödeme Kaydet</button>
+      </div>
+
+      <table id="paymentsTable" style="margin-top:16px">
+        <thead>
+          <tr>
+            <th>Tarih</th>
+            <th>Tutar</th>
+            <th>Yöntem</th>
+            <th>Referans</th>
+            <th>Kaydeden</th>
+          </tr>
+        </thead>
+        <tbody id="paymentsTableBody">
+          <tr>
+            <td colspan="5" style="text-align:center;padding:40px;color:#6b7280">Yükleniyor...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <script type="module">
+    import { initGlobalHeader } from '../assets/js/ui/header.js';
+    initGlobalHeader({ mount: '#app-header', activeRoute: 'invoicing' });
+  </script>
+  
+  <script type="module" src="/scripts/invoice-detail.js"></script>
+</body>
+</html>

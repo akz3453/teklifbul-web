@@ -4,23 +4,40 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Gönderdiğim Teklifler</title>
+  
+  <!-- Teklifbul Rule v1.0 - Tema standardı: tb_theme key, FOUC önleme -->
+  <script>
+    (function() {
+      const STORAGE_KEY = 'tb_theme';
+      const root = document.documentElement;
+      const saved = localStorage.getItem(STORAGE_KEY);
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const shouldBeDark = saved === 'dark' || (!saved && prefersDark);
+      if (shouldBeDark) {
+        root.classList.add('force-dark');
+        root.setAttribute('data-theme', 'dark');
+      } else {
+        root.classList.remove('force-dark');
+        root.removeAttribute('data-theme');
+      }
+    })();
+  </script>
+  
+  <!-- Teklifbul Rule v1.0 - Ortak CSS dosyaları kullanılıyor -->
+  <link rel="stylesheet" href="/css/ui-standard.css" />
   <style>
-    :root { --border:#e5e7eb; --muted:#f8fafc; --c1:#2563eb; }
+    /* Sayfaya özel stiller */
     body{font-family:system-ui,Arial;margin:0;color:#0f172a;background:#fff;}
-    header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border);position:sticky;top:0;background:#fff;z-index:10}
-    .container{max-width:1200px;margin:0 auto;padding:20px}
-    .filters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:12px}
-    select,input{padding:10px;border:1px solid var(--border);border-radius:8px}
-    table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden}
-    th,td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:left}
-    th{background:#f9fafb}
-    .badge{padding:2px 8px;border-radius:999px;font-size:12px;font-weight:600}
-    .b-secret{background:#dbeafe;color:#1e40af}
-    .b-open{background:#dcfce7;color:#166534}
-    .b-hybrid{background:#f3e8ff;color:#6b21a8}
-    .muted{color:#64748b}
-    .btn-link{background:none;border:0;color:var(--c1);cursor:pointer;font-weight:600}
-    .empty{padding:24px;text-align:center;color:#64748b}
+    html[data-theme="dark"] body{background:#111827;color:#ffffff;}
+    header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border,#e5e7eb);position:sticky;top:0;background:#fff;z-index:10}
+    html[data-theme="dark"] header{background:#111827;border-bottom-color:rgba(255,255,255,0.25);}
+    select,input{padding:10px;border:1px solid var(--border,#e5e7eb);border-radius:8px}
+    html[data-theme="dark"] select,
+    html[data-theme="dark"] input {
+      border-color: rgba(255,255,255,0.25);
+      background: #111827;
+      color: #ffffff;
+    }
   </style>
 </head>
 <body>
@@ -72,12 +89,19 @@
   </div>
 
   <script type="module">
+    // Teklifbul Rule v1.0 - XSS Protection
+    import DOMPurify from 'https://cdn.jsdelivr.net/npm/dompurify@3.2.2/+esm';
     import { auth, db } from './firebase.js';
     import {
       collection, query, where, getDocs, getDoc, doc, orderBy, limit
     } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
     import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js';
     import { getStatusLabel, getPaymentMethodLabel } from './bid-management.js';
+    import { toast } from '/src/shared/ui/toast.js';
+    import { MESSAGES } from '/src/shared/constants/messages.js';
+    import { logger } from '/src/shared/log/logger.js';
+    import { requireCompanyContext } from './assets/js/state/company-context.js';
+    import { initPermissions, can, getBidPerms } from './assets/js/state/permissions.js';
 
     const $ = (s)=>document.querySelector(s);
     const fmt = (n)=> typeof n==='number' ? new Intl.NumberFormat('tr-TR').format(n) : '—';
@@ -127,17 +151,31 @@
       if(filtered.length===0){ $('#empty').classList.remove('hidden'); return } else { $('#empty').classList.add('hidden'); }
       filtered.forEach(r=>{
         const tr=document.createElement('tr');
-        tr.innerHTML=`
-          <td>${r.demandTitle||r.demandId}</td>
-          <td>${r.buyerCompanyName||'—'}</td>
+        // Teklifbul Rule v1.0 - XSS Protection
+        const safeDemandTitle = DOMPurify.sanitize(r.demandTitle||r.demandId||'', { ALLOWED_TAGS: [] });
+        const safeBuyerCompanyName = DOMPurify.sanitize(r.buyerCompanyName||'—', { ALLOWED_TAGS: [] });
+        const safeBrand = DOMPurify.sanitize(r.brand||'—', { ALLOWED_TAGS: [] });
+        const safePaymentMethod = DOMPurify.sanitize(getPaymentMethodLabel(r.paymentMethod||'unknown')||'', { ALLOWED_TAGS: [] });
+        const safeStatus = DOMPurify.sanitize(getStatusLabel(r.status||'pending')||'', { ALLOWED_TAGS: [] });
+        const safeBadge = DOMPurify.sanitize(badge(r.biddingMode)||'', {
+          ALLOWED_TAGS: ['span'],
+          ALLOWED_ATTR: ['class']
+        });
+        const safeDemandId = DOMPurify.sanitize(r.demandId||'', { ALLOWED_TAGS: [] });
+        tr.innerHTML = DOMPurify.sanitize(`
+          <td>${safeDemandTitle}</td>
+          <td>${safeBuyerCompanyName}</td>
           <td>₺ ${fmt(r.netPrice ?? r.price)}</td>
           <td>${r.leadTimeDays ?? '—'}</td>
-          <td>${r.brand||'—'}</td>
-          <td>${getPaymentMethodLabel(r.paymentMethod||'unknown')}</td>
-          <td>${getStatusLabel(r.status||'pending')}</td>
-          <td>${badge(r.biddingMode)}</td>
+          <td>${safeBrand}</td>
+          <td>${safePaymentMethod}</td>
+          <td>${safeStatus}</td>
+          <td>${safeBadge}</td>
           <td>${fmtDate(r.createdAt)}</td>
-          <td><button class="btn-link" data-demand="${r.demandId}">Görüntüle →</button></td>`;
+          <td><button class="btn-link" data-demand="${safeDemandId}">Görüntüle →</button></td>`, {
+          ALLOWED_TAGS: ['td', 'button', 'span'],
+          ALLOWED_ATTR: ['class', 'data-demand']
+        });
         body.appendChild(tr);
       });
       body.querySelectorAll('button[data-demand]').forEach(b=>{
@@ -148,7 +186,22 @@
       });
     }
 
+    const BID_PERMS = getBidPerms();
+
     async function loadOutgoing(user){
+      // Permission guard - Teklifleri görüntüleme yetkisi yoksa sorgu çalıştırma
+      if (BID_PERMS.view && !can(BID_PERMS.view)) {
+        const msg =
+          MESSAGES.ERROR_PERMISSION_BIDS_VIEW ||
+          MESSAGES.ERROR_PERMISSION_DENIED ||
+          'Teklifleri görüntüleme yetkiniz yok.';
+        toast.error(msg);
+        logger.warn('bids-outgoing: view yetkisi yok, loadOutgoing iptal edildi', {
+          permKey: BID_PERMS.view,
+          uid: user.uid
+        });
+        return [];
+      }
       const q=query(collection(db,'bids'), where('supplierId','==', user.uid), orderBy('createdAt','desc'), limit(200));
       const snap=await getDocs(q);
       const rows=[];
@@ -167,13 +220,68 @@
 
     async function init(){
       const user=auth.currentUser;
-      await preloadDemandsForSupplier(user);
-      const data=await loadOutgoing(user);
-      render(data);
-      ['#f-demand','#f-mode','#f-status','#f-buyer'].forEach(sel=> $(sel).addEventListener('input', ()=> render(data)));
+
+      // Company context + permissions (URL guard)
+      try {
+        const ctx = await requireCompanyContext({ redirectOnPending: true });
+        if (!ctx || !ctx.companyId) {
+          logger.warn('bids-outgoing: company context alınamadı, sayfa başlatılmıyor', { ctx });
+          toast.error(
+            (MESSAGES.ERROR_COMPANY_ID_REQUIRED || 'Şirket bilgisi doğrulanamadı') +
+              '. Teklifler ekranı yüklenemedi.'
+          );
+          return;
+        }
+
+        const permState = await initPermissions({ redirectOnPending: true });
+        if (!permState) {
+          logger.warn('bids-outgoing: initPermissions sonuç vermedi, sayfa başlatılmıyor');
+          return;
+        }
+
+        if (BID_PERMS.view && !can(BID_PERMS.view)) {
+          const msg =
+            MESSAGES.ERROR_PERMISSION_BIDS_VIEW ||
+            MESSAGES.ERROR_PERMISSION_DENIED ||
+            'Teklifleri görüntüleme yetkiniz yok.';
+          toast.error(msg);
+          logger.warn('bids-outgoing: view yetkisi yok, URL guard tetiklendi', {
+            permKey: BID_PERMS.view,
+            companyId: permState.companyId,
+            roleKey: permState.roleKey,
+            uid: user.uid
+          });
+          window.location.href = './demands.html';
+          return;
+        }
+
+        await preloadDemandsForSupplier(user);
+        const data=await loadOutgoing(user);
+        render(data);
+        ['#f-demand','#f-mode','#f-status','#f-buyer'].forEach(sel=> $(sel).addEventListener('input', ()=> render(data)));
+      } catch (error) {
+        logger.error('bids-outgoing init error', error);
+        toast.error(
+          (MESSAGES.ERROR_LOADING_OUTGOING_BIDS || 'Gönderdiğiniz teklifler yüklenirken hata oluştu') +
+            ': ' +
+            (error.message || error)
+        );
+      }
     }
 
-    onAuthStateChanged(auth, (u)=>{ if(!u){ window.location.href='login.html'; } else { init(); } });
+    // Teklifbul Rule v1.0 - Memory Leak Prevention: Listener cleanup
+    const authUnsubscribe = onAuthStateChanged(auth, (u) => {
+      if (!u) {
+        window.location.href = 'login.html';
+      } else {
+        init();
+      }
+    });
+    
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+      if (authUnsubscribe) authUnsubscribe();
+    });
   </script>
 </body>
 </html>

@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
   <meta charset="utf-8" />
-  <title>Teklif Detayı — Teklifbul</title>
+  <title>Teklif Detayı — NEFISOFT</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" type="image/x-icon" href="/favicon.ico" />
   <link rel="stylesheet" href="/utils.css" />
@@ -132,7 +132,7 @@
   <header id="app-header" style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #e5e7eb;background:white">
     <div style="display:flex;gap:12px;align-items:center">
       <strong style="font-size:18px;color:#1f2937">Teklifbul</strong>
-      <a href="./dashboard.html" style="text-decoration:none;color:#3b82f6">Dashboard</a>
+      <a href="./dashboard.html" style="text-decoration:none;color:#3b82f6">Kontrol Paneli</a>
       <a href="./demands.html" style="text-decoration:none;color:#3b82f6">Taleplerim</a>
       <a href="./bids.html" style="text-decoration:none;color:#3b82f6">Teklifler</a>
       <a href="./main-demands.html" style="text-decoration:none;color:#3b82f6">Ana Talep Ekranı</a>
@@ -192,6 +192,10 @@
         <div class="detail-card">
           <h3> Teklif Detayları </h3>
           <div class="detail-item">
+            <div class="detail-label">Teklif ID</div>
+            <div id="bidId" class="detail-value" style="font-family:monospace;font-size:13px;word-break:break-all;">-</div>
+          </div>
+          <div class="detail-item">
             <div class="detail-label">Fiyat</div>
             <div id="bidPrice" class="detail-value">-</div>
           </div>
@@ -229,6 +233,7 @@
         <button id="rejectBid" class="btn btn-danger">✖️ Reddet</button>
         <button id="requestRevision" class="btn btn-warning">↻ Revizyon Talep Et</button>
         <button id="completeBid" class="btn btn-primary">✅ Tamamlandı</button>
+        <button id="convertToSale" class="btn btn-primary" style="display:none">💰 Satışa Dönüştür</button>
         <button id="backToList" class="btn btn-secondary">← Listeye Dön</button>
       </div>
     </div>
@@ -240,134 +245,212 @@
       </svg>
       <h3>Teklif bulunamadı</h3>
       <p>İlgili teklif bulunamadı veya erişim izniniz yok</p>
-      <button class="btn btn-secondary" onclick="window.location.href='./bids.html'">← Tekliflere Dön</button>
+      <button class="btn btn-secondary" id="backToBidsBtn">← Tekliflere Dön</button>
     </div>
   </div>
 
   <!-- Main Script -->
   <script type="module">
-    import { db, auth, requireAuth } from "./firebase.js";
+    import { db, requireAuth } from "./firebase.js";
     import { doc, getDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
     import { setupHeader } from "./src/common-company.js";
-    import { getStatusLabel, getPaymentMethodLabel } from "./bid-management.js";
+    import { getStatusLabel } from "./bid-management.js";
     // Teklifbul Rule v1.0 - Structured Logging
     import { logger } from './src/shared/log/logger.js';
     // Teklifbul Rule v1.0 - Toast Notification System
     import { toast } from './src/shared/ui/toast.js';
     // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
     import { MESSAGES } from './src/shared/constants/messages.js';
+    // Satış Modülü Faz 5 - Tekliften satış oluşturma
+    import { requireCompanyContext } from './assets/js/state/company-context.js';
+    import { authFetch } from './assets/js/utils/api-helpers.js';
 
-    // Setup common header functionality
-    await setupHeader();
+    // Teklifbul Rule v1.0 - Back button event listener
+    document.getElementById('backToBidsBtn')?.addEventListener('click', () => {
+      window.location.href = './bids.html';
+    });
 
-    const user = await requireAuth();
-    
-    // Setup header
-    document.getElementById("userLabel").textContent = user.email || user.uid.slice(0, 10);
-    
-    const urlParams = new URLSearchParams(window.location.search);
-    const bidId = urlParams.get('bid');
+    // Wrap in async IIFE to avoid top-level return issues
+    (async () => {
+      // Setup common header functionality
+      await setupHeader();
 
-    const loading = document.getElementById("loading");
-    const bidDetails = document.getElementById("bidDetails");
-    const emptyState = document.getElementById("emptyState");
-
-    // Show loading state
-    loading.style.display = "block";
-
-    if (!bidId) {
-      loading.style.display = "none";
-      emptyState.style.display = "block";
-      // Cannot use return in top-level await module, just skip loading
-    } else {
-
-    try {
-      // Load bid data
-      const bidRef = doc(db, "bids", bidId);
-      const bidSnap = await getDoc(bidRef);
+      const user = await requireAuth();
       
-      if (!bidSnap.exists()) {
+      // Setup header
+      document.getElementById("userLabel").textContent = user.email || user.uid.slice(0, 10);
+      
+      const urlParams = new URLSearchParams(window.location.search);
+      const bidId = urlParams.get('bid');
+      
+      // Global bidId (convertBidToSale fonksiyonu için)
+      window.currentBidId = bidId;
+
+      const loading = document.getElementById("loading");
+      const bidDetails = document.getElementById("bidDetails");
+      const emptyState = document.getElementById("emptyState");
+
+      // Show loading state
+      loading.style.display = "block";
+
+      if (!bidId) {
         loading.style.display = "none";
         emptyState.style.display = "block";
         return;
       }
-      
-      const bid = bidSnap.data();
-      
-      // Load demand data
-      const demandRef = doc(db, "demands", bid.demandId);
-      const demandSnap = await getDoc(demandRef);
-      const demand = demandSnap.exists() ? demandSnap.data() : null;
-      
-      // Load supplier data
-      let supplier = null;
-      if (bid.supplierId) {
-        try {
-          const supplierRef = doc(db, "users", bid.supplierId);
-          const supplierSnap = await getDoc(supplierRef);
-          supplier = supplierSnap.exists() ? supplierSnap.data() : null;
-        } catch (error) {
-          logger.warn("Supplier data could not be loaded", error);
+
+      try {
+        // Load bid data
+        const bidRef = doc(db, "bids", bidId);
+        const bidSnap = await getDoc(bidRef);
+        
+        if (!bidSnap.exists()) {
+          loading.style.display = "none";
+          emptyState.style.display = "block";
+          return;
         }
-      }
-      
-      // Populate UI
-      document.getElementById("supplierName").textContent = supplier?.companyName || "Bilinmeyen Firma";
-      document.getElementById("supplierContact").textContent = supplier?.email || "-";
-      document.getElementById("demandTitle").textContent = demand?.title || "Bilinmeyen Talep";
-      document.getElementById("demandId").textContent = bid.demandId;
-      document.getElementById("bidPrice").textContent = `₺ ${(bid.netPrice || bid.price || 0).toLocaleString("tr-TR")}`;
-      document.getElementById("bidDelivery").textContent = `${bid.leadTimeDays || "-"} gün`;
-      document.getElementById("bidBrand").textContent = bid.brand || "-";
-      document.getElementById("bidPayment").textContent = bid.paymentTerms || "-";
-      
-      // Format date
-      const createdAt = bid.createdAt?.toDate?.();
-      document.getElementById("bidDate").textContent = createdAt ? createdAt.toLocaleDateString("tr-TR") : "-";
-      
-      // Status badge
-      const statusElement = document.getElementById("bidStatus");
-      statusElement.textContent = getStatusLabel(bid.status || "pending");
-      statusElement.className = "status-badge status-" + (bid.status || "pending");
-      
-      // Hide loading, show details
-      loading.style.display = "none";
-      bidDetails.style.display = "block";
-      
-      // Setup action buttons - Teklifbul Rol & Onay Sistemi
-      // E-imza onay yetkisi kontrolü
-      const userDoc = await getDoc(doc(db, "users", user.uid));
-      const currentUserData = userDoc.exists() ? userDoc.data() : {};
-      const rolePermissions = {}; // settings.html'den alınabilir
-      const canApprove = canESignApprove(currentUserData, rolePermissions);
-      
-      const acceptBtn = document.getElementById("acceptBid");
-      if (acceptBtn) {
-        if (canApprove) {
-          acceptBtn.addEventListener("click", async () => {
-            // Guard kontrolü ve audit log ile onayla
-            await updateBidStatusWithGuard("accepted");
-          });
-          acceptBtn.title = "E-imza ile teklif onaylama";
-        } else {
-          acceptBtn.disabled = true;
-          acceptBtn.style.opacity = "0.5";
-          acceptBtn.style.cursor = "not-allowed";
-          acceptBtn.title = "E-imza onay yetkisi yok. Yalnızca üst onaycı rolleri e-imza ile teklif onaylayabilir.";
+        
+        const bid = bidSnap.data();
+        
+        // Load demand data
+        const demandRef = doc(db, "demands", bid.demandId);
+        const demandSnap = await getDoc(demandRef);
+        const demand = demandSnap.exists() ? demandSnap.data() : null;
+        
+        // Load supplier data
+        let supplier = null;
+        if (bid.supplierId) {
+          try {
+            const supplierRef = doc(db, "users", bid.supplierId);
+            const supplierSnap = await getDoc(supplierRef);
+            supplier = supplierSnap.exists() ? supplierSnap.data() : null;
+          } catch (error) {
+            logger.warn("Supplier data could not be loaded", error);
+          }
         }
+        
+        // Populate UI
+        document.getElementById("supplierName").textContent = supplier?.companyName || "Bilinmeyen Firma";
+        document.getElementById("supplierContact").textContent = supplier?.email || "-";
+        document.getElementById("demandTitle").textContent = demand?.title || "Bilinmeyen Talep";
+        document.getElementById("demandId").textContent = bid.demandId;
+        document.getElementById("bidId").textContent = bidId; // Teklifbul Rule v1.0 - Tam ID göster
+        document.getElementById("bidPrice").textContent = `₺ ${(bid.netPrice || bid.price || 0).toLocaleString("tr-TR")}`;
+        document.getElementById("bidDelivery").textContent = `${bid.leadTimeDays || "-"} gün`;
+        document.getElementById("bidBrand").textContent = bid.brand || "-";
+        document.getElementById("bidPayment").textContent = bid.paymentTerms || "-";
+        
+        // Format date
+        const createdAt = bid.createdAt?.toDate?.();
+        document.getElementById("bidDate").textContent = createdAt ? createdAt.toLocaleDateString("tr-TR") : "-";
+        
+        // Status badge
+        const statusElement = document.getElementById("bidStatus");
+        statusElement.textContent = getStatusLabel(bid.status || "pending");
+        statusElement.className = "status-badge status-" + (bid.status || "pending");
+        
+        // Satışa Dönüştür butonu (sadece accepted durumunda)
+        const convertToSaleBtn = document.getElementById("convertToSale");
+        if (convertToSaleBtn) {
+          if (bid.status === "accepted") {
+            convertToSaleBtn.style.display = "inline-block";
+            convertToSaleBtn.addEventListener("click", async () => {
+              await convertBidToSale(bidId);
+            });
+          } else {
+            convertToSaleBtn.style.display = "none";
+          }
+        }
+        
+        // Hide loading, show details
+        loading.style.display = "none";
+        bidDetails.style.display = "block";
+        
+        // Setup action buttons - Teklifbul Rol & Onay Sistemi
+        // E-imza onay yetkisi kontrolü
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        const currentUserData = userDoc.exists() ? userDoc.data() : {};
+        const rolePermissions = {}; // settings.html'den alınabilir
+        const canApprove = canESignApprove(currentUserData, rolePermissions);
+        
+        const acceptBtn = document.getElementById("acceptBid");
+        if (acceptBtn) {
+          if (canApprove) {
+            acceptBtn.addEventListener("click", async () => {
+              // Guard kontrolü ve audit log ile onayla
+              await updateBidStatusWithGuard("accepted");
+            });
+            acceptBtn.title = "E-imza ile teklif onaylama";
+          } else {
+            acceptBtn.disabled = true;
+            acceptBtn.style.opacity = "0.5";
+            acceptBtn.style.cursor = "not-allowed";
+            acceptBtn.title = "E-imza onay yetkisi yok. Yalnızca üst onaycı rolleri e-imza ile teklif onaylayabilir.";
+          }
+        }
+        
+        document.getElementById("rejectBid").addEventListener("click", () => updateBidStatus("rejected"));
+        document.getElementById("requestRevision").addEventListener("click", requestRevision);
+        document.getElementById("completeBid").addEventListener("click", () => updateBidStatus("completed"));
+        document.getElementById("backToList").addEventListener("click", () => window.location.href = "./bids.html");
+        
+        // Satışa Dönüştür butonu event listener'ı yukarıda eklendi (accepted durumunda)
+        
+      } catch (error) {
+        logger.error("Error loading bid details", error);
+        loading.style.display = "none";
+        emptyState.style.display = "block";
       }
-      
-      document.getElementById("rejectBid").addEventListener("click", () => updateBidStatus("rejected"));
-      document.getElementById("requestRevision").addEventListener("click", requestRevision);
-      document.getElementById("completeBid").addEventListener("click", () => updateBidStatus("completed"));
-      document.getElementById("backToList").addEventListener("click", () => window.location.href = "./bids.html");
-      
-    } catch (error) {
-      logger.error("Error loading bid details", error);
-      loading.style.display = "none";
-      emptyState.style.display = "block";
+    })(); // End of IIFE
+
+    // Tekliften satış oluştur (Satış Modülü Faz 5)
+    async function convertBidToSale(bidId) {
+      try {
+        logger.group('Tekliften Satış Oluşturuluyor');
+        
+        // Company context al
+        const companyContext = await requireCompanyContext({ redirectOnPending: true });
+        if (!companyContext || !companyContext.companyId) {
+          toast.error('Şirket bilgisi alınamadı');
+          return;
+        }
+        
+        // Onay sor
+        if (!confirm('Bu teklifi satışa dönüştürmek istediğinizden emin misiniz?\n\nNot: Satış oluşturulduktan sonra düzenleyebilirsiniz.')) {
+          return;
+        }
+        
+        // API çağrısı
+        const response = await authFetch(`/api/sales/from-bid/${bidId}`, {
+          method: 'POST',
+          body: JSON.stringify({
+            companyId: companyContext.companyId
+          })
+        });
+        
+        const result = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(result.error || 'Satış oluşturulamadı');
+        }
+        
+        toast.success('Satış oluşturuldu');
+        logger.info('Satış tekliften oluşturuldu', {
+          saleId: result.saleId,
+          bidId: bidId
+        });
+        logger.end();
+        
+        // Satış detay sayfasına yönlendir
+        setTimeout(() => {
+          window.location.href = `/pages/sale-detail.html?id=${result.saleId}`;
+        }, 1000);
+      } catch (error) {
+        logger.error('Tekliften satış oluşturma hatası', error);
+        toast.error(`Hata: ${error.message}`);
+        logger.end();
+      }
     }
-    } // End else block
 
     // Update bid status with guard check (Teklifbul Rol & Onay Sistemi)
     async function updateBidStatusWithGuard(newStatus) {

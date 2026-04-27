@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Teklif Veri Tamir Aracı Pro</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; line-height: 1.6; background: #f8fafc; }
+        .card { background: white; border: 1px solid #e2e8f0; padding: 32px; border-radius: 12px; max-width: 700px; margin: 40px auto; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .btn { background: #3b82f6; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 16px; }
+        .btn:hover { background: #2563eb; }
+        .log { background: #1e293b; color: #f8fafc; padding: 16px; margin-top: 24px; max-height: 400px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 13px; border-radius: 8px; }
+        .status-bar { display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 14px; color: #64748b; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2 style="margin-top:0; color:#1e293b;">🛠️ Teklif Veri Tamir Aracı (Gelişmiş)</h2>
+        <p style="color:#475569;">Bu araç, sisteminizdeki eski tekliflerin şirket bilgilerini (`Company ID` ve `İsim`) güncelleyerek Teklifler sayfasında görünür hale gelmelerini sağlar.</p>
+        
+        <div class="status-bar">
+            <div id="status">Bekliyor...</div>
+            <div id="counter">0 / 0</div>
+        </div>
+
+        <button id="btnRepair" class="btn">🚀 Tamiri ve Güncellemeyi Başlat</button>
+        
+        <div id="log" class="log">Giriş yapmanız bekleniyor...</div>
+    </div>
+
+    <script type="module">
+        import { db, auth } from './firebase.js';
+        import { collection, getDocs, getDoc, doc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+        const logEl = document.getElementById('log');
+        const statusEl = document.getElementById('status');
+        const counterEl = document.getElementById('counter');
+        
+        const log = (msg, color = '#f8fafc') => { 
+            const div = document.createElement('div');
+            div.style.color = color;
+            div.textContent = `${new Date().toLocaleTimeString()} - ${msg}`;
+            logEl.appendChild(div);
+            logEl.scrollTop = logEl.scrollHeight; 
+        };
+
+        // Bids.html ile aynı ID çözümleme mantığı
+        function resolveSharedCompanyId(uData) {
+            if (!uData) return null;
+            const cid = uData.companyId;
+            const aid = uData.activeCompanyId;
+            const arr0 = Array.isArray(uData.companies) && uData.companies.length ? uData.companies[0] : null;
+            
+            // Profesyonel şirket ID'leri (solo- veya tax- ile başlamayanlar) önceliklidir
+            if (cid && typeof cid === "string" && !cid.startsWith("solo-") && !cid.startsWith("tax-")) return cid;
+            // Solo ise ama CID varsa (backward support)
+            if (aid && typeof aid === "string" && aid.startsWith("solo-") && cid) return cid;
+            
+            return aid || cid || arr0;
+        }
+
+        document.getElementById('btnRepair').onclick = async () => {
+            if (!auth.currentUser) { 
+                alert('Lütfen önce giriş yapın'); 
+                return; 
+            }
+            
+            document.getElementById('btnRepair').disabled = true;
+            log('🚀 İşlem başlatılıyor...', '#38bdf8');
+            statusEl.textContent = 'Teklifler taranıyor...';
+            
+            try {
+                const bidsRef = collection(db, 'bids');
+                const snap = await getDocs(bidsRef);
+                const total = snap.size;
+                counterEl.textContent = `0 / ${total}`;
+                
+                log(`🔍 Toplam ${total} teklif bulundu.`, '#fbbf24');
+
+                let fixedCount = 0;
+                let processed = 0;
+
+                for (const bidDoc of snap.docs) {
+                    processed++;
+                    counterEl.textContent = `${processed} / ${total}`;
+                    
+                    const bidData = bidDoc.data();
+                    const updates = {};
+
+                    // 1. Supplier Bilgilerini Tamir Et
+                    if (bidData.supplierId) {
+                        const uSnap = await getDoc(doc(db, 'users', bidData.supplierId));
+                        if (uSnap.exists()) {
+                            const uData = uSnap.data();
+                            const resolvedSCID = resolveSharedCompanyId(uData);
+                            
+                            // ID Güncellemesi
+                            if (bidData.supplierCompanyId !== resolvedSCID) {
+                                updates.supplierCompanyId = resolvedSCID;
+                            }
+                            
+                            // İsim Güncellemesi (supplierName eksikse veya düzeltilmesi gerekiyorsa)
+                            if (!bidData.supplierName || bidData.supplierName === '--' || bidData.supplierName === '—') {
+                                if (resolvedSCID) {
+                                    const cSnap = await getDoc(doc(db, 'companies', resolvedSCID));
+                                    updates.supplierName = cSnap.exists() ? (cSnap.data().name || cSnap.data().companyName) : (uData.displayName || uData.email);
+                                } else {
+                                    updates.supplierName = uData.displayName || uData.email;
+                                }
+                            }
+                        }
+                    }
+
+                    // 2. Buyer Bilgilerini Tamir Et (Demand üzerinden)
+                    if (bidData.demandId) {
+                        const dSnap = await getDoc(doc(db, 'demands', bidData.demandId));
+                        if (dSnap.exists()) {
+                            const dData = dSnap.data();
+                            const resolvedBCID = dData.creatorCompanyId || dData.companyId || null;
+                            
+                            // ID Güncellemesi
+                            if (bidData.buyerCompanyId !== resolvedBCID) {
+                                updates.buyerCompanyId = resolvedBCID;
+                            }
+                            
+                            // İsim Güncellemesi
+                            if (!bidData.buyerName || bidData.buyerName === '--' || bidData.buyerName === '—') {
+                                if (resolvedBCID) {
+                                    const cSnap = await getDoc(doc(db, 'companies', resolvedBCID));
+                                    updates.buyerName = cSnap.exists() ? (cSnap.data().name || cSnap.data().companyName) : 'Alıcı Firma';
+                                } else {
+                                    updates.buyerName = dData.requester || 'Alıcı';
+                                }
+                            }
+                        }
+                    }
+
+                    // 3. Involved Company IDs & BidType
+                    const finalSCID = updates.supplierCompanyId || bidData.supplierCompanyId;
+                    const finalBCID = updates.buyerCompanyId || bidData.buyerCompanyId;
+                    
+                    if (finalSCID || finalBCID) {
+                        const inv = [finalSCID, finalBCID].filter(Boolean);
+                        // JSON stringify comparison for arrays
+                        if (JSON.stringify(bidData.involvedCompanyIds || []) !== JSON.stringify(inv)) {
+                            updates.involvedCompanyIds = inv;
+                        }
+                    }
+
+                    // Veritabanına yaz
+                    if (Object.keys(updates).length > 0) {
+                        await updateDoc(bidDoc.ref, updates);
+                        fixedCount++;
+                        log(`✅ Güncellendi: ${bidDoc.id} (${bidData.supplierName || 'Teklif'})`, '#10b981');
+                    } else {
+                        // log(`ℹ️ Atlandı: ${bidDoc.id}`, '#64748b');
+                    }
+                }
+
+                log(`\n🎉 İşlem tamamlandı!`, '#38bdf8');
+                log(`📊 Özet: ${total} incelendi, ${fixedCount} teklif güncellendi.`, '#fbbf24');
+                statusEl.textContent = 'Bitti!';
+                alert(`İşlem tamamlandı! ${fixedCount} teklif başarıyla güncellendi. Lütfen Teklifler sayfasını yenileyin.`);
+
+            } catch (err) {
+                log(`❌ Kritik Hata: ${err.message}`, '#ef4444');
+                console.error(err);
+                statusEl.textContent = 'Hata oluştu';
+            } finally {
+                document.getElementById('btnRepair').disabled = false;
+            }
+        };
+
+        // Oturum Kontrolü
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                log(`👋 Merhaba ${user.email}, hazırsanız tamiri başlatabilirsiniz.`);
+            } else {
+                log(`⚠️ Lütfen sistemi kullanabilmek için giriş yapın.`);
+            }
+        });
+    </script>
+</body>
+</html>

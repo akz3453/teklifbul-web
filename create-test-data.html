@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Alıcı Talepleri ve Teklifler Oluştur</title>
+  <!-- Teklifbul Rule v1.0 - Auth guard'ı devre dışı bırak (TÜM scriptlerden önce çalışmalı) -->
+  <script>
+    window.__SKIP_AUTH_GUARD__ = true;
+  </script>
+  <style>
+    body {
+      font-family: system-ui, Arial;
+      max-width: 1000px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    h1 { color: #111827; margin-top: 0; }
+    button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+      margin-right: 12px;
+      margin-bottom: 12px;
+    }
+    button:hover { background: #2563eb; }
+    button:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+    .status {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    .status.success {
+      background: #d1fae5;
+      color: #065f46;
+    }
+    .status.error {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    .status.info {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+    .log {
+      margin-top: 16px;
+      padding: 12px;
+      background: #f9fafb;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 12px;
+      max-height: 400px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+    .progress {
+      margin-top: 16px;
+      height: 8px;
+      background: #e5e7eb;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      background: #3b82f6;
+      transition: width 0.3s;
+    }
+    .info-box {
+      background: #eff6ff;
+      border-left: 4px solid #3b82f6;
+      padding: 12px;
+      margin-bottom: 20px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🧪 Alıcı Talepleri ve Teklifler Oluşturucu</h1>
+    
+    <div class="info-box">
+      <strong>Bu script şunları oluşturur:</strong><br>
+      • teklifbulalici@gmail.com kullanıcısından 10 adet talep<br>
+      • Her talep için 5 kalem malzeme<br>
+      • Tüm tedarikçi firmalardan teklifler<br>
+      • 15.01.2025 termin tarihi<br>
+      • Açık teklif modu<br>
+      • Peşin escrow ödeme<br>
+      • Nakliye dahil<br>
+      • Şantiyede indirme personeli var
+    </div>
+    
+    <button id="createBtn">Test Verileri Oluştur</button>
+    <button id="clearBtn" style="background: #ef4444;">Test Verilerini Sil</button>
+    
+    <div id="status" class="status info" style="display:none;"></div>
+    <div id="progress" class="progress" style="display:none;">
+      <div id="progressBar" class="progress-bar" style="width:0%"></div>
+    </div>
+    <div id="log" class="log" style="display:none;"></div>
+  </div>
+
+  <script type="module">
+    import { auth, db } from './firebase.js';
+    import {
+      collection, query, where, getDocs, getDoc, doc, addDoc, 
+      serverTimestamp, arrayUnion, Timestamp, orderBy, limit
+    } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+    import { onAuthStateChanged, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js';
+    import { toast } from '/src/shared/ui/toast.js';
+
+    const $ = (id) => document.getElementById(id);
+    const log = (msg) => {
+      const logEl = $('log');
+      logEl.style.display = 'block';
+      logEl.textContent += new Date().toLocaleTimeString() + ' - ' + msg + '\n';
+      logEl.scrollTop = logEl.scrollHeight;
+      console.log(msg);
+    };
+
+    const showStatus = (type, msg) => {
+      const status = $('status');
+      status.className = `status ${type}`;
+      status.textContent = msg;
+      status.style.display = 'block';
+    };
+
+    const updateProgress = (percent) => {
+      $('progress').style.display = 'block';
+      $('progressBar').style.width = percent + '%';
+    };
+
+    // Teklifbul Rule v1.0 - Örnek malzemeler
+    const sampleMaterials = [
+      { name: 'Çimento 32 KG', sku: 'CMT-32KG', qty: 100, unit: 'ADT', brandModel: 'Akçansa' },
+      { name: 'Demir 12 MM', sku: 'DEMIR-12MM', qty: 50, unit: 'KG', brandModel: 'İçdaş' },
+      { name: 'Tuğla Bims', sku: 'TUGLA-BIMS', qty: 1000, unit: 'ADT', brandModel: 'Bims' },
+      { name: 'Yapma Kum', sku: 'KUM-YAPMA', qty: 20, unit: 'TON', brandModel: 'Doğal' },
+      { name: 'Çivi 4x100', sku: 'CIVI-4X100', qty: 500, unit: 'ADT', brandModel: 'Standart' }
+    ];
+
+    // Teklifbul Rule v1.0 - Talep başlıkları
+    const demandTitles = [
+      'İnşaat Malzemeleri Alımı - Şantiye 1',
+      'İnşaat Malzemeleri Alımı - Şantiye 2',
+      'İnşaat Malzemeleri Alımı - Şantiye 3',
+      'İnşaat Malzemeleri Alımı - Şantiye 4',
+      'İnşaat Malzemeleri Alımı - Şantiye 5',
+      'İnşaat Malzemeleri Alımı - Şantiye 6',
+      'İnşaat Malzemeleri Alımı - Şantiye 7',
+      'İnşaat Malzemeleri Alımı - Şantiye 8',
+      'İnşaat Malzemeleri Alımı - Şantiye 9',
+      'İnşaat Malzemeleri Alımı - Şantiye 10'
+    ];
+
+    async function getBuyerUser() {
+      try {
+        // Önce giriş yapmış kullanıcıyı kontrol et
+        const currentUser = auth.currentUser;
+        if (currentUser) {
+          log(`ℹ️ Giriş yapmış kullanıcı bulundu: ${currentUser.email}`);
+          
+          // Kullanıcı dokümanını yükle
+          const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            const companyId = userData.companyId || (userData.companies && userData.companies[0]) || null;
+            
+            if (companyId) {
+              log(`✅ Giriş yapmış kullanıcı kullanılıyor: ${userData.email || currentUser.email} (UID: ${currentUser.uid}, Company: ${companyId})`);
+              return { 
+                uid: currentUser.uid, 
+                email: userData.email || currentUser.email, 
+                companyId, 
+                userData 
+              };
+            } else {
+              log(`⚠️ Giriş yapmış kullanıcının companyId'si yok, alternatif aranıyor...`);
+            }
+          }
+        }
+        
+        // Önce mevcut kullanıcıyı email ile bul
+        const usersRef = collection(db, 'users');
+        const q = query(usersRef, where('email', '==', 'teklifbulalici@gmail.com'));
+        const snapshot = await getDocs(q);
+        
+        if (!snapshot.empty) {
+          const userDoc = snapshot.docs[0];
+          const userData = userDoc.data();
+          const companyId = userData.companyId || (userData.companies && userData.companies[0]) || null;
+          
+          if (companyId) {
+            log(`✅ Kullanıcı bulundu: ${userData.email} (UID: ${userDoc.id}, Company: ${companyId})`);
+            return { uid: userDoc.id, email: userData.email, companyId, userData };
+          }
+        }
+        
+        // Kullanıcı bulunamadı veya companyId yok - alternatif: Tüm alıcı kullanıcıları listele
+        log(`⚠️ teklifbulalici@gmail.com bulunamadı, alıcı kullanıcılar aranıyor...`);
+        
+        const buyerQuery = query(
+          usersRef, 
+          where('role', 'array-contains', 'buyer'),
+          limit(10)
+        );
+        const buyerSnapshot = await getDocs(buyerQuery);
+        
+        if (!buyerSnapshot.empty) {
+          // İlk alıcı kullanıcıyı kullan
+          const buyerDoc = buyerSnapshot.docs[0];
+          const buyerData = buyerDoc.data();
+          const buyerCompanyId = buyerData.companyId || (buyerData.companies && buyerData.companies[0]) || null;
+          
+          if (buyerCompanyId) {
+            log(`✅ Alıcı kullanıcı bulundu: ${buyerData.email} (UID: ${buyerDoc.id}, Company: ${buyerCompanyId})`);
+            log(`ℹ️ Not: teklifbulalici@gmail.com yerine ${buyerData.email} kullanılıyor`);
+            
+            return { 
+              uid: buyerDoc.id, 
+              email: buyerData.email, 
+              companyId: buyerCompanyId, 
+              userData: buyerData 
+            };
+          }
+        }
+        
+        // Son çare: Tüm kullanıcıları listele (role kontrolü olmadan)
+        log(`⚠️ Alıcı kullanıcı bulunamadı, tüm kullanıcılar aranıyor...`);
+        const allUsersQuery = query(usersRef, limit(20));
+        const allUsersSnapshot = await getDocs(allUsersQuery);
+        
+        if (allUsersSnapshot.empty) {
+          throw new Error('Sistemde hiç kullanıcı bulunamadı! Lütfen önce bir kullanıcı oluşturun.');
+        }
+        
+        // CompanyId'si olan ilk kullanıcıyı bul
+        for (const userDoc of allUsersSnapshot.docs) {
+          const userData = userDoc.data();
+          const companyId = userData.companyId || (userData.companies && userData.companies[0]) || null;
+          
+          if (companyId) {
+            log(`✅ Kullanıcı bulundu: ${userData.email || userDoc.id} (UID: ${userDoc.id}, Company: ${companyId})`);
+            log(`ℹ️ Not: Bu kullanıcı test verileri oluşturmak için kullanılacak`);
+            
+            return { 
+              uid: userDoc.id, 
+              email: userData.email || userDoc.id, 
+              companyId, 
+              userData 
+            };
+          }
+        }
+        
+        throw new Error('CompanyId bilgisi olan kullanıcı bulunamadı!');
+      } catch (error) {
+        log(`❌ Kullanıcı bulunamadı: ${error.message}`);
+        throw error;
+      }
+    }
+
+    async function getAllSuppliers() {
+      try {
+        const usersRef = collection(db, 'users');
+        
+        // Önce supplier role'ü ile ara
+        let q = query(usersRef, where('role', 'array-contains', 'supplier'), limit(50));
+        let snapshot = await getDocs(q);
+        
+        // Eğer bulunamazsa, roles alanını da kontrol et (alternatif format)
+        if (snapshot.empty) {
+          log(`⚠️ 'role' alanında supplier bulunamadı, 'roles' alanı kontrol ediliyor...`);
+          try {
+            q = query(usersRef, where('roles', 'array-contains', 'supplier'), limit(50));
+            snapshot = await getDocs(q);
+          } catch (e) {
+            log(`⚠️ 'roles' alanı sorgusu başarısız: ${e.message}`);
+          }
+        }
+        
+        // Hala bulunamazsa, tüm kullanıcıları al ve supplier olanları filtrele
+        if (snapshot.empty) {
+          log(`⚠️ Role sorgusu sonuç vermedi, tüm kullanıcılar kontrol ediliyor...`);
+          q = query(usersRef, limit(100));
+          snapshot = await getDocs(q);
+        }
+        
+        const suppliers = [];
+        for (const docSnap of snapshot.docs) {
+          const data = docSnap.data();
+          
+          // Supplier kontrolü - farklı formatları kontrol et
+          const isSupplier = 
+            (data.role && Array.isArray(data.role) && data.role.includes('supplier')) ||
+            (data.roles && Array.isArray(data.roles) && data.roles.includes('supplier')) ||
+            (data.role === 'supplier') ||
+            (data.roleType === 'supplier') ||
+            (data.supplierCategories && data.supplierCategories.length > 0);
+          
+          if (!isSupplier) continue; // Supplier değilse atla
+          
+          const companyId = data.companyId || (data.companies && data.companies[0]) || null;
+          
+          if (companyId) {
+            // Company bilgilerini al
+            try {
+              const companyDoc = await getDoc(doc(db, 'companies', companyId));
+              const companyData = companyDoc.exists() ? companyDoc.data() : {};
+              
+              suppliers.push({
+                uid: docSnap.id,
+                email: data.email,
+                companyId,
+                companyName: companyData.name || data.companyName || data.displayName || 'Bilinmeyen Firma',
+                companyData
+              });
+            } catch (e) {
+              log(`⚠️ Şirket bilgisi yüklenemedi (${docSnap.id}): ${e.message}`);
+            }
+          } else {
+            // CompanyId yoksa da ekle (solo kullanıcı olabilir)
+            suppliers.push({
+              uid: docSnap.id,
+              email: data.email,
+              companyId: null,
+              companyName: data.companyName || data.displayName || 'Bilinmeyen Firma',
+              companyData: null
+            });
+          }
+        }
+        
+        if (suppliers.length === 0) {
+          log(`⚠️ Hiç tedarikçi bulunamadı. Test verileri oluşturulmayacak.`);
+          log(`ℹ️ Not: Tedarikçi olmadan da test verileri oluşturulabilir, ancak teklifler oluşturulmayacak.`);
+        } else {
+          log(`✅ ${suppliers.length} tedarikçi bulundu`);
+        }
+        
+        return suppliers;
+      } catch (error) {
+        log(`❌ Tedarikçiler yüklenemedi: ${error.message}`);
+        return [];
+      }
+    }
+
+    function generateSATFK(index) {
+      const date = new Date();
+      const dateStr = date.getFullYear().toString().slice(-2) + 
+                     String(date.getMonth() + 1).padStart(2, '0') + 
+                     String(date.getDate()).padStart(2, '0');
+      const id = String(index + 1).padStart(3, '0');
+      return `SATFK-${dateStr}-${id}`;
+    }
+
+    async function createDemand(buyer, index) {
+      try {
+        const satfk = generateSATFK(index);
+        const title = demandTitles[index] || `Test Talep ${index + 1}`;
+        const dueDate = Timestamp.fromDate(new Date('2025-01-15T00:00:00'));
+        const demandDate = serverTimestamp();
+        
+        // Teklifbul Rule v1.0 - Talep verisi
+        const demandData = {
+          title,
+          satfk,
+          demandDate,
+          dueDate,
+          priority: 'normal',
+          currency: 'TRY',
+          biddingMode: 'open', // Açık teklif
+          paymentTerms: 'Peşin (Escrow)',
+          paymentPreference: 'cash_escrow',
+          siteName: `Test Şantiye ${index + 1}`,
+          purchaseLocation: 'Ankara',
+          deliveryCity: 'Ankara',
+          deliveryAddress: buyer.userData?.address || buyer.userData?.companyData?.address || 'Test Adresi',
+          deliveryMethod: 'Teslimat', // Teslimat
+          unloadingMethod: 'site_personnel', // Şantiyede indirme personeli var
+          shipping: {
+            mode: 'included', // Nakliye dahil
+            type: 'truck',
+            notes: 'Nakliye dahil'
+          },
+          categoryIds: ['CAT.INSAAT'], // İnşaat Malzemeleri
+          categoryTags: ['insaat-malzemeleri'],
+          spec: `Test talep açıklaması - ${title}`,
+          descriptions: [`Test talep detay açıklaması ${index + 1}`],
+          requester: buyer.userData?.displayName || 'Test Kullanıcı',
+          approver: buyer.userData?.displayName || 'Test Kullanıcı',
+          purchaseManager: buyer.userData?.displayName || 'Test Kullanıcı',
+          generalManager: buyer.userData?.displayName || 'Test Kullanıcı',
+          createdBy: buyer.uid,
+          creatorId: buyer.uid,
+          creatorCompanyId: buyer.companyId,
+          companyId: buyer.companyId,
+          status: 'published',
+          isPublished: true,
+          visibility: 'public',
+          published: true,
+          statusHistory: [{
+            status: 'published',
+            timestamp: Date.now(),
+            userId: buyer.uid,
+            note: 'Test talep oluşturuldu ve yayınlandı'
+          }],
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          filesCount: 0
+        };
+
+        // Talep oluştur
+        const demandRef = await addDoc(collection(db, 'demands'), demandData);
+        log(`✅ Talep oluşturuldu: ${title} (${demandRef.id})`);
+
+        // Kalemleri ekle
+        const itemsRef = collection(db, 'demands', demandRef.id, 'items');
+        for (let i = 0; i < sampleMaterials.length; i++) {
+          const material = sampleMaterials[i];
+          const itemDueDate = Timestamp.fromDate(new Date('2025-01-15T00:00:00'));
+          
+          await addDoc(itemsRef, {
+            lineNo: i + 1,
+            sku: material.sku,
+            name: material.name,
+            brandModel: material.brandModel,
+            qty: material.qty,
+            unit: material.unit,
+            itemDueDate,
+            notes: `Test kalem ${i + 1}`,
+            createdAt: serverTimestamp()
+          });
+        }
+
+        log(`✅ ${sampleMaterials.length} kalem eklendi`);
+        return { demandId: demandRef.id, demandData };
+      } catch (error) {
+        log(`❌ Talep oluşturma hatası: ${error.message}`);
+        throw error;
+      }
+    }
+
+    async function createBidsForDemand(demandId, demandData, suppliers) {
+      const bidsCreated = [];
+      
+      for (let i = 0; i < suppliers.length; i++) {
+        const supplier = suppliers[i];
+        try {
+          // Her kalem için rastgele fiyat oluştur
+          const items = [];
+          let totalAmount = 0;
+          
+          for (let j = 0; j < sampleMaterials.length; j++) {
+            const material = sampleMaterials[j];
+            const unitPrice = Math.random() * 100 + 10; // 10-110 arası rastgele fiyat
+            const quantity = material.qty;
+            const vatRate = 20;
+            const netPrice = unitPrice * quantity;
+            const grossPrice = netPrice * (1 + vatRate / 100);
+            totalAmount += grossPrice;
+            
+            items.push({
+              lineNo: j + 1,
+              sku: material.sku,
+              demandItemId: material.sku,
+              description: material.name,
+              quantity,
+              unit: material.unit,
+              unitPrice,
+              netPrice,
+              totalPrice: netPrice,
+              totalWithVat: grossPrice,
+              vatRate,
+              brand: material.brandModel,
+              deliveryDate: '2025-01-15',
+              notes: `Teklif notu ${j + 1}`
+            });
+          }
+
+          const bidData = {
+            demandId,
+            supplierId: supplier.uid,
+            supplierName: supplier.companyName,
+            buyerId: demandData.createdBy,
+            items,
+            currency: 'TRY',
+            paymentPreference: 'cash_escrow',
+            shipping: {
+              mode: 'included',
+              type: 'truck',
+              notes: 'Nakliye dahil'
+            },
+            deliveryMethod: 'Teslimat',
+            vatRate: 20,
+            netPrice: totalAmount / 1.2,
+            totalAmount: totalAmount.toFixed(2),
+            grossPrice: totalAmount,
+            leadTimeDays: 7,
+            status: 'sent',
+            notes: `Test teklif - ${supplier.companyName}`,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            statusHistory: [{
+              status: 'sent',
+              timestamp: Date.now(),
+              userId: supplier.uid,
+              note: 'Teklif gönderildi'
+            }]
+          };
+
+          const bidRef = await addDoc(collection(db, 'bids'), bidData);
+          bidsCreated.push(bidRef.id);
+          log(`  ✅ Teklif oluşturuldu: ${supplier.companyName} (${bidRef.id})`);
+          
+          updateProgress(((i + 1) / suppliers.length) * 100);
+        } catch (error) {
+          log(`  ❌ Teklif oluşturma hatası (${supplier.companyName}): ${error.message}`);
+        }
+      }
+      
+      return bidsCreated;
+    }
+
+    async function createTestData() {
+      try {
+        $('createBtn').disabled = true;
+        showStatus('info', 'Test verileri oluşturuluyor...');
+        log('🚀 Test verileri oluşturma başlatıldı');
+        
+        // 1. Alıcı kullanıcıyı bul
+        log('📋 Alıcı kullanıcı aranıyor...');
+        const buyer = await getBuyerUser();
+        
+        // 2. Tüm tedarikçileri bul
+        log('📋 Tüm tedarikçiler yükleniyor...');
+        const suppliers = await getAllSuppliers();
+        
+        if (suppliers.length === 0) {
+          log(`⚠️ Hiç tedarikçi bulunamadı. Talepler oluşturulacak ancak teklifler oluşturulmayacak.`);
+          // Tedarikçi olmadan da devam et, sadece talepler oluştur
+        }
+        
+        // 3. 10 adet talep oluştur
+        log(`📋 10 adet talep oluşturuluyor...`);
+        const demands = [];
+        let totalBids = 0;
+        
+        for (let i = 0; i < 10; i++) {
+          log(`\n📝 Talep ${i + 1}/10 oluşturuluyor...`);
+          const demand = await createDemand(buyer, i);
+          demands.push(demand);
+          
+          // Her talep için tüm tedarikçilerden teklif oluştur (eğer tedarikçi varsa)
+          if (suppliers.length > 0) {
+            log(`📝 Talep ${i + 1} için ${suppliers.length} tedarikçiden teklif oluşturuluyor...`);
+            const bids = await createBidsForDemand(demand.demandId, demand.demandData, suppliers);
+            totalBids += bids.length;
+            log(`✅ Talep ${i + 1} için ${bids.length} teklif oluşturuldu`);
+          } else {
+            log(`⚠️ Talep ${i + 1} için teklif oluşturulmadı (tedarikçi yok)`);
+          }
+          
+          updateProgress(((i + 1) / 10) * 100);
+        }
+        
+        log(`\n✅ Tüm test verileri başarıyla oluşturuldu!`);
+        log(`📊 Özet:`);
+        log(`   • ${demands.length} adet talep`);
+        log(`   • ${totalBids} adet teklif`);
+        log(`   • ${suppliers.length} tedarikçi`);
+        
+        if (suppliers.length === 0) {
+          showStatus('success', `✅ ${demands.length} talep başarıyla oluşturuldu! (Teklif oluşturulmadı - tedarikçi yok)`);
+          toast.success(`${demands.length} talep oluşturuldu! (Tedarikçi olmadığı için teklif oluşturulmadı)`);
+        } else {
+          showStatus('success', `✅ ${demands.length} talep ve ${totalBids} teklif başarıyla oluşturuldu!`);
+          toast.success('Test verileri başarıyla oluşturuldu!');
+        }
+        
+      } catch (error) {
+        log(`\n❌ Hata: ${error.message}`);
+        showStatus('error', `Hata: ${error.message}`);
+        toast.error('Test verileri oluşturulamadı: ' + error.message);
+      } finally {
+        $('createBtn').disabled = false;
+      }
+    }
+
+    async function clearTestData() {
+      if (!confirm('Tüm test verilerini silmek istediğinize emin misiniz?')) {
+        return;
+      }
+      
+      try {
+        $('clearBtn').disabled = true;
+        showStatus('info', 'Test verileri siliniyor...');
+        log('🗑️ Test verileri siliniyor...');
+        
+        // Test taleplerini bul ve sil
+        const demandsRef = collection(db, 'demands');
+        const q = query(demandsRef, where('createdBy', '==', (await getBuyerUser()).uid));
+        const snapshot = await getDocs(q);
+        
+        let deleted = 0;
+        for (const docSnap of snapshot.docs) {
+          const data = docSnap.data();
+          // Sadece test taleplerini sil (başlık kontrolü)
+          if (data.title && data.title.includes('Test Şantiye')) {
+            // Önce teklifleri sil
+            const bidsRef = collection(db, 'bids');
+            const bidsQuery = query(bidsRef, where('demandId', '==', docSnap.id));
+            const bidsSnapshot = await getDocs(bidsQuery);
+            
+            for (const bidDoc of bidsSnapshot.docs) {
+              await bidDoc.ref.delete();
+              log(`  🗑️ Teklif silindi: ${bidDoc.id}`);
+            }
+            
+            // Sonra talebi sil
+            await docSnap.ref.delete();
+            log(`  🗑️ Talep silindi: ${docSnap.id}`);
+            deleted++;
+          }
+        }
+        
+        log(`✅ ${deleted} test talebi ve ilgili teklifler silindi`);
+        showStatus('success', `✅ ${deleted} test talebi silindi`);
+        toast.success('Test verileri silindi!');
+        
+      } catch (error) {
+        log(`❌ Silme hatası: ${error.message}`);
+        showStatus('error', `Hata: ${error.message}`);
+        toast.error('Test verileri silinemedi: ' + error.message);
+      } finally {
+        $('clearBtn').disabled = false;
+      }
+    }
+
+    // Event listeners
+    $('createBtn').addEventListener('click', createTestData);
+    $('clearBtn').addEventListener('click', clearTestData);
+
+    // Auth kontrolü
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        showStatus('error', 'Lütfen önce giriş yapın!');
+        $('createBtn').disabled = true;
+        $('clearBtn').disabled = true;
+      } else {
+        log(`✅ Giriş yapıldı: ${user.email}`);
+        $('createBtn').disabled = false;
+        $('clearBtn').disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
+

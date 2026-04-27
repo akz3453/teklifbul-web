@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>Stok Sayım</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Teklifbul Rule v1.0 - FOUC önleme: Tema hemen uygulanmalı -->
+  <script src="/assets/js/theme-init.js"></script>
+  <link rel="stylesheet" href="/utils.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <!-- ExcelJS CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+  <style>
+    body{font-family:system-ui, Arial; background:#f8fafc; color:#111827; margin:0}
+    .container{max-width:1400px;margin:0 auto;padding:20px}
+    h1{margin:0 0 8px 0}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:20px;margin:16px 0}
+    .tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+    .tab{flex:1;min-width:150px;padding:12px;border:1px solid #e5e7eb;background:#f9fafb;cursor:pointer;text-align:center;border-radius:6px;font-weight:600}
+    .tab.active{background:#2563eb;color:#fff;border-color:#2563eb}
+    .hidden{display:none}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
+    label{font-size:12px;color:#374151;font-weight:600;display:block;margin-bottom:6px}
+    input,select,textarea{width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:14px}
+    table{width:100%;border-collapse:collapse;margin-top:12px}
+    th,td{border-bottom:1px solid #e5e7eb;padding:8px;text-align:left;font-size:13px}
+    th{background:#f9fafb;font-weight:600}
+    tr:hover{background:#f9fafb}
+    .badge{display:inline-block;border-radius:14px;padding:4px 10px;font-size:12px;font-weight:600}
+    .badge-draft{background:#f3f4f6;color:#374151}
+    .badge-in-progress{background:#dbeafe;color:#1e40af}
+    .badge-completed{background:#dcfce7;color:#065f46}
+    .badge-approved{background:#d1fae5;color:#065f46}
+    .muted{color:#6b7280;font-size:12px}
+    .btn{padding:10px 16px;border:0;border-radius:6px;cursor:pointer;font-weight:600;font-size:14px;margin-right:8px}
+    .btn-primary{background:#2563eb;color:#fff}
+    .btn-primary:hover{background:#1d4ed8}
+    .btn-secondary{background:#6b7280;color:#fff}
+    .btn-secondary:hover{background:#4b5563}
+    .btn-success{background:#10b981;color:#fff}
+    .btn-success:hover{background:#059669}
+    .btn-danger{background:#ef4444;color:#fff}
+    .btn-danger:hover{background:#dc2626}
+    .btn[disabled]{opacity:.5;cursor:not-allowed}
+    .progress-bar{width:100%;height:8px;background:#e5e7eb;border-radius:4px;overflow:hidden;margin-top:8px}
+    .progress-fill{height:100%;background:#2563eb;transition:width 0.3s}
+    .count-card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin-bottom:12px;cursor:pointer;transition:all 0.2s}
+    .count-card:hover{box-shadow:0 2px 4px rgba(0,0,0,0.1);border-color:#2563eb}
+    .count-card-header{display:flex;justify-content:space-between;align-items:start;margin-bottom:12px}
+    .count-card-title{font-size:16px;font-weight:600;color:#1f2937}
+    .count-card-meta{font-size:12px;color:#6b7280;margin-top:8px}
+    .difference-positive{color:#10b981;font-weight:600}
+    .difference-negative{color:#ef4444;font-weight:600}
+    .difference-zero{color:#6b7280}
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:20px}
+    .stat-card{background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:16px}
+    .stat-label{font-size:12px;color:#0369a1;font-weight:600}
+    .stat-value{font-size:24px;color:#0284c7;font-weight:700;margin-top:4px}
+    
+    /* Koyu Mod Düzenlemeleri */
+    html[data-theme="dark"] body,
+    html.force-dark body {
+      background:#111827;
+      color:#ffffff;
+    }
+    html[data-theme="dark"] .card,
+    html.force-dark .card {
+      background:#111827;
+      border:1px solid rgba(255,255,255,0.1);
+      color:#ffffff;
+    }
+    html[data-theme="dark"] .tab,
+    html.force-dark .tab {
+      background:#111827;
+      border:1px solid rgba(255,255,255,0.1);
+      color:#ffffff;
+    }
+    html[data-theme="dark"] .tab.active,
+    html.force-dark .tab.active {
+      background:#2563eb;
+      border-color:#2563eb;
+    }
+    html[data-theme="dark"] label,
+    html.force-dark label {
+      color:#d1d5db;
+    }
+    html[data-theme="dark"] input,
+    html[data-theme="dark"] select,
+    html[data-theme="dark"] textarea,
+    html.force-dark input,
+    html.force-dark select,
+    html.force-dark textarea {
+      background:#111827;
+      border:1px solid rgba(255,255,255,0.1);
+      color:#ffffff;
+    }
+    html[data-theme="dark"] table,
+    html.force-dark table {
+      background:#111827;
+    }
+    html[data-theme="dark"] th,
+    html.force-dark th {
+      background:#111827;
+      color:#ffffff;
+      border-bottom:1px solid rgba(255,255,255,0.1);
+    }
+    html[data-theme="dark"] td,
+    html.force-dark td {
+      color:#ffffff;
+      border-bottom:1px solid rgba(255,255,255,0.1);
+    }
+    html[data-theme="dark"] tr:hover,
+    html.force-dark tr:hover {
+      background:#1f2937;
+    }
+    html[data-theme="dark"] .muted,
+    html.force-dark .muted {
+      color:#9ca3af;
+    }
+    html[data-theme="dark"] .count-card,
+    html.force-dark .count-card {
+      background:#111827;
+      border:1px solid rgba(255,255,255,0.1);
+    }
+    html[data-theme="dark"] .count-card:hover,
+    html.force-dark .count-card:hover {
+      border-color:rgba(255,255,255,0.3);
+    }
+    html[data-theme="dark"] .count-card-title,
+    html.force-dark .count-card-title {
+      color:#ffffff;
+    }
+    html[data-theme="dark"] .stat-card,
+    html.force-dark .stat-card {
+      background:#111827;
+      border:1px solid rgba(255,255,255,0.1);
+    }
+    html[data-theme="dark"] .stat-label,
+    html.force-dark .stat-label {
+      color:#9ca3af;
+    }
+    html[data-theme="dark"] .stat-value,
+    html.force-dark .stat-value {
+      color:#60a5fa;
+    }
+  </style>
+</head>
+<body>
+  <!-- Common Header -->
+  <header id="app-header"></header>
+
+  <div class="container">
+    <h1>🧮 Stok Sayım</h1>
+    <p class="muted">Yıl sonu sayımı ve stok düzeltme işlemleri</p>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <div class="tab active" data-tab="active">Aktif Sayımlar</div>
+      <div class="tab" data-tab="create">Yeni Sayım Oluştur</div>
+      <div class="tab" data-tab="history">Geçmiş Sayımlar</div>
+      <div class="tab" data-tab="reports">Raporlar</div>
+    </div>
+
+    <!-- Aktif Sayımlar Tab -->
+    <div id="tab-active" class="tab-content">
+      <div class="card">
+        <h3>Aktif Sayımlar</h3>
+        <div id="activeCountsList">
+          <div style="text-align:center;padding:40px;color:#6b7280">Yükleniyor...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Yeni Sayım Oluştur Tab -->
+    <div id="tab-create" class="tab-content hidden">
+      <div class="card">
+        <h3>Yeni Sayım Oturumu Oluştur</h3>
+        <div class="row">
+          <div>
+            <label for="countTitle">Sayım Başlığı <span style="color:#ef4444">*</span></label>
+            <input type="text" id="countTitle" placeholder="Örn: 2024 Yıl Sonu Sayımı" />
+          </div>
+          <div>
+            <label for="countLocation">Lokasyon <span style="color:#ef4444">*</span></label>
+            <select id="countLocation">
+              <option value="">Lokasyon seçin...</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-top:12px">
+          <label for="countDescription">Açıklama</label>
+          <textarea id="countDescription" rows="3" placeholder="Sayım hakkında notlar..."></textarea>
+        </div>
+        <div style="margin-top:16px;display:flex;gap:8px">
+          <button class="btn btn-primary" id="btnCreateCount">Sayım Oluştur</button>
+          <button class="btn btn-secondary" id="btnCancelCreate">İptal</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Geçmiş Sayımlar Tab -->
+    <div id="tab-history" class="tab-content hidden">
+      <div class="card">
+        <h3>Geçmiş Sayımlar</h3>
+        <div id="historyCountsList">
+          <div style="text-align:center;padding:40px;color:#6b7280">Yükleniyor...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Raporlar Tab -->
+    <div id="tab-reports" class="tab-content hidden">
+      <div class="card">
+        <h3>Sayım Raporları</h3>
+        <div class="stats-grid" id="countStats">
+          <div class="stat-card">
+            <div class="stat-label">Toplam Sayım</div>
+            <div class="stat-value" id="statTotalCounts">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Tamamlanan Sayım</div>
+            <div class="stat-value" id="statCompletedCounts">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Onaylanan Sayım</div>
+            <div class="stat-value" id="statApprovedCounts">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Toplam Fark</div>
+            <div class="stat-value" id="statTotalDifference">0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/scripts/stock-count-page-init.js"></script>
+  <script type="module" src="/scripts/stock-count.js"></script>
+</body>
+</html>

@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>Yeni İrsaliye</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Teklifbul Rule v1.0 - FOUC önleme: Tema hemen uygulanmalı -->
+  <script src="/assets/js/theme-init.js"></script>
+  <link rel="stylesheet" href="/utils.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <style>
+    body{font-family:system-ui, Arial; background:#f8fafc; color:#111827; margin:0}
+    .container{max-width:1400px;margin:0 auto;padding:20px}
+    h1{margin:0 0 8px 0}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:20px;margin:16px 0}
+    .form-group{margin-bottom:16px}
+    .form-group label{display:block;margin-bottom:4px;font-size:12px;font-weight:600;color:#374151}
+    .form-group input,.form-group select,.form-group textarea{width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;box-sizing:border-box}
+    .required::after{content:" *";color:#dc2626}
+    .btn{padding:10px 20px;border:0;border-radius:6px;cursor:pointer;font-weight:600;font-size:14px;margin-right:8px}
+    .btn-primary{background:#2563eb;color:#fff}
+    .btn-primary:hover{background:#1d4ed8}
+    .btn-secondary{background:#6b7280;color:#fff}
+    .btn-secondary:hover{background:#4b5563}
+    table{width:100%;border-collapse:collapse;margin-top:16px;background:#fff}
+    th,td{border-bottom:1px solid #e5e7eb;padding:12px;text-align:left;font-size:13px}
+    th{background:#f9fafb;font-weight:600;color:#374151}
+    tr:hover{background:#f9fafb}
+    .muted{color:#6b7280;font-size:12px}
+    .info-row{display:grid;grid-template-columns:200px 1fr;gap:12px;padding:8px 0;border-bottom:1px solid #e5e7eb}
+    .info-row:last-child{border-bottom:none}
+    .info-label{font-weight:600;color:#374151}
+    .delivery-quantity-input{width:100px;text-align:center}
+    .remaining-qty{color:#6b7280;font-size:11px}
+    
+    /* Koyu Mod */
+    html[data-theme="dark"] body,
+    html.force-dark body {
+      background:#111827;
+      color:#ffffff;
+    }
+    html[data-theme="dark"] .card,
+    html.force-dark .card {
+      background:#1f2937;
+      border:1px solid rgba(255,255,255,0.1);
+    }
+    html[data-theme="dark"] .form-group input,
+    html[data-theme="dark"] .form-group select,
+    html[data-theme="dark"] .form-group textarea,
+    html.force-dark .form-group input,
+    html.force-dark .form-group select,
+    html.force-dark .form-group textarea {
+      background:#111827;
+      border:1px solid rgba(255,255,255,0.1);
+      color:#ffffff;
+    }
+  </style>
+</head>
+<body>
+  <!-- Common Header -->
+  <header id="app-header"></header>
+
+  <div class="container">
+    <!-- Breadcrumb Navigation -->
+    <div class="tb-breadcrumb" id="breadcrumb">
+      <span class="tb-crumb">
+        <span class="ico">🏠</span>
+        <a href="/dashboard.html">Ana Sayfa</a>
+      </span>
+      <span class="tb-sep">›</span>
+      <span class="tb-crumb">
+        <span class="ico">💰</span>
+        <a href="/pages/sales.html">Satışlar</a>
+      </span>
+      <span class="tb-sep">›</span>
+      <span class="tb-crumb">
+        <span class="ico">📦</span>
+        <span>Yeni İrsaliye</span>
+      </span>
+    </div>
+    
+    <h1>📦 Yeni İrsaliye</h1>
+    <p class="muted">Satış için irsaliye oluşturun (kısmi teslimat desteği).</p>
+
+    <form id="deliveryNoteForm">
+      <input type="hidden" id="saleId" />
+      
+      <div class="card">
+        <h2 style="margin-top:0">Satış Bilgileri</h2>
+        
+        <div class="info-row">
+          <div class="info-label">Satış Numarası:</div>
+          <div id="saleNumber">-</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">Müşteri:</div>
+          <div id="customerName">-</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">Satış Durumu:</div>
+          <div id="saleStatus">-</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 style="margin-top:0">Teslimat Kalemleri</h2>
+        <p class="muted">Her kalem için teslim edilecek miktarı girin (kısmi teslimat mümkün).</p>
+        
+        <table id="deliveryItemsTable">
+          <thead>
+            <tr>
+              <th>SKU</th>
+              <th>Ürün Adı</th>
+              <th>Orijinal Miktar</th>
+              <th>Daha Önce Teslim</th>
+              <th>Kalan</th>
+              <th>Teslim Edilecek</th>
+              <th>Birim</th>
+            </tr>
+          </thead>
+          <tbody id="deliveryItemsTableBody">
+            <tr>
+              <td colspan="7" style="text-align:center;padding:40px;color:#6b7280">Yükleniyor...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2 style="margin-top:0">Teslimat Adresi</h2>
+        <div class="form-group">
+          <label for="deliveryAddress">Adres</label>
+          <textarea id="deliveryAddress" rows="4" placeholder="Teslimat adresi..."></textarea>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px">
+        <a href="/pages/sales.html" class="btn btn-secondary">İptal</a>
+        <button type="button" class="btn btn-primary" id="btnCreateDeliveryNote">İrsaliye Oluştur</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Header -->
+  <script type="module">
+    import { initGlobalHeader } from '../assets/js/ui/header.js';
+    initGlobalHeader({ mount: '#app-header', activeRoute: 'invoicing' });
+  </script>
+  
+  <script type="module" src="/scripts/delivery-notes.js"></script>
+</body>
+</html>

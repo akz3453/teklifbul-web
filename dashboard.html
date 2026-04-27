@@ -1,178 +1,354 @@
 <!doctype html>
 <html lang="tr">
+
 <head>
   <meta charset="utf-8" />
-  <title>Teklifbul — Dashboard</title>
+  <title>NEFISOFT — Kontrol Paneli</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%233b82f6' rx='6'/%3E%3Ctext x='16' y='22' font-family='Arial' font-size='18' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E" />
+
+  <!-- PWA Meta Tags -->
+  <meta name="theme-color" content="#2563EB" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="NEFISOFT" />
+  <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+  <link rel="manifest" href="/manifest.json" />
+
+  <!-- Teklifbul Rule v1.0 - Tema standardı: tb_theme key, FOUC önleme -->
+  <script src="/assets/js/theme-init.js"></script>
+  <link rel="icon" type="image/svg+xml"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%233b82f6' rx='6'/%3E%3Ctext x='16' y='22' font-family='Arial' font-size='18' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E" />
   <link rel="stylesheet" href="/utils.css" />
   <link rel="stylesheet" href="/assets/css/layout.css" />
+  <link rel="stylesheet" href="/assets/css/ai-assistant-widget.css" />
+  <link rel="stylesheet" href="/assets/css/dashboard-shortcuts.css" />
   <style>
-    body { margin: 0; font-family: system-ui, Arial; }
-    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin: 16px 0; }
-    .card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; background: white; }
-    .card h2 { margin: 8px 0 0 0; font-size: 32px; color: #1f2937; }
-    .card-title { font-size: 14px; color: #6b7280; font-weight: 500; }
-    .metric-card { cursor: pointer; transition: all 0.2s; }
-    .metric-card:hover { box-shadow: 0 4px 6px rgba(0,0,0,0.1); transform: translateY(-2px); }
-    .badge { display: inline-block; padding: 4px 8px; border-radius: 12px; background: #e5e7eb; font-size: 12px; }
-    .badge.success { background: #d1fae5; color: #065f46; }
-    .badge.warn { background: #fef3c7; color: #92400e; }
-    .table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-    .table th, .table td { border-bottom: 1px solid #e5e7eb; padding: 10px; text-align: left; }
-    .table th { background: #f9fafb; font-weight: 600; font-size: 13px; color: #374151; }
-    .table td { font-size: 14px; }
-    .fx-row { display: flex; justify-content: space-between; align-items: center; margin: 6px 0; }
-    .fx-label { font-size: 13px; color: #6b7280; }
-    .fx-value { font-size: 18px; font-weight: 600; color: #1f2937; }
-    .quick-links { display: flex; gap: 12px; margin-top: 12px; }
-    .quick-links a { text-decoration: none; color: #3b82f6; font-weight: 500; }
-    
+    body {
+      margin: 0;
+      font-family: system-ui, Arial;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin: 16px 0;
+    }
+
+    .card {
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 16px;
+      background: white;
+    }
+
+    html[data-theme="dark"] .card {
+      background: #111827;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: #ffffff;
+    }
+
+    .card h2 {
+      margin: 8px 0 0 0;
+      font-size: 32px;
+      color: #1f2937;
+    }
+
+    html[data-theme="dark"] .card h2 {
+      color: #ffffff;
+    }
+
+    .card-title {
+      font-size: 14px;
+      color: #6b7280;
+      font-weight: 500;
+    }
+
+    html[data-theme="dark"] .card-title {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .metric-card {
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .metric-card:hover {
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 12px;
+      background: #e5e7eb;
+      font-size: 12px;
+    }
+
+    .badge.success {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .badge.warn {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+
+    .table th,
+    .table td {
+      border-bottom: 1px solid #e5e7eb;
+      padding: 10px;
+      text-align: left;
+    }
+
+    html[data-theme="dark"] .table th,
+    html[data-theme="dark"] .table td {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+      color: #ffffff;
+    }
+
+    .table th {
+      background: #f9fafb;
+      font-weight: 600;
+      font-size: 13px;
+      color: #374151;
+    }
+
+    html[data-theme="dark"] .table th {
+      background: #111827;
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+
+    .table td {
+      font-size: 14px;
+    }
+
+    .fx-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 6px 0;
+    }
+
+    .fx-label {
+      font-size: 13px;
+      color: #6b7280;
+    }
+
+    html[data-theme="dark"] .fx-label {
+      color: #ffffff;
+    }
+
+    .fx-value {
+      font-size: 18px;
+      font-weight: 600;
+      color: #1f2937;
+    }
+
+    html[data-theme="dark"] .fx-value {
+      color: #ffffff;
+    }
+
+    html[data-theme="dark"] #fx-time {
+      color: #ffffff !important;
+    }
+
+    .quick-links {
+      display: flex;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .quick-links a {
+      text-decoration: none;
+      color: #3b82f6;
+      font-weight: 500;
+    }
+
+    html[data-theme="dark"] .quick-links a {
+      color: #ffffff;
+    }
+
+    /* Navigation grid */
+    .nav-card-wrapper {
+      margin-bottom: 24px;
+    }
+
+    .nav-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    @media (min-width: 1440px) {
+      .nav-grid {
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      }
+    }
+
     /* Navigation Cards */
     .nav-card {
       display: flex;
       align-items: center;
-      gap: 12px;
-      padding: 16px;
+      gap: 16px;
+      padding: 20px;
+      min-height: 118px;
       background: white;
       border: 1px solid #e5e7eb;
-      border-radius: 8px;
+      border-radius: 12px;
       text-decoration: none;
       color: inherit;
-      transition: all 0.2s;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
     }
+
+    html[data-theme="dark"] .nav-card {
+      background: #111827;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: #ffffff;
+    }
+
     .nav-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      border-color: #3b82f6;
+      transform: translateY(-4px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+      border-color: #60a5fa;
+      background: rgba(96, 165, 250, 0.05);
     }
+
     .nav-icon {
-      font-size: 24px;
-      width: 48px;
-      height: 48px;
+      font-size: 28px;
+      width: 56px;
+      height: 56px;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #f8fafc;
-      border-radius: 8px;
+      background: rgba(99, 102, 241, 0.08);
+      border-radius: 12px;
+      color: #2563eb;
     }
+
+    html[data-theme="dark"] .nav-icon {
+      background: rgba(255, 255, 255, 0.08);
+      color: #93c5fd;
+    }
+
     .nav-content h4 {
-      margin: 0 0 4px 0;
-      font-size: 16px;
+      margin: 0 0 6px 0;
+      font-size: 18px;
       font-weight: 600;
       color: #1f2937;
     }
+
+    html[data-theme="dark"] .nav-content h4 {
+      color: #ffffff;
+    }
+
     .nav-content p {
       margin: 0;
-      font-size: 13px;
-      color: #6b7280;
-      line-height: 1.4;
+      font-size: 14px;
+      line-height: 1.5;
+      color: #4b5563;
+    }
+
+    html[data-theme="dark"] .nav-content p {
+      color: rgba(255, 255, 255, 0.7);
     }
   </style>
 </head>
+
 <body>
   <!-- Common Header -->
   <header id="app-header"></header>
 
   <main class="container--wide" style="padding:20px 0">
-    <h1 style="margin:0 0 20px 0">Dashboard</h1>
-    
-    <!-- Quick Navigation -->
-    <div class="card" style="margin-bottom:24px">
-      <h3 style="margin:0 0 16px 0">📋 Sayfa Navigasyonu</h3>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px">
-        <a href="./demands.html" class="nav-card">
-          <div class="nav-icon">📋</div>
-          <div class="nav-content">
-            <h4>Taleplerim</h4>
-            <p>Oluşturduğum ve aldığım talepleri görüntüle</p>
-          </div>
-        </a>
-        <a href="./bids.html" class="nav-card">
-          <div class="nav-icon">💰</div>
-          <div class="nav-content">
-            <h4>Teklifler</h4>
-            <p>Gelen ve gönderdiğim teklifleri yönet</p>
-          </div>
-        </a>
-        <a href="./main-demands.html" class="nav-card">
-          <div class="nav-icon">🛍️</div>
-          <div class="nav-content">
-            <h4>Ana Talep Ekranı</h4>
-            <p>Tedarikçiler için genel talep listesi</p>
-          </div>
-        </a>
-        <a href="./demand-new.html" class="nav-card">
-          <div class="nav-icon">➕</div>
-          <div class="nav-content">
-            <h4>Yeni Talep Oluştur</h4>
-            <p>Yeni bir talep oluştur ve yayınla</p>
-          </div>
-        </a>
-        <a href="./settings.html" class="nav-card">
-          <div class="nav-icon">⚙️</div>
-          <div class="nav-content">
-            <h4>Ayarlar</h4>
-            <p>Hesap ve firma bilgilerini düzenle</p>
-          </div>
-        </a>
-        <!-- Diagnostic Tools -->
-        <a href="./debug-info.html" class="nav-card" style="border-color: #ff9800;">
-          <div class="nav-icon">🔧</div>
-          <div class="nav-content">
-            <h4>Sistem Teşhisi</h4>
-            <p>Sistem durumunu kontrol et</p>
-          </div>
-        </a>
-        <a href="./test-data-loading.html" class="nav-card" style="border-color: #ff9800;">
-          <div class="nav-icon">🧪</div>
-          <div class="nav-content">
-            <h4>Veri Testi</h4>
-            <p>Veri yükleme işlemlerini test et</p>
-          </div>
-        </a>
+    <div class="page-heading">
+      <div class="page-title-chip" role="presentation">
+        <span class="page-title-icon" aria-hidden="true">📊</span>
+        <div class="page-title-text">
+          <h1>Kontrol Paneli</h1>
+          <p class="page-title-caption">Genel görünüm ve hızlı erişimler</p>
+          <button class="edit-shortcuts-btn" id="btn-edit-shortcuts" style="margin-top: 8px;">
+            <span id="edit-btn-text">⚙️ Kısayolları Düzenle</span>
+          </button>
+        </div>
       </div>
     </div>
-    
+
+    <!-- Quick Navigation -->
+    <div class="card nav-card-wrapper" id="shortcuts-container">
+      <div class="nav-grid" id="shortcuts-grid">
+        <!-- Shortcuts will be rendered here dynamically -->
+      </div>
+    </div>
+
+    <!-- Shortcut Selection Modal -->
+    <div id="shortcut-modal" class="shortcut-modal">
+      <div class="shortcut-modal-content">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <h3 style="margin:0;">Kısayol Ekle</h3>
+          <button id="close-shortcut-modal" style="background:none; border:none; font-size:20px; cursor:pointer; color:#6b7280;">&times;</button>
+        </div>
+        <p style="font-size:14px; color:#6b7280; margin-bottom:16px;">Eklemek istediğiniz kısayolu seçin:</p>
+        <div id="available-shortcuts-list" class="shortcut-list">
+          <!-- Available shortcuts will be listed here -->
+        </div>
+        <div style="margin-top:24px; display:flex; justify-content:flex-end; gap:12px;">
+          <button id="btn-cancel-shortcut" class="btn btn-secondary">İptal</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Metrics Cards -->
     <div class="cards">
-      <div class="card metric-card clickable-card" id="inbox-card" onclick="location.href='./demands.html?filter=inbox'">
-        <div class="card-title">Gelen Talepler</div>
-        <h2 id="metric-inbox">0</h2>
+      <div class="card metric-card clickable-card" id="inbox-card">
+        <div class="card-title"><span aria-hidden="true">📥</span> Gelen Talepler</div>
+        <h2 id="metric-inbox" style="opacity: 0.5;">...</h2>
       </div>
-      <div class="card metric-card clickable-card" id="sent-card" onclick="location.href='./demands.html?filter=sent'">
-        <div class="card-title">Gönderdiğim Talepler</div>
-        <h2 id="metric-sent">0</h2>
+      <div class="card metric-card clickable-card" id="sent-card">
+        <div class="card-title"><span aria-hidden="true">📤</span> Gönderdiğim Talepler</div>
+        <h2 id="metric-sent" style="opacity: 0.5;">...</h2>
       </div>
-      <div class="card metric-card clickable-card" id="draft-card" onclick="location.href='./demands.html?filter=draft'">
-        <div class="card-title">Taslak Talepler</div>
-        <h2 id="metric-draft">0</h2>
+      <div class="card metric-card clickable-card" id="draft-card">
+        <div class="card-title"><span aria-hidden="true">📝</span> Taslak Talepler</div>
+        <h2 id="metric-draft" style="opacity: 0.5;">...</h2>
       </div>
-      <!-- FCM Test Card -->
-      <div class="card" id="fcm-test-card" style="border-color: #3b82f6;">
-        <div class="card-title">🔔 Push Bildirimleri</div>
+      <!-- FCM Test Card - Sadece Adminler İçin -->
+      <div class="card" id="fcm-test-card" style="border-color: #3b82f6; display: none;">
+        <div class="card-title">🔔 Push Bildirimleri (Admin)</div>
         <div id="fcm-status" style="margin-top:8px; font-size:13px; color:#6b7280;">Yükleniyor...</div>
-        <div id="fcm-token-info" style="margin-top:8px; font-size:11px; color:#9ca3af; word-break:break-all; display:none;"></div>
-        <button id="test-notification-btn" style="margin-top:12px; padding:8px 16px; background:#3b82f6; color:white; border:none; border-radius:6px; cursor:pointer; font-size:13px; font-weight:600; width:100%;" disabled>
+        <div id="fcm-token-info"
+          style="margin-top:8px; font-size:11px; color:#9ca3af; word-break:break-all; display:none;"></div>
+        <button id="test-notification-btn"
+          style="margin-top:12px; padding:8px 16px; background:#3b82f6; color:white; border:none; border-radius:6px; cursor:pointer; font-size:13px; font-weight:600; width:100%;"
+          disabled>
           📤 Test Bildirimi Gönder
         </button>
       </div>
-      <div class="card metric-card clickable-card" id="incoming-bids-card" onclick="location.href='./bids.html?tab=incoming'">
-        <div class="card-title">Gelen Teklifler</div>
-        <h2 id="metric-incoming-bids">0</h2>
+      <div class="card metric-card clickable-card" id="incoming-bids-card">
+        <div class="card-title"><span aria-hidden="true">💌</span> Gelen Teklifler</div>
+        <h2 id="metric-incoming-bids" style="opacity: 0.5;">...</h2>
       </div>
-      <div class="card metric-card clickable-card" id="outgoing-bids-card" onclick="location.href='./bids.html?tab=outgoing'">
-        <div class="card-title">Gönderdiğim Teklifler</div>
-        <h2 id="metric-outgoing-bids">0</h2>
+      <div class="card metric-card clickable-card" id="outgoing-bids-card">
+        <div class="card-title"><span aria-hidden="true">🚀</span> Gönderdiğim Teklifler</div>
+        <h2 id="metric-outgoing-bids" style="opacity: 0.5;">...</h2>
       </div>
       <div class="card">
         <div class="card-title">TCMB Kurları</div>
         <div class="fx-row">
-          <span class="fx-label">USD/TRY:</span>
+          <span class="fx-label">💵 USD/TRY:</span>
           <strong class="fx-value" id="fx-usd">-</strong>
         </div>
         <div class="fx-row">
-          <span class="fx-label">EUR/TRY:</span>
+          <span class="fx-label">💶 EUR/TRY:</span>
           <strong class="fx-value" id="fx-eur">-</strong>
         </div>
         <small id="fx-time" style="opacity:0.7;font-size:11px;color:#6b7280"></small>
@@ -184,7 +360,7 @@
       <div style="display:flex;justify-content:space-between;align-items:center">
         <h3 style="margin:0">Son Taleplerim</h3>
         <div class="quick-links">
-          <a href="./demand-new.html">+ Yeni Talep</a>
+          <a href="./demand-new.html">+ Yeni Satın Alma Talebi Oluştur</a>
           <a href="./demands.html">Tüm Talepler</a>
         </div>
       </div>
@@ -208,90 +384,338 @@
   <script type="module" src="/assets/js/theme.js" defer></script>
 
   <!-- FCM VAPID Key - Teklifbul Rule v1.0 -->
-  <script>
-    // VAPID Public Key - Firebase Console → Project Settings → Cloud Messaging → Web Push certificates
-    // Public Key: BGb_aJH4wkibTze33NjHJVTUUS8PtSIVW76QPsxi2_BNNqf3lezoE_nHjl8FgJS4G2l59LL7Cs1sLDfjRr_qAsM
-    window.FCM_VAPID_KEY = 'BGb_aJH4wkibTze33NjHJVTUUS8PtSIVW76QPsxi2_BNNqf3lezoE_nHjl8FgJS4G2l59LL7Cs1sLDfjRr_qAsM';
-  </script>
+  <script src="/scripts/fcm-vapid-key.js"></script>
 
   <!-- Main Script -->
   <script type="module">
-    // Teklifbul Rule v1.0 - Tek kaynaktan auth guard yönetimi
+    // Teklifbul Rule v1.0 - XSS Protection
+    import DOMPurify from 'https://cdn.jsdelivr.net/npm/dompurify@3.2.2/+esm';
+    // Teklifbul Rule v1.0 - Auth Guard (oturum kontrolü)
     import { initAuthGuard } from './assets/js/auth-guard.js';
+    // Teklifbul Rule v1.0 - Tek kaynaktan auth guard yönetimi
     import { initGlobalHeader } from './assets/js/ui/header.js';
     import { db, auth, requireAuth } from "./firebase.js";
-    import { initFCM, getCurrentToken } from "./assets/js/fcm.js";
+
+    // Teklifbul Rule v1.0 - Google login sonrası auth state'in stabilize olmasını bekle
+    const isGoogleLogin = sessionStorage.getItem('googleLoginSuccess') === 'true';
+    if (isGoogleLogin) {
+      logger.info("Google login tespit edildi, auth state bekleniyor...");
+
+      // Google login sonrası auth state'in stabilize olmasını bekle
+      const { watchAuth, getUser, auth } = await import('./firebase.js');
+
+      // Önce mevcut user'ı kontrol et
+      let currentUser = getUser();
+      if (currentUser) {
+        logger.info("Google login sonrası auth state hazır (ilk kontrol)");
+        // Biraz daha bekle, auth state'in tam stabilize olduğundan emin ol
+        await new Promise(resolve => setTimeout(resolve, 500));
+        currentUser = getUser();
+        if (currentUser) {
+          logger.info("Google login sonrası auth state doğrulandı");
+          sessionStorage.removeItem('googleLoginSuccess');
+          sessionStorage.removeItem('pendingLoginTs');
+        }
+      } else {
+        // watchAuth ile auth state değişikliğini dinle
+        await new Promise((resolve) => {
+          let resolved = false;
+
+          const checkAuthState = () => {
+            const user = auth.currentUser;
+            if (user && !resolved) {
+              resolved = true;
+              logger.info("Google login sonrası auth state stabilize oldu (watchAuth)");
+              sessionStorage.removeItem('googleLoginSuccess');
+              sessionStorage.removeItem('pendingLoginTs');
+              unsubscribe();
+              resolve();
+            }
+          };
+
+          // watchAuth ile auth state değişikliğini dinle
+          const unsubscribe = watchAuth((user) => {
+            if (user) {
+              checkAuthState();
+            }
+          });
+
+          // İlk kontrol
+          checkAuthState();
+
+          // Polling ile de kontrol et (her 200ms)
+          const pollInterval = setInterval(() => {
+            if (resolved) {
+              clearInterval(pollInterval);
+              return;
+            }
+            checkAuthState();
+          }, 200);
+
+          // Timeout: 3 saniye sonra devam et
+          setTimeout(() => {
+            if (!resolved) {
+              resolved = true;
+              clearInterval(pollInterval);
+              const finalUser = auth.currentUser;
+              if (finalUser) {
+                logger.info("Google login sonrası auth state timeout'ta hazır");
+                sessionStorage.removeItem('googleLoginSuccess');
+                sessionStorage.removeItem('pendingLoginTs');
+              } else {
+                logger.warn("Google login sonrası auth state timeout'ta hazır değil");
+              }
+              unsubscribe();
+              resolve();
+            }
+          }, 3000);
+        });
+      }
+
+      // Son bir kontrol daha yap
+      await new Promise(resolve => setTimeout(resolve, 300));
+      const finalCheck = getUser();
+      if (!finalCheck) {
+        logger.warn("Google login sonrası auth state hala hazır değil, biraz daha bekleniyor...");
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
+
+    // Teklifbul Rule v1.0 - Auth guard'ı başlat (oturum yoksa login'e yönlendirir)
+    initAuthGuard().catch(err => {
+      console.error('Auth guard init failed', err);
+    });
     // Teklifbul Rule v1.0 - Structured Logging
     import { logger } from './src/shared/log/logger.js';
     // Teklifbul Rule v1.0 - Toast Notification System
     import { toast } from './src/shared/ui/toast.js';
     // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
     import { MESSAGES } from './src/shared/constants/messages.js';
-    
-    // Guard'ı başlat - tüm yönlendirmeler guard üzerinden yapılacak
-    initAuthGuard().catch(err => logger.error('Auth guard init failed', err));
-    
+
     // Initialize global header
     initGlobalHeader({ mount: '#app-header', activeRoute: 'dashboard' });
-    
-    // FCM başlat ve UI güncelle
-    // Teklifbul Rule v1.0 - Push notification setup
+
+    // Excel import shortcut - dashboard'da dosya seçimi yap, sonra sayfaya yönlendir
+    const excelShortcut = document.getElementById('excel-import-shortcut');
+    const excelInput = document.getElementById('dashboard-excel-input');
+
+    if (excelShortcut && excelInput) {
+      excelShortcut.addEventListener('click', async (e) => {
+        e.preventDefault();
+
+        try {
+          // Önce dosya seçimini aç (user activation hala geçerli)
+          excelInput.value = '';
+          excelInput.click();
+
+          // Dosya seçilmesini bekle
+          excelInput.addEventListener('change', async function handler() {
+            excelInput.removeEventListener('change', handler);
+
+            const file = excelInput.files?.[0];
+            if (!file) {
+              toast.info('Dosya seçilmedi');
+              return;
+            }
+
+            try {
+              // Dosyayı base64'e çevir ve localStorage'a kaydet
+              const reader = new FileReader();
+              reader.onload = () => {
+                try {
+                  const result = reader.result || '';
+                  const base64 = typeof result === 'string' ? result.split(',')[1] : '';
+                  if (!base64) {
+                    toast.error('Excel dosyası okunamadı');
+                    return;
+                  }
+
+                  localStorage.setItem('excelImportPrefill', JSON.stringify({
+                    name: file.name,
+                    data: base64,
+                    timestamp: Date.now()
+                  }));
+
+                  // Flag set et (sayfa açıldığında Excel import'u başlatmak için)
+                  sessionStorage.setItem('excelImportAutoTrigger', 'true');
+
+                  // Sayfaya yönlendir
+                  window.location.href = './demand-new.html?prefill=excel-upload';
+                } catch (err) {
+                  logger.error('Excel dosyası kaydedilemedi', err);
+                  toast.error('Excel dosyası kaydedilemedi');
+                }
+              };
+              reader.onerror = () => {
+                toast.error('Excel dosyası okunamadı');
+              };
+              reader.readAsDataURL(file);
+            } catch (err) {
+              logger.error('Excel dosyası işlenirken hata', err);
+              toast.error('Excel dosyası işlenemedi');
+            }
+          }, { once: true });
+        } catch (err) {
+          logger.error('Excel import shortcut hatası', err);
+          toast.error('Dosya seçimi açılamadı');
+        }
+      });
+    }
+
+    // Metric card click listeners are now handled in dashboard-shortcuts.js if they were shortcuts, 
+    // but these are metric cards (Inbox, Sent, etc.) so we keep them here or move them to dashboard-data.js.
+    // For now, let's keep them here but simplify if needed.
+    // ... (Keeping them for now as they are not shortcuts in the nav-grid)
+
+    // Teklifbul Rule v1.2.26 - FCM Lazy Loading (Performance Optimization)
+    // FCM'i sadece FCM card görünür olduğunda veya kullanıcı etkileşime geçtiğinde yükle
     (async () => {
+      const fcmCard = document.getElementById('fcm-test-card');
       const statusEl = document.getElementById('fcm-status');
       const tokenInfoEl = document.getElementById('fcm-token-info');
       const testBtn = document.getElementById('test-notification-btn');
-      
-      // Teklifbul Rule v1.0 - user değişkenini geniş scope'da tut
-      let currentUser = null;
-      
-      try {
-        currentUser = await requireAuth();
-        if (currentUser) {
-          statusEl.textContent = '⏳ FCM başlatılıyor...';
-          
-          const token = await initFCM();
-          if (token) {
-            statusEl.innerHTML = '<span style="color:#10b981;">✅ FCM aktif</span>';
-            tokenInfoEl.textContent = `Token: ${token.substring(0, 30)}...`;
-            tokenInfoEl.style.display = 'block';
-            testBtn.disabled = false;
-            
-            logger.info('FCM başarıyla başlatıldı');
-            
-            // FCM mesajlarını dinle
-            window.addEventListener('fcm-message', (event) => {
-              const payload = event.detail;
-              logger.info('FCM mesajı alındı', payload);
-              
-              // Toast göster (eğer varsa)
-              if (window.showToast) {
-                window.showToast(
-                  payload.notification?.title || payload.data?.title || 'Bildirim',
-                  payload.notification?.body || payload.data?.body || 'Yeni mesaj',
-                  'info'
-                );
-              }
+
+      // FCM'i lazy load et - sadece card görünür olduğunda veya kullanıcı etkileşime geçtiğinde
+      let fcmModule = null;
+      let fcmInitialized = false;
+
+      const initFCMLazy = async () => {
+        if (fcmInitialized) return;
+
+        try {
+          // Dynamic import - FCM'i sadece ihtiyaç duyulduğunda yükle
+          fcmModule = await import('./assets/js/fcm.js');
+          fcmInitialized = true;
+          logger.info('FCM modülü lazy load edildi');
+        } catch (error) {
+          logger.error('FCM modülü yüklenemedi', error);
+          if (statusEl) {
+            // Teklifbul Rule v1.0 - XSS Protection
+            const safeErrorMessage = DOMPurify.sanitize(error.message || '', { ALLOWED_TAGS: [] });
+            statusEl.innerHTML = DOMPurify.sanitize(`<span style="color:#ef4444;">❌ FCM yüklenemedi: ${safeErrorMessage}</span>`, {
+              ALLOWED_TAGS: ['span'],
+              ALLOWED_ATTR: ['style']
             });
-          } else {
-            statusEl.innerHTML = '<span style="color:#ef4444;">❌ FCM başlatılamadı</span>';
-            tokenInfoEl.textContent = 'Token alınamadı. Tarayıcı ayarlarından bildirim izni verin.';
-            tokenInfoEl.style.display = 'block';
+          }
+          return null;
+        }
+
+        return fcmModule;
+      };
+
+      // FCM başlat ve UI güncelle
+      // Teklifbul Rule v1.0 - Push notification setup (Lazy Load)
+      const startFCM = async () => {
+        const fcm = await initFCMLazy();
+        if (!fcm) return;
+
+        const { initFCM, getCurrentToken } = fcm;
+        // Teklifbul Rule v1.0 - requireAuth error handling (auth guard yönlendirecek)
+        let currentUser;
+        try {
+          currentUser = await requireAuth();
+        } catch (err) {
+          // Auth guard yönlendirmeyi yapacak
+          if (statusEl) {
+            statusEl.textContent = '⏳ Giriş bekleniyor...';
+          }
+          return;
+        }
+
+        if (currentUser && statusEl) {
+          statusEl.textContent = '⏳ FCM başlatılıyor...';
+
+          try {
+            const token = await initFCM();
+            if (token) {
+              // Teklifbul Rule v1.0 - XSS Protection
+              statusEl.innerHTML = DOMPurify.sanitize('<span style="color:#10b981;">✅ FCM aktif</span>', {
+                ALLOWED_TAGS: ['span'],
+                ALLOWED_ATTR: ['style']
+              });
+              if (tokenInfoEl) {
+                tokenInfoEl.textContent = `Token: ${token.substring(0, 30)}...`;
+                tokenInfoEl.style.display = 'block';
+              }
+              if (testBtn) {
+                testBtn.disabled = false;
+              }
+
+              logger.info('FCM başarıyla başlatıldı');
+
+              // FCM mesajlarını dinle
+              window.addEventListener('fcm-message', (event) => {
+                const payload = event.detail;
+                logger.info('FCM mesajı alındı', payload);
+
+                // Toast göster (eğer varsa)
+                if (window.showToast) {
+                  window.showToast(
+                    payload.notification?.title || payload.data?.title || 'Bildirim',
+                    payload.notification?.body || payload.data?.body || 'Yeni mesaj',
+                    'info'
+                  );
+                }
+              });
+            } else {
+              // Teklifbul Rule v1.0 - XSS Protection
+              statusEl.innerHTML = DOMPurify.sanitize('<span style="color:#ef4444;">❌ FCM başlatılamadı</span>', {
+                ALLOWED_TAGS: ['span'],
+                ALLOWED_ATTR: ['style']
+              });
+              if (tokenInfoEl) {
+                tokenInfoEl.textContent = 'Token alınamadı. Tarayıcı ayarlarından bildirim izni verin.';
+                tokenInfoEl.style.display = 'block';
+              }
+            }
+          } catch (error) {
+            logger.warn('FCM başlatılamadı', error);
+            // Teklifbul Rule v1.0 - XSS Protection
+            const safeErrorMessage = DOMPurify.sanitize(error.message || '', { ALLOWED_TAGS: [] });
+            statusEl.innerHTML = DOMPurify.sanitize(`<span style="color:#ef4444;">❌ Hata: ${safeErrorMessage}</span>`, {
+              ALLOWED_TAGS: ['span'],
+              ALLOWED_ATTR: ['style']
+            });
+            if (tokenInfoEl) {
+              tokenInfoEl.textContent = error.message;
+              tokenInfoEl.style.display = 'block';
+            }
           }
         }
-      } catch (error) {
-        logger.warn('FCM başlatılamadı', error);
-        statusEl.innerHTML = `<span style="color:#ef4444;">❌ Hata: ${error.message}</span>`;
-        tokenInfoEl.textContent = error.message;
-        tokenInfoEl.style.display = 'block';
+      };
+
+      // IntersectionObserver ile FCM card görünür olduğunda yükle
+      if (fcmCard && 'IntersectionObserver' in window) {
+        const observer = new IntersectionObserver((entries) => {
+          if (entries[0].isIntersecting) {
+            startFCM();
+            observer.disconnect(); // Sadece bir kez yükle
+          }
+        }, { rootMargin: '50px' }); // 50px önceden yükle
+
+        observer.observe(fcmCard);
+      } else {
+        // Fallback: IntersectionObserver yoksa hemen yükle
+        startFCM();
       }
-      
-      // Test bildirimi butonu
+
+      // Test bildirimi butonu (lazy load sonrası çalışır)
       if (testBtn) {
         testBtn.addEventListener('click', async () => {
           try {
             testBtn.disabled = true;
             testBtn.textContent = '⏳ Gönderiliyor...';
-            
+
+            // FCM modülünü yükle (eğer henüz yüklenmediyse)
+            const fcm = await initFCMLazy();
+            if (!fcm) {
+              toast.error('FCM modülü yüklenemedi');
+              testBtn.disabled = false;
+              testBtn.textContent = '📤 Test Bildirimi Gönder';
+              return;
+            }
+
+            const { getCurrentToken } = fcm;
             const token = getCurrentToken();
             if (!token) {
               toast.error(MESSAGES.ERROR_FCM_TOKEN);
@@ -299,19 +723,19 @@
               testBtn.textContent = '📤 Test Bildirimi Gönder';
               return;
             }
-            
+
             // Cloud Function'a test bildirimi isteği gönder
             const { collection, addDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js');
-            
+
             // Teklifbul Rule v1.0 - user değişkenini auth.currentUser'dan al
-            const user = auth.currentUser || currentUser;
+            const user = auth.currentUser;
             if (!user) {
               toast.error(MESSAGES.ERROR_USER_NOT_AUTH);
               testBtn.disabled = false;
               testBtn.textContent = '📤 Test Bildirimi Gönder';
               return;
             }
-            
+
             // Test bildirimi için Firestore'a kayıt oluştur (Cloud Function dinleyecek)
             await addDoc(collection(db, 'notification_tests'), {
               userId: user.uid,
@@ -322,13 +746,13 @@
               createdAt: serverTimestamp(),
               status: 'pending'
             });
-            
+
             testBtn.textContent = '✅ Gönderildi!';
             setTimeout(() => {
               testBtn.disabled = false;
               testBtn.textContent = '📤 Test Bildirimi Gönder';
             }, 2000);
-            
+
           } catch (error) {
             logger.error('Test bildirimi hatası', error);
             toast.error(MESSAGES.ERROR_SEND + ': ' + error.message);
@@ -340,529 +764,215 @@
     })();
   </script>
 
-  <!-- Dashboard Data Script -->
+  <!-- Dashboard Data Script - Lazy Loading (Performance Optimization) -->
+  <!-- Teklifbul Rule v1.2.26 - Dashboard data'yı sadece tablolar görünür olduğunda yükle -->
   <script type="module">
-    import { db, requireAuth } from "./firebase.js";
-    // Teklifbul Rule v1.0 - Structured Logging
-    import { logger } from './src/shared/log/logger.js';
-    // Teklifbul Rule v1.0 - Toast Notification System
-    import { toast } from './src/shared/ui/toast.js';
-    // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
-    import { MESSAGES } from './src/shared/constants/messages.js';
-    import {
-      collection, getDocs, getDoc, query, where, orderBy, limit, doc
-    } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
-    // CRITICAL: Import new ID-based category system
-    import { 
-      getAllCategories, 
-      getNameById,
-      normalizeToIds 
-    } from "./src/categories/category-service.js";
+    // Dashboard data'yı lazy load et - sadece tablolar görünür olduğunda yükle
+    (async () => {
+      // Tabloları bul
+      const lastDemandsTable = document.getElementById('last-demands');
+      const metricsSection = document.querySelector('.cards');
 
-    // Async IIFE - Teklifbul Rule v1.0
-    (async function() {
-      const dashUser = await requireAuth();
-      
-      // Şirket kodlu kayıt durumunu kontrol et - Teklifbul Rule v1.0
-      try {
-        const userDoc = await getDoc(doc(db, 'users', dashUser.uid));
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          if (userData.companyJoinStatus === 'pending' || userData.companyJoinStatus === 'rejected') {
-            location.href = "./company-join-waiting.html";
-            return; // Bu return artık async fonksiyon içinde olduğu için geçerli
-          }
-        }
-      } catch (e) {
-        logger.warn('User status check failed', e);
-        // Hata olsa bile devam et, normal kullanıcılar için sorun olmaz
-      }
-      
-      const uid = dashUser.uid;
+      // Metrikleri hemen yükle (küçük ve hızlı)
+      if (metricsSection) {
+        // Metrikler için minimal data yükle
+        try {
+          const { db, requireAuth } = await import("./firebase.js");
+          const { collection, getDocs, query, where, orderBy, limit, doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js');
 
-    // Durum çevirisi fonksiyonu
-    function translateStatus(status) {
-      const statusMap = {
-        'draft': 'Taslak',
-        'approved': 'Onaylandı',
-        'published': 'Yayınlandı',
-        'sent': 'Gönderildi',
-        'pending': 'Bekleyen',
-        'viewed': 'Görüldü',
-        'responded': 'Yanıtlandı',
-        'rejected': 'Reddedildi',
-        'cancelled': 'İptal Edildi',
-        'completed': 'Tamamlandı',
-        'in_progress': 'Devam Ediyor',
-        'closed': 'Kapatıldı'
-      };
-      return statusMap[status] || status || 'Bilinmeyen';
-    }
-
-    // Helper: slug normalize (tr-friendly) - same as demands.html
-    function toSlug(name){
-      if (!name) return '';
-      return String(name)
-        .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-        .replace(/[şŞ]/g,'s').replace(/[ıİ]/g,'i').replace(/[ğĞ]/g,'g')
-        .replace(/[çÇ]/g,'c').replace(/[öÖ]/g,'o').replace(/[üÜ]/g,'u')
-        .toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
-    }
-
-    try {
-      // Get user's company ID and supplier categories (same as demands.html)
-      const userDoc = await getDoc(doc(db, 'users', uid));
-      const userData = userDoc.exists() ? userDoc.data() : {};
-      const userCompanyId = userData.companyId;
-      // CRITICAL: Get supplier categories in ID format (new system)
-      // Priority: supplierCategoryIds > supplierCategoryKeys (slugs) > supplierCategories (names)
-      let mySupplierCategoryTokens = [];
-      if (Array.isArray(userData.supplierCategoryIds) && userData.supplierCategoryIds.length > 0) {
-        mySupplierCategoryTokens = userData.supplierCategoryIds;
-      } else if (Array.isArray(userData.supplierCategoryKeys) && userData.supplierCategoryKeys.length > 0) {
-        mySupplierCategoryTokens = userData.supplierCategoryKeys;
-      } else if (Array.isArray(userData.supplierCategories) && userData.supplierCategories.length > 0) {
-        mySupplierCategoryTokens = userData.supplierCategories;
-      }
-      
-      // Normalize all tokens to IDs
-      const mySupplierCategoryIds = normalizeToIds(mySupplierCategoryTokens).slice(0, 10); // Firestore limit
-      
-      // Reduced logging: Only log summary
-      if (mySupplierCategoryIds.length === 0) {
-        logger.warn("Dashboard: No supplier categories found for user.");
-      }
-      
-      // DEBUG queries removed for performance
-      
-      // Load incoming demands - same logic as demands.html
-      let incomingDemands = [];
-      try {
-        if (mySupplierCategoryIds.length > 0) {
-          // Use category filtering (same as demands.html)
-          // Note: Published demands have status='published' or 'approved' and isPublished=true
-          // CRITICAL: Try categoryIds first (new system), then fallback to legacy fields
-          let incomingSnap;
+          // Teklifbul Rule v1.0 - requireAuth error handling (auth guard yönlendirecek)
+          let user;
           try {
-            // Primary: Use categoryIds (new ID-based system)
-            const qIncomingDemands = query(
-              collection(db, "demands"),
-              where("isPublished", "==", true),
-              where("categoryIds", "array-contains-any", mySupplierCategoryIds),
-              orderBy("createdAt", "desc"),
-              limit(100)
-            );
-            incomingSnap = await getDocs(qIncomingDemands);
-            logger.info(`Dashboard: Found ${incomingSnap.docs.length} demands with categoryIds match`);
+            user = await requireAuth();
           } catch (err) {
-            // Fallback 1: Try supplierCategoryIds if categoryIds query fails
+            // Auth guard yönlendirmeyi yapacak
+            return;
+          }
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          const userData = userDoc.exists() ? userDoc.data() : {};
+
+          // Teklifbul Rule v1.0 - Resolve shared company ID (şirket kod ile kaydolan kullanıcılar için)
+          function resolveSharedCompanyId(userData) {
+            const cid = userData?.companyId;
+            const aid = userData?.activeCompanyId;
+            const arr0 = Array.isArray(userData?.companies) && userData.companies.length ? userData.companies[0] : null;
+            if (cid && typeof cid === "string" && !cid.startsWith("solo-") && !cid.startsWith("tax-")) return cid;
+            if (aid && typeof aid === "string" && aid.startsWith("solo-") && cid) return cid;
+            return aid || cid || arr0;
+          }
+
+          let userCompanyId = resolveSharedCompanyId(userData);
+
+          // Eğer companyId yoksa ama companyCode varsa, companyJoinRequests'ten al
+          if (!userCompanyId && userData.companyCode) {
             try {
-              const qIncomingDemands = query(
-                collection(db, "demands"),
-                where("isPublished", "==", true),
-                where("supplierCategoryIds", "array-contains-any", mySupplierCategoryIds),
-                orderBy("createdAt", "desc"),
-                limit(100)
+              const { collection: getCollection, getDocs, query: getQuery, where: getWhere } = await import('https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js');
+              const joinRequestsRef = getCollection(db, 'companyJoinRequests');
+              const joinRequestsQuery = getQuery(
+                joinRequestsRef,
+                getWhere('userId', '==', user.uid),
+                getWhere('status', 'in', ['pending', 'accepted'])
               );
-              incomingSnap = await getDocs(qIncomingDemands);
-              logger.info(`Dashboard: Found ${incomingSnap.docs.length} demands with supplierCategoryIds match`);
-            } catch (err2) {
-              // Fallback 2: Try legacy categoryTags (slugs) if ID queries fail
-              const allCategories = getAllCategories();
-              const legacySlugs = mySupplierCategoryIds.map(id => {
-                const cat = allCategories.find(c => c.id === id);
-                return cat ? cat.slug : null;
-              }).filter(Boolean);
-              
-              if (legacySlugs.length > 0) {
-                logger.warn("ID queries failed, trying legacy categoryTags fallback", err2.message);
-                try {
-                  const qIncomingDemands = query(
-                    collection(db, "demands"),
-                    where("isPublished", "==", true),
-                    where("categoryTags", "array-contains-any", legacySlugs.slice(0, 10)),
-                    orderBy("createdAt", "desc"),
-                    limit(100)
-                  );
-                  incomingSnap = await getDocs(qIncomingDemands);
-                  logger.info(`Dashboard: Found ${incomingSnap.docs.length} demands with categoryTags match (fallback)`);
-                } catch (err3) {
-                  logger.error("Dashboard: All category query attempts failed");
-                  if (err3.code === 'failed-precondition') {
-                    logger.error("Firestore index required. Please:");
-                    logger.error("   1. Click the link in the error message above to create the index manually");
-                    logger.error("   2. Or run: firebase deploy --only firestore:indexes");
-                    logger.error("   3. Wait a few minutes for the index to build, then refresh the page.");
-                  }
-                  incomingSnap = { docs: [] };
+              const joinRequestsSnapshot = await getDocs(joinRequestsQuery);
+
+              if (!joinRequestsSnapshot.empty) {
+                const latestRequest = joinRequestsSnapshot.docs
+                  .map(d => ({ id: d.id, ...d.data() }))
+                  .sort((a, b) => {
+                    const aTime = a.createdAt?.toMillis?.() || 0;
+                    const bTime = b.createdAt?.toMillis?.() || 0;
+                    return bTime - aTime;
+                  })[0];
+
+                if (latestRequest?.companyId) {
+                  userCompanyId = latestRequest.companyId;
                 }
-              } else {
-                logger.error("Dashboard: All category query attempts failed - no legacy slugs available");
-                incomingSnap = { docs: [] };
               }
+            } catch (joinRequestError) {
+              logger.warn('companyJoinRequests kontrolü sırasında hata (dashboard)', joinRequestError);
             }
           }
-          
-          incomingDemands = incomingSnap.docs
-            .filter(d => {
-              const data = d.data();
-              // Kendi şirketinin taleplerini filtrele (silent filter)
-              if (data.creatorCompanyId && userCompanyId && data.creatorCompanyId === userCompanyId) {
-                return false;
-              }
-              return true;
-            })
-            .map(d => ({ id: d.id, ...d.data() }));
-          logger.info(`Dashboard: Found ${incomingDemands.length} incoming demands`, { filtered: incomingSnap.docs.length - incomingDemands.length });
-          
-          // DEBUG: If no matches, check why
-          if (incomingSnap.docs.length > 0 && incomingDemands.length === 0) {
-            logger.warn("WARNING: Published demands exist but none match user categories!");
-            logger.info("Sample demand from query");
-            const sample = incomingSnap.docs[0];
-            const sampleData = sample.data();
-            const demandCats = sampleData.categoryIds || sampleData.supplierCategoryIds || sampleData.categoryTags || [];
-            const demandCategoryIds = normalizeToIds(demandCats);
-            const matchedCats = demandCategoryIds.filter(id => mySupplierCategoryIds.includes(id));
-            logger.info("Sample demand debug", {
-              demandId: sample.id,
-              categoryIds: sampleData.categoryIds,
-              supplierCategoryIds: sampleData.supplierCategoryIds,
-              categoryTags: sampleData.categoryTags,
-              creatorCompanyId: sampleData.creatorCompanyId,
-              userCompanyId: userCompanyId,
-              isOwnCompany: sampleData.creatorCompanyId === userCompanyId,
-              userCategoryIds: mySupplierCategoryIds,
-              demandCategoryIds: demandCategoryIds,
-              matchedCategoryIds: matchedCats,
-              hasMatch: matchedCats.length > 0
+
+          const userRoles = userData.roles || [];
+          const hasBuyerRole = userRoles.includes('buyer') || userRoles.includes('both');
+          const hasSupplierRole = userRoles.includes('supplier') || userRoles.includes('both');
+
+          const adminEmailList = `${window.ADMIN_EMAILS || ''}`
+            .split(',')
+            .map((e) => e.trim().toLowerCase())
+            .filter(Boolean);
+          if (!adminEmailList.length) {
+            adminEmailList.push('akyildizfaruk@gmail.com');
+          }
+
+          // Admin kontrolü - Teklifbul Rule v1.0 (claims + Firestore + API fallback)
+          const tokenResult = await user.getIdTokenResult(true);
+          const claimAdmin = tokenResult?.claims?.admin === true
+            || tokenResult?.claims?.isAdmin === true
+            || tokenResult?.claims?.role === 'admin'
+            || tokenResult?.claims?.ops === true;
+          let isAdmin = claimAdmin
+            || userData.isAdmin === true
+            || userData.role === 'admin'
+            || userRoles.includes('admin')
+            || userRoles.includes('ops')
+            || (user.email && adminEmailList.includes(user.email.toLowerCase()));
+
+          // API çağrısı yok; 403 spam engelleme: claim + email allowlist yeterli
+
+          // Admin ise FCM kartını ve admin-only kartları göster
+          if (isAdmin) {
+            const fcmCard = document.getElementById('fcm-test-card');
+            if (fcmCard) fcmCard.style.display = 'block';
+            document.querySelectorAll('[data-restricted="admin-only"]').forEach((elm) => {
+              elm.style.display = 'block';
             });
           }
-        } else {
-          // Fallback: if no supplier categories, show all published (excluding own)
-          // Note: Published demands have status='published' and isPublished=true
-          const qIncomingDemands = query(
-            collection(db, "demands"),
-            where("isPublished", "==", true),
-            orderBy("createdAt", "desc"),
-            limit(100)
-          );
-          const incomingSnap = await getDocs(qIncomingDemands);
-          incomingDemands = incomingSnap.docs
-            .filter(d => {
-              const data = d.data();
-              // Kendi şirketinin taleplerini filtrele
-              if (data.creatorCompanyId && userCompanyId && data.creatorCompanyId === userCompanyId) {
-                return false;
-              }
-              if (data.createdBy === uid) return false;
-              return true;
-            })
-            .map(d => ({ id: d.id, ...d.data() }));
-          // Silent: all published demands shown (no categories filter)
-        }
-      } catch (error) {
-        logger.error('Error loading incoming demands', error);
-        if (error.code === 'failed-precondition') {
-          logger.error("Firestore index required. Please:");
-          logger.error("   1. Click the link in the error message above to create the index manually");
-          logger.error("   2. Or run: firebase deploy --only firestore:indexes");
-          logger.error("   3. Wait a few minutes for the index to build, then refresh the page.");
-        }
-      }
-      
-      // OPTIMIZED: Load incoming bids using batch whereIn (same as bids.html)
-      let incomingBids = [];
-      try {
-        const ds = await getDocs(query(collection(db,'demands'), where('createdBy','==', uid)));
-        const demandIds = ds.docs.map(d=>d.id);
-        
-        if (demandIds.length > 0) {
-          // Batch load bids using whereIn (10 at a time)
-          for (let i = 0; i < demandIds.length; i += 10) {
-            const batchIds = demandIds.slice(i, i + 10);
-            try {
-              const q = query(
-                collection(db,'bids'), 
-                where('demandId','in', batchIds),
-                orderBy('createdAt','desc'),
-                limit(100)
-              );
-              const snap = await getDocs(q);
-              snap.docs.forEach(b => incomingBids.push({ id:b.id, ...b.data() }));
-            } catch (e) {
-              // Fallback: query individually if whereIn+orderBy fails
-              logger.warn('whereIn+orderBy failed, using fallback', e);
-              for (const demandId of batchIds) {
-                const q = query(
-                  collection(db,'bids'), 
-                  where('demandId','==', demandId),
-                  orderBy('createdAt','desc'),
-                  limit(50)
-                );
-                const snap = await getDocs(q);
-                snap.docs.forEach(b => incomingBids.push({ id:b.id, ...b.data() }));
-              }
-            }
-          }
-        }
-      } catch (error) {
-        logger.error('Error loading incoming bids', error);
-      }
-      
-      // Load outgoing bids (bids I sent)
-      const qOutgoingBids = query(
-        collection(db, "bids"),
-        where("supplierId", "==", uid)
-      );
 
-      // Load all user demands (for "Son Taleplerim" table) - creatorCompanyId or createdBy
-      let allUserDemands = [];
-      try {
-        if (userCompanyId) {
-          const qAllDemands = query(
-            collection(db, "demands"),
-            where("creatorCompanyId", "==", userCompanyId),
-            orderBy("createdAt", "desc"),
-            limit(100)
-          );
-          const allDemandsSnap = await getDocs(qAllDemands);
-          allUserDemands = allDemandsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-        } else {
-          // Fallback: use createdBy if no companyId
-          const qAllDemands = query(
-            collection(db, "demands"),
-            where("createdBy", "==", uid),
-            orderBy("createdAt", "desc"),
-            limit(100)
-          );
-          const allDemandsSnap = await getDocs(qAllDemands);
-          allUserDemands = allDemandsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+          // Teklifbul Rule v1.0 - Metrikler dashboard-data.js tarafından yüklenecek
+          // Hızlı sorgular kaldırıldı - yanlış veri gösteriyordu
+          // Metrikler başlangıçta "..." gösteriyor, dashboard-data.js yüklenince doğru değerler gösterilecek
+        } catch (error) {
+          logger.warn('Metrik yükleme hatası (devam ediliyor)', error);
         }
-      } catch (error) {
-        logger.error('Error loading all user demands', error);
       }
 
-      // Load outgoing demands - same logic as demands.html (creatorCompanyId + status published)
-      let outgoingDemands = [];
-      try {
-        if (userCompanyId) {
-          // Note: Published demands have status='approved' and isPublished=true
-          const qOutgoing = query(
-            collection(db, "demands"),
-            where("creatorCompanyId", "==", userCompanyId),
-            where("isPublished", "==", true),
-            orderBy("createdAt", "desc"),
-            limit(100)
-          );
-          const outgoingSnap = await getDocs(qOutgoing);
-          outgoingDemands = outgoingSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-          // Silent: outgoing demands loaded
-        } else {
-          // Fallback: use createdBy if no companyId
-          // Note: Published demands have status='published' and isPublished=true
-          const qOutgoing = query(
-            collection(db, "demands"),
-            where("createdBy", "==", uid),
-            where("isPublished", "==", true),
-            orderBy("createdAt", "desc"),
-            limit(100)
-          );
-          const outgoingSnap = await getDocs(qOutgoing);
-          outgoingDemands = outgoingSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-          // Silent: outgoing demands loaded (createdBy fallback)
-        }
-      } catch (error) {
-        logger.error('Error loading outgoing demands', error);
-      }
-      
-      // Load draft demands - same logic as demands.html (creatorCompanyId + status IN ['draft', 'withdrawn'])
-      let drafts = [];
-      try {
-        if (userCompanyId) {
-          const qDrafts = query(
-            collection(db, "demands"),
-            where("creatorCompanyId", "==", userCompanyId),
-            where("status", "in", ["draft", "withdrawn"]),
-            orderBy("updatedAt", "desc"),
-            limit(100)
-          );
-          const draftsSnap = await getDocs(qDrafts);
-          drafts = draftsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-          // Silent: draft demands loaded
-        } else {
-          // Fallback: use createdBy if no companyId
-          const qDrafts = query(
-            collection(db, "demands"),
-            where("createdBy", "==", uid),
-            where("status", "in", ["draft", "withdrawn"]),
-            orderBy("updatedAt", "desc"),
-            limit(100)
-          );
-          const draftsSnap = await getDocs(qDrafts);
-          drafts = draftsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-          // Silent: draft demands loaded (createdBy fallback)
-        }
-      } catch (error) {
-        logger.error('Error loading draft demands', error);
-      }
-
-      const [outgoingBidsSnap] = await Promise.all([
-        getDocs(qOutgoingBids)
-      ]);
-
-      const outgoingBids = outgoingBidsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-      // Use allUserDemands for "Son Taleplerim" table
-      const sent = allUserDemands;
-
-      // Update metrics - use outgoingDemands instead of sent for consistency
-      document.getElementById("metric-inbox").textContent = String(incomingDemands.length);
-      document.getElementById("metric-sent").textContent = String(outgoingDemands.length);
-      document.getElementById("metric-draft").textContent = String(drafts.length);
-      document.getElementById("metric-incoming-bids").textContent = String(incomingBids.length);
-      document.getElementById("metric-outgoing-bids").textContent = String(outgoingBids.length);
-
-      // Sort and display last 5 demands
-      sent.sort((a, b) => {
-        const aTime = a.createdAt?.toMillis?.() || 0;
-        const bTime = b.createdAt?.toMillis?.() || 0;
-        return bTime - aTime;
-      });
-
-      const lastBody = document.getElementById("last-demands");
-      lastBody.innerHTML = "";
-      
-      const last5 = sent.slice(0, 5);
-      if (last5.length === 0) {
-        lastBody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#6b7280;padding:20px">Henüz talep yok</td></tr>';
-      } else {
-        // OPTIMIZED: Batch load bid counts for all 5 demands at once
-        const demandIdsForBidCount = last5.map(x => x.id);
-        const bidCountsMap = new Map();
-        
-        if (demandIdsForBidCount.length > 0) {
-          try {
-            // Batch query with whereIn (10 max, but we have max 5)
-            const bidQuery = query(
-              collection(db, 'bids'), 
-              where('demandId', 'in', demandIdsForBidCount)
-            );
-            const bidSnap = await getDocs(bidQuery);
-            
-            // Count bids per demand
-            bidSnap.docs.forEach(b => {
-              const demandId = b.data().demandId;
-              bidCountsMap.set(demandId, (bidCountsMap.get(demandId) || 0) + 1);
-            });
-          } catch (error) {
-            logger.warn('Batch bid count error', error);
-          }
-        }
-        
-        // Render rows with cached bid counts
-        for (const x of last5) {
-          const bidCount = bidCountsMap.get(x.id) || 0;
-          
-          const cats = [
-            ...(Array.isArray(x.categoryTags) ? x.categoryTags : []),
-            ...(x.customCategory ? [x.customCategory] : [])
-          ];
-          const catDisplay = cats.length > 0
-            ? cats.slice(0, 3).join(", ") + (cats.length > 3 ? ` +${cats.length - 3}` : "")
-            : "-";
-          
-          const statusText = translateStatus(x.status || (x.isPublished ? 'published' : 'draft'));
-          const statusBadge = x.isPublished 
-            ? `<span class="badge success">${statusText}</span>` 
-            : `<span class="badge warn">${statusText}</span>`;
-          
-          const bidDisplay = bidCount > 0 
-            ? `<span class="badge success">${bidCount} teklif</span>`
-            : '<span style="color:#6b7280">Henüz teklif yok</span>';
-          
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td>${x.satfk || "-"}</td>
-            <td><a href="./demand-detail.html?id=${x.id}" style="color:#3b82f6;text-decoration:none">${x.title || "-"}</a></td>
-            <td>${catDisplay}</td>
-            <td>${statusBadge}</td>
-            <td>${bidDisplay}</td>
-            <td>${x.createdAt?.toDate?.()?.toLocaleDateString?.("tr-TR") || "-"}</td>
-          `;
-          lastBody.appendChild(tr);
-        }
-      }
-    } catch (e) {
-      logger.error("Dashboard data load error", e);
-      // Show detailed error information to help diagnose the issue
-      const errorMessage = `
-        <div style="text-align: center; padding: 40px; color: #6b7280; background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; margin: 20px;">
-          <h3>Dashboard verileri yüklenemedi</h3>
-          <p>Hata detayı: ${e.message || e}</p>
-          <p>Lütfen aşağıdaki kontrol listesini inceleyin:</p>
-          <ul style="text-align: left; max-width: 500px; margin: 20px auto;">
-            <li>İnternet bağlantınızı kontrol edin</li>
-            <li>Firebase authentication'ın doğru çalıştığından emin olun</li>
-            <li>Şirket bilgilerinizin doğru ayarlandığından emin olun</li>
-            <li>Tedarikçi kategorilerinizin seçili olduğundan emin olun</li>
-            <li>Ayarlar sayfasından profil bilgilerinizi kontrol edin</li>
-          </ul>
-          <p style="font-size: 14px; margin-top: 20px;">
-            <a href="./settings.html" style="color: #3b82f6;">Ayarlar</a> | 
-            <a href="./demands.html" style="color: #3b82f6;">Talepler</a> | 
-            <a href="./bids.html" style="color: #3b82f6;">Teklifler</a>
-          </p>
-        </div>
-      `;
-      
-      // Try to insert the error message in a visible place
-      const mainContent = document.querySelector("main");
-      if (mainContent) {
-        const errorDiv = document.createElement("div");
-        errorDiv.innerHTML = errorMessage;
-        mainContent.insertBefore(errorDiv, mainContent.firstChild);
-      }
-      
-      if (e.message && e.message.includes("Missing or insufficient permissions")) {
-        logger.warn("Permission denied for dashboard data - Firestore rules may need updating");
-      }
-    }
-    
-    // Async IIFE kapatma - Teklifbul Rule v1.0
+      // Teklifbul Rule v1.0 - Dashboard data'yı hemen yükle (metrikler için)
+      // Metriklerin doğru gösterilmesi için dashboard-data.js'i hemen yükle
+      const script = document.createElement('script');
+      script.type = 'module';
+      script.src = '/assets/js/dashboard-data.js';
+      script.onerror = (evt) => {
+        logger.error('Dashboard data yüklenemedi', evt?.error || evt);
+      };
+      document.body.appendChild(script);
     })();
   </script>
 
   <!-- TCMB FX Widget -->
   <script type="module">
-    // Using a public FX API since /fx endpoint is not working
-    const FX_URL = "https://api.exchangerate-api.com/v4/latest/TRY";
+    import { logger } from './src/shared/log/logger.js';
+    import { toast } from './src/shared/ui/toast.js';
+
+    const FX_PROXY_URL = '/api/fx';
+    const FX_REFRESH_INTERVAL = 60_000;
+    const placeholderText = '-';
+    const timeElement = document.getElementById('fx-time');
 
     async function loadFx() {
       try {
-        const r = await fetch(FX_URL);
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        
-        const data = await r.json();
-        
-        // Convert to expected format (USD and EUR rates against TRY)
-        const usdRate = (1 / data.rates.USD).toFixed(4);
-        const eurRate = (1 / data.rates.EUR).toFixed(4);
-        const asOf = new Date().toLocaleDateString("tr-TR");
-        
-        document.getElementById("fx-usd").textContent = usdRate;
-        document.getElementById("fx-eur").textContent = eurRate;
-        document.getElementById("fx-time").textContent = `Tarih: ${asOf}`;
-      } catch (e) {
-        logger.error("FX load error", e);
-        document.getElementById("fx-usd").textContent = "-";
-        document.getElementById("fx-eur").textContent = "-";
-        document.getElementById("fx-time").textContent = "Kur bilgisi yüklenemedi";
+        const response = await fetch(FX_PROXY_URL);
+        if (!response.ok) {
+          // Teklifbul Rule v1.0 - HTTP hata kodlarına göre daha açıklayıcı mesaj
+          if (response.status === 500 || response.status === 502) {
+            const errorData = await response.json().catch(() => ({}));
+            if (errorData.error === 'fx_network_error') {
+              logger.warn('FX: Network error, server may be down');
+            } else {
+              logger.error('FX: Server error', { status: response.status, error: errorData });
+            }
+          }
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        // Teklifbul Rule v1.0 - Response validation
+        if (!data.ok) {
+          logger.warn('FX: API returned error', data);
+          throw new Error(data.error || 'fx_api_error');
+        }
+
+        document.getElementById('fx-usd').textContent = data.usdRate?.toFixed(4) ?? placeholderText;
+        document.getElementById('fx-eur').textContent = data.eurRate?.toFixed(4) ?? placeholderText;
+        if (timeElement) {
+          const displayDate = new Date(data.timestamp).toLocaleDateString('tr-TR');
+          timeElement.textContent = `Tarih: ${displayDate}`;
+        }
+      } catch (error) {
+        // Teklifbul Rule v1.0 - Network hatalarını daha iyi handle et
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const isNetworkError = errorMessage.includes('Failed to fetch') ||
+          errorMessage.includes('ERR_CONNECTION_REFUSED') ||
+          errorMessage.includes('ERR_ABORTED');
+
+        if (isNetworkError) {
+          logger.warn('FX: Connection error - API server may not be running');
+          // Network hatası durumunda toast gösterme (çok fazla spam olmasın)
+          // Sadece ilk hatada göster
+          if (!window.fxErrorShown) {
+            toast.info('Kur bilgisi servisi şu anda kullanılamıyor');
+            window.fxErrorShown = true;
+          }
+        } else {
+          toast.error('Kur bilgisi yüklenemedi');
+        }
+
+        logger.error('FX load error', error);
+        document.getElementById('fx-usd').textContent = placeholderText;
+        document.getElementById('fx-eur').textContent = placeholderText;
+        if (timeElement) {
+          timeElement.textContent = 'Kur bilgisi yüklenemedi';
+        }
       }
     }
-    
+
     loadFx();
-    setInterval(loadFx, 60000); // Refresh every minute
+    setInterval(loadFx, FX_REFRESH_INTERVAL);
+  </script>
+
+  <!-- AI Purchase Assistant Widget -->
+  <script type="module" src="/assets/js/ai-assistant-widget.js"></script>
+
+  <!-- Customizable Shortcuts Script -->
+  <script type="module" src="/assets/js/dashboard-shortcuts.js"></script>
+
+  <!-- PWA Install Prompt -->
+  <script type="module">
+    import { initPWAInstall } from '/assets/js/pwa-install.js';
+    initPWAInstall(); // Teklifbul Rule v1.0 - PWA install prompt
   </script>
 
 </body>
+
 </html>

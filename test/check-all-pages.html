@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>Sayfa Kontrol Testi</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      font-family: system-ui, Arial, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f8fafc;
+    }
+    h1 {
+      color: #1f2937;
+      margin-bottom: 20px;
+    }
+    .test-results {
+      display: grid;
+      gap: 12px;
+      margin-top: 20px;
+    }
+    .test-item {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .test-item.success {
+      border-color: #10b981;
+      background: #f0fdf4;
+    }
+    .test-item.error {
+      border-color: #ef4444;
+      background: #fef2f2;
+    }
+    .test-item.loading {
+      border-color: #3b82f6;
+      background: #eff6ff;
+    }
+    .status-icon {
+      font-size: 24px;
+    }
+    .test-info {
+      flex: 1;
+    }
+    .test-name {
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 4px;
+    }
+    .test-error {
+      color: #dc2626;
+      font-size: 14px;
+      margin-top: 4px;
+    }
+    .summary {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .summary-stats {
+      display: flex;
+      gap: 24px;
+      margin-top: 12px;
+    }
+    .stat {
+      display: flex;
+      flex-direction: column;
+    }
+    .stat-value {
+      font-size: 32px;
+      font-weight: 700;
+      color: #1f2937;
+    }
+    .stat-label {
+      font-size: 14px;
+      color: #6b7280;
+    }
+    .btn {
+      padding: 12px 24px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-right: 8px;
+    }
+    .btn:hover {
+      background: #1d4ed8;
+    }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔍 Tüm Sayfaları Kontrol Et</h1>
+  
+  <div class="summary">
+    <h2>Özet</h2>
+    <div class="summary-stats">
+      <div class="stat">
+        <div class="stat-value" id="totalCount">0</div>
+        <div class="stat-label">Toplam Sayfa</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="successCount" style="color: #10b981;">0</div>
+        <div class="stat-label">Başarılı</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="errorCount" style="color: #ef4444;">0</div>
+        <div class="stat-label">Hatalı</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="loadingCount" style="color: #3b82f6;">0</div>
+        <div class="stat-label">Yükleniyor</div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <button class="btn" id="btnStart">Testi Başlat</button>
+    <button class="btn" id="btnStop" disabled>Durdur</button>
+  </div>
+
+  <div class="test-results" id="testResults"></div>
+
+  <script type="module">
+    // Teklifbul Rule v1.0 - Tüm sayfaları kontrol et
+    const pages = [
+      // Ana sayfalar
+      '/index.html',
+      '/login.html',
+      '/dashboard.html',
+      '/settings.html',
+      '/signup.html',
+      
+      // Talep sayfaları
+      '/demands.html',
+      '/demand-detail.html',
+      '/demand-new.html',
+      '/internal-demands.html',
+      '/internal-demand-new.html',
+      '/internal-demand-detail.html',
+      '/main-demands.html',
+      
+      // Teklif sayfaları
+      '/bids.html',
+      '/bid-detail.html',
+      '/bid-upload.html',
+      '/bids-incoming.html',
+      '/bids-outgoing.html',
+      
+      // Şirket sayfaları
+      '/company-profile.html',
+      '/company-invite.html',
+      '/company-join.html',
+      '/company-join-waiting.html',
+      '/role-select.html',
+      '/role-permissions-management.html',
+      
+      // Stok sayfaları
+      '/inventory-index.html',
+      '/pages/stock-list.html',
+      '/pages/stock-import.html',
+      '/pages/stock-movements.html',
+      '/pages/price-update.html',
+      '/pages/request-site.html',
+      '/pages/request-detail.html',
+      '/pages/reports.html',
+      '/pages/purchase-form.html',
+      '/pages/purchase-form-detail.html',
+      '/pages/invoice-import.html',
+      '/pages/stock-count.html',
+      '/pages/stock-count-detail.html',
+      '/pages/sku-merge.html',
+      
+      // Satış sayfaları
+      '/pages/sales.html',
+      '/pages/sale-new.html',
+      '/pages/sale-detail.html',
+      '/pages/customers.html',
+      '/pages/customer-detail.html',
+      '/pages/invoice-new.html',
+      '/pages/invoice-detail.html',
+      '/pages/delivery-note-new.html',
+      '/pages/delivery-note-detail.html',
+      '/pages/request-list.html',
+      
+      // Hakediş sayfaları
+      '/interim-payments.html',
+      '/interim-payment-edit.html',
+      '/interim-payment-suggestions.html',
+      
+      // Diğer sayfalar
+      '/revision-request.html',
+      '/register-buyer.html',
+      '/forum.html',
+      '/contact.html',
+      '/add-satfk.html',
+      
+      // Admin sayfaları
+      '/pages/admin/dashboard.html',
+      '/pages/admin/premium-control.html',
+      '/pages/admin/subscription-monitor.html',
+      '/pages/admin/migration-dashboard.html'
+    ];
+
+    let testResults = {};
+    let isRunning = false;
+    let stopRequested = false;
+
+    const resultsContainer = document.getElementById('testResults');
+    const totalCountEl = document.getElementById('totalCount');
+    const successCountEl = document.getElementById('successCount');
+    const errorCountEl = document.getElementById('errorCount');
+    const loadingCountEl = document.getElementById('loadingCount');
+    const btnStart = document.getElementById('btnStart');
+    const btnStop = document.getElementById('btnStop');
+
+    function updateSummary() {
+      const total = pages.length;
+      const success = Object.values(testResults).filter(r => r.status === 'success').length;
+      const error = Object.values(testResults).filter(r => r.status === 'error').length;
+      const loading = Object.values(testResults).filter(r => r.status === 'loading').length;
+
+      totalCountEl.textContent = total;
+      successCountEl.textContent = success;
+      errorCountEl.textContent = error;
+      loadingCountEl.textContent = loading;
+    }
+
+    function createTestItem(page) {
+      const item = document.createElement('div');
+      item.className = 'test-item loading';
+      item.id = `test-${page.replace(/\//g, '-')}`;
+      item.innerHTML = `
+        <div class="status-icon">⏳</div>
+        <div class="test-info">
+          <div class="test-name">${page}</div>
+          <div class="test-error" style="display: none;"></div>
+        </div>
+      `;
+      return item;
+    }
+
+    function updateTestItem(page, status, error = null) {
+      const itemId = `test-${page.replace(/\//g, '-')}`;
+      const item = document.getElementById(itemId);
+      if (!item) return;
+
+      item.className = `test-item ${status}`;
+      const icon = item.querySelector('.status-icon');
+      const errorEl = item.querySelector('.test-error');
+
+      if (status === 'success') {
+        icon.textContent = '✅';
+        errorEl.style.display = 'none';
+      } else if (status === 'error') {
+        icon.textContent = '❌';
+        errorEl.textContent = error || 'Bilinmeyen hata';
+        errorEl.style.display = 'block';
+      } else {
+        icon.textContent = '⏳';
+        errorEl.style.display = 'none';
+      }
+
+      testResults[page] = { status, error };
+      updateSummary();
+    }
+
+    async function testPage(page) {
+      if (stopRequested) return;
+
+      updateTestItem(page, 'loading');
+
+      try {
+        // Sayfayı iframe ile yükle
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
+
+        const loadPromise = new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject(new Error('Timeout (10 saniye)'));
+          }, 10000);
+
+          iframe.onload = () => {
+            clearTimeout(timeout);
+            
+            // Sayfa yüklendi, konsol hatalarını kontrol et
+            try {
+              const iframeWindow = iframe.contentWindow;
+              const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+              
+              // Basit kontrol: sayfa yüklendi mi?
+              if (iframeDoc && iframeDoc.body) {
+                // Konsol hatalarını yakalamak için error event listener ekle
+                const errors = [];
+                
+                iframeWindow.addEventListener('error', (e) => {
+                  errors.push(e.message || 'JavaScript hatası');
+                });
+
+                iframeWindow.addEventListener('unhandledrejection', (e) => {
+                  errors.push(e.reason?.message || 'Promise rejection');
+                });
+
+                // Biraz bekle ki scriptler yüklensin
+                setTimeout(() => {
+                  if (errors.length > 0) {
+                    reject(new Error(`Konsol hataları: ${errors.join(', ')}`));
+                  } else {
+                    resolve();
+                  }
+                }, 2000);
+              } else {
+                reject(new Error('Sayfa yüklenemedi'));
+              }
+            } catch (err) {
+              reject(err);
+            }
+          };
+
+          iframe.onerror = () => {
+            clearTimeout(timeout);
+            reject(new Error('Sayfa yüklenirken hata oluştu'));
+          };
+
+          iframe.src = page;
+        });
+
+        await loadPromise;
+        
+        // Cleanup
+        document.body.removeChild(iframe);
+        
+        updateTestItem(page, 'success');
+      } catch (error) {
+        updateTestItem(page, 'error', error.message);
+      }
+    }
+
+    async function runTests() {
+      isRunning = true;
+      stopRequested = false;
+      btnStart.disabled = true;
+      btnStop.disabled = false;
+      
+      // Tüm test item'ları oluştur
+      resultsContainer.innerHTML = '';
+      pages.forEach(page => {
+        const item = createTestItem(page);
+        resultsContainer.appendChild(item);
+      });
+
+      updateSummary();
+
+      // Her sayfayı sırayla test et
+      for (const page of pages) {
+        if (stopRequested) break;
+        await testPage(page);
+        // Her test arasında kısa bir bekleme
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+
+      isRunning = false;
+      btnStart.disabled = false;
+      btnStop.disabled = true;
+    }
+
+    btnStart.addEventListener('click', runTests);
+    btnStop.addEventListener('click', () => {
+      stopRequested = true;
+      btnStop.disabled = true;
+    });
+  </script>
+</body>
+</html>
+

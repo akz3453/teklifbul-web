@@ -1,4 +1,6 @@
 import { useState } from "react";
+// Teklifbul Rule v1.0 - Toast Bildirim Sistemi
+import { toast } from "../../../src/shared/ui/toast.js";
 
 export default function PurchaseRequest() {
   const [preview, setPreview] = useState<any|null>(null);
@@ -13,15 +15,15 @@ export default function PurchaseRequest() {
         a.href = url; a.download = "satinalma_talep_sablon.xlsx";
         a.click(); URL.revokeObjectURL(url);
       })
-      .catch(e => alert(e.message));
+      .catch(e => toast.error(e.message));
   };
 
   const uploadFilled = async () => {
-    if (!file) return alert("Dosya seçin");
+    if (!file) return toast.warn("Dosya seçin");
     const fd = new FormData();
     fd.append("file", file);
     const r = await fetch("/api/forms/purchase/upload", { method: "POST", body: fd });
-    if (!r.ok) return alert("Form okunamadı");
+    if (!r.ok) return toast.error("Form okunamadı");
     const data = await r.json();
     setPreview(data);
   };
@@ -34,7 +36,7 @@ export default function PurchaseRequest() {
       body: JSON.stringify({ meta: preview.meta, items: preview.items, vendorGroupIds })
     });
     const data = await r.json();
-    alert(`Talep oluşturuldu: ${data.requestId}`);
+    toast.success(`Talep oluşturuldu: ${data.requestId}`);
   };
 
   return (

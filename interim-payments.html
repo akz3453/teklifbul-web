@@ -1,0 +1,985 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>NEFISOFT — Hakedişler</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  
+  <!-- PWA Meta Tags -->
+  <meta name="theme-color" content="#2563EB" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="NEFISOFT" />
+  <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+  <link rel="manifest" href="/manifest.json" />
+  
+  <!-- Teklifbul Rule v1.0 - Tema standardı: tb_theme key, FOUC önleme -->
+  <script src="/assets/js/theme-init.js"></script>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%233b82f6' rx='6'/%3E%3Ctext x='16' y='22' font-family='Arial' font-size='18' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/utils.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <style>
+    body { margin: 0; font-family: system-ui, Arial; }
+    .page-heading { margin: 20px 0; }
+    .page-title-chip { display: flex; align-items: center; gap: 12px; }
+    .page-title-icon { font-size: 32px; }
+    .page-title-text h1 { margin: 0; font-size: 24px; font-weight: 600; color: var(--text, #1f2937); }
+    html[data-theme="dark"] .page-title-text h1 { color: #ffffff; }
+    .page-title-caption { margin: 4px 0 0 0; font-size: 14px; color: var(--text-muted, #6b7280); }
+    html[data-theme="dark"] .page-title-caption { color: rgba(255,255,255,0.7); }
+    
+    .card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; background: white; margin-bottom: 20px; }
+    html[data-theme="dark"] .card { background: #111827; border: 1px solid rgba(255,255,255,0.25); color: #ffffff; }
+    
+    .filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px; }
+    .filter-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text, #1f2937); }
+    html[data-theme="dark"] .filter-group label { color: #ffffff; }
+    .filter-group select,
+    .filter-group input { width: 100%; padding: 10px; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 14px; background: white; color: #1f2937; }
+    html[data-theme="dark"] .filter-group select,
+    html[data-theme="dark"] .filter-group input { background: #1f2937; border: 1px solid rgba(255,255,255,0.25); color: #ffffff; }
+    
+    .action-buttons { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+    .btn { padding: 10px 20px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .btn-primary { background: #3b82f6; color: white; }
+    .btn-primary:hover { background: #2563eb; }
+    .btn-success { background: #10b981; color: white; }
+    .btn-success:hover { background: #059669; }
+    .btn-outline { background: transparent; border: 1px solid #e5e7eb; color: var(--text, #1f2937); }
+    html[data-theme="dark"] .btn-outline { border-color: rgba(255,255,255,0.25); color: #ffffff; }
+    
+    .table-container { overflow-x: auto; }
+    .table { width: 100%; border-collapse: collapse; }
+    .table th, .table td { border-bottom: 1px solid #e5e7eb; padding: 12px; text-align: left; font-size: 14px; }
+    html[data-theme="dark"] .table th, html[data-theme="dark"] .table td { border-bottom: 1px solid rgba(255,255,255,0.25); color: #ffffff; }
+    .table th { background: #f9fafb; font-weight: 600; color: #374151; }
+    html[data-theme="dark"] .table th { background: #111827; color: #ffffff; }
+    .table tbody tr:hover { background: #f9fafb; }
+    html[data-theme="dark"] .table tbody tr:hover { background: #1f2937; }
+    
+    .badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+    .badge.draft { background: #fef3c7; color: #92400e; }
+    .badge.approved { background: #d1fae5; color: #065f46; }
+    .badge.sent { background: #dbeafe; color: #1e40af; }
+    .badge.cancelled { background: #fee2e2; color: #991b1b; }
+    html[data-theme="dark"] .badge.draft { background: #78350f; color: #fbbf24; }
+    html[data-theme="dark"] .badge.approved { background: #064e3b; color: #34d399; }
+    html[data-theme="dark"] .badge.sent { background: #1e3a8a; color: #93c5fd; }
+    html[data-theme="dark"] .badge.cancelled { background: #7f1d1d; color: #fca5a5; }
+    
+    .action-buttons-cell { display: flex; gap: 8px; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+    
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted, #6b7280); }
+    html[data-theme="dark"] .empty-state { color: rgba(255,255,255,0.7); }
+    
+    .premium-required { text-align: center; padding: 60px 20px; }
+    .premium-required h2 { margin: 0 0 16px 0; color: var(--text, #1f2937); }
+    html[data-theme="dark"] .premium-required h2 { color: #ffffff; }
+    .premium-required p { color: var(--text-muted, #6b7280); margin: 8px 0; }
+    html[data-theme="dark"] .premium-required p { color: rgba(255,255,255,0.7); }
+  </style>
+</head>
+<body>
+  <!-- Common Header -->
+  <header id="app-header"></header>
+
+  <main class="container--wide" style="padding:20px 0">
+    <div class="page-heading">
+      <div class="page-title-chip" role="presentation">
+        <span class="page-title-icon" aria-hidden="true">💵</span>
+        <div class="page-title-text">
+          <h1>Hakedişler</h1>
+          <p class="page-title-caption">Hakediş listesi ve yönetimi</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Premium Kontrolü -->
+    <div id="premium-required" class="premium-required" style="display:none;">
+      <h2>Premium veya Premium Plus Gerekli</h2>
+      <p>Bu özellik Premium veya Premium Plus paketine özeldir.</p>
+      <p>Planınızı yükselterek hakediş hesaplama modülünü kullanabilirsiniz.</p>
+      <a href="./settings.html#premium" class="btn btn-primary" style="margin-top: 16px;">Planı Yükselt</a>
+    </div>
+    
+    <!-- Yükleniyor Mesajı -->
+    <div id="loading-message" class="premium-required" style="display:block;">
+      <h2>Yükleniyor...</h2>
+      <p>Sayfa yükleniyor, lütfen bekleyin.</p>
+    </div>
+    
+    <!-- Ana İçerik -->
+    <div id="main-content" style="display:none;">
+      <!-- Filtreler -->
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h3 style="margin: 0; font-size: 16px; font-weight: 600;">Filtreler</h3>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-outline" id="btn-clear-filters" style="padding: 6px 12px; font-size: 12px;">Filtreleri Temizle</button>
+            <button class="btn btn-outline" id="btn-save-filter" style="padding: 6px 12px; font-size: 12px;">Filtreyi Kaydet</button>
+            <select id="saved-filters" style="padding: 6px 12px; font-size: 12px; border: 1px solid #e5e7eb; border-radius: 6px;">
+              <option value="">Kaydedilen Filtreler</option>
+            </select>
+          </div>
+        </div>
+        <div class="filters">
+          <div class="filter-group">
+            <label>Hakediş No Ara</label>
+            <input type="text" id="filter-payment-number" placeholder="Örn: 2025-12-001" />
+          </div>
+          <div class="filter-group">
+            <label>Proje / Şantiye</label>
+            <select id="filter-site" multiple style="min-height: 100px;">
+              <option value="">Tümü</option>
+            </select>
+            <small style="font-size: 11px; color: #6b7280; margin-top: 4px; display: block;">Ctrl/Cmd ile çoklu seçim</small>
+          </div>
+          <div class="filter-group">
+            <label>Sözleşme</label>
+            <select id="filter-contract" multiple style="min-height: 100px;">
+              <option value="">Tümü</option>
+            </select>
+            <small style="font-size: 11px; color: #6b7280; margin-top: 4px; display: block;">Ctrl/Cmd ile çoklu seçim</small>
+          </div>
+          <div class="filter-group">
+            <label>Dönem Başlangıç</label>
+            <input type="date" id="filter-period-start" />
+          </div>
+          <div class="filter-group">
+            <label>Dönem Bitiş</label>
+            <input type="date" id="filter-period-end" />
+          </div>
+          <div class="filter-group">
+            <label>Durum</label>
+            <select id="filter-status">
+              <option value="">Tümü</option>
+              <option value="draft">Taslak</option>
+              <option value="pending">Onay Bekliyor</option>
+              <option value="approved">Onaylı</option>
+              <option value="sent">Muhasebeye Gönderildi</option>
+              <option value="rejected">Reddedildi</option>
+              <option value="cancelled">İptal</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Min Tutar (₺)</label>
+            <input type="number" id="filter-min-amount" placeholder="0" min="0" step="0.01" />
+          </div>
+          <div class="filter-group">
+            <label>Max Tutar (₺)</label>
+            <input type="number" id="filter-max-amount" placeholder="Sınırsız" min="0" step="0.01" />
+          </div>
+        </div>
+      </div>
+      
+      <!-- Butonlar -->
+      <div class="action-buttons">
+        <button class="btn btn-primary" id="btn-new">+ Yeni Hakediş Oluştur</button>
+        <a href="./contracts.html" class="btn btn-outline">📄 Sözleşmeleri Yönet</a>
+        <a href="./interim-payment-suggestions.html" class="btn btn-success">Hakediş Önerilerini Gör</a>
+        <button class="btn btn-outline" id="btn-export">Dışa Aktar (Excel)</button>
+      </div>
+      
+      <!-- Tablo -->
+      <div class="card">
+        <div class="table-container">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Hakediş No</th>
+                <th>Proje / Şantiye</th>
+                <th>Sözleşme Adı</th>
+                <th>Dönem</th>
+                <th>Brüt Tutar</th>
+                <th>Kesintiler</th>
+                <th>Net Tutar</th>
+                <th>KDV</th>
+                <th>Ödenecek Tutar</th>
+                <th>Durum</th>
+                <th>İşlemler</th>
+              </tr>
+            </thead>
+            <tbody id="payments-table-body">
+              <tr>
+                <td colspan="11" class="empty-state">Yükleniyor...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    // Teklifbul Rule v1.0 - XSS Protection
+    import DOMPurify from 'https://cdn.jsdelivr.net/npm/dompurify@3.2.2/+esm';
+    // Teklifbul Rule v1.0 - Auth Guard (oturum kontrolü)
+    import { initAuthGuard } from './assets/js/auth-guard.js';
+    // Teklifbul Rule v1.0
+    import { initGlobalHeader } from './assets/js/ui/header.js';
+    import { auth, waitAuthReady, db } from './firebase.js';
+    
+    // Teklifbul Rule v1.0 - Auth guard'ı başlat (oturum yoksa login'e yönlendirir)
+    initAuthGuard().catch(err => {
+      console.error('Auth guard init failed', err);
+    });
+    import { logger } from './src/shared/log/logger.js';
+    import { toast } from './src/shared/ui/toast.js';
+    import { MESSAGES } from './src/shared/constants/messages.js';
+    import { requireCompanyContext } from './assets/js/state/company-context.js';
+    import { initPermissions, can as canPermission, requirePerm, getInterimPerms } from './assets/js/state/permissions.js';
+    
+    // Teklifbul Rule v1.0 - Firebase Module Caching (Performance optimization)
+    const firebaseModuleCache = {
+      firestore: null,
+      auth: null
+    };
+    
+    async function getFirestoreModules() {
+      if (!firebaseModuleCache.firestore) {
+        firebaseModuleCache.firestore = await import("https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js");
+      }
+      return firebaseModuleCache.firestore;
+    }
+    
+    // getCurrentUser helper
+    async function getCurrentUser() {
+      if (auth.currentUser) return auth.currentUser;
+      const user = await waitAuthReady();
+      if (!user) {
+        throw new Error('not signed in');
+      }
+      return user;
+    }
+    
+    // Teklifbul Rule v1.0 - Authenticated fetch helper (ortak helper kullan)
+    // x-company-id header'ı otomatik eklenir
+    async function authFetch(url, options = {}) {
+      // Ortak helper'ı dinamik import et
+      const { authFetch: commonAuthFetch } = await import('/assets/js/utils/api-helpers.js');
+      return await commonAuthFetch(url, options);
+    }
+    
+    // Resolve shared company ID (same logic as settings.html)
+    function resolveSharedCompanyId(userData) {
+      const cid = userData?.companyId;
+      const aid = userData?.activeCompanyId;
+      const arr0 = Array.isArray(userData?.companies) && userData.companies.length ? userData.companies[0] : null;
+      if (cid && typeof cid === "string" && !cid.startsWith("solo-") && !cid.startsWith("tax-")) return cid;
+      if (aid && typeof aid === "string" && aid.startsWith("solo-") && cid) return cid;
+      return aid || cid || arr0;
+    }
+    
+    // Premium veya Premium Plus kontrolü (company-bazlı, tek kaynak: companies/{companyId}.planId)
+    // Teklifbul Rule v1.0 - Premium ve Premium Plus planlarında hakediş modülü kullanılabilir
+    async function checkPremiumAccess() {
+      try {
+        logger.group('Premium Erişim Kontrolü (company-based)');
+
+        const ctx = await requireCompanyContext({ redirectOnPending: true });
+        if (!ctx || !ctx.companyId) {
+          logger.warn('checkPremiumAccess: company context alınamadı', { ctx });
+          logger.end();
+          return false;
+        }
+
+        const { getCompanyPlan, isPremium, isPremiumPlus } = await import('./assets/js/state/company-plan.js');
+        const plan = await getCompanyPlan(ctx.companyId);
+        const hasPremium = isPremium(plan.planId);
+        const hasPremiumPlus = isPremiumPlus(plan.planId);
+        const hasAccess = hasPremium || hasPremiumPlus;
+
+        logger.info('Premium erişim kontrolü sonucu (company-based)', {
+          companyId: ctx.companyId,
+          planId: plan.planId,
+          planSource: plan.planSource,
+          isPremium: hasPremium,
+          isPremiumPlus: hasPremiumPlus,
+          hasAccess
+        });
+        logger.end();
+
+        return hasAccess;
+      } catch (error) {
+        logger.error('Premium erişim kontrolü başarısız', error);
+        logger.end();
+        return false;
+      }
+    }
+    
+    // Sayfa yükleme
+    async function init() {
+      try {
+        logger.group('Hakedişler Sayfası Yükleme');
+        logger.info('Sayfa başlatılıyor...');
+        
+        // Header'ı başlat
+        await initGlobalHeader({ mount: '#app-header', activeRoute: 'interim-payments' });
+        logger.info('Header yüklendi');
+        
+        // Company context kontrolü - companyId yoksa sayfayı başlatma
+        const companyContext = await requireCompanyContext({ redirectOnPending: true });
+        if (!companyContext || !companyContext.companyId) {
+          logger.warn('Hakedişler: company context alınamadı, ana içerik başlatılmıyor', {
+            companyContext
+          });
+          toast.error(
+            (MESSAGES.ERROR_COMPANY_ID_REQUIRED || 'Şirket bilgisi doğrulanamadı') +
+              '. Hakediş listesi yüklenemedi.'
+          );
+          document.getElementById('loading-message').style.display = 'none';
+          document.getElementById('premium-required').style.display = 'block';
+          document.getElementById('main-content').style.display = 'none';
+          logger.end();
+          return;
+        }
+        
+        // Premium veya Premium Plus kontrolü
+        logger.info('Premium erişim kontrolü yapılıyor...');
+        const hasAccess = await checkPremiumAccess();
+        logger.info('Premium erişim kontrolü tamamlandı', { hasAccess });
+        
+        // Yükleniyor mesajını gizle
+        document.getElementById('loading-message').style.display = 'none';
+        
+        if (!hasAccess) {
+          logger.warn('Premium erişimi yok, redirecting to billing-plan');
+          // Teklifbul Rule v1.7 - Redirect to billing-plan with reason
+          window.location.href = '/settings.html#billing-plan?reason=interim_payments';
+          logger.end();
+          return;
+        }
+
+        // Role-based permission init (Hakediş Gör / Hakediş İşlem)
+        const permState = await initPermissions({ redirectOnPending: true });
+        if (!permState) {
+          logger.warn('Hakedişler: permission state alınamadı, ekran kapatılıyor');
+          document.getElementById('premium-required').style.display = 'block';
+          // Teklifbul Rule v1.0 - XSS Protection
+          document.getElementById('premium-required').innerHTML = DOMPurify.sanitize(`
+            <h2>Hakediş Yetkisi Gerekli</h2>
+            <p>Hakedişleri görüntüleme veya işlem yapma yetkiniz bulunmuyor.</p>
+          `, {
+            ALLOWED_TAGS: ['h2', 'p'],
+            ALLOWED_ATTR: []
+          });
+          document.getElementById('main-content').style.display = 'none';
+          logger.end();
+          return;
+        }
+
+        const interimPerms = getInterimPerms();
+        const viewKey = interimPerms.view;
+        const manageKey = interimPerms.manage;
+
+        const canViewInterim = !viewKey || canPermission(viewKey);
+        const canManageInterim = !manageKey || canPermission(manageKey);
+
+        if (!canViewInterim) {
+          const msg =
+            (MESSAGES.ERROR_PERMISSION_INTERIM_VIEW ||
+              MESSAGES.ERROR_PERMISSION_DENIED ||
+              MESSAGES.ERROR_PERMISSION) ??
+            'Hakedişleri görüntüleme yetkiniz yok.';
+          toast.error(msg);
+          logger.warn('Hakedişler: interim.view izni yok, içerik gizleniyor', {
+            permKey: viewKey,
+            companyId: permState.companyId,
+            roleKey: permState.roleKey
+          });
+
+          document.getElementById('premium-required').style.display = 'block';
+          // Teklifbul Rule v1.0 - XSS Protection
+          document.getElementById('premium-required').innerHTML = DOMPurify.sanitize(`
+            <h2>Hakedişleri Görüntüleme Yetkisi Gerekli</h2>
+            <p>Bu ekranda hakedişleri görebilmek için şirket yöneticinizden yetki talep etmeniz gerekir.</p>
+          `, {
+            ALLOWED_TAGS: ['h2', 'p'],
+            ALLOWED_ATTR: []
+          });
+          document.getElementById('main-content').style.display = 'none';
+          logger.end();
+          return;
+        }
+
+        logger.info('Premium erişimi + interim.view izni var, ana içerik gösteriliyor', {
+          canViewInterim,
+          canManageInterim
+        });
+        document.getElementById('premium-required').style.display = 'none';
+        document.getElementById('main-content').style.display = 'block';
+      
+      // Event listener'ları ekle
+      const interimPerms2 = getInterimPerms();
+      const manageKey2 = interimPerms2.manage;
+      const canManageInterim2 = !manageKey2 || canPermission(manageKey2);
+
+      const btnNew = document.getElementById('btn-new');
+      if (btnNew) {
+        if (!canManageInterim) {
+          btnNew.setAttribute(
+            'title',
+            (MESSAGES.ERROR_PERMISSION_INTERIM_MANAGE ||
+              MESSAGES.ERROR_PERMISSION_DENIED ||
+              MESSAGES.ERROR_PERMISSION) ??
+              'Hakediş işlemi yapma yetkiniz yok.'
+          );
+          /** @type {HTMLButtonElement} */(btnNew).disabled = true;
+        } else {
+          /** @type {HTMLButtonElement} */(btnNew).disabled = false;
+          btnNew.removeAttribute('title');
+        }
+
+        btnNew.addEventListener('click', async () => {
+          if (manageKey2) {
+            const ok = await requirePerm(manageKey, {
+              toastMessage:
+                (MESSAGES.ERROR_PERMISSION_INTERIM_MANAGE ||
+                  MESSAGES.ERROR_PERMISSION_DENIED ||
+                  MESSAGES.ERROR_PERMISSION) ??
+                'Hakediş işlemi yapma yetkiniz yok.'
+            });
+            if (!ok) {
+              logger.warn('Hakedişler: interim.manage izni yok, yeni hakediş oluşturma engellendi', {
+                permKey: manageKey
+              });
+              return;
+            }
+          }
+          window.location.href = './interim-payment-edit.html';
+        });
+      }
+      
+      document.getElementById('btn-export')?.addEventListener('click', () => {
+        toast.info('Excel export özelliği yakında eklenecek');
+      });
+      
+      // Filtreler için event listener'lar
+      ['filter-site', 'filter-contract', 'filter-status', 'filter-period-start', 'filter-period-end', 
+       'filter-payment-number', 'filter-min-amount', 'filter-max-amount'].forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+          // Multi-select için 'change', input için 'input' event'i kullan
+          if (id === 'filter-payment-number' || id === 'filter-min-amount' || id === 'filter-max-amount') {
+            let timeout;
+            element.addEventListener('input', () => {
+              clearTimeout(timeout);
+              timeout = setTimeout(loadPayments, 500); // Debounce 500ms
+            });
+          } else {
+            element.addEventListener('change', loadPayments);
+          }
+        }
+      });
+      
+      // Filtre yönetimi butonları
+      document.getElementById('btn-clear-filters')?.addEventListener('click', clearFilters);
+      document.getElementById('btn-save-filter')?.addEventListener('click', saveCurrentFilter);
+      document.getElementById('saved-filters')?.addEventListener('change', loadSavedFilter);
+      
+      // Kaydedilen filtreleri yükle
+      loadSavedFiltersList();
+      
+        // İlk yükleme
+        logger.info('Şantiyeler yükleniyor...');
+        await loadSites();
+        logger.info('Hakedişler yükleniyor...');
+        await loadPayments();
+        
+        logger.info('Hakedişler sayfası başarıyla yüklendi');
+        logger.end();
+      } catch (error) {
+        logger.error('Sayfa yükleme hatası', error);
+        logger.end();
+        toast.error('Sayfa yüklenirken hata oluştu: ' + (error.message || 'Bilinmeyen hata'));
+        
+        // Hata durumunda yükleniyor mesajını gizle ve premium-required göster
+        document.getElementById('loading-message').style.display = 'none';
+        document.getElementById('premium-required').style.display = 'block';
+        document.getElementById('main-content').style.display = 'none';
+      }
+    }
+    
+    // Şantiyeleri yükle
+    async function loadSites() {
+      try {
+        logger.group('Şantiyeler Yükleniyor');
+        const user = await getCurrentUser();
+        if (!user) {
+          logger.warn('Kullanıcı bulunamadı');
+          logger.end();
+          return;
+        }
+        
+        const token = await user.getIdToken();
+        const { db } = await import('./firebase.js');
+        const { collection, query, where, getDocs } = await import('https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js');
+        
+        if (!db) {
+          logger.warn('Firestore DB bulunamadı');
+          logger.end();
+          return;
+        }
+        
+        // Kullanıcı bilgisini API'den al
+        const userResponse = await authFetch('/api/user');
+        
+        if (!userResponse.ok) {
+          logger.warn('Kullanıcı bilgisi alınamadı', { status: userResponse.status });
+          logger.end();
+          return;
+        }
+        
+        const userData = await userResponse.json();
+        const companyId = userData?.companyId || userData?.activeCompanyId;
+        
+        if (!companyId) {
+          logger.warn('Şirket bilgisi bulunamadı');
+          logger.end();
+          return;
+        }
+        
+        logger.info('Şirket ID bulundu', { companyId });
+        
+        const sitesMap = new Map(); // ID bazlı duplicate önlemek için
+        const sitesByNameMap = new Map(); // İsim bazlı duplicate önlemek için - Teklifbul Rule v1.0
+        
+        // 1. stock_locations koleksiyonundan yükle
+        try {
+          const stockLocationsQuery = query(
+            collection(db, 'stock_locations'),
+            where('companyId', '==', companyId)
+          );
+          
+          const stockLocationsSnapshot = await getDocs(stockLocationsQuery);
+          logger.info('stock_locations yüklendi', { count: stockLocationsSnapshot.size });
+          
+          stockLocationsSnapshot.forEach(doc => {
+            const data = doc.data();
+            // Sadece warehouse ve site tipindeki şantiyeleri göster
+            if ((data.type === 'warehouse' || data.type === 'site') && data.isActive !== false) {
+              const siteName = (data.title || data.siteName || data.name || data.warehouseCode || doc.id).trim();
+              const normalizedName = siteName.toLowerCase().trim();
+              
+              // İsim bazlı duplicate kontrolü - Teklifbul Rule v1.0
+              if (!sitesByNameMap.has(normalizedName)) {
+                logger.info('stock_locations şantiye eklendi', { id: doc.id, name: siteName, type: data.type });
+                sitesMap.set(doc.id, {
+                  id: doc.id,
+                  name: siteName,
+                  source: 'stock_locations'
+                });
+                sitesByNameMap.set(normalizedName, doc.id);
+              } else {
+                logger.info('stock_locations şantiye atlandı (duplicate isim)', { id: doc.id, name: siteName, existingId: sitesByNameMap.get(normalizedName) });
+              }
+            }
+          });
+        } catch (error) {
+          logger.warn('stock_locations yüklenirken hata', error);
+        }
+        
+        // 2. companies/{companyId}/sites koleksiyonundan yükle
+        try {
+          const companySitesRef = collection(db, 'companies', companyId, 'sites');
+          const companySitesSnapshot = await getDocs(companySitesRef);
+          logger.info('companies/sites yüklendi', { count: companySitesSnapshot.size });
+          
+          companySitesSnapshot.forEach(doc => {
+            const data = doc.data();
+            logger.info('Şantiye kontrol ediliyor', { 
+              id: doc.id, 
+              type: data.type, 
+              siteName: data.siteName, 
+              title: data.title,
+              isActive: data.isActive 
+            });
+            
+            // Sadece site ve warehouse tipindeki şantiyeleri göster
+            const isValidType = data.type === 'site' || 
+                                data.type === 'Şantiye' || 
+                                data.type === 'warehouse' || 
+                                data.type === 'Depo';
+            const isActive = data.isActive !== false;
+            
+            if (isValidType && isActive) {
+              const siteName = (data.siteName || data.title || data.name || doc.id).trim();
+              const normalizedName = siteName.toLowerCase().trim();
+              const siteId = doc.id;
+              
+              // ID bazlı ve isim bazlı duplicate kontrolü - Teklifbul Rule v1.0
+              if (!sitesMap.has(siteId) && !sitesByNameMap.has(normalizedName)) {
+                logger.info('Şantiye eklendi', { id: siteId, name: siteName });
+                sitesMap.set(siteId, {
+                  id: siteId,
+                  name: siteName,
+                  source: 'companies/sites'
+                });
+                sitesByNameMap.set(normalizedName, siteId);
+              } else {
+                logger.info('Şantiye atlandı (duplicate)', { 
+                  id: siteId, 
+                  name: siteName,
+                  reason: sitesMap.has(siteId) ? 'Duplicate ID' : 'Duplicate name',
+                  existingId: sitesByNameMap.get(normalizedName)
+                });
+              }
+            } else {
+              logger.info('Şantiye atlandı', { 
+                id: doc.id, 
+                reason: !isValidType ? 'Geçersiz tip' : 'Pasif',
+                type: data.type,
+                isActive: data.isActive
+              });
+            }
+          });
+        } catch (error) {
+          logger.warn('companies/sites yüklenirken hata', error);
+        }
+        
+        logger.info('Toplam şantiye sayısı', { count: sitesMap.size });
+        
+        const siteSelect = document.getElementById('filter-site');
+        if (siteSelect) {
+          // Teklifbul Rule v1.0 - XSS Protection
+          siteSelect.innerHTML = DOMPurify.sanitize('<option value="">Tümü</option>', {
+            ALLOWED_TAGS: ['option'],
+            ALLOWED_ATTR: ['value']
+          });
+          
+          // Alfabetik sırala
+          const sitesArray = Array.from(sitesMap.values()).sort((a, b) => 
+            (a.name || '').localeCompare(b.name || '', 'tr')
+          );
+          
+          sitesArray.forEach(site => {
+            const option = document.createElement('option');
+            option.value = site.id;
+            // Teklifbul Rule v1.0 - XSS Protection
+            // Fallback'i daha anlamlı yapalım (ID yerine İsimsiz Şantiye)
+            const displayName = (site.name && site.name !== site.id) ? site.name : `İsimsiz Şantiye (${site.id.substring(0,6)}...)`;
+            const safeSiteName = DOMPurify.sanitize(displayName, { ALLOWED_TAGS: [] });
+            option.textContent = safeSiteName;
+            siteSelect.appendChild(option);
+          });
+          
+          logger.info('Şantiyeler select\'e eklendi', { count: sitesArray.length });
+        }
+        
+        logger.end();
+      } catch (error) {
+        logger.error('Şantiyeler yüklenirken hata', error);
+        logger.end();
+        toast.error('Şantiyeler yüklenemedi: ' + (error.message || 'Bilinmeyen hata'));
+      }
+    }
+    
+    // Teklifbul Rule v1.0 - Gelişmiş filtreleme ile hakedişleri yükle
+    async function loadPayments() {
+      try {
+        const user = await getCurrentUser();
+        if (!user) return;
+
+        // Permission Query Guard - Hakediş Gör
+        const interimPerms3 = getInterimPerms();
+        const viewKey3 = interimPerms3.view;
+        if (viewKey3 && !canPermission(viewKey3)) {
+          const msg =
+            (MESSAGES.ERROR_PERMISSION_INTERIM_VIEW ||
+              MESSAGES.ERROR_PERMISSION_DENIED ||
+              MESSAGES.ERROR_PERMISSION) ??
+            'Hakedişleri görüntüleme yetkiniz yok.';
+          toast.error(msg);
+          logger.warn('Hakedişler: interim.view izni yok, loadPayments iptal edildi', {
+            permKey: viewKey
+          });
+          const tbody = document.getElementById('payments-table-body');
+          if (tbody) {
+            // Teklifbul Rule v1.0 - XSS Protection
+            tbody.innerHTML = DOMPurify.sanitize(
+              '<tr><td colspan="11" class="empty-state">Hakedişleri görüntüleme yetkiniz yok.</td></tr>',
+              {
+                ALLOWED_TAGS: ['tr', 'td'],
+                ALLOWED_ATTR: ['colspan', 'class']
+              }
+            );
+          }
+          return;
+        }
+        
+        const params = new URLSearchParams();
+        
+        // Multi-select şantiyeler
+        const siteSelect = document.getElementById('filter-site');
+        if (siteSelect) {
+          const selectedSites = Array.from(siteSelect.selectedOptions)
+            .map(opt => opt.value)
+            .filter(val => val && val !== '');
+          
+          if (selectedSites.length > 0) {
+            if (selectedSites.length === 1) {
+              params.append('siteId', selectedSites[0]);
+            } else {
+              params.append('siteIds', selectedSites.join(','));
+            }
+          }
+        }
+        
+        // Multi-select sözleşmeler
+        const contractSelect = document.getElementById('filter-contract');
+        if (contractSelect) {
+          const selectedContracts = Array.from(contractSelect.selectedOptions)
+            .map(opt => opt.value)
+            .filter(val => val && val !== '');
+          
+          if (selectedContracts.length > 0) {
+            if (selectedContracts.length === 1) {
+              params.append('contractId', selectedContracts[0]);
+            } else {
+              params.append('contractIds', selectedContracts.join(','));
+            }
+          }
+        }
+        
+        // Diğer filtreler
+        const status = (document.getElementById('filter-status'))?.value;
+        const periodStart = (document.getElementById('filter-period-start'))?.value;
+        const periodEnd = (document.getElementById('filter-period-end'))?.value;
+        const paymentNumber = (document.getElementById('filter-payment-number'))?.value;
+        const minAmount = (document.getElementById('filter-min-amount'))?.value;
+        const maxAmount = (document.getElementById('filter-max-amount'))?.value;
+        
+        if (status) params.append('status', status);
+        if (periodStart) params.append('periodStart', periodStart);
+        if (periodEnd) params.append('periodEnd', periodEnd);
+        if (paymentNumber) params.append('paymentNumber', paymentNumber);
+        if (minAmount) params.append('minAmount', minAmount);
+        if (maxAmount) params.append('maxAmount', maxAmount);
+        
+        const response = await authFetch(`/api/interim-payments?${params.toString()}`);
+        
+        if (!response.ok) {
+          throw new Error('Hakedişler yüklenemedi');
+        }
+        
+        const data = await response.json();
+        const payments = data.payments || [];
+        
+        renderPaymentsTable(payments);
+      } catch (error) {
+        logger.error('Hakedişler yüklenirken hata', error);
+        toast.error('Hakedişler yüklenemedi');
+        const tbody = document.getElementById('payments-table-body');
+        if (tbody) {
+          // Teklifbul Rule v1.0 - XSS Protection
+          tbody.innerHTML = DOMPurify.sanitize(
+            '<tr><td colspan="11" class="empty-state">Hata oluştu</td></tr>',
+            {
+              ALLOWED_TAGS: ['tr', 'td'],
+              ALLOWED_ATTR: ['colspan', 'class']
+            }
+          );
+        }
+      }
+    }
+    
+    // Teklifbul Rule v1.0 - Filtreleri temizle
+    function clearFilters() {
+      (document.getElementById('filter-site')).selectedIndex = -1;
+      (document.getElementById('filter-contract')).selectedIndex = -1;
+      (document.getElementById('filter-status')).value = '';
+      (document.getElementById('filter-period-start')).value = '';
+      (document.getElementById('filter-period-end')).value = '';
+      (document.getElementById('filter-payment-number')).value = '';
+      (document.getElementById('filter-min-amount')).value = '';
+      (document.getElementById('filter-max-amount')).value = '';
+      loadPayments();
+      toast.info('Filtreler temizlendi');
+    }
+    
+    // Teklifbul Rule v1.0 - Mevcut filtreyi kaydet
+    function saveCurrentFilter() {
+      const filterName = prompt('Filtre adı girin:');
+      if (!filterName || !filterName.trim()) return;
+      
+      const filters = {
+        siteIds: Array.from((document.getElementById('filter-site')).selectedOptions)
+          .map(opt => opt.value).filter(v => v),
+        contractIds: Array.from((document.getElementById('filter-contract')).selectedOptions)
+          .map(opt => opt.value).filter(v => v),
+        status: (document.getElementById('filter-status'))?.value || '',
+        periodStart: (document.getElementById('filter-period-start'))?.value || '',
+        periodEnd: (document.getElementById('filter-period-end'))?.value || '',
+        paymentNumber: (document.getElementById('filter-payment-number'))?.value || '',
+        minAmount: (document.getElementById('filter-min-amount'))?.value || '',
+        maxAmount: (document.getElementById('filter-max-amount'))?.value || '',
+      };
+      
+      const savedFilters = JSON.parse(localStorage.getItem('interim-payment-filters') || '{}');
+      savedFilters[filterName.trim()] = {
+        ...filters,
+        savedAt: new Date().toISOString()
+      };
+      localStorage.setItem('interim-payment-filters', JSON.stringify(savedFilters));
+      
+      loadSavedFiltersList();
+      toast.success('Filtre kaydedildi');
+    }
+    
+    // Teklifbul Rule v1.0 - Kaydedilen filtreleri listele
+    function loadSavedFiltersList() {
+      const savedFilters = JSON.parse(localStorage.getItem('interim-payment-filters') || '{}');
+      const select = document.getElementById('saved-filters');
+      if (!select) return;
+      
+      // Teklifbul Rule v1.0 - XSS Protection
+      select.innerHTML = DOMPurify.sanitize('<option value="">Kaydedilen Filtreler</option>', {
+        ALLOWED_TAGS: ['option'],
+        ALLOWED_ATTR: ['value']
+      });
+      Object.keys(savedFilters).forEach(name => {
+        const option = document.createElement('option');
+        option.value = name;
+        // Teklifbul Rule v1.0 - XSS Protection
+        const safeName = DOMPurify.sanitize(name || '', { ALLOWED_TAGS: [] });
+        option.textContent = safeName;
+        select.appendChild(option);
+      });
+    }
+    
+    // Teklifbul Rule v1.0 - Kaydedilen filtreyi yükle
+    function loadSavedFilter() {
+      const select = document.getElementById('saved-filters');
+      if (!select || !select.value) return;
+      
+      const savedFilters = JSON.parse(localStorage.getItem('interim-payment-filters') || '{}');
+      const filter = savedFilters[select.value];
+      if (!filter) return;
+      
+      // Şantiyeleri seç
+      const siteSelect = document.getElementById('filter-site');
+      if (siteSelect && filter.siteIds) {
+        Array.from(siteSelect.options).forEach(opt => {
+          opt.selected = filter.siteIds.includes(opt.value);
+        });
+      }
+      
+      // Sözleşmeleri seç
+      const contractSelect = document.getElementById('filter-contract');
+      if (contractSelect && filter.contractIds) {
+        Array.from(contractSelect.options).forEach(opt => {
+          opt.selected = filter.contractIds.includes(opt.value);
+        });
+      }
+      
+      // Diğer filtreleri doldur
+      if (filter.status) (document.getElementById('filter-status')).value = filter.status;
+      if (filter.periodStart) (document.getElementById('filter-period-start')).value = filter.periodStart;
+      if (filter.periodEnd) (document.getElementById('filter-period-end')).value = filter.periodEnd;
+      if (filter.paymentNumber) (document.getElementById('filter-payment-number')).value = filter.paymentNumber;
+      if (filter.minAmount) (document.getElementById('filter-min-amount')).value = filter.minAmount;
+      if (filter.maxAmount) (document.getElementById('filter-max-amount')).value = filter.maxAmount;
+      
+      loadPayments();
+      toast.success(`Filtre "${select.value}" yüklendi`);
+      
+      // Select'i sıfırla
+      select.value = '';
+    }
+    
+    // Tabloyu render et
+    function renderPaymentsTable(payments) {
+      const tbody = document.getElementById('payments-table-body');
+      if (!tbody) return;
+      
+      if (payments.length === 0) {
+        // Teklifbul Rule v1.0 - XSS Protection
+        tbody.innerHTML = DOMPurify.sanitize(
+          '<tr><td colspan="11" class="empty-state">Henüz hakediş bulunmuyor</td></tr>',
+          {
+            ALLOWED_TAGS: ['tr', 'td'],
+            ALLOWED_ATTR: ['colspan', 'class']
+          }
+        );
+        return;
+      }
+      
+      // Teklifbul Rule v1.0 - XSS Protection
+      const paymentsHTML = payments.map(payment => {
+        const periodStart = payment.periodStart ? new Date(payment.periodStart).toLocaleDateString('tr-TR') : '-';
+        const periodEnd = payment.periodEnd ? new Date(payment.periodEnd).toLocaleDateString('tr-TR') : '-';
+        const period = `${periodStart} - ${periodEnd}`;
+        
+        const grossAmount = payment.summary?.grossAmount || 0;
+        const deductionsTotal = payment.summary?.deductionsTotal || 0;
+        const netAmount = payment.summary?.netAmount || 0;
+        const kdvAmount = payment.summary?.kdvAmount || 0;
+        const totalAmount = payment.summary?.totalAmount || 0;
+        
+        const statusBadge = {
+          draft: '<span class="badge draft">Taslak</span>',
+          approved: '<span class="badge approved">Onaylı</span>',
+          sent: '<span class="badge sent">Gönderildi</span>',
+          cancelled: '<span class="badge cancelled">İptal</span>'
+        }[payment.status] || '<span class="badge draft">Taslak</span>';
+        
+        // Teklifbul Rule v1.0 - XSS Protection
+        const safePaymentNumber = DOMPurify.sanitize(payment.paymentNumber || '-', { ALLOWED_TAGS: [] });
+        const safeSiteName = DOMPurify.sanitize(payment.siteName || '-', { ALLOWED_TAGS: [] });
+        const safeContractName = DOMPurify.sanitize(payment.contractName || '-', { ALLOWED_TAGS: [] });
+        const safePeriod = DOMPurify.sanitize(period || '-', { ALLOWED_TAGS: [] });
+        const safePaymentId = DOMPurify.sanitize(payment.id || '', { ALLOWED_TAGS: [] });
+        
+        return `
+          <tr>
+            <td>${safePaymentNumber}</td>
+            <td>${safeSiteName}</td>
+            <td>${safeContractName}</td>
+            <td>${safePeriod}</td>
+            <td>${grossAmount.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}</td>
+            <td>${deductionsTotal.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}</td>
+            <td>${netAmount.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}</td>
+            <td>${kdvAmount.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}</td>
+            <td><strong>${totalAmount.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}</strong></td>
+            <td>${statusBadge}</td>
+            <td>
+              <div class="action-buttons-cell">
+                <button class="btn btn-sm btn-outline" onclick="viewPayment('${safePaymentId}')">Görüntüle</button>
+                <button class="btn btn-sm btn-primary" onclick="editPayment('${safePaymentId}')">Düzenle</button>
+                <button class="btn btn-sm btn-outline" onclick="exportPayment('${safePaymentId}')">PDF</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+      
+      tbody.innerHTML = DOMPurify.sanitize(paymentsHTML, {
+        ALLOWED_TAGS: ['tr', 'td', 'strong', 'span', 'div', 'button'],
+        ALLOWED_ATTR: ['class', 'onclick'],
+        ALLOW_DATA_ATTR: false
+      });
+    }
+    
+    // Global fonksiyonlar
+    window.viewPayment = function(id) {
+      window.location.href = `./interim-payment-edit.html?id=${id}`;
+    };
+    
+    window.editPayment = function(id) {
+      window.location.href = `./interim-payment-edit.html?id=${id}`;
+    };
+    
+    window.exportPayment = function(id) {
+      toast.info('PDF export özelliği yakında eklenecek');
+    };
+    
+    init().catch(error => {
+      logger.error('Sayfa yükleme hatası', error);
+      toast.error('Sayfa yüklenirken hata oluştu');
+    });
+  </script>
+</body>
+</html>
+

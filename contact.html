@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>İletişim — NEFISOFT</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%232563EB' rx='6'/%3E%3Ctext x='16' y='22' font-family='Arial' font-size='18' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/assets/css/main.css" />
+</head>
+<body>
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-content">
+      <a href="/index.html" class="header-logo">
+        <span>NEFISOFT</span>
+      </a>
+      
+      <nav class="header-nav">
+        <ul class="header-nav-links" id="desktop-nav">
+          <li><a href="/index.html#features" data-i18n="nav.features">Özellikler</a></li>
+          <li><a href="/index.html#premium" data-i18n="nav.premium">Premium</a></li>
+          <li><a href="/forum.html" data-i18n="nav.forum">Forum</a></li>
+          <li><a href="/index.html#references" data-i18n="nav.references">Referanslar</a></li>
+          <li><a href="/contact.html" data-i18n="nav.contact">İletişim</a></li>
+        </ul>
+        
+        <div class="header-actions">
+          <a href="/contact.html" class="btn btn-secondary btn-sm" data-i18n="nav.contact">İletişim</a>
+          <a href="/signup.html" class="btn btn-accent btn-sm" data-i18n="btn.tryFree">Ücretsiz Dene</a>
+          <a href="/login.html" class="btn btn-outline btn-sm" data-i18n="btn.login">Giriş Yap</a>
+          
+          <div class="lang-switch">
+            <button data-lang="tr" class="active">TR</button>
+            <button data-lang="en">EN</button>
+          </div>
+        </div>
+        
+        <button class="hamburger" id="hamburger" aria-label="Menu">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </nav>
+    </div>
+    
+    <!-- Mobile Menu -->
+    <nav class="mobile-menu" id="mobile-menu">
+      <ul>
+        <li><a href="/index.html#features" data-i18n="nav.features">Özellikler</a></li>
+        <li><a href="/index.html#premium" data-i18n="nav.premium">Premium</a></li>
+        <li><a href="/forum.html" data-i18n="nav.forum">Forum</a></li>
+        <li><a href="/index.html#references" data-i18n="nav.references">Referanslar</a></li>
+        <li><a href="/contact.html" data-i18n="nav.contact">İletişim</a></li>
+        <li><a href="/signup.html" class="btn btn-accent" data-i18n="btn.tryFree">Ücretsiz Dene</a></li>
+        <li><a href="/login.html" class="btn btn-outline" data-i18n="btn.login">Giriş Yap</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main style="padding-top: calc(var(--header-height) + var(--spacing-3xl));">
+    <section class="section">
+      <div class="container">
+        <div class="hero-content">
+          <div class="hero-text">
+            <h1 data-i18n="contact.title">İletişim</h1>
+            <p data-i18n="contact.subtitle">Bizimle iletişime geçin</p>
+            
+            <div style="margin-top: var(--spacing-2xl);">
+              <h3>İletişim Bilgileri</h3>
+              <p><strong>Adres:</strong><br />
+              <span data-i18n="footer.address">Çengeldere Mahallesi Çavuşbaşı Cumhuriyet Caddesi No:186, Beykoz / İstanbul</span></p>
+              
+              <p><strong>E-posta:</strong><br />
+              <a href="mailto:akyildizfaruk@gmail.com" data-i18n="footer.email">akyildizfaruk@gmail.com</a></p>
+              
+              <p><strong>Telefon:</strong><br />
+              <a href="tel:+905323459253" data-i18n="footer.phone">0532 345 92 53</a></p>
+            </div>
+            
+            <div style="margin-top: var(--spacing-2xl); padding: var(--spacing-lg); background: var(--color-bg-light); border-radius: var(--radius-lg);">
+              <p>Premium plan teklifi almak veya genel sorularınız için aşağıdaki formu doldurabilirsiniz. En kısa sürede size dönüş yapacağız.</p>
+            </div>
+          </div>
+          
+          <div class="card" style="max-width: 500px;">
+            <h2 style="margin-bottom: var(--spacing-lg);">İletişim Formu</h2>
+            <form id="contactForm">
+              <div class="form-group">
+                <label for="contactName" class="form-label" data-i18n="contact.name">İsim Soyisim</label>
+                <input type="text" id="contactName" class="form-input" required />
+              </div>
+              
+              <div class="form-group">
+                <label for="contactCompany" class="form-label" data-i18n="contact.company">Şirket Adı</label>
+                <input type="text" id="contactCompany" class="form-input" />
+              </div>
+              
+              <div class="form-group">
+                <label for="contactEmail" class="form-label" data-i18n="contact.email">E-posta</label>
+                <input type="email" id="contactEmail" class="form-input" required />
+              </div>
+              
+              <div class="form-group">
+                <label for="contactPhone" class="form-label" data-i18n="contact.phone">Telefon</label>
+                <input type="tel" id="contactPhone" class="form-input" />
+              </div>
+              
+              <div class="form-group">
+                <label for="contactMessage" class="form-label" data-i18n="contact.message">Mesaj / Talep</label>
+                <textarea id="contactMessage" class="form-input" rows="5" required></textarea>
+              </div>
+              
+              <button type="submit" class="btn btn-primary" style="width: 100%;" data-i18n="contact.submit">Gönder</button>
+            </form>
+            
+            <div id="contactSuccess" style="display: none; margin-top: var(--spacing-lg); padding: var(--spacing-lg); background: var(--color-success); color: white; border-radius: var(--radius-md);">
+              <p data-i18n="contact.success">Mesajınız başarıyla gönderildi! En kısa sürede size dönüş yapacağız.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-content">
+      <div class="footer-grid">
+        <div class="footer-section">
+          <h3>İletişim</h3>
+          <p data-i18n="footer.address">Çengeldere Mahallesi Çavuşbaşı Cumhuriyet Caddesi No:186, Beykoz / İstanbul</p>
+          <p><a href="mailto:akyildizfaruk@gmail.com" data-i18n="footer.email">akyildizfaruk@gmail.com</a></p>
+          <p><a href="tel:+905323459253" data-i18n="footer.phone">0532 345 92 53</a></p>
+        </div>
+        
+        <div class="footer-section">
+          <h3>Sosyal Medya</h3>
+          <ul>
+            <li><a href="https://www.youtube.com/@teklifbul" target="_blank" rel="noopener">YouTube</a></li>
+            <li><a href="https://x.com/teklifbul" target="_blank" rel="noopener">X (Twitter)</a></li>
+            <li><a href="https://www.instagram.com/teklifbul.com.tr/#" target="_blank" rel="noopener">Instagram</a></li>
+          </ul>
+        </div>
+        
+        <div class="footer-section">
+          <h3 data-i18n="footer.downloadApp">Uygulamayı indir</h3>
+          <ul>
+            <li><a href="#" data-i18n="footer.downloadGoogle">Google Play'den indir</a></li>
+            <li><a href="#" data-i18n="footer.downloadApple">App Store'dan indir</a></li>
+          </ul>
+        </div>
+        
+        <div class="footer-section">
+          <h3 data-i18n="footer.legal">Hukuki metinler</h3>
+          <ul>
+            <li><a href="/legal/kvkk-aydinlatma.html">KVKK Aydınlatma Metni</a></li>
+            <li><a href="/legal/acik-riza.html">Açık Rıza Bilgilendirme Metni</a></li>
+            <li><a href="/legal/kvkk-politika.html">KVKK Politikası</a></li>
+            <li><a href="/legal/cerez-politikasi.html">Çerez Politikası</a></li>
+            <li><a href="/legal/mesafeli-satis.html">Mesafeli Satış Sözleşmesi</a></li>
+            <li><a href="/legal/elektronik-bilgilendirme.html">Elektronik Bilgilendirme</a></li>
+            <li><a href="/legal/tedarikci-sozlesme.html">Tedarikçi Kullanıcı Sözleşmesi</a></li>
+            <li><a href="/legal/alici-sozlesme.html">Alıcı Kullanıcı Sözleşmesi</a></li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="footer-bottom">
+        <p>2026 NEFISOFT ©</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script type="module">
+    import { initI18n } from '/assets/js/i18n.js';
+    import { initCookieConsent } from '/assets/js/cookieConsent.js';
+    import { initCommonLayout } from '/assets/js/commonLayout.js';
+    import { initChatWidget } from '/assets/js/chatWidget.js';
+    import { t } from '/assets/js/i18n.js';
+    
+    // Initialize all modules
+    initI18n('tr');
+    initCookieConsent();
+    initCommonLayout();
+    initChatWidget();
+    
+    // Contact form handler
+    document.getElementById('contactForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      
+      // Show success message
+      const successDiv = document.getElementById('contactSuccess');
+      successDiv.style.display = 'block';
+      
+      // Reset form
+      e.target.reset();
+      
+      // Scroll to success message
+      successDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+  </script>
+  
+  <style>
+    /* Mobile Menu Styles */
+    .mobile-menu {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: var(--color-bg);
+      border-top: 1px solid var(--color-border);
+      box-shadow: var(--shadow-lg);
+      padding: var(--spacing-lg);
+    }
+    
+    .mobile-menu.open {
+      display: block;
+    }
+    
+    .mobile-menu ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-md);
+    }
+    
+    .mobile-menu ul li a {
+      display: block;
+      padding: var(--spacing-md);
+      color: var(--color-text);
+      border-radius: var(--radius-md);
+      transition: background var(--transition-fast);
+    }
+    
+    .mobile-menu ul li a:hover {
+      background: var(--color-bg-light);
+    }
+    
+    @media (max-width: 768px) {
+      .header-nav-links {
+        display: none;
+      }
+      
+      .header-actions .btn {
+        display: none;
+      }
+      
+      .header-actions .lang-switch {
+        display: none;
+      }
+      
+      .hero-content {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    @media (min-width: 769px) {
+      .mobile-menu {
+        display: none !important;
+      }
+    }
+    
+    .form-group {
+      margin-bottom: var(--spacing-lg);
+    }
+    
+    .form-label {
+      display: block;
+      margin-bottom: var(--spacing-sm);
+      font-weight: 600;
+      color: var(--color-text);
+    }
+    
+    .form-input {
+      width: 100%;
+      padding: var(--spacing-md);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      font-size: var(--font-size-base);
+      font-family: var(--font-family);
+    }
+    
+    .form-input:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+  </style>
+</body>
+</html>
+

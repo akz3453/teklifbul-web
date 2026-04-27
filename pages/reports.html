@@ -4,7 +4,12 @@
   <meta charset="utf-8" />
   <title>Stok Raporları</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Teklifbul Rule v1.0 - FOUC önleme: Tema hemen uygulanmalı -->
+  <script src="/assets/js/theme-init.js"></script>
   <link rel="stylesheet" href="/utils.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     body{font-family:system-ui, Arial; background:#f8fafc; color:#111827; margin:0}
     .container{max-width:1100px;margin:0 auto;padding:20px}
@@ -27,6 +32,87 @@
     .stat-card{display:inline-block;padding:16px;margin:8px;background:#f0f9ff;border-radius:8px;min-width:150px}
     .stat-value{font-size:24px;font-weight:bold;color:#0284c7}
     .stat-label{font-size:12px;color:#075985}
+    .chart-container{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin:16px 0}
+    .chart-card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:16px}
+    .chart-title{font-size:14px;font-weight:600;margin-bottom:12px;color:#374151}
+    .chart-wrapper{position:relative;height:300px}
+    
+    /* Koyu Mod Düzenlemeleri */
+    html[data-theme="dark"] body,
+    html.force-dark body {
+      background:#111827;
+      color:#ffffff;
+    }
+    html[data-theme="dark"] .card,
+    html.force-dark .card {
+      background:#111827;
+      border:1px solid rgba(255,255,255,0.1);
+      color:#ffffff;
+    }
+    html[data-theme="dark"] .tab,
+    html.force-dark .tab {
+      background:#111827;
+      border:1px solid rgba(255,255,255,0.1);
+      color:#ffffff;
+    }
+    html[data-theme="dark"] .tab.active,
+    html.force-dark .tab.active {
+      background:#2563eb;
+      border-color:#2563eb;
+    }
+    html[data-theme="dark"] table,
+    html.force-dark table {
+      background:#111827;
+    }
+    html[data-theme="dark"] th,
+    html.force-dark th {
+      background:#111827;
+      color:#ffffff;
+      border-bottom:1px solid rgba(255,255,255,0.1);
+    }
+    html[data-theme="dark"] td,
+    html.force-dark td {
+      color:#ffffff;
+      border-bottom:1px solid rgba(255,255,255,0.1);
+    }
+    html[data-theme="dark"] .muted,
+    html.force-dark .muted {
+      color:#9ca3af;
+    }
+    html[data-theme="dark"] .stat-card,
+    html.force-dark .stat-card {
+      background:#111827;
+      border:1px solid rgba(255,255,255,0.1);
+    }
+    html[data-theme="dark"] .stat-value,
+    html.force-dark .stat-value {
+      color:#60a5fa;
+    }
+    html[data-theme="dark"] .stat-label,
+    html.force-dark .stat-label {
+      color:#9ca3af;
+    }
+    html[data-theme="dark"] .chart-card,
+    html.force-dark .chart-card {
+      background:#111827;
+      border:1px solid rgba(255,255,255,0.1);
+    }
+    html[data-theme="dark"] .chart-title,
+    html.force-dark .chart-title {
+      color:#ffffff;
+    }
+    html[data-theme="dark"] select,
+    html.force-dark select {
+      background:#111827;
+      border:1px solid rgba(255,255,255,0.1);
+      color:#ffffff;
+    }
+    html[data-theme="dark"] h1,
+    html[data-theme="dark"] h2,
+    html.force-dark h1,
+    html.force-dark h2 {
+      color:#ffffff;
+    }
   </style>
 </head>
 <body>
@@ -34,6 +120,24 @@
   <header id="app-header"></header>
 
   <div class="container">
+    <!-- Breadcrumb Navigation -->
+    <div class="tb-breadcrumb" id="breadcrumb">
+      <span class="tb-crumb">
+        <span class="ico">🏠</span>
+        <a href="/dashboard.html">Ana Sayfa</a>
+      </span>
+      <span class="tb-sep">›</span>
+      <span class="tb-crumb">
+        <span class="ico">📦</span>
+        <a href="/inventory-index.html">Stok Takip</a>
+      </span>
+      <span class="tb-sep">›</span>
+      <span class="tb-crumb">
+        <span class="ico">📊</span>
+        <span>Stok Raporları</span>
+      </span>
+    </div>
+    
     <h1>Stok Raporları</h1>
     <p class="muted">Stok takip raporları ve analizler.</p>
 
@@ -51,7 +155,7 @@
         <table id="minstockTable">
           <thead>
             <tr>
-              <th>SKU</th><th>Ürün Adı</th><th>Marka</th><th>Birim</th><th>Mevcut</th><th>Minimum</th><th>Durum</th>
+              <th>SKU</th><th>Ürün Adı</th><th>Marka</th><th>Birim</th><th>Lokasyon</th><th>Mevcut</th><th>Minimum</th><th>Durum</th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -63,6 +167,15 @@
       <div class="card">
         <h2 style="margin:0 0 12px 0;font-size:18px">Ortalama Maliyet Altında Satışlar</h2>
         <div id="costsaleStats"></div>
+        <!-- Teklifbul Rule v1.0 - Chart.js: Cost Sale Trend Chart -->
+        <div class="chart-container">
+          <div class="chart-card">
+            <div class="chart-title">Maliyet Altı Satış Trendi (Zaman İçinde)</div>
+            <div class="chart-wrapper">
+              <canvas id="costSaleTrendChart"></canvas>
+            </div>
+          </div>
+        </div>
         <table id="costsaleTable">
           <thead>
             <tr>
@@ -78,6 +191,15 @@
       <div class="card">
         <h2 style="margin:0 0 12px 0;font-size:18px">Lokasyon (Şantiye/Depo) Stok Durumu</h2>
         <div id="locationStats"></div>
+        <!-- Teklifbul Rule v1.0 - Chart.js: Location Distribution Chart -->
+        <div class="chart-container">
+          <div class="chart-card">
+            <div class="chart-title">Lokasyon Bazlı Stok Dağılımı</div>
+            <div class="chart-wrapper">
+              <canvas id="locationDistributionChart"></canvas>
+            </div>
+          </div>
+        </div>
         <select id="locationFilter" style="margin-bottom:12px">
           <option value="">Tüm Lokasyonlar</option>
         </select>

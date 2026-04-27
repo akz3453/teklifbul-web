@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="tr">
+
+<head>
+    <meta charset="utf-8" />
+    <title>Satış Raporları</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Teklifbul Rule v1.0 - FOUC önleme: Tema hemen uygulanmalı -->
+    <script src="/assets/js/theme-init.js"></script>
+    <link rel="stylesheet" href="/utils.css" />
+    <link rel="stylesheet" href="/assets/css/layout.css" />
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        body {
+            font-family: system-ui, Arial;
+            background: #f8fafc;
+            color: #111827;
+            margin: 0
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px
+        }
+
+        h1 {
+            margin: 0 0 8px 0
+        }
+
+        .card {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 12px 0
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap
+        }
+
+        .tab {
+            flex: 1;
+            min-width: 150px;
+            padding: 12px;
+            border: 1px solid #e5e7eb;
+            background: #f9fafb;
+            cursor: pointer;
+            text-align: center;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.2s
+        }
+
+        .tab:hover {
+            background: #f3f4f6
+        }
+
+        .tab.active {
+            background: #2563eb;
+            color: #fff;
+            border-color: #2563eb
+        }
+
+        .hidden {
+            display: none
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px
+        }
+
+        th,
+        td {
+            border-bottom: 1px solid #e5e7eb;
+            padding: 12px 8px;
+            text-align: left;
+            font-size: 14px
+        }
+
+        th {
+            background: #f9fafb;
+            font-weight: 600;
+            color: #374151
+        }
+
+        tr:hover td {
+            background: #f9fafb
+        }
+
+        .badge {
+            display: inline-block;
+            border-radius: 14px;
+            padding: 2px 8px;
+            font-size: 12px;
+            font-weight: 500
+        }
+
+        .muted {
+            color: #6b7280;
+            font-size: 14px
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px
+        }
+
+        .stat-card {
+            padding: 20px;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05)
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #0284c7;
+            margin: 4px 0
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: #64748b;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px
+        }
+
+        .stat-trend {
+            font-size: 12px;
+            color: #059669;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 4px
+        }
+
+        .stat-trend.down {
+            color: #dc2626
+        }
+
+        .chart-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 24px;
+            margin: 24px 0
+        }
+
+        .chart-card {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05)
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px
+        }
+
+        .chart-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #111827
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 350px;
+            width: 100%
+        }
+
+        .filter-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            background: #fff;
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            align-items: center
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .form-select {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            min-width: 150px
+        }
+
+        /* Koyu Mod Düzenlemeleri */
+        html[data-theme="dark"] body,
+        html.force-dark body {
+            background: #111827;
+            color: #ffffff;
+        }
+
+        html[data-theme="dark"] .card,
+        html[data-theme="dark"] .stat-card,
+        html[data-theme="dark"] .chart-card,
+        html[data-theme="dark"] .filter-bar,
+        html.force-dark .card,
+        html.force-dark .stat-card,
+        html.force-dark .chart-card,
+        html.force-dark .filter-bar {
+            background: #1f2937;
+            border-color: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+        }
+
+        html[data-theme="dark"] .tab,
+        html.force-dark .tab {
+            background: #1f2937;
+            border-color: rgba(255, 255, 255, 0.1);
+            color: #d1d5db;
+        }
+
+        html[data-theme="dark"] .tab:hover,
+        html.force-dark .tab:hover {
+            background: #374151;
+        }
+
+        html[data-theme="dark"] .tab.active,
+        html.force-dark .tab.active {
+            background: #2563eb;
+            border-color: #2563eb;
+            color: #ffffff;
+        }
+
+        html[data-theme="dark"] th,
+        html.force-dark th {
+            background: #374151;
+            color: #e5e7eb;
+            border-bottom-color: rgba(255, 255, 255, 0.1);
+        }
+
+        html[data-theme="dark"] td,
+        html.force-dark td {
+            border-bottom-color: rgba(255, 255, 255, 0.1);
+            color: #d1d5db;
+        }
+
+        html[data-theme="dark"] tr:hover td,
+        html.force-dark tr:hover td {
+            background: #374151;
+        }
+
+        html[data-theme="dark"] .stat-value,
+        html.force-dark .stat-value {
+            color: #38bdf8;
+        }
+
+        html[data-theme="dark"] .stat-label,
+        html.force-dark .stat-label {
+            color: #94a3b8;
+        }
+
+        html[data-theme="dark"] .chart-title,
+        html.force-dark .chart-title {
+            color: #f3f4f6;
+        }
+
+        html[data-theme="dark"] .form-select,
+        html.force-dark .form-select {
+            background: #374151;
+            border-color: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+        }
+
+        html[data-theme="dark"] .muted,
+        html.force-dark .muted {
+            color: #9ca3af;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Common Header -->
+    <header id="app-header"></header>
+
+    <div class="container">
+        <!-- Breadcrumb Navigation -->
+        <div class="tb-breadcrumb" id="breadcrumb">
+            <span class="tb-crumb">
+                <span class="ico">🏠</span>
+                <a href="/dashboard.html">Ana Sayfa</a>
+            </span>
+            <span class="tb-sep">›</span>
+            <span class="tb-crumb">
+                <span class="ico">📦</span>
+                <a href="/inventory-index.html">Stok Takip</a>
+            </span>
+            <span class="tb-sep">›</span>
+            <span class="tb-crumb">
+                <span class="ico">📈</span>
+                <span>Satış Raporları</span>
+            </span>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+            <div>
+                <h1>Satış Raporları</h1>
+                <p class="muted">Satış performansı, ürün analizleri ve müşteri raporları.</p>
+            </div>
+            <div>
+                <button class="btn btn-secondary" id="refreshBtn"
+                    style="padding:8px 12px;border-radius:6px;border:1px solid #d1d5db;background:#fff;cursor:pointer">
+                    🔄 Yenile
+                </button>
+            </div>
+        </div>
+
+        <div class="filter-bar">
+            <div class="filter-group">
+                <label for="dateRange" style="font-size:14px;font-weight:500">Tarih Aralığı:</label>
+                <select id="dateRange" class="form-select">
+                    <option value="this_month">Bu Ay</option>
+                    <option value="last_month">Geçen Ay</option>
+                    <option value="this_year" selected>Bu Yıl</option>
+                    <option value="last_year">Geçen Yıl</option>
+                    <option value="all">Tümü</option>
+                    <option value="custom">📅 Özel Tarih</option>
+                </select>
+            </div>
+            <div class="filter-group" id="customDateGroup" style="display:none">
+                <label for="startDate" style="font-size:14px;font-weight:500">Başlangıç:</label>
+                <input type="date" id="startDate" class="form-select" style="min-width:140px" />
+                <label for="endDate" style="font-size:14px;font-weight:500">Bitiş:</label>
+                <input type="date" id="endDate" class="form-select" style="min-width:140px" />
+            </div>
+            <div class="filter-group">
+                <label for="currencyFilter" style="font-size:14px;font-weight:500">Para Birimi:</label>
+                <select id="currencyFilter" class="form-select">
+                    <option value="TRY" selected>Türk Lirası (TRY)</option>
+                    <option value="USD">Amerikan Doları (USD)</option>
+                    <option value="EUR">Euro (EUR)</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Key Metrics Cards -->
+        <div class="stat-grid">
+            <div class="stat-card">
+                <div class="stat-label">Toplam Satış Tutarı</div>
+                <div class="stat-value" id="totalRevenue">-</div>
+                <div class="stat-trend" id="revenueTrend">-- önceki döneme göre</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Toplam Satış Adedi</div>
+                <div class="stat-value" id="totalSalesCount">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Ortalama Sepet Tutarı</div>
+                <div class="stat-value" id="avgOrderValue">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Aktif Müşteri</div>
+                <div class="stat-value" id="activeCustomerCount">-</div>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" data-tab="overview">📊 Genel Bakış</div>
+            <div class="tab" data-tab="products">📦 Ürün Analizi</div>
+            <div class="tab" data-tab="customers">👥 Müşteri Analizi</div>
+            <div class="tab" data-tab="staff">💼 Personel Performansı</div>
+        </div>
+
+        <!-- Genel Bakış Paneli -->
+        <div id="overviewPanel">
+            <div class="chart-container">
+                <div class="chart-card" style="grid-column: span 2;">
+                    <div class="chart-header">
+                        <div class="chart-title">Aylık Satış Trendi (Ciro)</div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="revenueTrendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ürün Analizi Paneli -->
+        <div id="productsPanel" class="hidden">
+            <div class="chart-container">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title">En Çok Satan 10 Ürün (Ciro Bazlı)</div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="topProductsRevenueChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title">En Çok Satan 10 Ürün (Adet Bazlı)</div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="topProductsQtyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 style="font-size:16px;margin:0 0 16px 0;border-bottom:1px solid #e5e7eb;padding-bottom:8px">Ürün
+                    Satış Detayları</h3>
+                <div style="overflow-x:auto">
+                    <table id="productsTable">
+                        <thead>
+                            <tr>
+                                <th>SKU</th>
+                                <th>Ürün Adı</th>
+                                <th>Satış Adedi</th>
+                                <th>Ort. Birim Fiyat</th>
+                                <th>Toplam Ciro</th>
+                                <th>% Pay</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Müşteri Analizi Paneli -->
+        <div id="customersPanel" class="hidden">
+            <div class="chart-container">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title">En Değerli 10 Müşteri (Ciro)</div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="topCustomersChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 style="font-size:16px;margin:0 0 16px 0;border-bottom:1px solid #e5e7eb;padding-bottom:8px">Müşteri
+                    Detayları</h3>
+                <div style="overflow-x:auto">
+                    <table id="customersTable">
+                        <thead>
+                            <tr>
+                                <th>Müşteri Adı</th>
+                                <th>İşlem Sayısı</th>
+                                <th>Toplam Tutar</th>
+                                <th>Son İşlem Tarihi</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Personel Performansı Paneli -->
+        <div id="staffPanel" class="hidden">
+            <div class="chart-container">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title">Satış Temsilcisi Dağılımı</div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="staffPerformanceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 style="font-size:16px;margin:0 0 16px 0;border-bottom:1px solid #e5e7eb;padding-bottom:8px">Personel
+                    Satış Listesi</h3>
+                <table id="staffTable">
+                    <thead>
+                        <tr>
+                            <th>Personel</th>
+                            <th>Satış Sayısı</th>
+                            <th>Toplam Tutar</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase -->
+    <script type="module" src="/firebase.js"></script>
+    <!-- Header -->
+    <script type="module">
+        import { initGlobalHeader } from '../assets/js/ui/header.js';
+        initGlobalHeader({ mount: '#app-header', activeRoute: 'inventory' });
+    </script>
+    <!-- Main Logic -->
+    <script type="module" src="/scripts/sales-reports.js"></script>
+</body>
+
+</html>

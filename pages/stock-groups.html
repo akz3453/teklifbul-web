@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>Özel Kod Yönetimi</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="/assets/js/theme-init.js"></script>
+  <link rel="stylesheet" href="/utils.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <link rel="stylesheet" href="/assets/css/stock-groups.css" />
+</head>
+<body>
+  <header id="app-header"></header>
+
+  <div class="groups-container">
+    <div class="tb-breadcrumb">
+      <span class="tb-crumb"><span class="ico">🏠</span><a href="/dashboard.html">Ana Sayfa</a></span>
+      <span class="tb-sep">›</span>
+      <span class="tb-crumb"><span class="ico">📦</span><a href="/inventory-index.html">Stok Takip</a></span>
+      <span class="tb-sep">›</span>
+      <span class="tb-crumb"><span class="ico">🏷️</span><span>Özel Kod Yönetimi</span></span>
+    </div>
+
+    <div class="groups-header">
+      <div>
+        <h1>🏷️ Özel Kod Yönetimi</h1>
+        <p style="color:#6b7280;font-size:13px;margin:4px 0 0 0">Stok gruplarını oluşturun ve ürünleri gruplara atayın.</p>
+      </div>
+    </div>
+
+    <!-- Create / Edit Form -->
+    <div class="group-form-card" id="groupFormCard">
+      <h3 style="margin:0 0 12px 0;font-size:15px" id="formCardTitle">➕ Yeni Grup Oluştur</h3>
+      <div class="group-form-row">
+        <div class="form-group">
+          <label>Grup Kodu</label>
+          <input type="text" id="inputCode" placeholder="OZEL_1" maxlength="20" />
+        </div>
+        <div class="form-group">
+          <label>Grup Adı</label>
+          <input type="text" id="inputName" placeholder="Özel Kod 1" />
+        </div>
+        <div class="form-group">
+          <label>Açıklama</label>
+          <input type="text" id="inputDesc" placeholder="Boya, Polisan vb." />
+        </div>
+      </div>
+      <div style="margin-top:12px;display:flex;gap:8px">
+        <button class="btn btn-primary" id="btnSaveGroup">💾 Kaydet</button>
+        <button class="btn btn-secondary" id="btnCancelEdit" style="display:none">İptal</button>
+      </div>
+    </div>
+
+    <!-- Groups Grid -->
+    <div class="groups-grid" id="groupsGrid">
+      <div style="text-align:center;padding:40px;color:#6b7280;grid-column:1/-1">Yükleniyor...</div>
+    </div>
+
+    <!-- Group Detail (products list) -->
+    <div id="groupDetail" style="display:none;margin-top:20px">
+      <div class="group-form-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <h3 style="margin:0;font-size:15px" id="detailTitle">Gruptaki Ürünler</h3>
+          <button class="btn btn-secondary" id="btnCloseDetail" style="padding:4px 12px;font-size:12px">✕ Kapat</button>
+        </div>
+        <table class="group-products-table">
+          <thead><tr><th>SKU</th><th>Ürün Adı</th><th>Marka</th><th>Birim</th><th style="text-align:center">İşlem</th></tr></thead>
+          <tbody id="groupProductsBody"><tr><td colspan="5" style="text-align:center;color:#6b7280">Ürün yok</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Product Assignment Modal -->
+  <div class="modal-overlay" id="productModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modalTitle">Gruba Ürün Ekle</h3>
+        <button class="modal-close" id="btnCloseModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="text" class="modal-search" id="modalSearch" placeholder="Ürün adı, SKU veya marka ara..." />
+        <div class="product-list" id="productList"></div>
+      </div>
+      <div class="modal-footer">
+        <span class="selected-count" id="selectedCount">0 ürün seçildi</span>
+        <button class="btn btn-secondary" id="btnSelectFiltered" title="Listelenen ürünleri seç">☑️ Görünenleri Seç</button>
+        <button class="btn btn-secondary" id="btnClearSelected" title="Seçimi temizle">🧹 Seçimi Temizle</button>
+        <button class="btn btn-primary" id="btnAddSelected">✅ Seçilenleri Ekle</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initGlobalHeader } from '../assets/js/ui/header.js';
+    import { toast } from '../src/shared/ui/toast.js';
+    window.toast = toast;
+    initGlobalHeader({ mount: '#app-header', activeRoute: 'inventory' });
+  </script>
+  <script type="module" src="/scripts/stock-groups.js"></script>
+</body>
+</html>

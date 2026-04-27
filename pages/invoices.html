@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>Fatura Listesi | Teklifbul</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="/assets/js/theme-init.js"></script>
+  <link rel="stylesheet" href="/utils.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <style>
+    body { font-family: system-ui, Arial; background: #f8fafc; color: #111827; margin: 0; }
+    .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+    .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 16px 0; }
+    .toolbar { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; }
+    .toolbar .form-group { display: flex; flex-direction: column; gap: 4px; }
+    .toolbar label { font-size: 12px; color: #6b7280; font-weight: 600; }
+    .toolbar input, .toolbar select {
+      padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 6px;
+      font-size: 13px; background: #fff; color: #111827; min-width: 160px;
+    }
+    .btn { padding: 8px 16px; border-radius: 6px; font-weight: 600; border: none; cursor: pointer; font-size: 13px; transition: 0.2s; }
+    .btn-primary { background: #2563eb; color: #fff; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-secondary { background: #f3f4f6; color: #374151; }
+    .btn-secondary:hover { background: #e5e7eb; }
+    table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+    th, td { border-bottom: 1px solid #e5e7eb; padding: 12px; text-align: left; font-size: 13px; }
+    th { background: #f9fafb; font-weight: 600; color: #374151; }
+    tr:hover { background: #f9fafb; cursor: pointer; }
+    .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; display: inline-block; }
+    .status-draft { background: #f3f4f6; color: #374151; }
+    .status-prepared { background: #fef3c7; color: #92400e; }
+    .status-sent { background: #dbeafe; color: #1e40af; }
+    .status-accepted { background: #dcfce7; color: #166534; }
+    .status-rejected { background: #fee2e2; color: #991b1b; }
+    .status-cancelled { background: #e5e7eb; color: #6b7280; }
+    .empty-state { padding: 60px 20px; text-align: center; color: #6b7280; }
+    .pager { display: flex; gap: 8px; justify-content: center; margin-top: 16px; align-items: center; }
+    .pager button { padding: 6px 12px; border: 1px solid #d1d5db; background: #fff; border-radius: 6px; cursor: pointer; }
+    .pager button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .summary { color: #6b7280; font-size: 13px; }
+
+    /* Dark Mode */
+    html[data-theme="dark"] body { background: #111827; color: #f9fafb; }
+    html[data-theme="dark"] .card { background: #1f2937; border-color: #374151; }
+    html[data-theme="dark"] th { background: #374151; color: #f9fafb; }
+    html[data-theme="dark"] td { border-color: #374151; }
+    html[data-theme="dark"] .toolbar input,
+    html[data-theme="dark"] .toolbar select {
+      background: #111827; border-color: #374151; color: #f9fafb;
+    }
+    html[data-theme="dark"] tr:hover { background: #374151; }
+  </style>
+</head>
+<body>
+  <header id="app-header"></header>
+
+  <div class="container">
+    <div class="tb-breadcrumb">
+      <span class="tb-crumb"><a href="/dashboard.html">🏠 Ana Sayfa</a></span>
+      <span class="tb-sep">›</span>
+      <span class="tb-crumb"><a href="/pages/invoices.html">🧾 Faturalama</a></span>
+      <span class="tb-sep">›</span>
+      <span class="tb-crumb">📋 Fatura Listesi</span>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin: 20px 0;">
+      <div>
+        <h1>📋 Fatura Listesi</h1>
+        <p style="color: #6b7280; margin: 4px 0 0 0;">Oluşturulan ve gönderilen e-faturalarınızı yönetin.</p>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <a href="/pages/invoice-import.html" class="btn btn-secondary">📥 İçe Aktar</a>
+        <a href="/pages/incoming-docs.html" class="btn btn-secondary">📩 Gelen e-Belgeler</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="toolbar">
+        <div class="form-group">
+          <label for="filterStatus">Durum</label>
+          <select id="filterStatus">
+            <option value="">Tümü</option>
+            <option value="draft">Taslak</option>
+            <option value="prepared">Hazır</option>
+            <option value="sent">Gönderildi</option>
+            <option value="accepted">Kabul</option>
+            <option value="rejected">Red</option>
+            <option value="cancelled">İptal</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="filterFrom">Başlangıç</label>
+          <input type="date" id="filterFrom" />
+        </div>
+        <div class="form-group">
+          <label for="filterTo">Bitiş</label>
+          <input type="date" id="filterTo" />
+        </div>
+        <div class="form-group" style="flex:1; min-width:200px;">
+          <label for="filterSearch">Arama (No / Müşteri)</label>
+          <input type="text" id="filterSearch" placeholder="Fatura no veya müşteri adı..." />
+        </div>
+        <button class="btn btn-primary" id="btnApplyFilter">🔎 Filtrele</button>
+        <button class="btn btn-secondary" id="btnResetFilter">↺ Sıfırla</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <span class="summary" id="summary">Yükleniyor...</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Fatura No</th>
+            <th>Müşteri</th>
+            <th>Tutar</th>
+            <th>Durum</th>
+            <th>Tarih</th>
+            <th>Tür</th>
+            <th>İşlem</th>
+          </tr>
+        </thead>
+        <tbody id="invoicesTableBody">
+          <tr><td colspan="7" class="empty-state">Yükleniyor...</td></tr>
+        </tbody>
+      </table>
+      <div class="pager">
+        <button id="prevPage">‹ Önceki</button>
+        <span id="pageInfo">Sayfa 1</span>
+        <button id="nextPage">Sonraki ›</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/firebase.js"></script>
+  <script type="module">
+    import { initGlobalHeader } from '/assets/js/ui/header.js';
+    initGlobalHeader({ mount: '#app-header', activeRoute: 'invoicing' });
+  </script>
+  <script type="module" src="/scripts/invoices-list.js"></script>
+</body>
+</html>

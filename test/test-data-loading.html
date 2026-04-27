@@ -61,7 +61,7 @@
   </div>
 
   <script type="module">
-    import { auth, db } from './firebase.js';
+    import { auth, db } from '../firebase.js';
     import { 
       doc, 
       getDoc, 
@@ -296,16 +296,61 @@
           return;
         }
         
-        // Şirket bilgilerini al
+        // Şirket bilgilerini al - Teklifbul Rule v1.2.23
         const companyDoc = await getDoc(doc(db, 'companies', userCompanyId));
+        let companyData = {};
+        let invoiceAddressParts = {};
+        
         if (companyDoc.exists()) {
-          const companyData = companyDoc.data();
+          companyData = companyDoc.data();
+          invoiceAddressParts = companyData.invoiceAddressParts || {};
+        }
+        
+        // Teklifbul Rule v1.2.23 - Eğer companies'de invoiceAddressParts yoksa, users collection'ından çek
+        let userTaxOffice = '';
+        if ((!invoiceAddressParts || Object.keys(invoiceAddressParts).length === 0) && auth.currentUser) {
+          try {
+            const userDocForAddress = await getDoc(doc(db, 'users', auth.currentUser.uid));
+            if (userDocForAddress.exists()) {
+              const userDataForAddress = userDocForAddress.data();
+              invoiceAddressParts = userDataForAddress.invoiceAddressParts || invoiceAddressParts;
+              userTaxOffice = userDataForAddress.taxOffice || '';
+              log("Fatura adresi users collection'ından alındı");
+            }
+          } catch (userError) {
+            log("Users collection'ından fatura adresi alınamadı: " + userError.message);
+          }
+        }
+        
+        if (companyDoc.exists() || invoiceAddressParts) {
+          // İlçe bilgisini fatura adresinden al - Teklifbul Rule v1.2.23
+          const district = companyData.district || 
+                          (invoiceAddressParts?.ilce) || 
+                          'Belirtilmemiş';
+          
+          // Fatura adresi HTML'i oluştur
+          let addressHTML = '';
+          if (invoiceAddressParts && Object.keys(invoiceAddressParts).length > 0) {
+            const addressParts = [];
+            if (invoiceAddressParts.sokak) addressParts.push(`Sokak: ${invoiceAddressParts.sokak}`);
+            if (invoiceAddressParts.cadde) addressParts.push(`Cadde: ${invoiceAddressParts.cadde}`);
+            if (invoiceAddressParts.kapi || invoiceAddressParts.kapiNo) addressParts.push(`Kapı No: ${invoiceAddressParts.kapi || invoiceAddressParts.kapiNo}`);
+            if (invoiceAddressParts.daire) addressParts.push(`Daire: ${invoiceAddressParts.daire}`);
+            if (invoiceAddressParts.mahalle) addressParts.push(`Mahalle: ${invoiceAddressParts.mahalle}`);
+            if (invoiceAddressParts.ilce) addressParts.push(`İlçe: ${invoiceAddressParts.ilce}`);
+            if (invoiceAddressParts.il) addressParts.push(`İl: ${invoiceAddressParts.il}`);
+            if (invoiceAddressParts.postaKodu) addressParts.push(`Posta Kodu: ${invoiceAddressParts.postaKodu}`);
+            if (companyData.taxOffice || userTaxOffice) addressParts.push(`Vergi Dairesi: ${companyData.taxOffice || userTaxOffice}`);
+            if (companyData.taxNumber) addressParts.push(`Vergi No: ${companyData.taxNumber}`);
+            addressHTML = `<br><strong>Fatura Adresi:</strong><br>${addressParts.join('<br>')}`;
+          }
+          
           showResult('company-result', `
             <strong>✅ Şirket Verileri Testi Başarılı</strong><br>
             Şirket ID: ${userCompanyId}<br>
             Şirket Adı: ${companyData.name || 'Belirtilmemiş'}<br>
             Vergi No: ${companyData.taxNumber || 'Belirtilmemiş'}<br>
-            İlçe: ${companyData.district || 'Belirtilmemiş'}
+            İlçe: ${district}${addressHTML}
           `, 'success');
           log("Şirket verileri testi başarılı");
         } else {

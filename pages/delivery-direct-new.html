@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>Sıfırdan İrsaliye | Teklifbul</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="/assets/js/theme-init.js"></script>
+  <link rel="stylesheet" href="/utils.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <style>
+    body { font-family: system-ui, Arial; background: #f8fafc; color: #111827; margin: 0; }
+    .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+    h1 { margin: 0 0 8px 0; }
+    .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 16px 0; }
+    .form-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 80px; gap: 8px; align-items: end; }
+    .form-row.header { font-weight: 600; font-size: 12px; color: #6b7280; padding-bottom: 4px; border-bottom: 1px solid #e5e7eb; }
+    .form-group label { display: block; margin-bottom: 4px; font-size: 12px; font-weight: 600; color: #374151; }
+    input, select, textarea {
+      width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;
+      font-size: 13px; box-sizing: border-box; background: #fff; color: #111827;
+    }
+    .btn { padding: 8px 16px; border-radius: 6px; font-weight: 600; border: none; cursor: pointer; font-size: 13px; transition: 0.2s; }
+    .btn-primary { background: #2563eb; color: #fff; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-secondary { background: #f3f4f6; color: #374151; }
+    .btn-secondary:hover { background: #e5e7eb; }
+    .btn-danger { background: #fee2e2; color: #991b1b; }
+    .btn-danger:hover { background: #fecaca; }
+    .autocomplete-wrap { position: relative; }
+    .autocomplete-list {
+      position: absolute; top: 100%; left: 0; right: 0; background: #fff;
+      border: 1px solid #d1d5db; border-radius: 6px; max-height: 240px; overflow-y: auto;
+      z-index: 100; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .autocomplete-item { padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #f3f4f6; font-size: 13px; }
+    .autocomplete-item:hover { background: #f3f4f6; }
+    .autocomplete-item small { color: #6b7280; display: block; }
+
+    html[data-theme="dark"] body { background: #111827; color: #f9fafb; }
+    html[data-theme="dark"] .card { background: #1f2937; border-color: #374151; }
+    html[data-theme="dark"] input, html[data-theme="dark"] select, html[data-theme="dark"] textarea {
+      background: #111827; border-color: #374151; color: #f9fafb;
+    }
+    html[data-theme="dark"] .autocomplete-list { background: #1f2937; border-color: #374151; }
+    html[data-theme="dark"] .autocomplete-item { border-color: #374151; color: #f9fafb; }
+    html[data-theme="dark"] .autocomplete-item:hover { background: #374151; }
+  </style>
+</head>
+<body>
+  <header id="app-header"></header>
+
+  <div class="container">
+    <div class="tb-breadcrumb">
+      <span class="tb-crumb"><a href="/dashboard.html">🏠 Ana Sayfa</a></span>
+      <span class="tb-sep">›</span>
+      <span class="tb-crumb"><a href="/pages/delivery-notes.html">🧾 Faturalama</a></span>
+      <span class="tb-sep">›</span>
+      <span class="tb-crumb">➕ Sıfırdan İrsaliye</span>
+    </div>
+
+    <h1>➕ Sıfırdan İrsaliye</h1>
+    <p style="color:#6b7280;margin:0 0 16px 0;">
+      Satış kaydı olmadan doğrudan irsaliye kesin. Müşteri, sevk tarihi ve kalemleri seçin.
+    </p>
+
+    <div class="card">
+      <h3 style="margin-top:0;">Müşteri ve Sevk Bilgileri</h3>
+      <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;">
+        <div class="form-group autocomplete-wrap">
+          <label for="customerSearch">Müşteri *</label>
+          <input type="text" id="customerSearch" placeholder="Müşteri adı veya VKN ile ara..." autocomplete="off">
+          <div class="autocomplete-list" id="customerList"></div>
+          <input type="hidden" id="customerId">
+          <small id="customerInfo" style="color:#6b7280;"></small>
+        </div>
+        <div class="form-group">
+          <label for="shipDate">Sevk Tarihi</label>
+          <input type="date" id="shipDate">
+        </div>
+        <div class="form-group">
+          <label for="fromLocation">Çıkış Deposu</label>
+          <select id="fromLocation"><option value="">— Seçiniz —</option></select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h3 style="margin:0;">Kalemler</h3>
+        <button type="button" class="btn btn-secondary" id="btnAddItem">➕ Kalem Ekle</button>
+      </div>
+
+      <div class="form-row header">
+        <div>Ürün / Açıklama</div>
+        <div>SKU</div>
+        <div>Miktar</div>
+        <div>Birim</div>
+        <div>İşlem</div>
+      </div>
+
+      <div id="itemsContainer"></div>
+    </div>
+
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px;margin-bottom:40px;">
+      <a href="/pages/delivery-notes.html" class="btn btn-secondary">İptal</a>
+      <button type="button" class="btn btn-primary" id="btnCreate">İrsaliye Oluştur</button>
+    </div>
+  </div>
+
+  <script type="module" src="/firebase.js"></script>
+  <script type="module">
+    import { initGlobalHeader } from '/assets/js/ui/header.js';
+    initGlobalHeader({ mount: '#app-header', activeRoute: 'invoicing' });
+  </script>
+  <script type="module" src="/scripts/delivery-direct-new.js"></script>
+</body>
+</html>

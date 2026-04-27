@@ -1,0 +1,929 @@
+<!doctype html>
+<html lang="tr">
+
+<head>
+  <meta charset="utf-8" />
+  <title>Yeni Satış</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Teklifbul Rule v1.0 - FOUC önleme: Tema hemen uygulanmalı -->
+  <script src="/assets/js/theme-init.js"></script>
+  <link rel="stylesheet" href="/utils.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <style>
+    body {
+      font-family: system-ui, Arial;
+      background: #f8fafc;
+      color: #111827;
+      margin: 0
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px
+    }
+
+    h1 {
+      margin: 0 0 8px 0
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 16px 0
+    }
+
+    .form-group {
+      margin-bottom: 16px
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #374151
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px;
+      box-sizing: border-box
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px
+    }
+
+    .required::after {
+      content: " *";
+      color: #dc2626
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border: 0;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      margin-right: 8px
+    }
+
+    .btn-primary {
+      background: #2563eb;
+      color: #fff
+    }
+
+    .btn-primary:hover {
+      background: #1d4ed8
+    }
+
+    .btn-secondary {
+      background: #6b7280;
+      color: #fff
+    }
+
+    .btn-secondary:hover {
+      background: #4b5563
+    }
+
+    .btn-danger {
+      background: #dc2626;
+      color: #fff
+    }
+
+    .btn-danger:hover {
+      background: #b91c1c
+    }
+
+    /* Switch Style */
+    .slider {
+      background-color: #ccc;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+
+    input:checked+.slider {
+      background-color: #2563eb;
+    }
+
+    input:focus+.slider {
+      box-shadow: 0 0 1px #2563eb;
+    }
+
+    input:checked+.slider:before {
+      transform: translateX(20px);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+      background: #fff;
+      display: table !important
+    }
+
+    #itemsTable {
+      table-layout: fixed;
+      width: 100%;
+      display: table !important
+    }
+
+    #itemsTable thead {
+      display: table-header-group !important
+    }
+
+    #itemsTable tbody {
+      display: table-row-group !important
+    }
+
+    #itemsTable tr {
+      display: table-row !important
+    }
+
+    #itemsTable th:nth-child(1),
+    #itemsTable td:nth-child(1) {
+      width: 120px;
+      min-width: 120px;
+      max-width: 120px
+    }
+
+    #itemsTable th:nth-child(2),
+    #itemsTable td:nth-child(2) {
+      width: 200px;
+      min-width: 200px;
+      max-width: 200px
+    }
+
+    #itemsTable th:nth-child(3),
+    #itemsTable td:nth-child(3) {
+      width: 100px;
+      min-width: 100px;
+      max-width: 100px
+    }
+
+    #itemsTable th:nth-child(4),
+    #itemsTable td:nth-child(4) {
+      width: 100px;
+      min-width: 100px;
+      max-width: 100px
+    }
+
+    #itemsTable th:nth-child(5),
+    #itemsTable td:nth-child(5) {
+      width: 150px;
+      min-width: 150px;
+      max-width: 150px
+    }
+
+    #itemsTable th:nth-child(6),
+    #itemsTable td:nth-child(6) {
+      width: 120px;
+      min-width: 120px;
+      max-width: 120px
+    }
+
+    #itemsTable th:nth-child(7),
+    #itemsTable td:nth-child(7) {
+      width: 90px;
+      min-width: 90px;
+      max-width: 90px
+    }
+
+    #itemsTable th:nth-child(8),
+    #itemsTable td:nth-child(8) {
+      width: 90px;
+      min-width: 90px;
+      max-width: 90px
+    }
+
+    #itemsTable th:nth-child(9),
+    #itemsTable td:nth-child(9) {
+      width: 120px;
+      min-width: 120px;
+      max-width: 120px
+    }
+
+    #itemsTable th:nth-child(10),
+    #itemsTable td:nth-child(10) {
+      width: 100px;
+      min-width: 100px;
+      max-width: 100px
+    }
+
+    #itemsTable td input,
+    #itemsTable td select {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 6px 8px;
+      font-size: 13px;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      display: block;
+      margin: 0
+    }
+
+    #itemsTable td input:focus,
+    #itemsTable td select:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1)
+    }
+
+    #itemsTable th,
+    #itemsTable td {
+      border-bottom: 1px solid #e5e7eb;
+      padding: 12px;
+      text-align: left;
+      font-size: 13px;
+      vertical-align: top;
+      display: table-cell !important
+    }
+
+    #itemsTable th {
+      background: #f9fafb;
+      font-weight: 600;
+      color: #374151
+    }
+
+    #itemsTable tr:hover {
+      background: #f9fafb
+    }
+
+    #itemsTable td>div {
+      width: 100%;
+      position: relative;
+      display: block
+    }
+
+    .autocomplete-container {
+      position: relative
+    }
+
+    .autocomplete-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: #fff;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 1000;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      display: none
+    }
+
+    .autocomplete-option {
+      padding: 8px 12px;
+      cursor: pointer
+    }
+
+    .autocomplete-option:hover {
+      background: #f3f4f6
+    }
+
+    .autocomplete-option.selected {
+      background: #dbeafe
+    }
+
+    .field-locked {
+      background: #f3f4f6;
+      cursor: not-allowed;
+      opacity: 0.6
+    }
+
+    .sku-autocomplete-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      background: #fff;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 1000;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      margin-top: 2px;
+      min-width: 300px;
+      max-width: 400px
+    }
+
+    .sku-autocomplete-option {
+      padding: 8px 12px;
+      cursor: pointer;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 12px;
+      background: #fff
+    }
+
+    .sku-autocomplete-option:hover {
+      background: #f3f4f6
+    }
+
+    .sku-autocomplete-option:last-child {
+      border-bottom: none
+    }
+
+    html[data-theme="dark"] .sku-autocomplete-dropdown,
+    html.force-dark .sku-autocomplete-dropdown {
+      background: #1f2937;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    html[data-theme="dark"] .sku-autocomplete-option,
+    html.force-dark .sku-autocomplete-option {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    html[data-theme="dark"] .sku-autocomplete-option:hover,
+    html.force-dark .sku-autocomplete-option:hover {
+      background: #374151;
+    }
+
+    .summary-card {
+      background: #f0f9ff;
+      border: 1px solid #bae6fd;
+      border-radius: 6px;
+      padding: 16px;
+      margin-top: 16px
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #bae6fd
+    }
+
+    .summary-row:last-child {
+      border-bottom: none;
+      font-weight: 700;
+      font-size: 16px
+    }
+
+    .muted {
+      color: #6b7280;
+      font-size: 12px
+    }
+
+    /* Koyu Mod */
+    html[data-theme="dark"] body,
+    html.force-dark body {
+      background: #111827;
+      color: #ffffff;
+    }
+
+    html[data-theme="dark"] .card,
+    html.force-dark .card {
+      background: #1f2937;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    html[data-theme="dark"] .form-group input,
+    html[data-theme="dark"] .form-group select,
+    html[data-theme="dark"] .form-group textarea,
+    html.force-dark .form-group input,
+    html.force-dark .form-group select,
+    html.force-dark .form-group textarea {
+      background: #111827;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+    }
+
+    html[data-theme="dark"] .field-locked,
+    html.force-dark .field-locked {
+      background: #1f2937;
+    }
+
+    html[data-theme="dark"] .autocomplete-dropdown,
+    html.force-dark .autocomplete-dropdown {
+      background: #1f2937;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    html[data-theme="dark"] .autocomplete-option:hover,
+    html.force-dark .autocomplete-option:hover {
+      background: #374151;
+    }
+
+    html[data-theme="dark"] .summary-card,
+    html.force-dark .summary-card {
+      background: #1e3a5f;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    html[data-theme="dark"] #itemsTable td input,
+    html[data-theme="dark"] #itemsTable td select,
+    html.force-dark #itemsTable td input,
+    html.force-dark #itemsTable td select {
+      background: #111827;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+    }
+
+    html[data-theme="dark"] #itemsTable td input:focus,
+    html[data-theme="dark"] #itemsTable td select:focus,
+    html.force-dark #itemsTable td input:focus,
+    html.force-dark #itemsTable td select:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Common Header -->
+  <header id="app-header"></header>
+
+  <div class="container">
+    <!-- Breadcrumb Navigation -->
+    <div class="tb-breadcrumb" id="breadcrumb">
+      <span class="tb-crumb">
+        <span class="ico">🏠</span>
+        <a href="/dashboard.html">Ana Sayfa</a>
+      </span>
+      <span class="tb-sep">›</span>
+      <span class="tb-crumb">
+        <span class="ico">💰</span>
+        <a href="/pages/sales.html">Satışlar</a>
+      </span>
+      <span class="tb-sep">›</span>
+      <span class="tb-crumb">
+        <span class="ico">➕</span>
+        <span>Yeni Satış</span>
+      </span>
+    </div>
+
+    <h1>➕ Yeni Satış</h1>
+    <p class="muted">Yeni satış oluşturun veya mevcut satışı düzenleyin.</p>
+
+    <!-- TABS -->
+    <div class="tabs" style="display:flex;gap:12px;margin-bottom:24px;">
+      <a href="/pages/sale-new.html" class="btn" style="flex:1;text-align:center;background:#2563eb;color:#fff;border:1px solid #2563eb;height:auto;padding:12px;border-radius:8px;box-shadow:0 4px 6px -1px rgba(37, 99, 235, 0.2);transition:all 0.2s;">✨ Yeni Satış Kaydı</a>
+      <a href="/pages/sales.html" class="btn" style="flex:1;text-align:center;background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;height:auto;padding:12px;border-radius:8px;transition:all 0.2s;">📋 Satış Listesi</a>
+    </div>
+
+    <form id="saleForm">
+      <input type="hidden" id="saleId" />
+
+      <div class="card">
+        <div class="form-group" style="margin-bottom:20px; border-bottom:1px solid #f1f5f9; padding-bottom:15px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <label class="switch" style="position:relative; display:inline-block; width:44px; height:24px; margin-bottom:0;">
+              <input type="checkbox" id="isRetailSale" style="opacity:0; width:0; height:0;">
+              <span class="slider round" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; transition:.4s; border-radius:34px;"></span>
+            </label>
+            <div>
+              <span style="font-weight:700; color:#1e293b; font-size:14px;">🛍️ Hızlı Satış (Perakende)</span>
+              <small class="muted" style="display:block; font-size:11px;">Müşteri seçmeden direkt fiş kaydı oluşturur.</small>
+            </div>
+          </div>
+          <div id="retailSaleHint"
+            style="margin-top:10px;padding:10px 12px;border-radius:8px;border:1px solid #fcd34d;background:#fffbeb;color:#92400e;font-size:12px;line-height:1.5;">
+            Bu mod fiş / yazar kasa satışları içindir. Teslimat adresi, fatura bilgisi veya özel cari bilgisi gerekiyorsa
+            perakende modunu kapatıp yeni cari oluşturun.
+          </div>
+        </div>
+
+        <div class="form-group autocomplete-container" id="customerSearchGroup">
+          <label for="customerSearch" class="required">Müşteri</label>
+          <input type="text" id="customerSearch" placeholder="Müşteri adı veya kod ile ara..." autocomplete="off" />
+          <input type="hidden" id="customerId" />
+          <div id="customerDropdown" class="autocomplete-dropdown"></div>
+        </div>
+
+        <div id="customerInfo"
+          style="display:none;padding:12px;background:white;border:1px solid #e5e7eb;border-radius:8px;margin-top:12px;box-shadow:0 1px 2px rgba(0,0,0,0.05)">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div style="flex:1">
+              <div style="font-size:12px;color:#6b7280;margin-bottom:2px">Müşteri Bilgileri</div>
+              <div style="font-weight:600;color:#111827" id="customerNameDisplay"></div>
+              <div style="font-size:13px;color:#4b5563;margin-top:4px">
+                <span id="customerCodeDisplay"></span> | <span id="customerVKNDisplay"></span>
+              </div>
+            </div>
+            <div id="efaturaStatusBadge"
+              style="padding:4px 8px;border-radius:4px;font-size:11px;font-weight:600;display:none"></div>
+          </div>
+          <div style="margin-top:12px;border-top:1px solid #f3f4f6;padding-top:8px">
+            <button type="button" class="btn btn-secondary" id="btnQueryEFatura" style="padding:4px 8px;font-size:11px">
+              🔍 e-Fatura Sorgula
+            </button>
+          </div>
+        </div>
+
+        <div style="margin-top:12px">
+          <button type="button" class="btn btn-primary" id="btnNewCustomer" style="padding:10px 16px;font-size:14px">
+            ➕ Yeni Müşteri Ekle
+          </button>
+        </div>
+      </div>
+
+      <!-- Teklifbul Rule v1.0 - Nakliye Bilgileri -->
+      <div class="card" id="deliveryCard">
+        <h2 style="margin-top:0">🚚 Nakliye Bilgileri</h2>
+
+        <div class="form-group" id="deliveryToggleGroup" style="background:#f0f9ff; padding:16px; border-radius:8px; border:1px solid #bae6fd; display:flex; align-items:center; gap:12px; cursor:pointer;">
+          <input type="checkbox" id="isOwnDelivery" style="width:20px; height:20px; cursor:pointer;" />
+          <div style="flex:1">
+            <label style="margin:0; font-size:14px; font-weight:700; color:#0369a1; cursor:pointer;">🚚 Nakliye bize ait</label>
+            <small class="muted" style="display:block; margin-top:2px; color:#0ea5e9">Bu seçenek işaretlendiğinde, teslim alacak kişi bilgileri zorunludur.</small>
+          </div>
+        </div>
+
+        <div id="deliveryDetails" style="display:none">
+          <h3 style="margin-top:16px;font-size:14px;font-weight:600">Teslim Alacak Kişi</h3>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="recipientName" class="required">Ad</label>
+              <input type="text" id="recipientName" placeholder="Ad" />
+            </div>
+            <div class="form-group">
+              <label for="recipientSurname" class="required">Soyad</label>
+              <input type="text" id="recipientSurname" placeholder="Soyad" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="recipientPhone" class="required">Telefon</label>
+              <input type="tel" id="recipientPhone" placeholder="05XX XXX XX XX" />
+            </div>
+          </div>
+
+          <h3 style="margin-top:16px;font-size:14px;font-weight:600">Teslim Adresi</h3>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="deliveryCity" class="required">İl</label>
+              <select id="deliveryCity"
+                style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;box-sizing:border-box">
+                <option value="">İl seçiniz</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="deliveryDistrict" class="required">İlçe</label>
+              <select id="deliveryDistrict" disabled
+                style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;box-sizing:border-box">
+                <option value="">İlçe seçiniz</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="deliveryNeighborhood">Mahalle</label>
+              <input type="text" id="deliveryNeighborhood" placeholder="Mahalle" />
+            </div>
+            <div class="form-group">
+              <label for="deliveryAvenue">Cadde</label>
+              <input type="text" id="deliveryAvenue" placeholder="Cadde" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="deliveryStreet">Sokak</label>
+              <input type="text" id="deliveryStreet" placeholder="Sokak" />
+            </div>
+            <div class="form-group">
+              <label for="deliveryPostalCode">Posta Kodu</label>
+              <input type="text" id="deliveryPostalCode" placeholder="34000" maxlength="5" pattern="[0-9]{5}" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="deliveryDoorNumber">Kapı Numarası</label>
+              <input type="text" id="deliveryDoorNumber" placeholder="Kapı Numarası" />
+            </div>
+            <div class="form-group">
+              <label for="deliveryApartment">Daire</label>
+              <input type="text" id="deliveryApartment" placeholder="Daire" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="deliveryCountry">Ülke</label>
+              <input type="text" id="deliveryCountry" value="TR" readonly style="background:#f3f4f6" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 style="margin-top:0">Satış Kalemleri</h2>
+
+        <div style="margin-bottom:16px">
+          <button type="button" class="btn btn-primary" id="btnAddItem">+ Kalem Ekle</button>
+        </div>
+
+        <table id="itemsTable">
+          <thead>
+            <tr>
+              <th>SKU</th>
+              <th>Ürün Adı</th>
+              <th>Miktar</th>
+              <th>Birim</th>
+              <th>Lokasyon</th>
+              <th>Birim Fiyat</th>
+              <th>KDV %</th>
+              <th>İndirim %</th>
+              <th>Tutar</th>
+              <th>İşlem</th>
+            </tr>
+          </thead>
+          <tbody id="itemsTableBody">
+            <tr>
+              <td colspan="10" style="text-align:center;padding:40px;color:#6b7280">
+                Henüz kalem eklenmedi. "+ Kalem Ekle" butonuna tıklayın.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2 style="margin-top:0">Finansal Bilgiler</h2>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="currency">Para Birimi</label>
+            <select id="currency">
+              <option value="TRY">TRY - Türk Lirası</option>
+              <option value="USD">USD - Amerikan Doları</option>
+              <option value="EUR">EUR - Euro</option>
+              <option value="GBP">GBP - İngiliz Sterlini</option>
+            </select>
+          </div>
+          <div class="form-group" id="exchangeRateGroup" style="display:none">
+            <label for="exchangeRate">Döviz Kuru</label>
+            <div style="display:flex;gap:4px">
+              <input type="number" id="exchangeRate" step="0.0001" min="0" style="flex:1" />
+              <button type="button" class="btn btn-secondary" id="btnFetchExchangeRate"
+                style="padding:0 12px; font-size:12px">
+                🔄 Kuru Getir
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="summary-card">
+          <div class="summary-row">
+            <span>Ara Toplam (KDV Hariç):</span>
+            <span id="subtotal">0,00 TRY</span>
+          </div>
+          <div class="summary-row">
+            <span>Toplam İndirim:</span>
+            <span id="totalDiscount">0,00 TRY</span>
+          </div>
+          <div class="summary-row">
+            <span>Toplam KDV:</span>
+            <span id="totalVat">0,00 TRY</span>
+          </div>
+          <div class="summary-row">
+            <span>Genel Toplam:</span>
+            <span id="totalAmount">0,00 TRY</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 style="margin-top:0">Notlar</h2>
+        <div class="form-group">
+          <textarea id="notes" rows="3" placeholder="Satış ile ilgili notlar..."></textarea>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px">
+        <a href="/pages/sales.html" class="btn btn-secondary">İptal</a>
+        <button type="button" class="btn btn-primary" id="btnSaveSale">💾 Satışı Kaydet</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Header -->
+  <!-- Header -->
+  <script type="module">
+    import { initGlobalHeader } from '../assets/js/ui/header.js';
+    initGlobalHeader({ mount: '#app-header', activeRoute: 'sales' });
+  </script>
+
+  <script type="module" src="/scripts/sale-new-form.js"></script>
+
+  <!-- Müşteri Form Modal -->
+  <div id="customerModal" class="modal"
+    style="display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.5)">
+    <div class="modal-content"
+      style="background:#fff;margin:5% auto;padding:20px;border:1px solid #888;width:90%;max-width:600px;border-radius:8px;max-height:90vh;overflow-y:auto">
+      <span class="close" id="closeCustomerModal"
+        style="color:#aaa;float:right;font-size:28px;font-weight:bold;cursor:pointer">&times;</span>
+      <h2 id="modalTitle" style="margin-top:0">Yeni Müşteri</h2>
+      <form id="customerForm">
+        <input type="hidden" id="customerId" />
+
+        <div class="form-group">
+          <label for="customerCode">Müşteri Kodu</label>
+          <input type="text" id="customerCode" readonly style="background:#f3f4f6" />
+          <small class="muted">Otomatik oluşturulur</small>
+        </div>
+
+        <div class="form-group">
+          <label for="customerName" class="required">Müşteri Adı</label>
+          <input type="text" id="customerName" required />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="taxNumber">VKN/TCKN</label>
+            <input type="text" id="taxNumber" maxlength="11" pattern="[0-9]{10,11}" />
+          </div>
+          <div class="form-group">
+            <label for="taxOffice">Vergi Dairesi</label>
+            <input type="text" id="taxOffice" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Adres</label>
+          <!-- Teklifbul Rule v1.0 - Adres giriş sıralaması: İl → İlçe → Mahalle → Cadde → Sokak -->
+          <div class="form-row">
+            <div class="form-group">
+              <label for="addressCity" class="required">İl</label>
+              <select id="addressCity"
+                style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;box-sizing:border-box">
+                <option value="">İl seçiniz</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="addressDistrict" class="required">İlçe</label>
+              <select id="addressDistrict"
+                style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;box-sizing:border-box"
+                disabled>
+                <option value="">İlçe seçiniz</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="addressNeighborhood">Mahalle</label>
+              <input type="text" id="addressNeighborhood" placeholder="Mahalle" />
+            </div>
+            <div class="form-group">
+              <label for="addressAvenue">Cadde</label>
+              <input type="text" id="addressAvenue" placeholder="Cadde" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="addressStreet">Sokak</label>
+              <input type="text" id="addressStreet" placeholder="Sokak" />
+            </div>
+            <div class="form-group">
+              <label for="addressPostalCode">Posta Kodu</label>
+              <input type="text" id="addressPostalCode" placeholder="Posta Kodu" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="addressDoorNumber">Kapı Numarası</label>
+              <input type="text" id="addressDoorNumber" placeholder="Kapı Numarası" />
+            </div>
+            <div class="form-group">
+              <label for="addressApartment">Daire</label>
+              <input type="text" id="addressApartment" placeholder="Daire" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="addressCountry">Ülke</label>
+              <input type="text" id="addressCountry" placeholder="Ülke" value="TR" readonly
+                style="background:#f3f4f6" />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>İletişim</label>
+          <div id="contactPersonsContainer"></div>
+          <button type="button" id="btnAddContact" class="btn btn-secondary"
+            style="padding:6px 12px;font-size:12px;margin-top:8px">+ İletişim Kişisi Ekle</button>
+          <div class="form-row" style="margin-top:12px">
+            <div class="form-group">
+              <input type="email" id="contactEmail" placeholder="E-posta"
+                style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;box-sizing:border-box" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Teklifbul Rule v1.0 - E-Belge: Fatura Bilgileri Kartı -->
+        <div class="form-group"
+          style="margin-top:24px;padding:16px;background:#f9fafb;border-radius:8px;border:1px solid #e5e7eb">
+          <h3 style="margin:0 0 16px 0;font-size:16px;font-weight:600;color:#1f2937">📄 Fatura Bilgileri</h3>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="invoiceEmail" class="required">Fatura E-posta</label>
+              <input type="email" id="invoiceEmail" placeholder="fatura@musteri.com"
+                style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;box-sizing:border-box" />
+              <small class="muted">E-fatura gönderimi için gerekli</small>
+            </div>
+            <div class="form-group">
+              <label for="defaultScenario">Varsayılan Senaryo</label>
+              <select id="defaultScenario"
+                style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;box-sizing:border-box">
+                <option value="">Seçiniz</option>
+                <option value="TEMEL">TEMEL</option>
+                <option value="TICARI" selected>TİCARİ</option>
+              </select>
+              <small class="muted" style="display:block;margin-top:4px;font-size:11px;line-height:1.4;color:#6b7280">
+                <strong>TİCARİ:</strong> Alıcı e-Fatura kullanıcısı ve faturayı sistemden reddedebilme/yanıtlayabilme
+                süreci olsun (B2B ticaret, kurumsal alımlar).<br>
+                <strong>TEMEL:</strong> Fatura otomatik kabul sayılsın, red/yanıt süreci olmasın (çoğu hizmet/abonelik
+                tarzı).
+              </small>
+            </div>
+          </div>
+
+          <div style="margin-top:12px;padding:12px;background:#fef3c7;border-radius:6px;border:1px solid #fbbf24">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+              <span style="font-weight:600;color:#92400e">e-Fatura Mükellefi Durumu</span>
+              <span id="efaturaStatusBadge"
+                style="padding:4px 8px;background:#fef3c7;border:1px solid #fbbf24;border-radius:4px;font-size:12px;color:#92400e">Sorgulanmadı</span>
+            </div>
+            <button type="button" id="btnQueryEFatura" class="btn btn-secondary"
+              style="padding:6px 12px;font-size:12px">🔍 Mükellef Sorgula</button>
+            <small class="muted" style="display:block;margin-top:4px;font-size:12px">Mükellef sorgusu e-belge
+              entegratörü üzerinden yapılacaktır</small>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="paymentTerms">Vade (Gün)</label>
+            <input type="number" id="paymentTerms" min="0" value="30" />
+          </div>
+          <div class="form-group">
+            <label for="creditLimit">Kredi Limiti</label>
+            <input type="number" id="creditLimit" min="0" step="0.01" />
+            <small class="muted" id="creditLimitNote">Sadece yönetici kadrosu düzenleyebilir</small>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="currency">Para Birimi</label>
+          <select id="currency">
+            <option value="TRY">TRY - Türk Lirası</option>
+            <option value="USD">USD - Amerikan Doları</option>
+            <option value="EUR">EUR - Euro</option>
+            <option value="GBP">GBP - İngiliz Sterlini</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="isActive" checked />
+            Aktif
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label for="notes">Notlar</label>
+          <textarea id="notes" rows="3"></textarea>
+        </div>
+
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px">
+          <button type="button" class="btn btn-secondary" id="btnCancelCustomer">İptal</button>
+          <button type="submit" class="btn btn-primary" id="btnSaveCustomer">Kaydet</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</body>
+
+</html>

@@ -28,8 +28,8 @@
 
     <script type="module">
         // Teklifbul Rule v1.0 - Root firebase.js kullan (duplicate app hatası önleme)
-        import { db, auth, login } from './firebase.js';
-        import { collection, getDocs, doc, updateDoc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+        import { db, auth } from './firebase.js';
+        import { collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
 
         const log = document.getElementById('log');
         const startBtn = document.getElementById('startBtn');

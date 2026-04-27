@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>Test Rapor Verileri Oluştur</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="/utils.css" />
+  <style>
+    body { font-family: system-ui, Arial; background: #f8fafc; padding: 20px; }
+    .container { max-width: 800px; margin: 0 auto; background: white; padding: 24px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    h1 { margin: 0 0 16px 0; }
+    .btn { padding: 12px 24px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
+    .btn:hover { background: #1d4ed8; }
+    .btn:disabled { background: #9ca3af; cursor: not-allowed; }
+    .log { margin-top: 20px; padding: 16px; background: #f9fafb; border-radius: 6px; font-family: monospace; font-size: 13px; max-height: 400px; overflow-y: auto; }
+    .log-item { margin: 4px 0; }
+    .log-success { color: #059669; }
+    .log-error { color: #dc2626; }
+    .log-info { color: #2563eb; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📊 Test Rapor Verileri Oluştur</h1>
+    <p>Bu sayfa, <strong>teklifbultedarikci1@gmail.com</strong> kullanıcısı için Stok Raporları test verilerini oluşturur.</p>
+    
+    <button id="createBtn" class="btn">Test Verilerini Oluştur</button>
+    
+    <div id="log" class="log" style="display: none;"></div>
+  </div>
+
+  <script type="module">
+    import { db, auth } from '/firebase.js';
+    import { collection, addDoc, getDocs, query, where, doc, getDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+    import { getActiveCompanyId } from '/assets/js/state/company.js';
+    import { toast } from '/src/shared/ui/toast.js';
+
+    const btn = document.getElementById('createBtn');
+    const logDiv = document.getElementById('log');
+    
+    function log(message, type = 'info') {
+      logDiv.style.display = 'block';
+      const item = document.createElement('div');
+      item.className = `log-item log-${type}`;
+      item.textContent = message;
+      logDiv.appendChild(item);
+      logDiv.scrollTop = logDiv.scrollHeight;
+      console.log(message);
+    }
+
+    function generateSearchKeywords(name) {
+      const normalized = name
+        .normalize('NFD').replace(/\p{Diacritic}/gu, '')
+        .toLowerCase('tr-TR')
+        .replace(/ç/g, 'c').replace(/ğ/g, 'g').replace(/ı/g, 'i').replace(/i/g, 'i')
+        .replace(/ö/g, 'o').replace(/ş/g, 's').replace(/ü/g, 'u');
+      
+      const words = normalized.split(/\s+/).filter(Boolean);
+      const keywords = new Set();
+      
+      words.forEach(word => {
+        for (let i = 1; i <= Math.min(8, word.length); i++) {
+          keywords.add(word.slice(0, i));
+        }
+      });
+      
+      return Array.from(keywords);
+    }
+
+    function normalizeTR(s) {
+      if (!s) return "";
+      return s
+        .normalize('NFD').replace(/\p{Diacritic}/gu, '')
+        .toUpperCase('tr-TR')
+        .replace(/Ç/g, 'C').replace(/Ğ/g, 'G').replace(/İ/g, 'I')
+        .replace(/Ö/g, 'O').replace(/Ş/g, 'S').replace(/Ü/g, 'U');
+    }
+
+    async function createTestData() {
+      try {
+        btn.disabled = true;
+        log('🧭 Test verileri oluşturuluyor...', 'info');
+        
+        // Kullanıcı giriş kontrolü
+        const user = auth.currentUser;
+        if (!user) {
+          throw new Error('Lütfen önce giriş yapın');
+        }
+        
+        log(`✅ Kullanıcı: ${user.email}`, 'success');
+        
+        // Company ID'yi al
+        const companyId = await getActiveCompanyId();
+        if (!companyId) {
+          throw new Error('Company ID bulunamadı. Lütfen hesap ayarlarından şirket seçin.');
+        }
+        
+        log(`✅ Company ID: ${companyId}`, 'success');
+        
+        // 1. Lokasyonlar oluştur
+        log('📍 Lokasyonlar oluşturuluyor...', 'info');
+        const locations = [
+          { name: 'Merkez Depo', type: 'DEPOT', province: 'İstanbul', district: 'Şişli', addressSummary: 'İstanbul, Şişli' },
+          { name: 'Şantiye A', type: 'SITE', province: 'İstanbul', district: 'Kadıköy', addressSummary: 'İstanbul, Kadıköy' },
+          { name: 'Şantiye B', type: 'SITE', province: 'Ankara', district: 'Çankaya', addressSummary: 'Ankara, Çankaya' }
+        ];
+        
+        const locationIds = [];
+        for (const loc of locations) {
+          const docRef = await addDoc(collection(db, 'stock_locations'), {
+            ...loc,
+            companyId,
+            createdAt: serverTimestamp()
+          });
+          locationIds.push(docRef.id);
+          log(`  ✅ ${loc.name} oluşturuldu (${docRef.id})`, 'success');
+        }
+        
+        // 2. Stok kartları oluştur
+        log('📦 Stok kartları oluşturuluyor...', 'info');
+        const stocks = [
+          { sku: 'CIM-001', name: 'ÇİMENTO 32 KG', brand: 'Lafarge', unit: 'KG', minStock: 100, avgCost: 45.50, salePrice: 55.00, lastPurchasePrice: 45.50 },
+          { sku: 'DEM-001', name: 'DEMİR 12 MM', brand: 'İÇDAŞ', unit: 'TON', minStock: 5, avgCost: 12500.00, salePrice: 13500.00, lastPurchasePrice: 12500.00 },
+          { sku: 'KUM-001', name: 'KUM İNCE', brand: null, unit: 'TON', minStock: 20, avgCost: 350.00, salePrice: 420.00, lastPurchasePrice: 350.00 },
+          { sku: 'BOY-001', name: 'BOYA BEYAZ 20 LT', brand: 'Marshall', unit: 'LT', minStock: 50, avgCost: 280.00, salePrice: 350.00, lastPurchasePrice: 280.00 },
+          { sku: 'TUĞ-001', name: 'TUĞLA KIRMIZI', brand: null, unit: 'ADT', minStock: 1000, avgCost: 2.50, salePrice: 3.20, lastPurchasePrice: 2.50 },
+          { sku: 'BET-001', name: 'BETON C25', brand: null, unit: 'M3', minStock: 10, avgCost: 450.00, salePrice: 550.00, lastPurchasePrice: 450.00 }
+        ];
+        
+        const stockIds = [];
+        for (const stock of stocks) {
+          const nameNorm = normalizeTR(stock.name);
+          const docRef = await addDoc(collection(db, 'stocks'), {
+            ...stock,
+            companyId,
+            name_norm: nameNorm,
+            search_keywords: generateSearchKeywords(stock.name),
+            vatRate: 20,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+          });
+          stockIds.push({ id: docRef.id, ...stock });
+          log(`  ✅ ${stock.sku} - ${stock.name} oluşturuldu`, 'success');
+        }
+        
+        // 3. Stok hareketleri oluştur
+        log('🔄 Stok hareketleri oluşturuluyor...', 'info');
+        const now = new Date();
+        const movements = [];
+        
+        const cimStock = stockIds.find(s => s.sku === 'CIM-001');
+        const demStock = stockIds.find(s => s.sku === 'DEM-001');
+        const kumStock = stockIds.find(s => s.sku === 'KUM-001');
+        const boyStock = stockIds.find(s => s.sku === 'BOY-001');
+        const tugStock = stockIds.find(s => s.sku === 'TUĞ-001');
+        const betStock = stockIds.find(s => s.sku === 'BET-001');
+        
+        const loc1 = locationIds[0]; // Merkez Depo
+        const loc2 = locationIds[1]; // Şantiye A
+        const loc3 = locationIds[2]; // Şantiye B
+        
+        // Min Stok Altı için: Düşük stoklu ürünler
+        movements.push(
+          // CIM-001: 50 kg giriş (min 100, düşük stok)
+          {
+            stockId: cimStock.id,
+            sku: 'CIM-001',
+            companyId,
+            locationId: loc1,
+            type: 'IN',
+            qty: 50,
+            unitCost: 45.50,
+            totalCost: 2275.00,
+            extras: [
+              { type: 'NAKLİYE', amount: 100.00 },
+              { type: 'AMBALAJ', amount: 50.00 }
+            ],
+            createdAt: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),
+            createdBy: user.uid
+          },
+          // DEM-001: 2 ton giriş (min 5, düşük stok)
+          {
+            stockId: demStock.id,
+            sku: 'DEM-001',
+            companyId,
+            locationId: loc1,
+            type: 'IN',
+            qty: 2,
+            unitCost: 12500.00,
+            totalCost: 25000.00,
+            extras: [{ type: 'NAKLİYE', amount: 500.00 }],
+            createdAt: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000),
+            createdBy: user.uid
+          },
+          // KUM-001: 15 ton giriş (min 20, düşük stok)
+          {
+            stockId: kumStock.id,
+            sku: 'KUM-001',
+            companyId,
+            locationId: loc2,
+            type: 'IN',
+            qty: 15,
+            unitCost: 350.00,
+            totalCost: 5250.00,
+            extras: [],
+            createdAt: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000),
+            createdBy: user.uid
+          },
+          // BOY-001: 30 lt giriş (min 50, düşük stok)
+          {
+            stockId: boyStock.id,
+            sku: 'BOY-001',
+            companyId,
+            locationId: loc1,
+            type: 'IN',
+            qty: 30,
+            unitCost: 280.00,
+            totalCost: 8400.00,
+            extras: [{ type: 'AMBALAJ', amount: 100.00 }],
+            createdAt: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000),
+            createdBy: user.uid
+          }
+        );
+        
+        // Maliyet Altı Satış için: OUT hareketleri (satış fiyatı < avgCost)
+        movements.push(
+          // CIM-001: 10 kg çıkış, 40 TL/kg (avgCost: 45.50, maliyet altı)
+          {
+            stockId: cimStock.id,
+            sku: 'CIM-001',
+            companyId,
+            locationId: loc1,
+            type: 'OUT',
+            qty: 10,
+            unitCost: 40.00, // avgCost'tan düşük
+            totalCost: 400.00,
+            createdAt: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000),
+            createdBy: user.uid
+          },
+          // DEM-001: 0.5 ton çıkış, 12000 TL/ton (avgCost: 12500, maliyet altı)
+          {
+            stockId: demStock.id,
+            sku: 'DEM-001',
+            companyId,
+            locationId: loc1,
+            type: 'OUT',
+            qty: 0.5,
+            unitCost: 12000.00, // avgCost'tan düşük
+            totalCost: 6000.00,
+            createdAt: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000),
+            createdBy: user.uid
+          },
+          // KUM-001: 5 ton çıkış, 320 TL/ton (avgCost: 350, maliyet altı)
+          {
+            stockId: kumStock.id,
+            sku: 'KUM-001',
+            companyId,
+            locationId: loc2,
+            type: 'OUT',
+            qty: 5,
+            unitCost: 320.00, // avgCost'tan düşük
+            totalCost: 1600.00,
+            createdAt: new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000),
+            createdBy: user.uid
+          }
+        );
+        
+        // Lokasyon Stok için: Farklı lokasyonlarda stok
+        movements.push(
+          // TUĞ-001: Şantiye A'da 500 adet
+          {
+            stockId: tugStock.id,
+            sku: 'TUĞ-001',
+            companyId,
+            locationId: loc2,
+            type: 'IN',
+            qty: 500,
+            unitCost: 2.50,
+            totalCost: 1250.00,
+            extras: [],
+            createdAt: new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000),
+            createdBy: user.uid
+          },
+          // BET-001: Şantiye B'de 8 m3
+          {
+            stockId: betStock.id,
+            sku: 'BET-001',
+            companyId,
+            locationId: loc3,
+            type: 'IN',
+            qty: 8,
+            unitCost: 450.00,
+            totalCost: 3600.00,
+            extras: [{ type: 'NAKLİYE', amount: 200.00 }],
+            createdAt: new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000),
+            createdBy: user.uid
+          }
+        );
+        
+        // Hareketleri Firestore'a ekle ve stock_balances'i güncelle
+        const { updateStockBalance } = await import('/scripts/inventory-balances.js');
+        
+        for (const mv of movements) {
+          const docRef = await addDoc(collection(db, 'stock_movements'), {
+            ...mv,
+            createdAt: serverTimestamp()
+          });
+          
+          // Stock balance'ı güncelle
+          try {
+            await updateStockBalance({ ...mv, id: docRef.id });
+            log(`  ✅ Hareket oluşturuldu: ${mv.type} - ${mv.sku} (${mv.qty} ${stocks.find(s => s.sku === mv.sku)?.unit || ''})`, 'success');
+          } catch (balanceError) {
+            log(`  ⚠️ Hareket oluşturuldu ama balance güncellenemedi: ${balanceError.message}`, 'error');
+          }
+        }
+        
+        log('', 'info');
+        log('✨ Test verileri başarıyla oluşturuldu!', 'success');
+        log(`📊 Raporları görüntülemek için: http://localhost:5173/pages/reports.html`, 'info');
+        
+        toast.success('Test verileri başarıyla oluşturuldu!');
+        btn.disabled = false;
+        
+      } catch (error) {
+        log(`❌ Hata: ${error.message}`, 'error');
+        console.error('Test verileri oluşturma hatası:', error);
+        toast.error(`Hata: ${error.message}`);
+        btn.disabled = false;
+      }
+    }
+    
+    btn.addEventListener('click', createTestData);
+  </script>
+</body>
+</html>
+

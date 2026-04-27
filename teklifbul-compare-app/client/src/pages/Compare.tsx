@@ -1,4 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
+// Teklifbul Rule v1.0 - Toast Bildirim Sistemi
+import { toast } from '../../../src/shared/ui/toast.js';
+// Teklifbul Rule v1.0 - Structured Logging
+import { logger } from '../../../src/shared/log/logger.js';
 import { 
   RefreshCw, 
   Download, 
@@ -60,7 +64,7 @@ export default function ComparePage() {
       setData(comparisonResponse.data);
       setStatistics(statsResponse);
     } catch (err) {
-      console.error('Error loading data:', err);
+      logger.error('Error loading data', err);
       setError('Veri yüklenirken hata oluştu. Lütfen sayfayı yenileyin.');
     } finally {
       setLoading(false);
@@ -79,8 +83,8 @@ export default function ComparePage() {
       const filename = `mukayese_${generateTimestamp()}.${type}`;
       downloadFile(blob, filename);
     } catch (err) {
-      console.error('Export error:', err);
-      alert('Dosya indirilirken hata oluştu.');
+      logger.error('Export error', err);
+      toast.error('Dosya indirilirken hata oluştu.');
     } finally {
       setExporting(null);
     }

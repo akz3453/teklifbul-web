@@ -1,0 +1,3327 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>NEFISOFT — Hakediş Düzenle</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  
+  <!-- Teklifbul Rule v1.0 - Content Security Policy -->
+  <!-- Not: Google login ve Firebase Auth akışı için teklifbul.firebaseapp.com iframe içinde açılabildiğinden frame-src listesine eklendi. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://apis.google.com https://www.google.com https://www.recaptcha.net https://cdn.jsdelivr.net https://unpkg.com; script-src-elem 'self' https://www.gstatic.com https://apis.google.com https://www.google.com https://www.recaptcha.net https://cdn.jsdelivr.net https://unpkg.com 'sha256-+3oPYgb41B6T9DDxTV5+BxwuBt0kH4MCB0ubkutEst8='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com https://cdn.jsdelivr.net; style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com https://cdn.jsdelivr.net; frame-src 'self' https://accounts.google.com https://www.google.com https://www.recaptcha.net https://teklifbul.firebaseapp.com https://*.firebaseapp.com; connect-src 'self' wss://localhost:5173 ws://localhost:5173 http://localhost:5174 https://apis.google.com https://www.googleapis.com https://*.googleapis.com https://*.google.com https://*.firebaseio.com https://*.firebaseapp.com https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com; img-src 'self' data: blob: https:; object-src 'none'; base-uri 'self'; form-action 'self';" />
+  
+  <!-- PWA Meta Tags -->
+  <meta name="theme-color" content="#2563EB" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="NEFISOFT" />
+  <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+  <link rel="manifest" href="/manifest.json" />
+  
+  <!-- Teklifbul Rule v1.0 - Tema standardı: tb_theme key, FOUC önleme -->
+  <script src="/assets/js/theme-init.js"></script>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%233b82f6' rx='6'/%3E%3Ctext x='16' y='22' font-family='Arial' font-size='18' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/utils.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <style>
+    body { margin: 0; font-family: system-ui, Arial; }
+    .page-heading { margin: 20px 0; }
+    .page-title-chip { display: flex; align-items: center; gap: 12px; }
+    .page-title-icon { font-size: 32px; }
+    .page-title-text h1 { margin: 0; font-size: 24px; font-weight: 600; color: var(--text, #1f2937); }
+    html[data-theme="dark"] .page-title-text h1 { color: #ffffff; }
+    .page-title-caption { margin: 4px 0 0 0; font-size: 14px; color: var(--text-muted, #6b7280); }
+    html[data-theme="dark"] .page-title-caption { color: rgba(255,255,255,0.7); }
+    
+    .card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; background: white; margin-bottom: 20px; }
+    html[data-theme="dark"] .card { background: #111827; border: 1px solid rgba(255,255,255,0.25); color: #ffffff; }
+    
+    /* Tab styles - Teklifbul Rule v1.0 - Mevcut sistemle uyumlu */
+    .tabs { display: flex; gap: 8px; margin: 12px 0; }
+    .tab { padding: 8px 12px; border: 1px solid #e5e7eb; border-radius: 8px; background: #ffffff; cursor: pointer; font-weight: 600; color: #1f2937; transition: all 0.2s; }
+    .tab:hover { background: #2563eb; color: #ffffff; border-color: #2563eb; }
+    .tab.active { background: #2563eb; color: #ffffff; border-color: #2563eb; }
+    html[data-theme="dark"] .tab { background: #111827; color: #ffffff; border-color: rgba(255,255,255,0.25); }
+    html[data-theme="dark"] .tab:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.4); }
+    html[data-theme="dark"] .tab.active { background: #2563eb; color: #ffffff; border-color: #2563eb; }
+    .hidden { display: none; }
+    
+    .info-card { background: #eff6ff; border-left: 4px solid #3b82f6; padding: 16px; margin-bottom: 20px; border-radius: 6px; }
+    html[data-theme="dark"] .info-card { background: #1e3a8a; border-left-color: #60a5fa; }
+    
+    /* Approval Stepper Styles - Teklifbul Rule v1.0 */
+    .approval-stepper { display: flex; align-items: center; justify-content: space-between; position: relative; padding: 20px 0; }
+    .approval-stepper::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 2px; background: #e5e7eb; z-index: 0; }
+    html[data-theme="dark"] .approval-stepper::before { background: rgba(255,255,255,0.25); }
+    .stepper-step { flex: 1; display: flex; flex-direction: column; align-items: center; position: relative; z-index: 1; }
+    .stepper-step-circle { width: 40px; height: 40px; border-radius: 50%; background: #e5e7eb; color: #6b7280; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px; margin-bottom: 8px; transition: all 0.3s; }
+    html[data-theme="dark"] .stepper-step-circle { background: rgba(255,255,255,0.25); color: rgba(255,255,255,0.7); }
+    .stepper-step.active .stepper-step-circle { background: #3b82f6; color: white; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2); }
+    .stepper-step.completed .stepper-step-circle { background: #10b981; color: white; }
+    .stepper-step.rejected .stepper-step-circle { background: #ef4444; color: white; }
+    .stepper-step-label { font-size: 12px; font-weight: 600; color: #6b7280; text-align: center; max-width: 100px; }
+    html[data-theme="dark"] .stepper-step-label { color: rgba(255,255,255,0.7); }
+    .stepper-step.active .stepper-step-label { color: #3b82f6; font-weight: 700; }
+    html[data-theme="dark"] .stepper-step.active .stepper-step-label { color: #60a5fa; }
+    .stepper-step.completed .stepper-step-label { color: #10b981; }
+    .stepper-step.rejected .stepper-step-label { color: #ef4444; }
+    
+    /* Kimde Kaldı Paneli - Teklifbul Rule v1.0 */
+    .approval-who-item { padding: 12px; background: #f9fafb; border-radius: 8px; margin-bottom: 8px; }
+    html[data-theme="dark"] .approval-who-item { background: #1f2937; }
+    .approval-who-item.current { background: #eff6ff; border-left: 4px solid #3b82f6; }
+    html[data-theme="dark"] .approval-who-item.current { background: #1e3a8a; border-left-color: #60a5fa; }
+    .approval-who-item.completed { background: #d1fae5; border-left: 4px solid #10b981; }
+    html[data-theme="dark"] .approval-who-item.completed { background: #064e3b; border-left-color: #34d399; }
+    .approval-who-name { font-weight: 600; color: #1f2937; margin-bottom: 4px; }
+    html[data-theme="dark"] .approval-who-name { color: #ffffff; }
+    .approval-who-email { font-size: 12px; color: #6b7280; }
+    html[data-theme="dark"] .approval-who-email { color: rgba(255,255,255,0.7); }
+    
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text, #1f2937); }
+    html[data-theme="dark"] .form-group label { color: #ffffff; }
+    .form-group input,
+    .form-group select,
+    .form-group textarea { width: 100%; padding: 10px; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 14px; background: white; color: #1f2937; }
+    html[data-theme="dark"] .form-group input,
+    html[data-theme="dark"] .form-group select,
+    html[data-theme="dark"] .form-group textarea { background: #1f2937; border: 1px solid rgba(255,255,255,0.25); color: #ffffff; }
+    .form-group input[readonly],
+    .form-group select[readonly] { background: #f9fafb; cursor: not-allowed; }
+    html[data-theme="dark"] .form-group input[readonly],
+    html[data-theme="dark"] .form-group select[readonly] { background: #1f2937; opacity: 0.7; }
+    
+    .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+    
+    .btn { padding: 10px 20px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .btn-primary { background: #3b82f6; color: white; }
+    .btn-primary:hover { background: #2563eb; }
+    .btn-success { background: #10b981; color: white; }
+    .btn-success:hover { background: #059669; }
+    .btn-outline { background: transparent; border: 1px solid #e5e7eb; color: var(--text, #1f2937); }
+    html[data-theme="dark"] .btn-outline { border-color: rgba(255,255,255,0.25); color: #ffffff; }
+    
+    .action-buttons { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+    
+    .table-container { overflow-x: auto; }
+    .table { width: 100%; border-collapse: collapse; }
+    .table th, .table td { border-bottom: 1px solid #e5e7eb; padding: 12px; text-align: left; font-size: 14px; }
+    html[data-theme="dark"] .table th, html[data-theme="dark"] .table td { border-bottom: 1px solid rgba(255,255,255,0.25); color: #ffffff; }
+    .table th { background: #f9fafb; font-weight: 600; color: #374151; }
+    html[data-theme="dark"] .table th { background: #111827; color: #ffffff; }
+    
+    .badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+    .badge.draft { background: #fef3c7; color: #92400e; }
+    .badge.approved { background: #d1fae5; color: #065f46; }
+    .badge.sent { background: #dbeafe; color: #1e40af; }
+    html[data-theme="dark"] .badge.draft { background: #78350f; color: #fbbf24; }
+    html[data-theme="dark"] .badge.approved { background: #064e3b; color: #34d399; }
+    html[data-theme="dark"] .badge.sent { background: #1e3a8a; color: #93c5fd; }
+    
+    .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 16px; }
+    .summary-item { padding: 16px; background: #f9fafb; border-radius: 8px; }
+    html[data-theme="dark"] .summary-item { background: #1f2937; }
+    .summary-item-label { font-size: 12px; color: #6b7280; font-weight: 600; margin-bottom: 4px; }
+    html[data-theme="dark"] .summary-item-label { color: rgba(255,255,255,0.7); }
+    .summary-item-value { font-size: 20px; font-weight: 700; color: #1f2937; }
+    html[data-theme="dark"] .summary-item-value { color: #ffffff; }
+    
+    .premium-required { text-align: center; padding: 60px 20px; }
+    .premium-required h2 { margin: 0 0 16px 0; color: var(--text, #1f2937); }
+    html[data-theme="dark"] .premium-required h2 { color: #ffffff; }
+    .premium-required p { color: var(--text-muted, #6b7280); margin: 8px 0; }
+    html[data-theme="dark"] .premium-required p { color: rgba(255,255,255,0.7); }
+    
+    /* Modal styles - Teklifbul Rule v1.0 */
+    .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); }
+    .modal-content { background: white; margin: 5% auto; padding: 20px; border-radius: 8px; max-width: 700px; max-height: 90vh; overflow-y: auto; }
+    html[data-theme="dark"] .modal-content { background: #111827; border: 1px solid rgba(255,255,255,0.25); color: #ffffff; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .modal-header h3 { margin: 0; }
+    .close-modal { background: none; border: none; font-size: 24px; cursor: pointer; color: #6b7280; }
+    html[data-theme="dark"] .close-modal { color: #ffffff; }
+    .close-modal:hover { color: #1f2937; }
+    html[data-theme="dark"] .close-modal:hover { color: #ffffff; }
+  </style>
+</head>
+<body>
+  <!-- Common Header -->
+  <header id="app-header"></header>
+
+  <main class="container--wide" style="padding:20px 0">
+    <div class="page-heading">
+      <div class="page-title-chip" role="presentation">
+        <span class="page-title-icon" aria-hidden="true">💵</span>
+        <div class="page-title-text">
+          <h1 id="page-title">Yeni Hakediş</h1>
+          <p class="page-title-caption">Hakediş bilgilerini düzenleyin</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Premium Plus Kontrolü -->
+    <div id="premium-required" class="premium-required" style="display:none;">
+      <h2>Premium Plus Gerekli</h2>
+      <p>Bu özellik Premium Plus paketine özeldir.</p>
+      <p>Planınızı yükselterek hakediş hesaplama modülünü kullanabilirsiniz.</p>
+      <a href="./settings.html#premium" class="btn btn-primary" style="margin-top: 16px;">Planı Yükselt</a>
+    </div>
+    
+    <!-- Ana İçerik -->
+    <div id="main-content" style="display:none;">
+      <!-- Üst Bilgi Kartı -->
+      <div class="card info-card">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Proje / Şantiye</label>
+            <select id="site-select" readonly>
+              <option value="">Yükleniyor...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Sözleşme <span style="color: #ef4444;">*</span></label>
+            <select id="contract-select" required>
+              <option value="">Sözleşme seçiniz</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Dönem</label>
+            <div style="display: flex; gap: 8px;">
+              <input type="date" id="period-start" />
+              <span style="align-self: center;">-</span>
+              <input type="date" id="period-end" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Hakediş No</label>
+            <input type="text" id="payment-number" readonly />
+          </div>
+          <div class="form-group">
+            <label>Durum</label>
+            <select id="status-select">
+              <option value="draft">Taslak</option>
+              <option value="approved">Onaylı</option>
+              <option value="sent">Muhasebeye Gönderildi</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Butonlar -->
+      <div class="action-buttons">
+        <button class="btn btn-primary" id="btn-ai-draft">AI ile Taslak Oluştur</button>
+        <button class="btn btn-success" id="btn-save">Kaydet</button>
+        <button class="btn btn-outline" id="btn-send-approval" style="display: none;">Onaya Gönder</button>
+        <button class="btn btn-success" id="btn-approve" style="display: none;">Onayla</button>
+        <button class="btn btn-danger" id="btn-reject" style="display: none;">Reddet</button>
+        <button class="btn btn-outline" id="btn-send-to-accountant" style="display: none;">Muhasebeye Gönder</button>
+        <button class="btn btn-outline" id="btn-pdf">PDF Oluştur</button>
+        <button class="btn btn-outline" id="btn-excel">Excel İndir</button>
+        <a href="./interim-payments.html" class="btn btn-outline">← Listeye Dön</a>
+      </div>
+      
+      <!-- Onay Akışı Stepper - Teklifbul Rule v1.0 -->
+      <div class="card" id="approval-stepper-container" style="margin-bottom: 20px;">
+        <h3 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 600;">Onay Durumu</h3>
+        <div class="approval-stepper" id="approval-stepper">
+          <!-- Stepper dinamik olarak oluşturulacak -->
+        </div>
+      </div>
+      
+      <!-- Kimde Kaldı? Paneli - Teklifbul Rule v1.0 -->
+      <div class="card" id="approval-who-panel" style="display: none; margin-bottom: 20px;">
+        <h3 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 600;">Kimde Kaldı?</h3>
+        <div id="approval-who-content">
+          <!-- İçerik dinamik olarak oluşturulacak -->
+        </div>
+      </div>
+      
+      <!-- Onay Durumu Bilgisi (Eski - Geriye dönük uyumluluk) -->
+      <!-- Onay Akışı Stepper - Teklifbul Rule v1.0 -->
+      <div class="card" id="approval-stepper-container" style="margin-bottom: 20px;">
+        <h3 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 600;">Onay Durumu</h3>
+        <div class="approval-stepper" id="approval-stepper">
+          <!-- Stepper dinamik olarak oluşturulacak -->
+        </div>
+      </div>
+      
+      <!-- Kimde Kaldı? Paneli - Teklifbul Rule v1.0 -->
+      <div class="card" id="approval-who-panel" style="display: none; margin-bottom: 20px;">
+        <h3 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 600;">Kimde Kaldı?</h3>
+        <div id="approval-who-content">
+          <!-- İçerik dinamik olarak oluşturulacak -->
+        </div>
+      </div>
+      
+      <!-- Onay Durumu Bilgisi (Eski - Geriye dönük uyumluluk) -->
+      <div id="approval-status-info" class="info-card" style="display: none;">
+        <strong>Onay Durumu:</strong> <span id="approval-status-text"></span>
+        <div id="approval-pending-info" style="margin-top: 8px; font-size: 13px;"></div>
+      </div>
+      
+      <!-- Tabs - Teklifbul Rule v1.0 - Mevcut sistemle uyumlu -->
+      <div class="tabs" role="tablist">
+        <button id="tab-summary" class="tab active" role="tab" aria-controls="panel-summary" aria-selected="true">Özet</button>
+        <button id="tab-items" class="tab" role="tab" aria-controls="panel-items" aria-selected="false">Pozlar & Metraj</button>
+        <button id="tab-costs" class="tab" role="tab" aria-controls="panel-costs" aria-selected="false">Giderler & Maliyetler</button>
+        <button id="tab-deductions" class="tab" role="tab" aria-controls="panel-deductions" aria-selected="false">Kesintiler</button>
+        <button id="tab-approval-history" class="tab" role="tab" aria-controls="panel-approval-history" aria-selected="false">Onay Geçmişi</button>
+        <button id="tab-version-history" class="tab" role="tab" aria-controls="panel-version-history" aria-selected="false">Versiyon Geçmişi</button>
+        <button id="tab-documents" class="tab" role="tab" aria-controls="panel-documents" aria-selected="false">Dokümanlar & Paylaşım</button>
+      </div>
+      
+      <!-- Tab Panels -->
+      <!-- Sekme 1: Özet -->
+      <div id="panel-summary" role="tabpanel" aria-labelledby="tab-summary">
+        <div class="card">
+          <h2 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 600;">Özet Bilgiler</h2>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Proje / Şantiye</label>
+              <input type="text" id="summary-site" readonly />
+            </div>
+            <div class="form-group">
+              <label>Sözleşme</label>
+              <input type="text" id="summary-contract" readonly />
+            </div>
+            <div class="form-group">
+              <label>Sözleşme Tutarı</label>
+              <input type="text" id="summary-contract-value" readonly />
+            </div>
+            <div class="form-group">
+              <label>Önceki Hakedişler Toplamı</label>
+              <input type="number" id="summary-previous-total" min="0" step="0.01" placeholder="0.00" />
+            </div>
+          </div>
+          
+          <div class="summary-grid">
+            <div class="summary-item">
+              <div class="summary-item-label">Bu Hakediş Brüt Tutar</div>
+              <div class="summary-item-value" id="summary-gross">0,00 ₺</div>
+            </div>
+            <div class="summary-item">
+              <div class="summary-item-label">Kesintiler Toplamı</div>
+              <div class="summary-item-value" id="summary-deductions">0,00 ₺</div>
+            </div>
+            <div class="summary-item">
+              <div class="summary-item-label">Net Tutar</div>
+              <div class="summary-item-value" id="summary-net">0,00 ₺</div>
+            </div>
+            <div class="form-group" style="grid-column: span 1;">
+              <label>KDV Oranı (%)</label>
+              <input type="number" id="summary-kdv-rate" value="20" min="0" max="100" step="0.01" />
+            </div>
+            <div class="summary-item">
+              <div class="summary-item-label">KDV Tutarı</div>
+              <div class="summary-item-value" id="summary-kdv">0,00 ₺</div>
+            </div>
+            <div class="summary-item">
+              <div class="summary-item-label">Ödenecek Toplam Tutar</div>
+              <div class="summary-item-value" id="summary-total" style="color: #10b981;">0,00 ₺</div>
+            </div>
+          </div>
+          
+          <div class="info-card" style="margin-top: 20px;">
+            <p style="margin: 0; color: #1e40af; font-size: 14px;">
+              <strong>💡 Bilgi:</strong> <span id="summary-cost-info">Bu dönemde oluşan şantiye maliyetleri: 0,00 ₺</span><br>
+              <strong>📊 Gerçekleşme:</strong> <span id="summary-progress">Toplam gerçekleştirme oranı: %0</span>
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Sekme 2: Pozlar & Metraj -->
+      <div id="panel-items" role="tabpanel" aria-labelledby="tab-items" class="hidden" aria-hidden="true">
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h2 style="margin: 0; font-size: 18px; font-weight: 600;">Poz Bazlı Metraj ve Hesaplama</h2>
+            <div style="display: flex; gap: 8px;">
+              <input type="text" id="item-search" placeholder="Poz No / Açıklama ara..." style="width: 300px; padding: 8px; border: 1px solid #e5e7eb; border-radius: 6px;" />
+              <button class="btn btn-outline" id="btn-download-template">📥 Metraj Excel Şablonu İndir</button>
+              <button class="btn btn-outline" id="btn-import-excel">📤 Excel'den Metraj Aktar</button>
+              <input type="file" id="excel-file-input" accept=".xlsx" style="display: none;" />
+              <button class="btn btn-outline" id="btn-hide-empty">Boş pozları gizle</button>
+            </div>
+          </div>
+          
+          <div class="table-container">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Poz No</th>
+                  <th>Açıklama</th>
+                  <th>Birim</th>
+                  <th>Birim Fiyat</th>
+                  <th>Önceki Hakediş Miktarı</th>
+                  <th>Bu Hakediş Miktarı</th>
+                  <th>Toplam Miktar</th>
+                  <th>Satır Tutarı</th>
+                </tr>
+              </thead>
+              <tbody id="items-table-body">
+                <tr>
+                  <td colspan="8" style="text-align: center; padding: 40px; color: #6b7280;">
+                    Pozlar yükleniyor...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <div style="margin-top: 16px; text-align: right;">
+            <strong>Toplam Brüt Tutar: <span id="items-total">0,00 ₺</span></strong>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Sekme 3: Giderler & Maliyetler -->
+      <div id="panel-costs" role="tabpanel" aria-labelledby="tab-costs" class="hidden" aria-hidden="true">
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h2 style="margin: 0; font-size: 18px; font-weight: 600;">Şantiye Giderleri ve Maliyet Bilgileri</h2>
+            <button class="btn btn-primary" id="btn-add-cost" style="padding: 8px 16px; font-size: 14px;">+ Gider Ekle</button>
+          </div>
+          
+          <!-- Gider Ekleme Formu (Başlangıçta gizli) -->
+          <div id="cost-add-form" class="card" style="display: none; margin-bottom: 20px; background: #f0f9ff; border: 1px solid #3b82f6;">
+            <h3 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 600;">Yeni Gider Ekle</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Tarih *</label>
+                <input type="date" id="cost-add-date" required />
+              </div>
+              <div class="form-group">
+                <label>Gider Türü *</label>
+                <select id="cost-add-type" required>
+                  <option value="">Seçiniz</option>
+                  <option value="material">Malzeme</option>
+                  <option value="labor">İşçilik</option>
+                  <option value="service">Hizmet</option>
+                  <option value="subcontractor">Taşeron</option>
+                  <option value="other">Diğer</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Açıklama *</label>
+                <input type="text" id="cost-add-description" placeholder="Gider açıklaması" required />
+              </div>
+              <div class="form-group">
+                <label>Tutar (₺) *</label>
+                <input type="number" id="cost-add-amount" min="0" step="0.01" placeholder="0.00" required />
+              </div>
+              <div class="form-group">
+                <label>Kaynak</label>
+                <select id="cost-add-source">
+                  <option value="manual">Manuel Giriş</option>
+                  <option value="stock_movement">Stok Hareketi</option>
+                  <option value="invoice">Fatura</option>
+                  <option value="other">Diğer</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>İlgili Fatura No / Evrak No</label>
+                <input type="text" id="cost-add-document-number" placeholder="Fatura/Evrak numarası" />
+              </div>
+            </div>
+            <div style="display: flex; gap: 8px; margin-top: 12px;">
+              <button class="btn btn-success" id="btn-cost-save" style="padding: 8px 16px; font-size: 14px;">Kaydet</button>
+              <button class="btn btn-outline" id="btn-cost-cancel" style="padding: 8px 16px; font-size: 14px;">İptal</button>
+            </div>
+          </div>
+          
+          <div class="form-row" style="margin-bottom: 16px;">
+            <div class="form-group">
+              <label>Gider Türü</label>
+              <select id="cost-type-filter">
+                <option value="">Tümü</option>
+                <option value="material">Malzeme</option>
+                <option value="labor">İşçilik</option>
+                <option value="service">Hizmet</option>
+                <option value="subcontractor">Taşeron</option>
+                <option value="other">Diğer</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Tarih Aralığı Başlangıç</label>
+              <input type="date" id="cost-period-start" />
+            </div>
+            <div class="form-group">
+              <label>Tarih Aralığı Bitiş</label>
+              <input type="date" id="cost-period-end" />
+            </div>
+          </div>
+          
+          <div class="table-container">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Tarih</th>
+                  <th>Gider Türü</th>
+                  <th>Açıklama</th>
+                  <th>Tutar</th>
+                  <th>Kaynak</th>
+                  <th>İlgili Fatura No / Evrak No</th>
+                  <th>İşlemler</th>
+                </tr>
+              </thead>
+              <tbody id="costs-table-body">
+                <tr>
+                  <td colspan="7" style="text-align: center; padding: 40px; color: #6b7280;">
+                    Giderler yükleniyor...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <div style="margin-top: 16px;">
+            <p><strong>Bu dönemde oluşan toplam gider: <span id="costs-period-total">0,00 ₺</span></strong></p>
+            <p><strong>Projenin bugüne kadarki toplam gideri: <span id="costs-total">0,00 ₺</span></strong></p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Sekme 4: Kesintiler -->
+      <div id="panel-deductions" role="tabpanel" aria-labelledby="tab-deductions" class="hidden" aria-hidden="true">
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h2 style="margin: 0; font-size: 18px; font-weight: 600;">Kesintiler ve Net Tutar Hesabı</h2>
+            <button class="btn btn-primary" id="btn-add-deduction" style="padding: 8px 16px; font-size: 14px;">+ Manuel Kesinti Ekle</button>
+          </div>
+          
+          <!-- Manuel Kesinti Ekleme Formu (Başlangıçta gizli) -->
+          <div id="deduction-add-form" class="card" style="display: none; margin-bottom: 20px; background: #f0f9ff; border: 1px solid #3b82f6;">
+            <h3 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 600;">Yeni Manuel Kesinti Ekle</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Kesinti Adı *</label>
+                <input type="text" id="deduction-add-name" placeholder="Örn: Geçici Kabul Kesintisi" required />
+              </div>
+              <div class="form-group">
+                <label>Kesinti Tutarı (₺) *</label>
+                <input type="number" id="deduction-add-amount" min="0" step="0.01" placeholder="0.00" required />
+              </div>
+              <div class="form-group">
+                <label>Açıklama</label>
+                <input type="text" id="deduction-add-description" placeholder="Kesinti açıklaması" />
+              </div>
+            </div>
+            <div style="display: flex; gap: 8px; margin-top: 12px;">
+              <button class="btn btn-success" id="btn-deduction-save" style="padding: 8px 16px; font-size: 14px;">Kaydet</button>
+              <button class="btn btn-outline" id="btn-deduction-cancel" style="padding: 8px 16px; font-size: 14px;">İptal</button>
+            </div>
+          </div>
+          
+          <!-- Manuel Kesintiler Listesi -->
+          <div id="manual-deductions-list" style="margin-bottom: 20px;">
+            <h3 style="margin: 0 0 12px 0; font-size: 16px; font-weight: 600;">Manuel Kesintiler</h3>
+            <div class="table-container">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Kesinti Adı</th>
+                    <th>Tutar</th>
+                    <th>Açıklama</th>
+                    <th>İşlemler</th>
+                  </tr>
+                </thead>
+                <tbody id="manual-deductions-table-body">
+                  <tr>
+                    <td colspan="4" style="text-align: center; padding: 20px; color: #6b7280;">
+                      Henüz manuel kesinti eklenmemiş
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label>Avans Mahsubu Oranı (%)</label>
+              <input type="number" id="deduction-advance-rate" value="10" min="0" max="100" step="0.01" />
+            </div>
+            <div class="form-group">
+              <label>Avans Mahsubu Tutarı</label>
+              <input type="text" id="deduction-advance-amount" readonly />
+            </div>
+            <div class="form-group">
+              <label>Teminat Kesintisi Oranı (%)</label>
+              <input type="number" id="deduction-guarantee-rate" value="6" min="0" max="100" step="0.01" />
+            </div>
+            <div class="form-group">
+              <label>Teminat Kesintisi Tutarı</label>
+              <input type="text" id="deduction-guarantee-amount" readonly />
+            </div>
+            <div class="form-group">
+              <label>Stopaj Oranı (%)</label>
+              <input type="number" id="deduction-stopaj-rate" value="5" min="0" max="100" step="0.01" />
+            </div>
+            <div class="form-group">
+              <label>Stopaj Tutarı</label>
+              <input type="text" id="deduction-stopaj-amount" readonly />
+            </div>
+          </div>
+          
+          <div style="margin-top: 24px; padding-top: 24px; border-top: 2px solid #e5e7eb;">
+            <div class="summary-grid">
+              <div class="summary-item">
+                <div class="summary-item-label">Brüt Tutar</div>
+                <div class="summary-item-value" id="deduction-gross">0,00 ₺</div>
+              </div>
+              <div class="summary-item">
+                <div class="summary-item-label">Kesintiler Toplamı</div>
+                <div class="summary-item-value" id="deduction-total">0,00 ₺</div>
+              </div>
+              <div class="summary-item">
+                <div class="summary-item-label">Net Tutar</div>
+                <div class="summary-item-value" id="deduction-net">0,00 ₺</div>
+              </div>
+              <div class="summary-item">
+                <div class="summary-item-label">KDV (%)</div>
+                <div class="summary-item-value" id="deduction-kdv-rate">20%</div>
+              </div>
+              <div class="summary-item">
+                <div class="summary-item-label">KDV Tutarı</div>
+                <div class="summary-item-value" id="deduction-kdv">0,00 ₺</div>
+              </div>
+              <div class="summary-item">
+                <div class="summary-item-label">Ödenecek Net + KDV</div>
+                <div class="summary-item-value" id="deduction-final" style="color: #10b981;">0,00 ₺</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Sekme 5: Onay Geçmişi -->
+      <div id="panel-approval-history" role="tabpanel" aria-labelledby="tab-approval-history" class="hidden" aria-hidden="true">
+        <div class="card">
+          <h2 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 600;">Onay Geçmişi</h2>
+          <div id="approval-history-list" style="min-height: 200px;">
+            <div class="empty-state">Onay geçmişi yükleniyor...</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Sekme 6: Versiyon Geçmişi -->
+      <div id="panel-version-history" role="tabpanel" aria-labelledby="tab-version-history" class="hidden" aria-hidden="true">
+        <div class="card">
+          <h2 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 600;">Versiyon Geçmişi</h2>
+          <div class="info-box" style="margin-bottom: 20px;">
+            <p style="margin: 0; font-size: 14px;">
+              <strong>💡 Bilgi:</strong> Hakedişinizde yapılan tüm değişiklikler otomatik olarak kaydedilir. 
+              İstediğiniz bir versiyona geri dönebilirsiniz. (Onaylanmış/gönderilmiş hakedişlerde geri alma yapılamaz)
+            </p>
+          </div>
+          <div id="version-history-list" style="min-height: 200px;">
+            <div class="empty-state">Versiyon geçmişi yükleniyor...</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Sekme 7: Dokümanlar & Paylaşım -->
+      <div id="panel-documents" role="tabpanel" aria-labelledby="tab-documents" class="hidden" aria-hidden="true">
+        <div class="card">
+          <h2 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 600;">Dokümanlar ve Paylaşım</h2>
+          
+          <div class="action-buttons" style="margin-bottom: 24px;">
+            <button class="btn btn-primary" id="btn-download-pdf">Hakedişi PDF Olarak İndir</button>
+            <button class="btn btn-outline" id="btn-download-excel">Excel Çıktısı Al</button>
+            <button class="btn btn-outline" id="btn-send-accountant">Muhasebecime Gönder</button>
+          </div>
+          
+          <div class="form-group">
+            <label>Ekler: Metraj dökümleri, saha tutanakları, fotoğraflar vb.</label>
+            <input type="file" id="file-upload" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx" />
+            <div id="file-list" style="margin-top: 12px;"></div>
+            <div id="attachments-list" style="margin-top: 16px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    // Teklifbul Rule v1.0 - Auth Guard (oturum kontrolü)
+    import { initAuthGuard } from './assets/js/auth-guard.js';
+    // Teklifbul Rule v1.0 - XSS Protection
+    import DOMPurify from 'https://cdn.jsdelivr.net/npm/dompurify@3.2.2/+esm';
+    // Teklifbul Rule v1.0
+    import { initGlobalHeader } from './assets/js/ui/header.js';
+    import { switchTab } from './assets/js/ui/tabs.js';
+    import { auth, waitAuthReady, db } from './firebase.js';
+    import { logger } from './src/shared/log/logger.js';
+    import { toast } from './src/shared/ui/toast.js';
+    import { MESSAGES } from './src/shared/constants/messages.js';
+    import { requireCompanyContext } from './assets/js/state/company-context.js';
+    import { initPermissions, can as canPermission, requirePerm, requireExistingPerm, getInterimPerms, getAiPerms } from './assets/js/state/permissions.js';
+
+    // Teklifbul Rule v1.0 - Global hata yakalayıcı (loglama, PII yok)
+    window.addEventListener('error', (event) => {
+      try {
+        logger.error('window.error', {
+          message: String(event?.message || ''),
+          filename: String(event?.filename || ''),
+          lineno: Number(event?.lineno || 0),
+          colno: Number(event?.colno || 0),
+        });
+      } catch (_) { /* sessiz */ }
+    });
+    window.addEventListener('unhandledrejection', (event) => {
+      try {
+        const reason = event?.reason;
+        logger.error('promise.unhandledrejection', {
+          reasonType: typeof reason,
+          reasonName: reason && reason.name ? String(reason.name) : '',
+          reasonMessage: reason && reason.message ? String(reason.message) : String(reason || ''),
+        });
+      } catch (_) { /* sessiz */ }
+    });
+
+    // Teklifbul Rule v1.0 - Auth guard'ı başlat (oturum yoksa login'e yönlendirir)
+    initAuthGuard().catch(err => {
+      logger.error('Auth guard init failed', {
+        name: err && err.name ? String(err.name) : '',
+        message: err && err.message ? String(err.message) : String(err || ''),
+      });
+      toast.error('Hata: Oturum kontrolü başlatılamadı');
+    });
+    import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+    import { resolveSharedCompanyId, authFetch } from './assets/js/utils/api-helpers.js';
+    
+    // getCurrentUser helper
+    async function getCurrentUser() {
+      if (auth.currentUser) return auth.currentUser;
+      const user = await waitAuthReady();
+      if (!user) {
+        throw new Error('not signed in');
+      }
+      return user;
+    }
+    
+    // Premium Plus kontrolü (company-bazlı, tek kaynak: companies/{companyId}.planId)
+    async function checkPremiumPlus() {
+      try {
+        logger.group('Premium Plus Kontrolü (company-based)');
+
+        const ctx = await requireCompanyContext({ redirectOnPending: true });
+        if (!ctx || !ctx.companyId) {
+          logger.warn('checkPremiumPlus: company context alınamadı', { ctx });
+          logger.end();
+          return false;
+        }
+
+        const { getCompanyPlan, isPremiumPlus } = await import('./assets/js/state/company-plan.js');
+        const plan = await getCompanyPlan(ctx.companyId);
+        const isPlus = isPremiumPlus(plan.planId);
+
+        logger.info('Premium Plus kontrolü sonucu (company-based)', {
+          companyId: ctx.companyId,
+          planId: plan.planId,
+          planSource: plan.planSource,
+          isPremiumPlus: isPlus
+        });
+        logger.end();
+
+        return isPlus;
+      } catch (error) {
+        logger.error('Premium Plus kontrolü başarısız', error);
+        logger.end();
+        return false;
+      }
+    }
+    
+    // Tab switching - Teklifbul Rule v1.0 - Mevcut sistemle uyumlu
+    function initTabs() {
+      const tabs = document.querySelectorAll('.tabs .tab');
+      tabs.forEach(tab => {
+        tab.addEventListener('click', (e) => {
+          e.preventDefault();
+          const tabId = tab.id;
+          switchTab(tabId, '.tabs');
+        });
+      });
+    }
+    
+    // Sayfa yükleme
+    async function init() {
+      // Header'ı başlat
+      await initGlobalHeader({ mount: '#app-header', activeRoute: 'interim-payment-edit' });
+      
+      // Premium Plus kontrolü
+      const hasAccess = await checkPremiumPlus();
+      if (!hasAccess) {
+        document.getElementById('premium-required').style.display = 'block';
+        document.getElementById('main-content').style.display = 'none';
+        return;
+      }
+
+      // Role-based permission init (Hakediş İşlem - interim.manage)
+      const permState = await initPermissions({ redirectOnPending: true });
+      if (!permState) {
+        const msg =
+          (MESSAGES.ERROR_PERMISSION_INTERIM_MANAGE ||
+            MESSAGES.ERROR_PERMISSION_DENIED ||
+            MESSAGES.ERROR_PERMISSION) ??
+          'Hakediş işlemi yapma yetkiniz yok.';
+        toast.error(msg);
+        logger.warn('Hakediş Düzenle: permission state alınamadı, sayfa kapatılıyor');
+        window.location.href = './interim-payments.html';
+        return;
+      }
+
+      const interimPerms = getInterimPerms();
+      const manageKey = interimPerms.manage;
+      const canManageInterim = !manageKey || canPermission(manageKey);
+
+      if (!canManageInterim) {
+        const msg =
+          (MESSAGES.ERROR_PERMISSION_INTERIM_MANAGE ||
+            MESSAGES.ERROR_PERMISSION_DENIED ||
+            MESSAGES.ERROR_PERMISSION) ??
+          'Hakediş işlemi yapma yetkiniz yok.';
+        toast.error(msg);
+        logger.warn('Hakediş Düzenle: interim.manage izni yok, sayfa kapatılıyor', {
+          permKey: manageKey,
+          companyId: permState.companyId,
+          roleKey: permState.roleKey
+        });
+        window.location.href = './interim-payments.html';
+        return;
+      }
+
+      document.getElementById('premium-required').style.display = 'none';
+      document.getElementById('main-content').style.display = 'block';
+      
+      // Tab'ları başlat
+      initTabs();
+      
+      // URL parametrelerini kontrol et (önerilerden geliyorsa)
+      const params = new URLSearchParams(window.location.search);
+      const siteId = params.get('siteId');
+      const contractId = params.get('contractId');
+      const periodStart = params.get('periodStart');
+      const periodEnd = params.get('periodEnd');
+      
+      // Event listener'ları ekle
+      const interimPermsForUi = getInterimPerms();
+      const manageKeyForUi = interimPermsForUi.manage;
+      const canManageForUi = !manageKeyForUi || canPermission(manageKeyForUi);
+
+      const aiPermsForUi = getAiPerms();
+      const aiUseKeyForUi = aiPermsForUi && aiPermsForUi.use;
+      const canAiUseForUi = !!(aiUseKeyForUi && canPermission(aiUseKeyForUi));
+
+      const saveBtn = /** @type {HTMLButtonElement|null} */ (document.getElementById('btn-save'));
+      const aiDraftBtn = /** @type {HTMLButtonElement|null} */ (document.getElementById('btn-ai-draft'));
+      const sendApprovalBtn = /** @type {HTMLButtonElement|null} */ (document.getElementById('btn-send-approval'));
+      const approveBtn = /** @type {HTMLButtonElement|null} */ (document.getElementById('btn-approve'));
+      const rejectBtn = /** @type {HTMLButtonElement|null} */ (document.getElementById('btn-reject'));
+      const sendToAccountantBtn = /** @type {HTMLButtonElement|null} */ (document.getElementById('btn-send-to-accountant'));
+
+      const disabledTitle =
+        (MESSAGES.ERROR_PERMISSION_INTERIM_MANAGE ||
+          MESSAGES.ERROR_PERMISSION_DENIED ||
+          MESSAGES.ERROR_PERMISSION) ??
+        'Hakediş işlemi yapma yetkiniz yok.';
+
+      const aiDisabledTitle =
+        (MESSAGES.ERROR_PERMISSION_AI_USE ||
+          MESSAGES.ERROR_PERMISSION_DENIED ||
+          MESSAGES.ERROR_PERMISSION) ??
+        'AI hakediş asistanını kullanma yetkiniz yok.';
+
+      const applyManageUiGuard = (btn) => {
+        if (!btn) return;
+        if (!canManageForUi) {
+          btn.disabled = true;
+          btn.title = disabledTitle;
+        } else {
+          btn.disabled = false;
+          btn.title = '';
+        }
+      };
+
+      applyManageUiGuard(saveBtn);
+      applyManageUiGuard(aiDraftBtn);
+      applyManageUiGuard(sendApprovalBtn);
+      applyManageUiGuard(approveBtn);
+      applyManageUiGuard(rejectBtn);
+      applyManageUiGuard(sendToAccountantBtn);
+
+      // AI özel UI guard - hem manage hem ai.use gerekli (fail-closed)
+      if (aiDraftBtn) {
+        if (!aiUseKeyForUi) {
+          const msg =
+            (MESSAGES.ERROR_PERMISSION_TEMPLATE_MISSING ||
+              'Yetki şablonu eksik (Excel export gerekli).');
+          aiDraftBtn.disabled = true;
+          aiDraftBtn.title = msg;
+        } else if (!canManageForUi || !canAiUseForUi) {
+          aiDraftBtn.disabled = true;
+          aiDraftBtn.title = !canAiUseForUi ? aiDisabledTitle : disabledTitle;
+        }
+      }
+
+      saveBtn?.addEventListener('click', savePayment);
+      aiDraftBtn?.addEventListener('click', generateAiDraft);
+      sendApprovalBtn?.addEventListener('click', sendForApproval);
+      approveBtn?.addEventListener('click', approvePayment);
+      rejectBtn?.addEventListener('click', showRejectModal);
+      sendToAccountantBtn?.addEventListener('click', sendToAccountant);
+      document.getElementById('btn-pdf')?.addEventListener('click', downloadPDF);
+      document.getElementById('btn-excel')?.addEventListener('click', downloadExcel);
+      document.getElementById('btn-download-pdf')?.addEventListener('click', downloadPDF);
+      document.getElementById('btn-download-excel')?.addEventListener('click', downloadExcel);
+      document.getElementById('btn-send-accountant')?.addEventListener('click', () => toast.info('Muhasebe gönderimi yakında eklenecek'));
+      
+      // Gider ekleme event listener'ları
+      document.getElementById('btn-add-cost')?.addEventListener('click', () => {
+        const form = document.getElementById('cost-add-form');
+        if (form) form.style.display = form.style.display === 'none' ? 'block' : 'none';
+      });
+      document.getElementById('btn-cost-cancel')?.addEventListener('click', () => {
+        const form = document.getElementById('cost-add-form');
+        if (form) {
+          form.style.display = 'none';
+          // Form alanlarını temizle
+          document.getElementById('cost-add-date').value = '';
+          document.getElementById('cost-add-type').value = '';
+          document.getElementById('cost-add-description').value = '';
+          document.getElementById('cost-add-amount').value = '';
+          document.getElementById('cost-add-source').value = 'manual';
+          document.getElementById('cost-add-document-number').value = '';
+        }
+      });
+      document.getElementById('btn-cost-save')?.addEventListener('click', addCost);
+      
+      // Kesinti ekleme event listener'ları
+      document.getElementById('btn-add-deduction')?.addEventListener('click', () => {
+        const form = document.getElementById('deduction-add-form');
+        if (form) form.style.display = form.style.display === 'none' ? 'block' : 'none';
+      });
+      document.getElementById('btn-deduction-cancel')?.addEventListener('click', () => {
+        const form = document.getElementById('deduction-add-form');
+        if (form) {
+          form.style.display = 'none';
+          // Form alanlarını temizle
+          document.getElementById('deduction-add-name').value = '';
+          document.getElementById('deduction-add-amount').value = '';
+          document.getElementById('deduction-add-description').value = '';
+        }
+      });
+      document.getElementById('btn-deduction-save')?.addEventListener('click', addManualDeduction);
+      
+      // Pozlar ve metraj için event listener'lar
+      document.getElementById('summary-kdv-rate')?.addEventListener('input', () => {
+        calculateSummary();
+        calculateDeductions();
+      });
+      
+      // Önceki hakedişler toplamı değiştiğinde güncelle
+      document.getElementById('summary-previous-total')?.addEventListener('input', calculateSummary);
+      
+      // Kesinti oranları değiştiğinde hesapla
+      document.getElementById('deduction-advance-rate')?.addEventListener('input', calculateDeductions);
+      document.getElementById('deduction-guarantee-rate')?.addEventListener('input', calculateDeductions);
+      document.getElementById('deduction-stopaj-rate')?.addEventListener('input', calculateDeductions);
+      
+      // Excel şablonu indirme ve import - Teklifbul Rule v1.0
+      document.getElementById('btn-download-template')?.addEventListener('click', downloadMetrajTemplate);
+      document.getElementById('btn-import-excel')?.addEventListener('click', () => {
+        /** @type {HTMLInputElement | null} */ // Teklifbul Rule v1.0
+        const fileInput = document.getElementById('excel-file-input');
+        if (fileInput) {
+          fileInput.click();
+        }
+      });
+      document.getElementById('excel-file-input')?.addEventListener('change', async (e) => {
+        const target = e.target;
+        const file = target.files?.[0];
+        if (file) {
+          await importMetrajFromExcel(file);
+          target.value = ''; // Reset input
+        }
+      });
+      
+      if (siteId && contractId && periodStart && periodEnd) {
+        // Önerilerden gelen verileri doldur
+        document.getElementById('period-start').value = periodStart.split('T')[0];
+        document.getElementById('period-end').value = periodEnd.split('T')[0];
+        await loadSitesAndContracts();
+        document.getElementById('site-select').value = siteId;
+        document.getElementById('contract-select').value = contractId;
+        await loadContractData(contractId);
+      } else {
+        await loadSitesAndContracts();
+      }
+      
+      // Payment ID kontrolü (düzenleme modu)
+      const paymentId = params.get('id');
+      if (paymentId) {
+        document.getElementById('page-title').textContent = `Hakediş Düzenle`;
+        await loadPayment(paymentId);
+        
+        // Dosya yükleme handler'ını kur
+        await setupFileUpload(paymentId);
+      } else {
+        // Yeni hakediş oluşturulduğunda da dosya yükleme handler'ını kur (geçici ID ile)
+        // Not: Yeni hakediş kaydedildikten sonra gerçek ID ile tekrar kurulacak
+        const tempId = 'new';
+        await setupFileUpload(tempId);
+      }
+      
+      logger.info('Hakediş düzenleme sayfası yüklendi');
+    }
+    
+    // Şantiyeleri ve sözleşmeleri yükle
+    async function loadSitesAndContracts() {
+      try {
+        const user = await getCurrentUser();
+        if (!user) return;
+        
+        const token = await user.getIdToken();
+        const { db } = await import('./firebase.js');
+        const { collection, query, where, getDocs } = await import('https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js');
+        
+        if (!db) return;
+        
+        // Kullanıcı bilgisini API'den al
+        const userResponse = await fetch('/api/user', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (!userResponse.ok) return;
+        
+        const userData = await userResponse.json();
+        const companyId = userData?.companyId || userData?.activeCompanyId;
+        if (!companyId) return;
+        
+        // Şantiyeleri yükle
+        const sitesQuery = query(
+          collection(db, 'stock_locations'),
+          where('companyId', '==', companyId)
+        );
+        const sitesSnapshot = await getDocs(sitesQuery);
+        
+        const siteSelect = document.getElementById('site-select');
+        if (siteSelect) {
+          // Teklifbul Rule v1.0 - XSS Protection
+          siteSelect.innerHTML = DOMPurify.sanitize('<option value="">Şantiye seçiniz</option>');
+          sitesSnapshot.forEach(doc => {
+            const data = doc.data();
+            if (data.type === 'warehouse' || data.type === 'site') {
+              const option = document.createElement('option');
+              option.value = doc.id;
+              option.textContent = data.title || data.siteName || doc.id;
+              siteSelect.appendChild(option);
+            }
+          });
+          
+          // Şantiye değiştiğinde sözleşmeleri yükle ve özet bilgilerini güncelle
+          siteSelect.addEventListener('change', async (e) => {
+            const selectedSiteId = e.target.value;
+            if (selectedSiteId) {
+              await loadContracts(selectedSiteId, companyId);
+              calculateSummary(); // Özet bilgilerini güncelle
+            }
+          });
+        }
+      } catch (error) {
+        logger.error('Şantiyeler yüklenirken hata', error);
+        toast.error('Şantiyeler yüklenemedi');
+      }
+    }
+    
+    // Sözleşmeleri yükle - Teklifbul Rule v1.0 - API üzerinden yükle
+    async function loadContracts(siteId, companyId) {
+      try {
+        logger.group('Sözleşmeler Yükleniyor');
+        const user = await getCurrentUser();
+        if (!user) return;
+        
+        // API üzerinden sözleşmeleri yükle
+        const params = new URLSearchParams();
+        if (siteId) params.append('siteId', siteId);
+        params.append('status', 'active'); // Sadece aktif sözleşmeleri göster
+        
+        const contractsResponse = await authFetch(`/api/contracts?${params.toString()}`);
+        if (!contractsResponse.ok) {
+          throw new Error('Sözleşmeler yüklenemedi');
+        }
+        
+        const data = await contractsResponse.json();
+        const contracts = data.contracts || [];
+        
+        const contractSelect = document.getElementById('contract-select');
+        if (contractSelect) {
+          // Teklifbul Rule v1.0 - XSS Protection
+          contractSelect.innerHTML = DOMPurify.sanitize('<option value="">Sözleşme seçiniz</option>');
+          contracts.forEach(contract => {
+            const option = document.createElement('option');
+            option.value = contract.id;
+            option.textContent = contract.contractName || contract.contractNo || contract.id;
+            contractSelect.appendChild(option);
+          });
+          
+          // Sözleşme değiştiğinde sözleşme verilerini yükle ve özet bilgilerini güncelle
+          contractSelect.addEventListener('change', async (e) => {
+            const selectedContractId = e.target.value;
+            if (selectedContractId) {
+              await loadContractData(selectedContractId);
+              calculateSummary(); // Özet bilgilerini güncelle
+            } else {
+              // Sözleşme seçimi temizlendiğinde pozları temizle
+              const tbody = document.getElementById('items-table-body');
+              if (tbody) {
+                tbody.innerHTML = DOMPurify.sanitize('<tr><td colspan="8" style="text-align: center; padding: 40px; color: #6b7280;">Sözleşme seçiniz</td></tr>');
+              }
+            }
+          });
+          
+          logger.info('Sözleşmeler yüklendi', { siteId, count: contracts.length });
+        }
+        logger.end();
+      } catch (error) {
+        logger.error('Sözleşmeler yüklenirken hata', error);
+        logger.end();
+        toast.error('Sözleşmeler yüklenemedi: ' + (error.message || 'Bilinmeyen hata'));
+      }
+    }
+    
+    // Sözleşme verilerini yükle - Teklifbul Rule v1.0 - API üzerinden yükle
+    async function loadContractData(contractId) {
+      try {
+        logger.group('Sözleşme Verileri Yükleniyor');
+        const user = await getCurrentUser();
+        if (!user) return;
+        
+        // API üzerinden sözleşmeyi yükle
+        const contractResponse = await authFetch(`/api/contracts/${contractId}`);
+        if (!contractResponse.ok) {
+          throw new Error('Sözleşme yüklenemedi');
+        }
+        
+        const contractData = await contractResponse.json();
+        
+        // Özet sekmesine sözleşme bilgilerini yaz
+        document.getElementById('summary-contract').value = contractData.contractName || '-';
+        const contractValue = contractData.contractValue || 0;
+        document.getElementById('summary-contract-value').value = 
+          contractValue.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' });
+        
+        // Teklifbul Rule v1.0 - Sözleşme tutarını snapshot olarak kaydetmek için input'a data attribute ekle
+        const contractValueInput = document.getElementById('summary-contract-value');
+        if (contractValueInput) {
+          contractValueInput.dataset.contractValue = contractValue;
+        }
+        
+        // Teklifbul Rule v1.0 - Contract varsayılan oranlarını yükle
+        if (contractData.kdvRate !== undefined) {
+          document.getElementById('summary-kdv-rate').value = contractData.kdvRate || 20;
+        }
+        if (contractData.stopajRate !== undefined) {
+          document.getElementById('deduction-stopaj-rate').value = contractData.stopajRate || 5;
+        }
+        if (contractData.guaranteeRate !== undefined) {
+          document.getElementById('deduction-guarantee-rate').value = contractData.guaranteeRate || 6;
+        }
+        if (contractData.advanceRate !== undefined) {
+          document.getElementById('deduction-advance-rate').value = contractData.advanceRate || 10;
+        }
+        
+        // Hesaplamaları güncelle
+        calculateSummary();
+        calculateDeductions();
+        
+        // Pozları yükle
+        await loadContractItems(contractId, null);
+        
+        logger.info('Sözleşme verileri yüklendi', { contractId });
+        logger.end();
+      } catch (error) {
+        logger.error('Sözleşme verileri yüklenirken hata', error);
+        logger.end();
+        toast.error('Sözleşme verileri yüklenemedi: ' + (error.message || 'Bilinmeyen hata'));
+      }
+    }
+    
+    // Sözleşme pozlarını yükle - Teklifbul Rule v1.0 - API üzerinden yükle
+    async function loadContractItems(contractId, paymentItems = null) {
+      try {
+        logger.group('Sözleşme Pozları Yükleniyor');
+        const user = await getCurrentUser();
+        if (!user) return;
+        
+        // API üzerinden pozları yükle
+        const itemsResponse = await authFetch(`/api/contracts/${contractId}/items`);
+        if (!itemsResponse.ok) {
+          throw new Error('Pozlar yüklenemedi');
+        }
+        
+        const data = await itemsResponse.json();
+        const items = data.items || [];
+        
+        const tbody = document.getElementById('items-table-body');
+        if (!tbody) return;
+        
+        if (items.length === 0) {
+          // Teklifbul Rule v1.0 - XSS Protection
+          tbody.innerHTML = DOMPurify.sanitize('<tr><td colspan="8" style="text-align: center; padding: 40px; color: #6b7280;">Henüz poz bulunmuyor</td></tr>');
+          logger.info('Poz bulunamadı', { contractId });
+          logger.end();
+          return;
+        }
+        
+        // Teklifbul Rule v1.0 - Mevcut hakediş verilerinden poz miktarlarını map'le
+        const paymentItemsMap = new Map();
+        if (paymentItems && Array.isArray(paymentItems)) {
+          paymentItems.forEach(paymentItem => {
+            // itemId veya code'a göre map'le
+            if (paymentItem.itemId) {
+              paymentItemsMap.set(paymentItem.itemId, paymentItem);
+            }
+            if (paymentItem.code) {
+              paymentItemsMap.set(paymentItem.code, paymentItem);
+            }
+          });
+        }
+        
+        // Teklifbul Rule v1.0 - XSS Protection: Sanitize user input
+        const sanitize = (str) => DOMPurify.sanitize(String(str || ''), { ALLOWED_TAGS: [] });
+        const sanitizeAttr = (str) => DOMPurify.sanitize(String(str || ''), { ALLOWED_TAGS: [] });
+        
+        const html = items.map(item => {
+          const safeCode = sanitize(item.code || '-');
+          const safeDescription = sanitize(item.description || '-');
+          const safeUnit = sanitize(item.unit || '-');
+          const safeItemId = sanitizeAttr(item.id);
+          const unitPrice = Number(item.unitPrice || 0);
+          
+          // Mevcut hakediş verilerinden miktarları al
+          const paymentItem = paymentItemsMap.get(item.id) || paymentItemsMap.get(item.code) || null;
+          const currentQuantity = paymentItem ? (paymentItem.quantity || 0) : 0;
+          const previousQuantity = paymentItem ? (paymentItem.previousQuantity || 0) : 0;
+          
+          return `
+            <tr>
+              <td>${safeCode}</td>
+              <td>${safeDescription}</td>
+              <td>${safeUnit}</td>
+              <td>${unitPrice.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}</td>
+              <td>${previousQuantity.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</td>
+              <td>
+                <input type="number" 
+                       class="current-quantity" 
+                       data-item-id="${safeItemId}"
+                       data-unit-price="${unitPrice}"
+                       value="${currentQuantity}" 
+                       min="0" 
+                       step="0.01"
+                       style="width: 100px; padding: 6px; border: 1px solid #e5e7eb; border-radius: 4px;"
+                       onchange="calculateItemTotal(this)" />
+              </td>
+              <td>${(previousQuantity + currentQuantity).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</td>
+              <td class="item-total">${(unitPrice * currentQuantity).toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}</td>
+            </tr>
+          `;
+        }).join('');
+        
+        // Sanitize final HTML - Teklifbul Rule v1.0 - XSS Protection
+        tbody.innerHTML = DOMPurify.sanitize(html, {
+          ALLOWED_TAGS: ['tr', 'td', 'input'],
+          ALLOWED_ATTR: ['class', 'type', 'data-item-id', 'data-unit-price', 'value', 'min', 'step', 'style', 'onchange', 'colspan']
+        });
+        
+        // İlk yüklemede toplamları hesapla
+        calculateItemsTotal();
+        
+        logger.info('Pozlar yüklendi', { contractId, count: items.length });
+        logger.end();
+      } catch (error) {
+        logger.error('Pozlar yüklenirken hata', error);
+        logger.end();
+        toast.error('Pozlar yüklenemedi: ' + (error.message || 'Bilinmeyen hata'));
+      }
+    }
+    
+    // Poz satır tutarını hesapla
+    window.calculateItemTotal = function(input) {
+      const unitPrice = parseFloat(input.dataset.unitPrice) || 0;
+      const quantity = parseFloat(input.value) || 0;
+      const total = unitPrice * quantity;
+      
+      const row = input.closest('tr');
+      const totalCell = row.querySelector('.item-total');
+      if (totalCell) {
+        totalCell.textContent = total.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' });
+      }
+      
+      calculateItemsTotal();
+      calculateSummary();
+    };
+    
+    // Pozlar toplamını hesapla
+    function calculateItemsTotal() {
+      const inputs = document.querySelectorAll('.current-quantity');
+      let total = 0;
+      
+      inputs.forEach(input => {
+        const unitPrice = parseFloat(input.dataset.unitPrice) || 0;
+        const quantity = parseFloat(input.value) || 0;
+        total += unitPrice * quantity;
+      });
+      
+      document.getElementById('items-total').textContent = 
+        total.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' });
+    }
+    
+    // Özet hesaplamaları
+    function calculateSummary() {
+      const grossAmount = parseFloat(document.getElementById('items-total').textContent.replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
+      const kdvRate = parseFloat(document.getElementById('summary-kdv-rate').value) || 0;
+      
+      // Teklifbul Rule v1.0 - Kesintiler sekmesinden alınacak
+      const deductionTotalElement = document.getElementById('deduction-total');
+      const deductionsTotal = deductionTotalElement 
+        ? parseFloat(deductionTotalElement.textContent.replace(/[^\d,.-]/g, '').replace(',', '.')) || 0
+        : 0;
+      
+      const netAmount = grossAmount - deductionsTotal;
+      const kdvAmount = netAmount * (kdvRate / 100);
+      const totalAmount = netAmount + kdvAmount;
+      
+      document.getElementById('summary-gross').textContent = 
+        grossAmount.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' });
+      document.getElementById('summary-deductions').textContent = 
+        deductionsTotal.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' });
+      document.getElementById('summary-net').textContent = 
+        netAmount.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' });
+      document.getElementById('summary-kdv').textContent = 
+        kdvAmount.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' });
+      document.getElementById('summary-total').textContent = 
+        totalAmount.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' });
+      
+      // Önceki hakedişler toplamını göster
+      const previousTotal = parseFloat(document.getElementById('summary-previous-total').value) || 0;
+      document.getElementById('summary-previous-total').value = previousTotal;
+      
+      // Özet bilgileri güncelle
+      const summarySite = document.getElementById('summary-site');
+      const summaryContract = document.getElementById('summary-contract');
+      if (summarySite && document.getElementById('site-select').value) {
+        const siteSelect = document.getElementById('site-select');
+        const selectedOption = siteSelect.options[siteSelect.selectedIndex];
+        summarySite.value = selectedOption ? selectedOption.textContent : '-';
+      }
+      if (summaryContract && document.getElementById('contract-select').value) {
+        const contractSelect = document.getElementById('contract-select');
+        const selectedOption = contractSelect.options[contractSelect.selectedIndex];
+        summaryContract.value = selectedOption ? selectedOption.textContent : '-';
+      }
+    }
+    
+    // Hakedişi kaydet
+    async function savePayment() {
+      try {
+        const user = await getCurrentUser();
+        if (!user) {
+          toast.error('Giriş yapmanız gerekiyor');
+          return;
+        }
+
+        // Permission Write Guard - Hakediş Kaydet (interim.manage)
+        const interimPerms = getInterimPerms();
+        const manageKey = interimPerms.manage;
+        if (manageKey) {
+          const ok = await requirePerm(manageKey, {
+            toastMessage:
+              (MESSAGES.ERROR_PERMISSION_INTERIM_MANAGE ||
+                MESSAGES.ERROR_PERMISSION_DENIED ||
+                MESSAGES.ERROR_PERMISSION) ??
+              'Hakediş işlemi yapma yetkiniz yok.'
+          });
+          if (!ok) {
+            logger.warn('Hakediş Kaydet: interim.manage izni yok, işlem iptal edildi', {
+              permKey: manageKey
+            });
+            return;
+          }
+        }
+        
+        const token = await user.getIdToken();
+        const siteId = document.getElementById('site-select').value;
+        const contractId = document.getElementById('contract-select').value;
+        const periodStart = document.getElementById('period-start').value;
+        const periodEnd = document.getElementById('period-end').value;
+        const status = document.getElementById('status-select').value;
+        
+        // Teklifbul Rule v1.0 - Contract seçimi zorunlu
+        if (!siteId || !contractId || !periodStart || !periodEnd) {
+          toast.error('Lütfen tüm gerekli alanları doldurun (Şantiye, Sözleşme, Dönem başlangıç ve bitiş tarihleri zorunludur)');
+          return;
+        }
+        
+        // Pozları topla - Teklifbul Rule v1.0 - Tüm poz bilgilerini ekle
+        const items = [];
+        document.querySelectorAll('.current-quantity').forEach(input => {
+          const quantity = parseFloat(input.value) || 0;
+          const row = input.closest('tr');
+          if (row) {
+            const code = row.querySelector('td:first-child')?.textContent?.trim() || '';
+            const description = row.querySelector('td:nth-child(2)')?.textContent?.trim() || '';
+            const unit = row.querySelector('td:nth-child(3)')?.textContent?.trim() || '';
+            const unitPrice = parseFloat(input.dataset.unitPrice) || 0;
+            const previousQuantity = parseFloat(row.querySelector('td:nth-child(5)')?.textContent?.replace(/[^\d,.-]/g, '').replace(',', '.') || '0') || 0;
+            
+            // Tüm pozları kaydet (miktar 0 olsa bile)
+            items.push({
+              itemId: input.dataset.itemId,
+              code: code,
+              description: description,
+              unit: unit,
+              quantity: quantity,
+              previousQuantity: previousQuantity,
+              unitPrice: unitPrice,
+              totalQuantity: previousQuantity + quantity,
+              amount: unitPrice * quantity
+            });
+          }
+        });
+        
+        // Hesaplamaları yap
+        calculateSummary();
+        calculateDeductions();
+        
+        // Önceki hakedişler toplamını al
+        const previousTotal = parseFloat(document.getElementById('summary-previous-total').value) || 0;
+        
+        // Sözleşme tutarını al (snapshot olarak kaydet) - Teklifbul Rule v1.0
+        const contractValueInput = document.getElementById('summary-contract-value');
+        let contractValue = 0;
+        if (contractValueInput) {
+          // Önce data attribute'dan dene (contract'tan geldi)
+          if (contractValueInput.dataset.contractValue) {
+            contractValue = parseFloat(contractValueInput.dataset.contractValue) || 0;
+          } else {
+            // Yoksa input'tan al (manuel girilmiş olabilir)
+            contractValue = parseFloat(contractValueInput.value.replace(/[^\d,.-]/g, '').replace(',', '.') || '0') || 0;
+          }
+        }
+        
+        // Kesintiler objesi oluştur - Teklifbul Rule v1.0 - Backend formatına uygun
+        const advanceRate = parseFloat(document.getElementById('deduction-advance-rate').value) || 0;
+        const guaranteeRate = parseFloat(document.getElementById('deduction-guarantee-rate').value) || 0;
+        const stopajRate = parseFloat(document.getElementById('deduction-stopaj-rate').value) || 0;
+        const grossAmount = parseFloat(document.getElementById('summary-gross').textContent.replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
+        const advanceAmount = grossAmount * (advanceRate / 100);
+        const guaranteeAmount = grossAmount * (guaranteeRate / 100);
+        const stopajAmount = grossAmount * (stopajRate / 100);
+        const manualDeductionsTotal = manualDeductions.reduce((sum, d) => sum + (d.amount || 0), 0);
+        
+        const deductions = {
+          advanceRate: advanceRate,
+          advanceAmount: advanceAmount,
+          guaranteeRate: guaranteeRate,
+          guaranteeAmount: guaranteeAmount,
+          stopajRate: stopajRate,
+          stopajAmount: stopajAmount,
+          manualDeductions: manualDeductions,
+          total: advanceAmount + guaranteeAmount + stopajAmount + manualDeductionsTotal
+        };
+        
+        // KDV oranı
+        const kdvRate = parseFloat(document.getElementById('summary-kdv-rate').value) || 20;
+        
+        const paymentData = {
+          siteId,
+          contractId,
+          periodStart,
+          periodEnd,
+          status,
+          items,
+          costs: manualCosts, // Teklifbul Rule v1.0 - Giderler (costs olarak kaydet)
+          deductions: deductions, // Teklifbul Rule v1.0 - Kesintiler (deductions objesi olarak)
+          previousTotal, // Teklifbul Rule v1.0 - Önceki hakedişler toplamı
+          contractValue: contractValue, // Teklifbul Rule v1.0 - Sözleşme tutarı snapshot
+          summary: {
+            grossAmount: grossAmount,
+            deductionsTotal: deductions.total,
+            netAmount: parseFloat(document.getElementById('summary-net').textContent.replace(/[^\d,.-]/g, '').replace(',', '.')) || 0,
+            kdvRate: kdvRate,
+            kdvAmount: parseFloat(document.getElementById('summary-kdv').textContent.replace(/[^\d,.-]/g, '').replace(',', '.')) || 0,
+            totalAmount: parseFloat(document.getElementById('summary-total').textContent.replace(/[^\d,.-]/g, '').replace(',', '.')) || 0
+          }
+        };
+        
+        const params = new URLSearchParams(window.location.search);
+        const paymentId = params.get('id');
+        
+        const url = paymentId ? `/api/interim-payments/${paymentId}` : '/api/interim-payments';
+        const method = paymentId ? 'PUT' : 'POST';
+        
+        const response = await fetch(url, {
+          method,
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(paymentData)
+        });
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Hakediş kaydedilemedi');
+        }
+        
+        const result = await response.json();
+        toast.success('Hakediş başarıyla kaydedildi');
+        
+        // Listeye yönlendir
+        setTimeout(() => {
+          window.location.href = './interim-payments.html';
+        }, 1500);
+      } catch (error) {
+        logger.error('Hakediş kaydetme hatası', error);
+        toast.error('Hakediş kaydedilemedi: ' + error.message);
+      }
+    }
+    
+    // AI ile taslak oluştur
+    async function generateAiDraft() {
+      try {
+        const user = await getCurrentUser();
+        if (!user) {
+          toast.error('Giriş yapmanız gerekiyor');
+          return;
+        }
+
+        // Permission Write Guard - AI taslak oluşturma (interim.manage + ai.use, fail-closed)
+        const interimPerms = getInterimPerms();
+        const manageKey = interimPerms.manage;
+        if (manageKey) {
+          const okManage = await requirePerm(manageKey, {
+            toastMessage:
+              (MESSAGES.ERROR_PERMISSION_INTERIM_MANAGE ||
+                MESSAGES.ERROR_PERMISSION_DENIED ||
+                MESSAGES.ERROR_PERMISSION) ??
+              'Hakediş işlemi yapma yetkiniz yok.'
+          });
+          if (!okManage) {
+            logger.warn('AI Taslak: interim.manage izni yok, işlem iptal edildi', {
+              permKey: manageKey
+            });
+            return;
+          }
+        }
+
+        const aiPerms = getAiPerms();
+        const aiUseKey = aiPerms && aiPerms.use;
+        const okAi = await requireExistingPerm(aiUseKey, {
+          toastMessage:
+            (MESSAGES.ERROR_PERMISSION_AI_USE ||
+              MESSAGES.ERROR_PERMISSION_DENIED ||
+              MESSAGES.ERROR_PERMISSION) ??
+            'AI hakediş asistanını kullanma yetkiniz yok.'
+        });
+        if (!okAi) {
+          logger.warn('AI Taslak: ai.use izni yok veya şablonu eksik, işlem iptal edildi', {
+            permKey: aiUseKey || 'premium.ai.useAssistant'
+          });
+          return;
+        }
+
+        const token = await user.getIdToken();
+        const params = new URLSearchParams(window.location.search);
+        const paymentId = params.get('id');
+
+        if (!paymentId) {
+          // Yeni hakediş oluşturuluyorsa önce kaydet
+          toast.info('Önce hakedişi kaydedin, sonra AI taslak oluşturabilirsiniz');
+          return;
+        }
+
+        // Loading göster
+        const aiButton = document.getElementById('btn-ai-draft');
+        const originalText = aiButton.textContent;
+        aiButton.disabled = true;
+        aiButton.textContent = '⏳ AI çalışıyor...';
+
+        logger.group('AI Taslak Oluşturma');
+        logger.info('AI taslak oluşturma başlatıldı', { paymentId });
+
+        const response = await fetch(`/api/interim-payments/${paymentId}/ai-draft`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            userNotes: document.getElementById('user-notes')?.value || ''
+          })
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'AI taslak oluşturulamadı');
+        }
+
+        const result = await response.json();
+        logger.info('AI taslak oluşturuldu', result);
+        logger.end();
+
+        toast.success('AI taslak oluşturuldu');
+        
+        // AI'dan gelen verileri forma uygula
+        if (result.data && result.data.contractItems) {
+          // Pozları güncelle
+          result.data.contractItems.forEach((item, index) => {
+            const quantityInput = document.querySelector(`[data-item-id="${item.code}"]`);
+            if (quantityInput) {
+              quantityInput.value = item.currentQuantity || 0;
+              calculateItemTotal(quantityInput);
+            }
+          });
+          
+          // Özet hesaplamaları güncelle
+          calculateSummary();
+        }
+      } catch (error) {
+        logger.error('AI taslak oluşturma hatası', error);
+        const errorMessage = error instanceof Error ? error.message : 'Bilinmeyen hata';
+        toast.error('AI taslak oluşturulamadı: ' + errorMessage);
+      } finally {
+        // Button'u tekrar aktif et
+        const aiButton = document.getElementById('btn-ai-draft');
+        if (aiButton) {
+          aiButton.disabled = false;
+          aiButton.textContent = 'AI ile Taslak Oluştur';
+        }
+      }
+    }
+    
+    // Onaya gönder
+    // Teklifbul Rule v1.0 - Onaya gönder
+    async function sendForApproval() {
+      try {
+        const user = await getCurrentUser();
+        if (!user) {
+          toast.error('Giriş yapmanız gerekiyor');
+          return;
+        }
+
+        // Permission Write Guard - Hakediş Onaya Gönder (interim.manage)
+        const interimPerms = getInterimPerms();
+        const manageKey = interimPerms.manage;
+        if (manageKey) {
+          const ok = await requirePerm(manageKey, {
+            toastMessage:
+              (MESSAGES.ERROR_PERMISSION_INTERIM_MANAGE ||
+                MESSAGES.ERROR_PERMISSION_DENIED ||
+                MESSAGES.ERROR_PERMISSION) ??
+              'Hakediş işlemi yapma yetkiniz yok.'
+          });
+          if (!ok) {
+            logger.warn('Hakediş Onaya Gönder: interim.manage izni yok, işlem iptal edildi', {
+              permKey: manageKey
+            });
+            return;
+          }
+        }
+
+        const token = await user.getIdToken();
+        const params = new URLSearchParams(window.location.search);
+        const paymentId = params.get('id');
+
+        if (!paymentId) {
+          toast.error('Önce hakedişi kaydedin');
+          return;
+        }
+
+        // Status kontrolü
+        const statusSelect = document.getElementById('status-select');
+        if (statusSelect.value !== 'draft') {
+          toast.error('Sadece taslak (draft) durumundaki hakedişler onaya gönderilebilir');
+          return;
+        }
+
+        // Onay mesajı al
+        const comment = prompt('Onaya gönderme notu (isteğe bağlı):');
+        if (comment === null) {
+          return; // Kullanıcı iptal etti
+        }
+
+        logger.group('Hakediş Onaya Gönderme');
+        logger.info('Onaya gönderme başlatıldı', { paymentId });
+
+        const response = await fetch(`/api/interim-payments/${paymentId}/send-approval`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            comment: comment || null
+          })
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Onaya gönderilemedi');
+        }
+
+        const result = await response.json();
+        logger.info('Hakediş onaya gönderildi', result);
+        logger.end();
+
+        toast.success(`Hakediş onaya gönderildi. ${result.approvers?.length || 0} onaylayıcıya bildirim gönderildi.`);
+        
+        // Sayfayı yenile
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      } catch (error) {
+        logger.error('Onaya gönderme hatası', error);
+        toast.error('Onaya gönderilemedi: ' + error.message);
+      }
+    }
+    
+    // Teklifbul Rule v1.0 - Hakedişi onayla
+    async function approvePayment() {
+      try {
+        const user = await getCurrentUser();
+        if (!user) {
+          toast.error('Giriş yapmanız gerekiyor');
+          return;
+        }
+
+        // Permission Write Guard - Hakediş Onayla (interim.manage)
+        const interimPerms = getInterimPerms();
+        const manageKey = interimPerms.manage;
+        if (manageKey) {
+          const ok = await requirePerm(manageKey, {
+            toastMessage:
+              (MESSAGES.ERROR_PERMISSION_INTERIM_MANAGE ||
+                MESSAGES.ERROR_PERMISSION_DENIED ||
+                MESSAGES.ERROR_PERMISSION) ??
+              'Hakediş işlemi yapma yetkiniz yok.'
+          });
+          if (!ok) {
+            logger.warn('Hakediş Onayla: interim.manage izni yok, işlem iptal edildi', {
+              permKey: manageKey
+            });
+            return;
+          }
+        }
+
+        const token = await user.getIdToken();
+        const params = new URLSearchParams(window.location.search);
+        const paymentId = params.get('id');
+
+        if (!paymentId) {
+          toast.error('Hakediş bulunamadı');
+          return;
+        }
+
+        // Onay mesajı al
+        const comment = prompt('Onay notu (isteğe bağlı):');
+        if (comment === null) {
+          return; // Kullanıcı iptal etti
+        }
+
+        logger.group('Hakediş Onaylama');
+        logger.info('Onaylama başlatıldı', { paymentId });
+
+        const response = await fetch(`/api/interim-payments/${paymentId}/approve`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            comment: comment || null
+          })
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Onaylanamadı');
+        }
+
+        const result = await response.json();
+        logger.info('Hakediş onaylandı', result);
+        logger.end();
+
+        toast.success(result.message || 'Hakediş onaylandı');
+        
+        // Sayfayı yenile
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      } catch (error) {
+        logger.error('Onaylama hatası', error);
+        toast.error('Onaylanamadı: ' + error.message);
+      }
+    }
+    
+    // Teklifbul Rule v1.0 - Reddetme modalı göster (global scope)
+    window.showRejectModal = function() {
+      let modal = document.getElementById('reject-modal');
+      if (!modal) {
+        // Modal yoksa oluştur
+        const modalHtml = `
+          <div id="reject-modal" class="modal">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h3>Hakedişi Reddet</h3>
+                <button class="close-modal" onclick="closeRejectModal()">&times;</button>
+              </div>
+              <div class="form-group">
+                <label>Red Nedeni <span style="color: #ef4444;">*</span></label>
+                <textarea id="reject-reason-input" rows="4" placeholder="Red nedeni belirtiniz..." style="width: 100%; padding: 10px; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 14px;"></textarea>
+              </div>
+              <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+                <button class="btn btn-outline" onclick="closeRejectModal()">İptal</button>
+                <button class="btn btn-danger" onclick="confirmReject()">Reddet</button>
+              </div>
+            </div>
+          </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        modal = document.getElementById('reject-modal');
+      }
+      if (!modal) return;
+      modal.style.display = 'block';
+      document.getElementById('reject-reason-input').focus();
+    }
+    
+    window.closeRejectModal = function() {
+      const modal = document.getElementById('reject-modal');
+      if (modal) {
+        modal.style.display = 'none';
+        document.getElementById('reject-reason-input').value = '';
+      }
+    }
+    
+    window.confirmReject = async function() {
+      const reasonInput = document.getElementById('reject-reason-input');
+      const comment = reasonInput?.value?.trim() || '';
+      
+      if (!comment || comment.length === 0) {
+        toast.error('Red nedeni belirtilmelidir');
+        reasonInput?.focus();
+        return;
+      }
+      
+      closeRejectModal();
+      await rejectPayment(comment);
+    }
+    
+    // Teklifbul Rule v1.0 - Hakedişi reddet
+    async function rejectPayment(comment) {
+      try {
+        const user = await getCurrentUser();
+        if (!user) {
+          toast.error('Giriş yapmanız gerekiyor');
+          return;
+        }
+
+        // Permission Write Guard - Hakediş Reddet (interim.manage)
+        const interimPerms = getInterimPerms();
+        const manageKey = interimPerms.manage;
+        if (manageKey) {
+          const ok = await requirePerm(manageKey, {
+            toastMessage:
+              (MESSAGES.ERROR_PERMISSION_INTERIM_MANAGE ||
+                MESSAGES.ERROR_PERMISSION_DENIED ||
+                MESSAGES.ERROR_PERMISSION) ??
+              'Hakediş işlemi yapma yetkiniz yok.'
+          });
+          if (!ok) {
+            logger.warn('Hakediş Reddet: interim.manage izni yok, işlem iptal edildi', {
+              permKey: manageKey
+            });
+            return;
+          }
+        }
+
+        const token = await user.getIdToken();
+        const params = new URLSearchParams(window.location.search);
+        const paymentId = params.get('id');
+
+        if (!paymentId) {
+          toast.error('Hakediş bulunamadı');
+          return;
+        }
+
+        if (!comment || comment.trim().length === 0) {
+          toast.error('Red nedeni belirtilmelidir');
+          return;
+        }
+
+        logger.group('Hakediş Reddetme');
+        logger.info('Reddetme başlatıldı', { paymentId });
+
+        const response = await fetch(`/api/interim-payments/${paymentId}/reject`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            comment: comment.trim()
+          })
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Reddedilemedi');
+        }
+
+        const result = await response.json();
+        logger.info('Hakediş reddedildi', result);
+        logger.end();
+
+        toast.success(result.message || 'Hakediş reddedildi');
+        
+        // Sayfayı yenile
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      } catch (error) {
+        logger.error('Reddetme hatası', error);
+        toast.error('Reddedilemedi: ' + error.message);
+      }
+    }
+    
+    // Teklifbul Rule v1.0 - Muhasebeye gönder
+    async function sendToAccountant() {
+      try {
+        const user = await getCurrentUser();
+        if (!user) {
+          toast.error('Giriş yapmanız gerekiyor');
+          return;
+        }
+
+        // Permission Write Guard - Hakediş Muhasebeye Gönder (interim.manage)
+        const interimPerms = getInterimPerms();
+        const manageKey = interimPerms.manage;
+        if (manageKey) {
+          const ok = await requirePerm(manageKey, {
+            toastMessage:
+              (MESSAGES.ERROR_PERMISSION_INTERIM_MANAGE ||
+                MESSAGES.ERROR_PERMISSION_DENIED ||
+                MESSAGES.ERROR_PERMISSION) ??
+              'Hakediş işlemi yapma yetkiniz yok.'
+          });
+          if (!ok) {
+            logger.warn('Hakediş Muhasebeye Gönder: interim.manage izni yok, işlem iptal edildi', {
+              permKey: manageKey
+            });
+            return;
+          }
+        }
+
+        const token = await user.getIdToken();
+        const params = new URLSearchParams(window.location.search);
+        const paymentId = params.get('id');
+
+        if (!paymentId) {
+          toast.error('Hakediş bulunamadı');
+          return;
+        }
+
+        // Onay mesajı al
+        const comment = prompt('Muhasebeye gönderme notu (isteğe bağlı):');
+        if (comment === null) {
+          return; // Kullanıcı iptal etti
+        }
+
+        logger.group('Hakediş Muhasebeye Gönderme');
+        logger.info('Muhasebeye gönderme başlatıldı', { paymentId });
+
+        const response = await fetch(`/api/interim-payments/${paymentId}/send-to-accountant`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            comment: comment || null
+          })
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Muhasebeye gönderilemedi');
+        }
+
+        const result = await response.json();
+        logger.info('Hakediş muhasebeye gönderildi', result);
+        logger.end();
+
+        toast.success(result.message || 'Hakediş muhasebeye gönderildi');
+        
+        // Sayfayı yenile
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      } catch (error) {
+        logger.error('Muhasebeye gönderme hatası', error);
+        toast.error('Muhasebeye gönderilemedi: ' + error.message);
+      }
+    }
+    
+    // Mevcut hakedişi yükle
+    async function loadPayment(paymentId) {
+      try {
+        const user = await getCurrentUser();
+        if (!user) return;
+        
+        const token = await user.getIdToken();
+        const response = await fetch(`/api/interim-payments/${paymentId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Hakediş yüklenemedi');
+        }
+        
+        const payment = await response.json();
+        
+        // Form alanlarını doldur
+        document.getElementById('payment-number').value = payment.paymentNumber || '-';
+        document.getElementById('period-start').value = payment.periodStart ? payment.periodStart.split('T')[0] : '';
+        document.getElementById('period-end').value = payment.periodEnd ? payment.periodEnd.split('T')[0] : '';
+        document.getElementById('status-select').value = payment.status || 'draft';
+        
+        // Onay durumuna göre butonları göster/gizle - Teklifbul Rule v1.0
+        await updateApprovalButtons(payment.status, payment.pendingApprovers || [], user.uid, payment.approval || null);
+        
+        // Stepper UI render - Teklifbul Rule v1.0
+        renderApprovalStepper(payment.status, payment.approvalHistory || []);
+        
+        // Kimde Kaldı paneli render - Teklifbul Rule v1.0
+        await renderApprovalWhoPanel(payment.status, payment.approval || null, payment.approvalHistory || []);
+        
+        // Onay geçmişini yükle
+        await loadApprovalHistory(paymentId);
+        
+        // Versiyon geçmişini yükle
+        await loadVersionHistory(paymentId, payment.status);
+        
+        // Dosya eklerini yükle
+        await loadAttachments(paymentId);
+        
+        // Şantiye ve sözleşme bilgilerini yükle
+        await loadSitesAndContracts();
+        if (payment.siteId) {
+          document.getElementById('site-select').value = payment.siteId;
+          await loadContracts(payment.siteId);
+        }
+        if (payment.contractId) {
+          document.getElementById('contract-select').value = payment.contractId;
+          await loadContractData(payment.contractId);
+        }
+        
+        // Sözleşme tutarını yükle (snapshot)
+        if (payment.contractValue !== undefined) {
+          document.getElementById('summary-contract-value').value = 
+            (payment.contractValue || 0).toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' });
+        }
+        
+        // Özet bilgileri doldur
+        if (payment.summary) {
+          document.getElementById('summary-gross').textContent = 
+            (payment.summary.grossAmount || 0).toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' });
+          document.getElementById('summary-deductions').textContent = 
+            (payment.summary.deductionsTotal || 0).toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' });
+          document.getElementById('summary-net').textContent = 
+            (payment.summary.netAmount || 0).toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' });
+          document.getElementById('summary-kdv-rate').value = payment.summary.kdvRate || 20;
+          document.getElementById('summary-kdv').textContent = 
+            (payment.summary.kdvAmount || 0).toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' });
+          document.getElementById('summary-total').textContent = 
+            (payment.summary.totalAmount || 0).toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' });
+        }
+        
+        // Önceki hakedişler toplamını yükle
+        if (payment.previousTotal !== undefined) {
+          document.getElementById('summary-previous-total').value = payment.previousTotal || 0;
+        }
+        
+        // Pozları yükle - Teklifbul Rule v1.0 - Mevcut hakediş verilerinden
+        // Önce sözleşme pozlarını yükle, sonra mevcut hakediş verilerinden miktarları güncelle
+        if (payment.contractId) {
+          await loadContractItems(payment.contractId, payment.items);
+        }
+        
+        // Giderleri yükle - Teklifbul Rule v1.0 - costs veya manualCosts'den
+        if (payment.costs && Array.isArray(payment.costs)) {
+          manualCosts = payment.costs;
+          renderCostsTable();
+        } else if (payment.manualCosts && Array.isArray(payment.manualCosts)) {
+          manualCosts = payment.manualCosts;
+          renderCostsTable();
+        }
+        
+        // Kesintileri yükle - Teklifbul Rule v1.0 - deductions objesinden
+        if (payment.deductions) {
+          const deductions = payment.deductions;
+          
+          // Oranları yükle
+          if (deductions.advanceRate !== undefined) {
+            document.getElementById('deduction-advance-rate').value = deductions.advanceRate || 0;
+          }
+          if (deductions.guaranteeRate !== undefined) {
+            document.getElementById('deduction-guarantee-rate').value = deductions.guaranteeRate || 0;
+          }
+          if (deductions.stopajRate !== undefined) {
+            document.getElementById('deduction-stopaj-rate').value = deductions.stopajRate || 0;
+          }
+          
+          // Manuel kesintileri yükle
+          if (deductions.manualDeductions && Array.isArray(deductions.manualDeductions)) {
+            manualDeductions = deductions.manualDeductions;
+            renderManualDeductionsTable();
+          } else if (payment.manualDeductions && Array.isArray(payment.manualDeductions)) {
+            // Geriye dönük uyumluluk
+            manualDeductions = payment.manualDeductions;
+            renderManualDeductionsTable();
+          }
+          
+          // Kesintileri yeniden hesapla
+          calculateDeductions();
+        }
+      } catch (error) {
+        logger.error('Hakediş yükleme hatası', error);
+        toast.error('Hakediş yüklenemedi: ' + error.message);
+      }
+    }
+    
+    // Teklifbul Rule v1.0 - Stepper UI render
+    function renderApprovalStepper(status, approvalHistory = []) {
+      const stepperContainer = document.getElementById('approval-stepper');
+      if (!stepperContainer) return;
+      
+      const steps = [
+        { key: 'draft', label: 'Taslak', icon: '1' },
+        { key: 'pending', label: 'Onayda', icon: '2' },
+        { key: 'approved', label: 'Onaylandı', icon: '3' },
+        { key: 'sent', label: 'Muhasebeye Gönderildi', icon: '4' },
+      ];
+      
+      // Reddedildi durumu için özel step
+      const rejectedStep = { key: 'rejected', label: 'Reddedildi', icon: '✕' };
+      
+      let html = '';
+      let currentStepIndex = -1;
+      
+      // Status'a göre aktif adımı belirle
+      if (status === 'rejected') {
+        // Reddedildi durumu: draft'tan sonra rejected branch göster
+        steps.forEach((step, index) => {
+          const stepClass = step.key === 'draft' ? 'completed' : '';
+          html += `
+            <div class="stepper-step ${stepClass}">
+              <div class="stepper-step-circle">${step.icon}</div>
+              <div class="stepper-step-label">${step.label}</div>
+            </div>
+          `;
+        });
+        // Rejected branch
+        html += `
+          <div class="stepper-step rejected">
+            <div class="stepper-step-circle">${rejectedStep.icon}</div>
+            <div class="stepper-step-label">${rejectedStep.label}</div>
+          </div>
+        `;
+      } else {
+        steps.forEach((step, index) => {
+          let stepClass = '';
+          if (step.key === status) {
+            stepClass = 'active';
+            currentStepIndex = index;
+          } else if (currentStepIndex === -1) {
+            // Henüz aktif adıma gelinmediyse, önceki adımlar completed
+            const statusOrder = ['draft', 'pending', 'approved', 'sent'];
+            const currentStatusIndex = statusOrder.indexOf(status);
+            if (index < currentStatusIndex) {
+              stepClass = 'completed';
+            }
+          }
+          
+          html += `
+            <div class="stepper-step ${stepClass}">
+              <div class="stepper-step-circle">${step.icon}</div>
+              <div class="stepper-step-label">${step.label}</div>
+            </div>
+          `;
+        });
+      }
+      
+      stepperContainer.innerHTML = html;
+    }
+    
+    // Teklifbul Rule v1.0 - Kimde Kaldı paneli render
+    async function renderApprovalWhoPanel(status, approval, approvalHistory = []) {
+      const panel = document.getElementById('approval-who-panel');
+      const content = document.getElementById('approval-who-content');
+      if (!panel || !content) return;
+      
+      if (status !== 'pending') {
+        panel.style.display = 'none';
+        return;
+      }
+      
+      panel.style.display = 'block';
+      
+      const pendingApprovers = approval?.pendingApproverUserIds || [];
+      const currentApproverId = approval?.currentApproverUserId || null;
+      
+      if (pendingApprovers.length === 0) {
+        content.innerHTML = '<p style="color: #6b7280;">Onaylayıcı bulunamadı.</p>';
+        return;
+      }
+      
+      // Onaylayıcı bilgilerini al - Teklifbul Rule v1.0
+      const approverPromises = pendingApprovers.map(async (userId) => {
+        try {
+          const user = await getCurrentUser();
+          if (!user) return null;
+          const token = await user.getIdToken();
+          const response = await fetch(`/api/user/${userId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (response.ok) {
+            const userData = await response.json();
+            return {
+              userId,
+              name: userData.name || userData.displayName || userData.email || 'Bilinmeyen',
+              email: userData.email || '',
+              isCurrent: userId === currentApproverId
+            };
+          }
+        } catch (error) {
+          logger.warn('Onaylayıcı bilgisi alınamadı', { userId, error });
+        }
+        return { userId, name: 'Bilinmeyen', email: '', isCurrent: userId === currentApproverId };
+      });
+      
+      const approvers = (await Promise.all(approverPromises)).filter(Boolean);
+      
+      // Tamamlayanları history'den al
+      const completedApprovers = [];
+      approvalHistory.forEach(entry => {
+        if (entry.action === 'approved' && entry.userId) {
+          if (!completedApprovers.find(a => a.userId === entry.userId)) {
+            completedApprovers.push({
+              userId: entry.userId,
+              name: entry.userName || entry.userEmail || 'Bilinmeyen',
+              email: entry.userEmail || ''
+            });
+          }
+        }
+      });
+      
+      let html = '';
+      
+      // Bekleyen onaylayıcılar
+      if (approvers.length > 0) {
+        html += '<div style="margin-bottom: 16px;"><strong style="font-size: 14px; color: #6b7280;">Bekleyen Onaylayıcılar:</strong></div>';
+        approvers.forEach(approver => {
+          const itemClass = approver.isCurrent ? 'current' : '';
+          html += `
+            <div class="approval-who-item ${itemClass}">
+              <div class="approval-who-name">${DOMPurify.sanitize(approver.name)}${approver.isCurrent ? ' <span style="color: #3b82f6;">(Şu an onaylaması gereken)</span>' : ''}</div>
+              <div class="approval-who-email">${DOMPurify.sanitize(approver.email)}</div>
+            </div>
+          `;
+        });
+      }
+      
+      // Tamamlayanlar
+      if (completedApprovers.length > 0) {
+        html += '<div style="margin-top: 20px; margin-bottom: 16px;"><strong style="font-size: 14px; color: #6b7280;">Tamamlayanlar:</strong></div>';
+        completedApprovers.forEach(approver => {
+          html += `
+            <div class="approval-who-item completed">
+              <div class="approval-who-name">${DOMPurify.sanitize(approver.name)}</div>
+              <div class="approval-who-email">${DOMPurify.sanitize(approver.email)}</div>
+            </div>
+          `;
+        });
+      }
+      
+      content.innerHTML = html;
+    }
+    
+    // Teklifbul Rule v1.0 - Onay butonlarını güncelle
+    async function updateApprovalButtons(status, pendingApprovers, currentUserId, approval = null) {
+      const btnSendApproval = document.getElementById('btn-send-approval');
+      const btnApprove = document.getElementById('btn-approve');
+      const btnReject = document.getElementById('btn-reject');
+      const btnSendToAccountant = document.getElementById('btn-send-to-accountant');
+      const approvalStatusInfo = document.getElementById('approval-status-info');
+      const approvalStatusText = document.getElementById('approval-status-text');
+      const approvalPendingInfo = document.getElementById('approval-pending-info');
+      
+      // Tüm butonları gizle
+      if (btnSendApproval) btnSendApproval.style.display = 'none';
+      if (btnApprove) btnApprove.style.display = 'none';
+      if (btnReject) btnReject.style.display = 'none';
+      if (btnSendToAccountant) btnSendToAccountant.style.display = 'none';
+      if (approvalStatusInfo) approvalStatusInfo.style.display = 'none';
+      
+      // Status'a göre butonları göster
+      if (status === 'draft') {
+        if (btnSendApproval) btnSendApproval.style.display = 'inline-block';
+        if (approvalStatusInfo) {
+          approvalStatusInfo.style.display = 'block';
+          approvalStatusText.textContent = 'Taslak';
+          approvalPendingInfo.textContent = '';
+        }
+      } else if (status === 'pending') {
+        const isPendingApprover = pendingApprovers.includes(currentUserId);
+        if (isPendingApprover) {
+          if (btnApprove) btnApprove.style.display = 'inline-block';
+          if (btnReject) btnReject.style.display = 'inline-block';
+        }
+        if (approvalStatusInfo) {
+          approvalStatusInfo.style.display = 'block';
+          approvalStatusText.textContent = 'Onay Bekliyor';
+          approvalPendingInfo.textContent = `${pendingApprovers.length} onaylayıcı bekleniyor`;
+          if (isPendingApprover) {
+            approvalPendingInfo.textContent += ' (Siz onaylayabilirsiniz)';
+            approvalPendingInfo.style.color = '#10b981';
+          }
+        }
+      } else if (status === 'approved') {
+        if (btnSendToAccountant) btnSendToAccountant.style.display = 'inline-block';
+        if (approvalStatusInfo) {
+          approvalStatusInfo.style.display = 'block';
+          approvalStatusText.textContent = 'Onaylandı';
+          approvalPendingInfo.textContent = '';
+        }
+      } else if (status === 'rejected') {
+        if (approvalStatusInfo) {
+          approvalStatusInfo.style.display = 'block';
+          approvalStatusText.textContent = 'Reddedildi';
+          approvalPendingInfo.textContent = '';
+        }
+      } else if (status === 'sent') {
+        if (approvalStatusInfo) {
+          approvalStatusInfo.style.display = 'block';
+          approvalStatusText.textContent = 'Muhasebeye Gönderildi';
+          approvalPendingInfo.textContent = '';
+        }
+      }
+    }
+    
+    // Teklifbul Rule v1.0 - PDF indir
+    async function downloadPDF() {
+      try {
+        const user = await getCurrentUser();
+        if (!user) {
+          toast.error('Giriş yapmanız gerekiyor');
+          return;
+        }
+
+        const token = await user.getIdToken();
+        const params = new URLSearchParams(window.location.search);
+        const paymentId = params.get('id');
+
+        if (!paymentId) {
+          toast.error('Önce hakedişi kaydedin');
+          return;
+        }
+
+        logger.group('PDF İndirme');
+        logger.info('PDF indirme başlatıldı', { paymentId });
+
+        const response = await fetch(`/api/interim-payments/${paymentId}/export/pdf`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'PDF oluşturulamadı');
+        }
+
+        // PDF'i blob olarak al ve indir
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `hakedis-${paymentId}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+
+        logger.info('PDF indirme tamamlandı');
+        logger.end();
+        toast.success('PDF başarıyla indirildi');
+      } catch (error) {
+        logger.error('PDF indirme hatası', error);
+        toast.error('PDF indirilemedi: ' + error.message);
+      }
+    }
+    
+    // Teklifbul Rule v1.0 - Excel indir
+    async function downloadExcel() {
+      try {
+        const user = await getCurrentUser();
+        if (!user) {
+          toast.error('Giriş yapmanız gerekiyor');
+          return;
+        }
+
+        const token = await user.getIdToken();
+        const params = new URLSearchParams(window.location.search);
+        const paymentId = params.get('id');
+
+        if (!paymentId) {
+          toast.error('Önce hakedişi kaydedin');
+          return;
+        }
+
+        logger.group('Excel İndirme');
+        logger.info('Excel indirme başlatıldı', { paymentId });
+
+        const response = await fetch(`/api/interim-payments/${paymentId}/export/excel`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Excel oluşturulamadı');
+        }
+
+        // Excel'i blob olarak al ve indir
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `hakedis-${paymentId}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+
+        logger.info('Excel indirme tamamlandı');
+        logger.end();
+        toast.success('Excel başarıyla indirildi');
+      } catch (error) {
+        logger.error('Excel indirme hatası', error);
+        toast.error('Excel indirilemedi: ' + error.message);
+      }
+    }
+    
+    // Teklifbul Rule v1.0 - Onay geçmişini yükle
+    async function loadApprovalHistory(paymentId) {
+      try {
+        const user = await getCurrentUser();
+        if (!user) return;
+        
+        const token = await user.getIdToken();
+        const response = await fetch(`/api/interim-payments/${paymentId}/approval-history`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Onay geçmişi yüklenemedi');
+        }
+        
+        const data = await response.json();
+        const historyList = document.getElementById('approval-history-list');
+        if (!historyList) return;
+        
+        // Stepper ve kimde kaldı panelini güncelle - Teklifbul Rule v1.0
+        const currentStatus = data.currentStatus || 'draft';
+        renderApprovalStepper(currentStatus, data.approvalHistory || []);
+        await renderApprovalWhoPanel(currentStatus, data.approval || null, data.approvalHistory || []);
+        
+        if (!data.approvalHistory || data.approvalHistory.length === 0) {
+          // Teklifbul Rule v1.0 - XSS Protection
+          historyList.innerHTML = DOMPurify.sanitize('<div class="empty-state">Henüz onay geçmişi yok</div>');
+          return;
+        }
+        
+        // Teklifbul Rule v1.0 - XSS Protection: Sanitize user input
+        const sanitize = (str) => DOMPurify.sanitize(String(str || ''), { ALLOWED_TAGS: [] });
+        
+        // Onay geçmişini göster
+        const historyHtml = data.approvalHistory.map((entry, index) => {
+          const actionLabels = {
+            'sent': 'Onaya Gönderildi',
+            'approved': 'Onaylandı',
+            'rejected': 'Reddedildi'
+          };
+          
+          const actionColors = {
+            'sent': '#3b82f6',
+            'approved': '#10b981',
+            'rejected': '#ef4444'
+          };
+          
+          const date = entry.timestamp ? new Date(entry.timestamp).toLocaleString('tr-TR') : '-';
+          
+          // Sanitize user input - Teklifbul Rule v1.0 - XSS Protection
+          const safeAction = sanitize(entry.action || '');
+          const safeUserEmail = sanitize(entry.userEmail || entry.userId || '');
+          const safeUserRole = sanitize(entry.userRole || '');
+          const safeComment = sanitize(entry.comment || '');
+          const safeDate = sanitize(date);
+          const actionColor = actionColors[entry.action] || '#6b7280';
+          const actionLabel = sanitize(actionLabels[entry.action] || entry.action || '');
+          
+          return `
+            <div style="padding: 12px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: start;">
+              <div style="flex: 1;">
+                <div style="font-weight: 600; margin-bottom: 4px;">
+                  <span style="color: ${actionColor};">
+                    ${actionLabel}
+                  </span>
+                </div>
+                <div style="font-size: 13px; color: #6b7280; margin-bottom: 4px;">
+                  ${safeUserEmail}${safeUserRole ? ` (${safeUserRole})` : ''}
+                </div>
+                ${safeComment ? `<div style="font-size: 13px; color: #374151; margin-top: 8px; padding: 8px; background: #f9fafb; border-radius: 4px;">${safeComment}</div>` : ''}
+              </div>
+              <div style="font-size: 12px; color: #9ca3af; margin-left: 16px;">
+                ${safeDate}
+              </div>
+            </div>
+          `;
+        }).join('');
+        
+        // Sanitize final HTML - Teklifbul Rule v1.0 - XSS Protection
+        historyList.innerHTML = DOMPurify.sanitize(historyHtml, {
+          ALLOWED_TAGS: ['div', 'span'],
+          ALLOWED_ATTR: ['style', 'class']
+        });
+      } catch (error) {
+        logger.error('Onay geçmişi yükleme hatası', error);
+        const historyList = document.getElementById('approval-history-list');
+        if (historyList) {
+          // Teklifbul Rule v1.0 - XSS Protection
+          historyList.innerHTML = DOMPurify.sanitize('<div class="empty-state">Onay geçmişi yüklenirken hata oluştu</div>');
+        }
+      }
+    }
+    
+    // Teklifbul Rule v1.0 - Versiyon geçmişini yükle
+    async function loadVersionHistory(paymentId, currentStatus = 'draft') {
+      try {
+        const user = await getCurrentUser();
+        if (!user) return;
+        
+        const token = await user.getIdToken();
+        const response = await fetch(`/api/interim-payments/${paymentId}/versions`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Versiyon geçmişi yüklenemedi');
+        }
+        
+        const data = await response.json();
+        const versionList = document.getElementById('version-history-list');
+        if (!versionList) return;
+        
+        // Onaylanmış/gönderilmiş hakedişlerde rollback yapılamaz
+        const canRollback = currentStatus === 'draft' || currentStatus === 'pending';
+        
+        if (!data.versions || data.versions.length === 0) {
+          // Teklifbul Rule v1.0 - XSS Protection
+          versionList.innerHTML = DOMPurify.sanitize('<div class="empty-state">Henüz versiyon geçmişi yok</div>');
+          return;
+        }
+        
+        // Teklifbul Rule v1.0 - XSS Protection: Sanitize helper
+        const sanitizeVersion = (str) => DOMPurify.sanitize(String(str || ''), { ALLOWED_TAGS: [] });
+        const sanitizeVersionAttr = (str) => DOMPurify.sanitize(String(str || ''), { ALLOWED_TAGS: [] });
+        
+        // Versiyon geçmişini göster (en yeni önce)
+        const sortedVersions = [...data.versions].sort((a, b) => {
+          const dateA = new Date(a.changedAt || 0);
+          const dateB = new Date(b.changedAt || 0);
+          return dateB - dateA; // Yeni önce
+        });
+        
+        const versionHtml = `
+          <div class="table-container">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Versiyon</th>
+                  <th>Değiştiren</th>
+                  <th>Tarih</th>
+                  <th>Değişiklik Nedeni</th>
+                  ${canRollback ? '<th>İşlem</th>' : ''}
+                </tr>
+              </thead>
+              <tbody>
+                ${sortedVersions.map(version => {
+                  const changedDate = version.changedAt ? new Date(version.changedAt).toLocaleString('tr-TR') : '-';
+                  const changedBy = version.changedByName || version.changedByEmail || version.changedBy || 'Bilinmiyor';
+                  const changeReason = version.changeReason || '-';
+                  
+                  // Sanitize user input - Teklifbul Rule v1.0 - XSS Protection
+                  const safeChangedBy = sanitizeVersion(changedBy);
+                  const safeChangeReason = sanitizeVersion(changeReason);
+                  const safeDate = sanitizeVersion(changedDate);
+                  const safePaymentId = sanitizeVersionAttr(paymentId);
+                  const safeVersion = Number(version.version) || 0;
+                  
+                  return `
+                    <tr>
+                      <td><strong>v${safeVersion}</strong></td>
+                      <td>${safeChangedBy}</td>
+                      <td>${safeDate}</td>
+                      <td>${safeChangeReason}</td>
+                      ${canRollback ? `
+                        <td>
+                          <button class="btn btn-outline" onclick="rollbackToVersion('${safePaymentId}', ${safeVersion})" 
+                                  style="padding: 6px 12px; font-size: 12px;">
+                            Bu Versiyona Dön
+                          </button>
+                        </td>
+                      ` : '<td><span style="color: #9ca3af; font-size: 12px;">Geri alma yapılamaz</span></td>'}
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+          ${!canRollback ? `
+            <div class="info-box" style="margin-top: 16px;">
+              <p style="margin: 0; font-size: 14px;">
+                <strong>⚠️ Uyarı:</strong> Onaylanmış veya gönderilmiş hakedişlerde geri alma işlemi yapılamaz.
+              </p>
+            </div>
+          ` : ''}
+        `;
+        
+        // Sanitize final HTML - Teklifbul Rule v1.0 - XSS Protection
+        versionList.innerHTML = DOMPurify.sanitize(versionHtml, {
+          ALLOWED_TAGS: ['div', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'strong', 'button', 'span', 'p'],
+          ALLOWED_ATTR: ['class', 'style', 'onclick']
+        });
+      } catch (error) {
+        logger.error('Versiyon geçmişi yükleme hatası', error);
+        const versionList = document.getElementById('version-history-list');
+        if (versionList) {
+          // Teklifbul Rule v1.0 - XSS Protection
+          versionList.innerHTML = DOMPurify.sanitize('<div class="empty-state">Versiyon geçmişi yüklenirken hata oluştu</div>');
+        }
+      }
+    }
+    
+    // Teklifbul Rule v1.0 - Versiyona geri dön (rollback)
+    window.rollbackToVersion = async function(paymentId, versionNumber) {
+      if (!confirm(`Versiyon ${versionNumber} geri yüklenecek. Bu işlem geri alınamaz. Devam etmek istiyor musunuz?`)) {
+        return;
+      }
+      
+      try {
+        logger.group('Versiyona Geri Dön');
+        const user = await getCurrentUser();
+        if (!user) {
+          toast.error('Kullanıcı giriş yapmamış');
+          return;
+        }
+        
+        const token = await user.getIdToken();
+        const response = await fetch(`/api/interim-payments/${paymentId}/rollback/${versionNumber}`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ message: 'Bilinmeyen hata' }));
+          throw new Error(errorData.message || 'Rollback başarısız');
+        }
+        
+        const result = await response.json();
+        logger.info('Versiyona geri dönüldü', { paymentId, version: versionNumber });
+        logger.end();
+        
+        toast.success(`Versiyon ${versionNumber} başarıyla geri yüklendi`);
+        
+        // Sayfayı yenile
+        await loadPayment(paymentId);
+      } catch (error) {
+        logger.error('Rollback hatası', error);
+        logger.end();
+        const errorMessage = error instanceof Error ? error.message : 'Bilinmeyen hata';
+        toast.error('Rollback başarısız: ' + errorMessage);
+      }
+    }
+    
+    // Teklifbul Rule v1.0 - Dosya eklerini yükle
+    async function loadAttachments(paymentId) {
+      try {
+        const user = await getCurrentUser();
+        if (!user) return;
+        
+        const token = await user.getIdToken();
+        const response = await fetch(`/api/interim-payments/${paymentId}/attachments`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Dosya listesi yüklenemedi');
+        }
+        
+        const data = await response.json();
+        const attachmentsList = document.getElementById('attachments-list');
+        if (!attachmentsList) return;
+        
+        if (!data.attachments || data.attachments.length === 0) {
+          attachmentsList.innerHTML = '<div class="empty-state" style="padding: 20px; text-align: center; color: #6b7280;">Henüz dosya eklenmemiş</div>';
+          return;
+        }
+        
+        // Dosya listesini göster
+        attachmentsList.innerHTML = `
+          <div style="margin-top: 16px;">
+            <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 12px;">Ekli Dosyalar (${data.attachments.length})</h3>
+            <div style="display: grid; gap: 12px;">
+              ${data.attachments.map(attachment => {
+                const uploadedDate = attachment.uploadedAt ? new Date(attachment.uploadedAt).toLocaleString('tr-TR') : '-';
+                const fileSize = attachment.fileSize ? (attachment.fileSize / 1024).toFixed(2) + ' KB' : '-';
+                const fileIcon = attachment.fileType?.startsWith('image/') ? '🖼️' : 
+                                attachment.fileType === 'application/pdf' ? '📄' : 
+                                attachment.fileType?.includes('word') ? '📝' : 
+                                attachment.fileType?.includes('excel') || attachment.fileType?.includes('spreadsheet') ? '📊' : '📎';
+                
+                return `
+                  <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb;">
+                    <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+                      <span style="font-size: 24px;">${fileIcon}</span>
+                      <div style="flex: 1;">
+                        <div style="font-weight: 600; margin-bottom: 4px;">
+                          <a href="${attachment.fileUrl}" target="_blank" rel="noopener noreferrer" style="color: #2563eb; text-decoration: none;">
+                            ${attachment.fileName}
+                          </a>
+                        </div>
+                        <div style="font-size: 12px; color: #6b7280;">
+                          ${fileSize} • ${uploadedDate}
+                        </div>
+                      </div>
+                    </div>
+                    <button class="btn btn-outline" onclick="deleteAttachment('${paymentId}', '${attachment.id}')" 
+                            style="padding: 6px 12px; font-size: 12px; margin-left: 12px;">
+                      Sil
+                    </button>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        `;
+      } catch (error) {
+        logger.error('Dosya listesi yükleme hatası', error);
+        const attachmentsList = document.getElementById('attachments-list');
+        if (attachmentsList) {
+          attachmentsList.innerHTML = '<div class="empty-state" style="padding: 20px; text-align: center; color: #ef4444;">Dosya listesi yüklenirken hata oluştu</div>';
+        }
+      }
+    }
+    
+    // Teklifbul Rule v1.0 - Dosya silme
+    window.deleteAttachment = async function(paymentId, attachmentId) {
+      if (!confirm('Bu dosyayı silmek istediğinize emin misiniz?')) {
+        return;
+      }
+      
+      try {
+        const user = await getCurrentUser();
+        if (!user) {
+          toast.error('Kullanıcı giriş yapmamış');
+          return;
+        }
+        
+        const token = await user.getIdToken();
+        const response = await fetch(`/api/interim-payments/${paymentId}/attachments/${attachmentId}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ message: 'Bilinmeyen hata' }));
+          throw new Error(errorData.message || 'Dosya silinemedi');
+        }
+        
+        toast.success('Dosya başarıyla silindi');
+        
+        // Dosya listesini yenile
+        await loadAttachments(paymentId);
+      } catch (error) {
+        logger.error('Dosya silme hatası', error);
+        const errorMessage = error instanceof Error ? error.message : 'Bilinmeyen hata';
+        toast.error('Dosya silinemedi: ' + errorMessage);
+      }
+    }
+    
+    // Teklifbul Rule v1.0 - Gider ekleme
+    let manualCosts = []; // Manuel eklenen giderler
+    
+    async function addCost() {
+      try {
+        logger.group('Gider Ekleme');
+        const user = await getCurrentUser();
+        if (!user) {
+          toast.error('Giriş yapmanız gerekiyor');
+          return;
+        }
+        
+        const date = document.getElementById('cost-add-date').value;
+        const type = document.getElementById('cost-add-type').value;
+        const description = document.getElementById('cost-add-description').value.trim();
+        const amount = parseFloat(document.getElementById('cost-add-amount').value);
+        const source = document.getElementById('cost-add-source').value;
+        const documentNumber = document.getElementById('cost-add-document-number').value.trim();
+        
+        if (!date || !type || !description || !amount || amount <= 0) {
+          toast.error('Lütfen tüm zorunlu alanları doldurun');
+          return;
+        }
+        
+        // Manuel gider listesine ekle
+        const costId = 'cost_' + Date.now();
+        manualCosts.push({
+          id: costId,
+          date,
+          type,
+          description,
+          amount,
+          source,
+          documentNumber
+        });
+        
+        // Tabloyu güncelle
+        renderCostsTable();
+        
+        // Formu temizle ve gizle
+        document.getElementById('cost-add-date').value = '';
+        document.getElementById('cost-add-type').value = '';
+        document.getElementById('cost-add-description').value = '';
+        document.getElementById('cost-add-amount').value = '';
+        document.getElementById('cost-add-source').value = 'manual';
+        document.getElementById('cost-add-document-number').value = '';
+        document.getElementById('cost-add-form').style.display = 'none';
+        
+        toast.success('Gider başarıyla eklendi');
+        logger.info('Gider eklendi', { costId, amount });
+        logger.end();
+      } catch (error) {
+        logger.error('Gider ekleme hatası', error);
+        toast.error('Gider eklenemedi: ' + error.message);
+        logger.end();
+      }
+    }
+    
+    // Teklifbul Rule v1.0 - Gider silme
+    window.deleteCost = function(costId) {
+      if (!confirm('Bu gideri silmek istediğinize emin misiniz?')) {
+        return;
+      }
+      manualCosts = manualCosts.filter(c => c.id !== costId);
+      renderCostsTable();
+      toast.success('Gider silindi');
+    };
+    
+    // Teklifbul Rule v1.0 - Giderler tablosunu render et
+    function renderCostsTable() {
+      const tbody = document.getElementById('costs-table-body');
+      if (!tbody) return;
+      
+      // Stok hareketlerinden gelen giderleri de buraya ekleyebiliriz (şimdilik sadece manuel giderler)
+      if (manualCosts.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #6b7280;">Henüz gider eklenmemiş</td></tr>';
+        return;
+      }
+      
+      const typeLabels = {
+        material: 'Malzeme',
+        labor: 'İşçilik',
+        service: 'Hizmet',
+        subcontractor: 'Taşeron',
+        other: 'Diğer'
+      };
+      
+      const sourceLabels = {
+        manual: 'Manuel Giriş',
+        stock_movement: 'Stok Hareketi',
+        invoice: 'Fatura',
+        other: 'Diğer'
+      };
+      
+      const html = manualCosts.map(cost => {
+        const safeId = DOMPurify.sanitize(cost.id, { ALLOWED_TAGS: [] });
+        const safeDate = DOMPurify.sanitize(cost.date || '-', { ALLOWED_TAGS: [] });
+        const safeType = DOMPurify.sanitize(typeLabels[cost.type] || cost.type || '-', { ALLOWED_TAGS: [] });
+        const safeDescription = DOMPurify.sanitize(cost.description || '-', { ALLOWED_TAGS: [] });
+        const safeAmount = (cost.amount || 0).toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' });
+        const safeSource = DOMPurify.sanitize(sourceLabels[cost.source] || cost.source || '-', { ALLOWED_TAGS: [] });
+        const safeDocumentNumber = DOMPurify.sanitize(cost.documentNumber || '-', { ALLOWED_TAGS: [] });
+        
+        return `
+          <tr>
+            <td>${safeDate}</td>
+            <td>${safeType}</td>
+            <td>${safeDescription}</td>
+            <td>${safeAmount}</td>
+            <td>${safeSource}</td>
+            <td>${safeDocumentNumber}</td>
+            <td>
+              <button class="btn btn-outline" onclick="deleteCost('${safeId}')" style="padding: 4px 8px; font-size: 12px;">Sil</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+      
+      tbody.innerHTML = DOMPurify.sanitize(html, {
+        ALLOWED_TAGS: ['tr', 'td', 'button'],
+        ALLOWED_ATTR: ['class', 'onclick', 'style']
+      });
+      
+      // Toplam gideri hesapla
+      const total = manualCosts.reduce((sum, cost) => sum + (cost.amount || 0), 0);
+      document.getElementById('costs-period-total').textContent = 
+        total.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' });
+    }
+    
+    // Teklifbul Rule v1.0 - Manuel kesinti ekleme
+    let manualDeductions = []; // Manuel eklenen kesintiler
+    
+    async function addManualDeduction() {
+      try {
+        logger.group('Manuel Kesinti Ekleme');
+        const name = document.getElementById('deduction-add-name').value.trim();
+        const amount = parseFloat(document.getElementById('deduction-add-amount').value);
+        const description = document.getElementById('deduction-add-description').value.trim();
+        
+        if (!name || !amount || amount <= 0) {
+          toast.error('Lütfen kesinti adı ve tutarını girin');
+          return;
+        }
+        
+        // Manuel kesinti listesine ekle
+        const deductionId = 'deduction_' + Date.now();
+        manualDeductions.push({
+          id: deductionId,
+          name,
+          amount,
+          description
+        });
+        
+        // Tabloyu güncelle
+        renderManualDeductionsTable();
+        
+        // Kesintileri yeniden hesapla
+        calculateDeductions();
+        
+        // Formu temizle ve gizle
+        document.getElementById('deduction-add-name').value = '';
+        document.getElementById('deduction-add-amount').value = '';
+        document.getElementById('deduction-add-description').value = '';
+        document.getElementById('deduction-add-form').style.display = 'none';
+        
+        toast.success('Manuel kesinti başarıyla eklendi');
+        logger.info('Manuel kesinti eklendi', { deductionId, amount });
+        logger.end();
+      } catch (error) {
+        logger.error('Manuel kesinti ekleme hatası', error);
+        toast.error('Manuel kesinti eklenemedi: ' + error.message);
+        logger.end();
+      }
+    }
+    
+    // Teklifbul Rule v1.0 - Manuel kesinti silme
+    window.deleteManualDeduction = function(deductionId) {
+      if (!confirm('Bu kesintiyi silmek istediğinize emin misiniz?')) {
+        return;
+      }
+      manualDeductions = manualDeductions.filter(d => d.id !== deductionId);
+      renderManualDeductionsTable();
+      calculateDeductions();
+      toast.success('Kesinti silindi');
+    };
+    
+    // Teklifbul Rule v1.0 - Manuel kesintiler tablosunu render et
+    function renderManualDeductionsTable() {
+      const tbody = document.getElementById('manual-deductions-table-body');
+      if (!tbody) return;
+      
+      if (manualDeductions.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #6b7280;">Henüz manuel kesinti eklenmemiş</td></tr>';
+        return;
+      }
+      
+      const html = manualDeductions.map(deduction => {
+        const safeId = DOMPurify.sanitize(deduction.id, { ALLOWED_TAGS: [] });
+        const safeName = DOMPurify.sanitize(deduction.name || '-', { ALLOWED_TAGS: [] });
+        const safeAmount = (deduction.amount || 0).toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' });
+        const safeDescription = DOMPurify.sanitize(deduction.description || '-', { ALLOWED_TAGS: [] });
+        
+        return `
+          <tr>
+            <td>${safeName}</td>
+            <td>${safeAmount}</td>
+            <td>${safeDescription}</td>
+            <td>
+              <button class="btn btn-outline" onclick="deleteManualDeduction('${safeId}')" style="padding: 4px 8px; font-size: 12px;">Sil</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+      
+      tbody.innerHTML = DOMPurify.sanitize(html, {
+        ALLOWED_TAGS: ['tr', 'td', 'button'],
+        ALLOWED_ATTR: ['class', 'onclick', 'style']
+      });
+    }
+    
+    // Teklifbul Rule v1.0 - Kesintileri hesapla
+    function calculateDeductions() {
+      const grossAmount = parseFloat(document.getElementById('summary-gross').textContent.replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
+      
+      // Oran bazlı kesintiler
+      const advanceRate = parseFloat(document.getElementById('deduction-advance-rate').value) || 0;
+      const guaranteeRate = parseFloat(document.getElementById('deduction-guarantee-rate').value) || 0;
+      const stopajRate = parseFloat(document.getElementById('deduction-stopaj-rate').value) || 0;
+      
+      const advanceAmount = grossAmount * (advanceRate / 100);
+      const guaranteeAmount = grossAmount * (guaranteeRate / 100);
+      const stopajAmount = grossAmount * (stopajRate / 100);
+      
+      // Manuel kesintiler toplamı
+      const manualDeductionsTotal = manualDeductions.reduce((sum, d) => sum + (d.amount || 0), 0);
+      
+      // Toplam kesintiler
+      const totalDeductions = advanceAmount + guaranteeAmount + stopajAmount + manualDeductionsTotal;
+      const netAmount = grossAmount - totalDeductions;
+      
+      // KDV hesaplama
+      const kdvRate = parseFloat(document.getElementById('summary-kdv-rate').value) || 20;
+      const kdvAmount = netAmount * (kdvRate / 100);
+      const finalAmount = netAmount + kdvAmount;
+      
+      // UI'ı güncelle
+      document.getElementById('deduction-advance-amount').value = advanceAmount.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' });
+      document.getElementById('deduction-guarantee-amount').value = guaranteeAmount.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' });
+      document.getElementById('deduction-stopaj-amount').value = stopajAmount.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' });
+      
+      document.getElementById('deduction-gross').textContent = grossAmount.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' });
+      document.getElementById('deduction-total').textContent = totalDeductions.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' });
+      document.getElementById('deduction-net').textContent = netAmount.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' });
+      document.getElementById('deduction-kdv-rate').textContent = kdvRate + '%';
+      document.getElementById('deduction-kdv').textContent = kdvAmount.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' });
+      document.getElementById('deduction-final').textContent = finalAmount.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' });
+      
+      // Özet sekmesini de güncelle
+      document.getElementById('summary-deductions').textContent = totalDeductions.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' });
+      document.getElementById('summary-net').textContent = netAmount.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' });
+      document.getElementById('summary-kdv').textContent = kdvAmount.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' });
+      document.getElementById('summary-total').textContent = finalAmount.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' });
+    }
+    
+    // Teklifbul Rule v1.0 - Dosya yükleme handler
+    async function setupFileUpload(paymentId) {
+      const fileUpload = document.getElementById('file-upload');
+      if (!fileUpload) return;
+      
+      // Mevcut event listener'ları temizle (tekrar kurulum için)
+      const newFileUpload = fileUpload.cloneNode(true);
+      fileUpload.parentNode?.replaceChild(newFileUpload, fileUpload);
+      
+      newFileUpload.addEventListener('change', async (e) => {
+        const files = (e.target).files;
+        if (!files || files.length === 0) return;
+        
+        // Yeni hakediş için önce kaydet
+        if (paymentId === 'new') {
+          toast.info('Lütfen önce hakedişi kaydedin, sonra dosya ekleyin');
+          newFileUpload.value = '';
+          return;
+        }
+        
+        const user = await getCurrentUser();
+        if (!user) {
+          toast.error('Kullanıcı giriş yapmamış');
+          return;
+        }
+        
+        const token = await user.getIdToken();
+        
+        // Her dosya için yükleme işlemi
+        for (const file of Array.from(files)) {
+          try {
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            const response = await fetch(`/api/interim-payments/${paymentId}/attachments`, {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${token}` },
+              body: formData
+            });
+            
+            if (!response.ok) {
+              const errorData = await response.json().catch(() => ({ message: 'Bilinmeyen hata' }));
+              throw new Error(errorData.message || 'Dosya yüklenemedi');
+            }
+            
+            toast.success(`${file.name} başarıyla yüklendi`);
+          } catch (error) {
+            logger.error('Dosya yükleme hatası', error);
+            const errorMessage = error instanceof Error ? error.message : 'Bilinmeyen hata';
+            toast.error(`${file.name} yüklenemedi: ${errorMessage}`);
+          }
+        }
+        
+        // Dosya listesini yenile
+        await loadAttachments(paymentId);
+        
+        // Input'u temizle
+        newFileUpload.value = '';
+      });
+    }
+    
+    // Excel şablonu indirme - Teklifbul Rule v1.0
+    async function downloadMetrajTemplate() {
+      try {
+        logger.group('Excel Şablonu İndiriliyor');
+        const user = await getCurrentUser();
+        if (!user) {
+          toast.error('Giriş yapmanız gerekiyor');
+          return;
+        }
+
+        const contractId = document.getElementById('contract-select').value;
+        if (!contractId) {
+          toast.error('Lütfen önce bir sözleşme seçin');
+          return;
+        }
+
+        const response = await authFetch(`/api/contracts/${contractId}/metraj-template`);
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Şablon indirilemedi');
+        }
+
+        // Dosyayı indir
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `metraj-sablon-${contractId}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+
+        toast.success('Excel şablonu indirildi');
+        logger.info('Excel şablonu indirildi', { contractId });
+        logger.end();
+      } catch (error) {
+        logger.error('Excel şablonu indirme hatası', error);
+        logger.end();
+        toast.error('Şablon indirilemedi: ' + (error.message || 'Bilinmeyen hata'));
+      }
+    }
+
+    // Excel import - Teklifbul Rule v1.0
+    async function importMetrajFromExcel(file) {
+      try {
+        logger.group('Excel Metraj Import');
+        const user = await getCurrentUser();
+        if (!user) {
+          toast.error('Giriş yapmanız gerekiyor');
+          return;
+        }
+
+        const params = new URLSearchParams(window.location.search);
+        const paymentId = params.get('id');
+        if (!paymentId) {
+          toast.error('Hakediş ID bulunamadı');
+          return;
+        }
+
+        // Önce önizleme al
+        const formData = new FormData();
+        formData.append('excelFile', file);
+
+        const previewResponse = await authFetch(`/api/interim-payments/${paymentId}/import-metraj?preview=true`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!previewResponse.ok) {
+          const error = await previewResponse.json();
+          throw new Error(error.message || 'Excel yüklenemedi');
+        }
+
+        const previewData = await previewResponse.json();
+        
+        // Önizleme modalını göster
+        showImportPreviewModal(previewData, paymentId, file);
+        
+        logger.info('Excel import önizleme alındı', { 
+          successCount: previewData.results.success.length,
+          errorCount: previewData.results.errors.length 
+        });
+        logger.end();
+      } catch (error) {
+        logger.error('Excel import hatası', error);
+        logger.end();
+        toast.error('Excel yüklenemedi: ' + (error.message || 'Bilinmeyen hata'));
+      }
+    }
+
+    // Import önizleme modalı - Teklifbul Rule v1.0
+    function showImportPreviewModal(previewData, paymentId, file) {
+      const modal = document.getElementById('import-preview-modal');
+      if (!modal) return;
+
+      const successCount = previewData.results.success.length;
+      const errorCount = previewData.results.errors.length;
+
+      // Modal içeriğini doldur
+      const modalContent = modal.querySelector('.modal-content');
+      if (modalContent) {
+        modalContent.innerHTML = `
+          <div class="modal-header">
+            <h3>Excel Import Önizleme</h3>
+            <button class="close-modal" onclick="closeImportPreviewModal()">&times;</button>
+          </div>
+          <div style="padding: 20px;">
+            <p><strong>${successCount}</strong> satır güncellenecek, <strong>${errorCount}</strong> satır hatalı</p>
+            
+            ${errorCount > 0 ? `
+              <div style="margin-top: 20px;">
+                <h4 style="margin: 0 0 10px 0; color: #ef4444;">Hatalı Satırlar:</h4>
+                <div style="max-height: 200px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 6px; padding: 10px;">
+                  <table style="width: 100%; font-size: 12px;">
+                    <thead>
+                      <tr>
+                        <th style="text-align: left; padding: 6px;">Satır</th>
+                        <th style="text-align: left; padding: 6px;">PozNo</th>
+                        <th style="text-align: left; padding: 6px;">Hata</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${previewData.results.errors.map((err) => `
+                        <tr>
+                          <td style="padding: 6px;">${err.row}</td>
+                          <td style="padding: 6px;">${err.code || '-'}</td>
+                          <td style="padding: 6px; color: #ef4444;">${err.error}</td>
+                        </tr>
+                      `).join('')}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ` : ''}
+            
+            <div style="margin-top: 20px; display: flex; gap: 12px;">
+              <button class="btn btn-primary" onclick="confirmImportMetraj('${paymentId}')">Onayla ve İçe Aktar</button>
+              <button class="btn btn-outline" onclick="closeImportPreviewModal()">İptal</button>
+            </div>
+          </div>
+        `;
+      }
+
+      modal.style.display = 'block';
+      
+      // Global değişkenlere kaydet
+      window.__importPreviewData = previewData;
+      window.__importFile = file;
+    }
+
+    // Import onayı - Teklifbul Rule v1.0
+    window.confirmImportMetraj = async function(paymentId) {
+      try {
+        logger.group('Excel Metraj Import Onaylandı');
+        const previewData = window.__importPreviewData;
+        const file = window.__importFile;
+
+        if (!previewData || !file) {
+          toast.error('Önizleme verisi bulunamadı');
+          return;
+        }
+
+        // Gerçek import
+        const formData = new FormData();
+        formData.append('excelFile', file);
+
+        const response = await authFetch(`/api/interim-payments/${paymentId}/import-metraj`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Import başarısız');
+        }
+
+        const result = await response.json();
+        
+        toast.success(result.message || 'Metraj başarıyla içe aktarıldı');
+        logger.info('Excel import tamamlandı', { 
+          updatedItemsCount: result.updatedItemsCount 
+        });
+        logger.end();
+
+        // Modal'ı kapat
+        closeImportPreviewModal();
+
+        // Pozları yeniden yükle
+        const contractId = document.getElementById('contract-select').value;
+        if (contractId) {
+          await loadContractItems(contractId, null);
+          calculateItemsTotal();
+          calculateSummary();
+        }
+      } catch (error) {
+        logger.error('Excel import onay hatası', error);
+        logger.end();
+        toast.error('Import başarısız: ' + (error.message || 'Bilinmeyen hata'));
+      }
+    };
+
+    // Modal kapatma - Teklifbul Rule v1.0
+    window.closeImportPreviewModal = function() {
+      const modal = document.getElementById('import-preview-modal');
+      if (modal) {
+        modal.style.display = 'none';
+      }
+      window.__importPreviewData = null;
+      window.__importFile = null;
+    };
+
+    init().catch(error => {
+      logger.error('Sayfa yükleme hatası', error);
+      toast.error('Sayfa yüklenirken hata oluştu');
+    });
+  </script>
+  
+  <!-- Excel Import Önizleme Modal -->
+  <div id="import-preview-modal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 700px;">
+      <!-- İçerik dinamik olarak doldurulacak -->
+    </div>
+  </div>
+</body>
+</html>
+

@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>Yeni Stok Kartı Oluştur</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="/assets/js/theme-init.js"></script>
+  <link rel="stylesheet" href="/utils.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <link rel="stylesheet" href="/assets/css/stock-form.css" />
+</head>
+<body>
+  <header id="app-header"></header>
+
+  <div class="stock-form-container">
+    <!-- Breadcrumb -->
+    <div class="tb-breadcrumb">
+      <span class="tb-crumb"><span class="ico">🏠</span><a href="/dashboard.html">Ana Sayfa</a></span>
+      <span class="tb-sep">›</span>
+      <span class="tb-crumb"><span class="ico">📦</span><a href="/inventory-index.html">Stok Takip</a></span>
+      <span class="tb-sep">›</span>
+      <span class="tb-crumb"><span class="ico">➕</span><span id="pageTitle">Yeni Stok Kartı Oluştur</span></span>
+    </div>
+
+    <h1 id="formTitle" style="margin:0 0 4px 0">➕ Yeni Stok Kartı Oluştur</h1>
+    <p style="color:#6b7280; font-size:13px; margin:0 0 20px 0">Stok kartı bilgilerini doldurun. Sadece <strong>Stok Kodu</strong> ve <strong>Ürün Adı</strong> zorunludur.</p>
+
+    <!-- 1) Temel Bilgiler -->
+    <div class="form-section" id="sectionBasic">
+      <div class="form-section-header" data-section="sectionBasic">
+        <h3>📋 Temel Bilgiler</h3>
+        <span class="form-section-toggle">▾</span>
+      </div>
+      <div class="form-section-body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Stok Kodu (SKU) <span class="required">*</span></label>
+            <input type="text" id="fieldSku" placeholder="Örn: STK-001" maxlength="50" required />
+          </div>
+          <div class="form-group">
+            <label>Ürün Adı <span class="required">*</span></label>
+            <input type="text" id="fieldName" placeholder="Ürün adını yazın" required />
+          </div>
+          <div class="form-group">
+            <label>Barkod</label>
+            <input type="text" id="fieldBarcode" placeholder="Barkod numarası" />
+          </div>
+          <div class="form-group">
+            <label>Tür</label>
+            <select id="fieldType">
+              <option value="stok">Stok</option>
+              <option value="hizmet">Hizmet</option>
+            </select>
+          </div>
+          <div class="form-group full-width">
+            <label>Açıklama</label>
+            <textarea id="fieldDescription" placeholder="Ürün açıklaması (opsiyonel)"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2) Kategori & Sınıflandırma -->
+    <div class="form-section" id="sectionCategory">
+      <div class="form-section-header" data-section="sectionCategory">
+        <h3>🏷️ Kategori & Sınıflandırma</h3>
+        <span class="form-section-toggle">▾</span>
+      </div>
+      <div class="form-section-body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Marka</label>
+            <input type="text" id="fieldBrand" placeholder="Marka adı" />
+          </div>
+          <div class="form-group">
+            <label>Model</label>
+            <input type="text" id="fieldModel" placeholder="Model adı" />
+          </div>
+          <div class="form-group">
+            <label>Grup Kodu</label>
+            <input type="text" id="fieldGroupCode" placeholder="Grup kodu" />
+          </div>
+          <div class="form-group">
+            <label>Raf Kodu</label>
+            <input type="text" id="fieldShelfCode" placeholder="Raf kodu" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3) Birim & Ölçü -->
+    <div class="form-section" id="sectionUnit">
+      <div class="form-section-header" data-section="sectionUnit">
+        <h3>📏 Birim & Ölçü</h3>
+        <span class="form-section-toggle">▾</span>
+      </div>
+      <div class="form-section-body">
+        <div class="form-grid-3">
+          <div class="form-group">
+            <label>Birim</label>
+            <select id="fieldUnit">
+              <option value="ADT">Adet (ADT)</option>
+              <option value="KG">Kilogram (KG)</option>
+              <option value="TON">Ton (TON)</option>
+              <option value="LT">Litre (LT)</option>
+              <option value="M">Metre (M)</option>
+              <option value="M2">Metrekare (M²)</option>
+              <option value="M3">Metreküp (M³)</option>
+              <option value="PKT">Paket (PKT)</option>
+              <option value="KOL">Koli (KOL)</option>
+              <option value="SET">Set (SET)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Alt Birim</label>
+            <input type="text" id="fieldSubUnit" placeholder="Örn: Kutu" />
+          </div>
+          <div class="form-group">
+            <label>Birim Çarpanı</label>
+            <input type="number" id="fieldUnitMultiplier" placeholder="Örn: 12" step="0.01" min="0" />
+            <span class="helper">Alt birim × çarpan = ana birim</span>
+          </div>
+          <div class="form-group">
+            <label>Ağırlık (kg)</label>
+            <input type="number" id="fieldWeight" placeholder="0.00" step="0.01" min="0" />
+          </div>
+          <div class="form-group">
+            <label>Hacim (m³)</label>
+            <input type="number" id="fieldVolume" placeholder="0.00" step="0.001" min="0" />
+          </div>
+        </div>
+        <div class="form-grid-3" style="margin-top:16px">
+          <div class="form-group">
+            <label>Genişlik (cm)</label>
+            <input type="number" id="fieldDimWidth" placeholder="0" step="0.1" min="0" />
+          </div>
+          <div class="form-group">
+            <label>Yükseklik (cm)</label>
+            <input type="number" id="fieldDimHeight" placeholder="0" step="0.1" min="0" />
+          </div>
+          <div class="form-group">
+            <label>Uzunluk (cm)</label>
+            <input type="number" id="fieldDimLength" placeholder="0" step="0.1" min="0" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4) Fiyat Bilgileri -->
+    <div class="form-section" id="sectionPrice">
+      <div class="form-section-header" data-section="sectionPrice">
+        <h3>💰 Fiyat Bilgileri</h3>
+        <span class="form-section-toggle">▾</span>
+      </div>
+      <div class="form-section-body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Alım Fiyatı</label>
+            <input type="number" id="fieldPurchasePrice" placeholder="0.00" step="0.01" min="0" />
+          </div>
+          <div class="form-group">
+            <label>Satış Fiyatı</label>
+            <input type="number" id="fieldSalePrice" placeholder="0.00" step="0.01" min="0" />
+          </div>
+          <div class="form-group">
+            <label>Para Birimi</label>
+            <select id="fieldCurrency">
+              <option value="TRY">TRY (₺)</option>
+              <option value="USD">USD ($)</option>
+              <option value="EUR">EUR (€)</option>
+              <option value="GBP">GBP (£)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>KDV Oranı (%)</label>
+            <input type="number" id="fieldVatRate" placeholder="20" step="1" min="0" max="100" value="20" />
+          </div>
+          <div class="form-group">
+            <label>İskonto Oranı (%)</label>
+            <input type="number" id="fieldDiscountRate" placeholder="0" step="0.01" min="0" max="100" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5) Stok Yönetimi -->
+    <div class="form-section" id="sectionStock">
+      <div class="form-section-header" data-section="sectionStock">
+        <h3>📦 Stok Yönetimi</h3>
+        <span class="form-section-toggle">▾</span>
+      </div>
+      <div class="form-section-body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Minimum Stok</label>
+            <input type="number" id="fieldMinStock" placeholder="0" step="1" min="0" />
+          </div>
+          <div class="form-group">
+            <label>Maksimum Stok</label>
+            <input type="number" id="fieldMaxStock" placeholder="0" step="1" min="0" />
+          </div>
+          <div class="form-group">
+            <label>Stok Takip Tipi</label>
+            <select id="fieldTrackingType">
+              <option value="none">Takip Yok</option>
+              <option value="serial">Seri Numarası</option>
+              <option value="lot">Lot/Parti</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="fieldHasExpiry">SKT Takibi</label>
+            <select id="fieldHasExpiry" title="Son kullanım tarihi takibi seçimi">
+              <option value="false">Takip Yok</option>
+              <option value="true">Takip Et</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="fieldShelfLifeDays">Varsayılan Raf Ömrü (Gün)</label>
+            <input type="number" id="fieldShelfLifeDays" placeholder="Örn: 365" step="1" min="0" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6) Tedarik (Collapse) -->
+    <div class="form-section collapsed" id="sectionSupply">
+      <div class="form-section-header" data-section="sectionSupply">
+        <h3>🚚 Tedarik <span style="font-size:11px;color:#9ca3af;font-weight:400;margin-left:6px">Opsiyonel</span></h3>
+        <span class="form-section-toggle">▾</span>
+      </div>
+      <div class="form-section-body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Tedarikçi ID</label>
+            <input type="text" id="fieldSupplierId" placeholder="Tedarikçi kodu" />
+          </div>
+          <div class="form-group">
+            <label>Tedarikçi Ürün Kodu</label>
+            <input type="text" id="fieldSupplierProductCode" placeholder="Tedarikçi ürün kodu" />
+          </div>
+          <div class="form-group">
+            <label>Tedarik Süresi (Gün)</label>
+            <input type="number" id="fieldLeadTimeDays" placeholder="0" min="0" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7) Ek Alanlar -->
+    <div class="form-section collapsed" id="sectionExtra">
+      <div class="form-section-header" data-section="sectionExtra">
+        <h3>📝 Ek Alanlar</h3>
+        <span class="form-section-toggle">▾</span>
+      </div>
+      <div class="form-section-body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>GTIN</label>
+            <input type="text" id="fieldGtin" placeholder="GTIN numarası" />
+          </div>
+          <div class="form-group">
+            <label>Menşei</label>
+            <input type="text" id="fieldOrigin" placeholder="Üretim ülkesi" />
+          </div>
+          <div class="form-group">
+            <label>Depo / Lokasyon <span class="required">*</span></label>
+            <select id="fieldWarehouseCode" required>
+              <option value="">Lokasyon seçiniz</option>
+            </select>
+          </div>
+          <div class="form-group full-width">
+            <label>Notlar</label>
+            <textarea id="fieldNotes" placeholder="Ek notlar..."></textarea>
+          </div>
+          <div class="form-group full-width" id="groupPickerWrapper" style="margin-top:8px">
+            <label>🏷️ Özel Kod Grupları</label>
+            <div id="groupPickerList" style="border:1px solid #d1d5db;border-radius:6px;padding:10px;max-height:180px;overflow-y:auto;background:#fafafa">
+              <span style="color:#9ca3af;font-size:12px">Gruplar yükleniyor...</span>
+            </div>
+            <span class="helper">Bu ürünü eklemek istediğiniz özel kod gruplarını seçin.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="form-actions">
+      <button class="btn btn-secondary" id="btnCancel" onclick="history.back()">← Geri</button>
+      <button class="btn btn-primary" id="btnSave">💾 Kaydet</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initGlobalHeader } from '../assets/js/ui/header.js';
+    import { toast } from '../src/shared/ui/toast.js';
+    window.toast = toast;
+    initGlobalHeader({ mount: '#app-header', activeRoute: 'inventory' });
+  </script>
+  <script type="module" src="/scripts/stock-new.js"></script>
+</body>
+</html>

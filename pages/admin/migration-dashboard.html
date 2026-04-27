@@ -1,0 +1,2083 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Migration Dashboard - NEFISOFT</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="./migration-dashboard.css">
+  <style>
+    /* Teklifbul Rule v1.0 - Admin sayfası başlangıçta gizli, admin kontrolü sonrası gösterilecek */
+    body:not(.admin-verified) {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔄 Migration Dashboard</h1>
+    
+    <div class="status-card">
+      <h3>Migration Status</h3>
+      <div style="margin: 16px 0;">
+        <label>Run ID:</label>
+        <input type="text" id="runIdInput" placeholder="Enter run ID">
+        <button onclick="loadStatus()">Load Status</button>
+      </div>
+      <div id="statusContent" class="loading">Enter a run ID to view migration status</div>
+    </div>
+
+    <div id="statsContainer" class="stats" style="display: none;">
+      <div class="stat-item">
+        <div class="stat-label">Progress</div>
+        <div class="stat-value" id="progressValue">0%</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Processed</div>
+        <div class="stat-value" id="processedValue">0</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Total</div>
+        <div class="stat-value" id="totalValue">0</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">ETA</div>
+        <div class="stat-value" id="etaValue">-</div>
+      </div>
+    </div>
+
+    <div class="status-card history-list">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3>Migration History</h3>
+        <span id="refreshIndicator" class="refresh-indicator" style="display: none;">🔄 Auto-refresh</span>
+      </div>
+      
+      <div class="filters">
+        <input type="text" id="searchInput" placeholder="Search migration name or run ID...">
+        
+        <div class="autocomplete-wrapper">
+          <input 
+            type="text" 
+            id="migrationNameInput" 
+            class="autocomplete-input"
+            placeholder="Migration name..."
+            autocomplete="off"
+          >
+          <div id="migrationNameDropdown" class="autocomplete-dropdown"></div>
+        </div>
+        
+        <div class="multi-select">
+          <div class="multi-select-button" onclick="toggleMultiSelect()">
+            <span id="statusFilterText">All Status</span>
+            <span>▼</span>
+          </div>
+          <div class="multi-select-dropdown" id="statusMultiSelect">
+            <div class="multi-select-item">
+              <input type="checkbox" id="status-all" checked onchange="updateStatusFilter()">
+              <label for="status-all">All Status</label>
+            </div>
+            <div class="multi-select-item">
+              <input type="checkbox" id="status-running" onchange="updateStatusFilter()">
+              <label for="status-running">Running</label>
+            </div>
+            <div class="multi-select-item">
+              <input type="checkbox" id="status-completed" onchange="updateStatusFilter()">
+              <label for="status-completed">Completed</label>
+            </div>
+            <div class="multi-select-item">
+              <input type="checkbox" id="status-failed" onchange="updateStatusFilter()">
+              <label for="status-failed">Failed</label>
+            </div>
+            <div class="multi-select-item">
+              <input type="checkbox" id="status-cancelled" onchange="updateStatusFilter()">
+              <label for="status-cancelled">Cancelled</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="date-range">
+          <input type="date" id="startDate" placeholder="Start Date">
+          <span>to</span>
+          <input type="date" id="endDate" placeholder="End Date">
+        </div>
+
+        <select id="limitSelect">
+          <option value="10">Last 10</option>
+          <option value="25" selected>Last 25</option>
+          <option value="50">Last 50</option>
+          <option value="100">Last 100</option>
+        </select>
+        <button onclick="loadHistory()">Refresh</button>
+        <button onclick="exportData('csv')" style="background: #10b981;">Export CSV</button>
+        <button onclick="exportData('json')" style="background: #3b82f6;">Export JSON</button>
+        <button onclick="exportData('pdf')" style="background: #ef4444;">Export PDF</button>
+        <button onclick="exportXLSX()" style="background: #059669;" id="xlsxExportBtn">📥 Excel (XLSX)</button>
+      </div>
+
+      <div id="filterTags" class="filter-tags" style="display: none;"></div>
+
+      <div id="historyContent" class="loading">Loading migration history...</div>
+
+      <div id="pagination" class="pagination" style="display: none;">
+        <div class="pagination-info">
+          <span id="paginationText">Showing 0-0 of 0</span>
+          <select id="pageSizeSelect" class="pagination-page-input">
+            <option value="10">10 per page</option>
+            <option value="25" selected>25 per page</option>
+            <option value="50">50 per page</option>
+            <option value="100">100 per page</option>
+          </select>
+        </div>
+        <div class="pagination-controls">
+          <button class="pagination-button" id="firstPageBtn" onclick="goToPage(1)">First</button>
+          <button class="pagination-button" id="prevPageBtn" onclick="goToPreviousPage()">Previous</button>
+          <input type="number" id="currentPageInput" class="pagination-page-input" min="1" value="1" onchange="goToPageInput()">
+          <span>/</span>
+          <span id="totalPages">1</span>
+          <button class="pagination-button" id="nextPageBtn" onclick="goToNextPage()">Next</button>
+          <button class="pagination-button" id="lastPageBtn" onclick="goToLastPage()">Last</button>
+        </div>
+        <div class="pagination-mode-toggle">
+          <label>
+            <input type="radio" name="paginationMode" value="page" checked onchange="setPaginationMode('page')">
+            <span>Page-based</span>
+          </label>
+          <label>
+            <input type="radio" name="paginationMode" value="infinite" onchange="setPaginationMode('infinite')">
+            <span>Infinite Scroll</span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="status-card">
+      <h3>Migration Statistics</h3>
+      <div id="statsSummary" class="stats-summary" style="display: none;">
+        <div class="summary-item">
+          <div class="summary-label">Total Migrations</div>
+          <div class="summary-value" id="totalMigrations">0</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-label">Success Rate</div>
+          <div class="summary-value" id="successRate">0%</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-label">Avg Duration</div>
+          <div class="summary-value" id="avgDuration">-</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-label">Total Processed</div>
+          <div class="summary-value" id="totalProcessed">0</div>
+        </div>
+      </div>
+      
+      <div class="chart-container">
+        <div class="chart">
+          <div class="chart-title">
+            Success vs Failed
+            <button onclick="exportChartPNG('successFailedChart')" class="chart-export-btn" title="Export as PNG">📷 PNG</button>
+          </div>
+          <canvas id="successFailedChart" style="max-height: 300px;"></canvas>
+        </div>
+        
+        <div class="chart">
+          <div class="chart-title">
+            Status Distribution
+            <button onclick="exportChartPNG('statusChart')" class="chart-export-btn" title="Export as PNG">📷 PNG</button>
+          </div>
+          <canvas id="statusChart" style="max-height: 300px;"></canvas>
+        </div>
+      </div>
+      
+      <div class="chart-container" style="margin-top: 16px;">
+        <div class="chart" style="flex: 1;">
+          <div class="chart-title">
+            Migration Timeline
+            <button onclick="exportChartPNG('timelineChart')" class="chart-export-btn" title="Export as PNG">📷 PNG</button>
+          </div>
+          <canvas id="timelineChart" style="max-height: 300px;"></canvas>
+        </div>
+        
+        <div class="chart" style="flex: 1;">
+          <div class="chart-title">
+            Success Rate Trend
+            <button onclick="exportChartPNG('trendChart')" class="chart-export-btn" title="Export as PNG">📷 PNG</button>
+          </div>
+          <canvas id="trendChart" style="max-height: 300px;"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    // Teklifbul Rule v1.0 - Toast & Logger
+    import { toast } from '/src/shared/ui/toast.js';
+    import { MESSAGES } from '/src/shared/constants/messages.js';
+    import { logger } from '/src/shared/log/logger.js';
+    import { requireAuth } from '/firebase.js';
+    // Teklifbul Rule v1.0 - XSS Protection
+    import DOMPurify from 'https://cdn.jsdelivr.net/npm/dompurify@3.2.2/+esm';
+
+    // Admin kontrolü
+    logger.group('Migration Dashboard - Auth Check');
+    
+    const user = await requireAuth();
+    if (!user) {
+      logger.warn('User not authenticated, redirecting');
+      window.location.href = '/index.html';
+      throw new Error('User not authenticated');
+    }
+
+    // Admin/ops kontrolü (custom claims)
+    try {
+      const tokenResult = await user.getIdTokenResult();
+      const claims = tokenResult.claims || {};
+      
+      // Admin veya ops kontrolü
+      const isAdmin = claims.admin === true || claims.role === 'admin';
+      const isOps = claims.ops === true || claims.role === 'ops';
+      
+      logger.info('User claims check', {
+        uid: user.uid,
+        email: user.email,
+        isAdmin: isAdmin,
+        isOps: isOps,
+        claims: claims
+      });
+
+      if (!isAdmin && !isOps) {
+        logger.warn('User does not have admin/ops permissions', {
+          uid: user.uid,
+          email: user.email
+        });
+        
+        // Admin değilse sayfa hiç gösterilmeden yönlendir
+        window.location.href = '/index.html';
+        throw new Error('Insufficient permissions');
+      }
+      
+      // Admin kontrolü başarılı - sayfayı göster
+      document.body.classList.add('admin-verified');
+      logger.info('User has admin/ops permissions, access granted');
+    } catch (error) {
+      logger.error('Admin check failed', error);
+      toast.error(MESSAGES.ERROR_ADMIN_MIGRATION_PERMISSION_CHECK);
+      window.location.href = '/index.html';
+      throw error;
+    } finally {
+      logger.end();
+    }
+
+    const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5174';
+
+    // Teklifbul Rule v1.0 - AbortController for request cancellation
+    let statusAbortController = null;
+    let historyAbortController = null;
+
+    async function loadStatus() {
+      const runId = document.getElementById('runIdInput').value.trim();
+      
+      if (!runId) {
+        toast.error(MESSAGES.ERROR_ADMIN_MIGRATION_RUN_ID_REQUIRED);
+        return;
+      }
+
+      // Cancel previous request if exists
+      if (statusAbortController) {
+        statusAbortController.abort();
+      }
+      statusAbortController = new AbortController();
+
+      logger.group('Loading Migration Status');
+      
+      // Show loading state - Teklifbul Rule v1.0 - XSS Protection
+      const statusContent = document.getElementById('statusContent');
+      statusContent.innerHTML = DOMPurify.sanitize('<div class="loading">Loading status...</div>');
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/migration/status?runId=${runId}`, {
+          signal: statusAbortController.signal
+        });
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Failed to load status');
+        }
+
+        displayStatus(data);
+        logger.info('Status loaded', data);
+      } catch (error) {
+        // Don't show error for aborted requests
+        if (error.name === 'AbortError') {
+          logger.info('Status request aborted');
+          return;
+        }
+        
+        logger.error('Failed to load status', error);
+        toast.error(MESSAGES.ERROR_ADMIN_MIGRATION_STATUS_LOAD.replace('{message}', error.message));
+        // Teklifbul Rule v1.0 - XSS Protection: Sanitize error message
+        const errorMsg = DOMPurify.sanitize(error.message || 'Unknown error');
+        statusContent.innerHTML = DOMPurify.sanitize(`
+          <div class="error">Error: ${errorMsg}</div>
+        `);
+      } finally {
+        statusAbortController = null;
+        logger.end();
+      }
+    }
+
+    function displayStatus(status) {
+      const progressPct = status.progressPct || 0;
+      const processed = status.processed || 0;
+      const total = status.total || 0;
+      const etaMs = status.etaMs || 0;
+      const statusText = status.status || 'unknown';
+
+      // Progress bar
+      document.getElementById('statusContent').innerHTML = `
+        <div class="progress-bar">
+          <div class="progress-fill" style="width: ${progressPct}%">${progressPct}%</div>
+        </div>
+        <div style="margin-top: 8px; color: #6b7280;">
+          Status: <strong>${statusText}</strong>
+        </div>
+      `;
+
+      // Stats
+      document.getElementById('progressValue').textContent = `${progressPct}%`;
+      document.getElementById('processedValue').textContent = processed.toLocaleString();
+      document.getElementById('totalValue').textContent = total.toLocaleString();
+      
+      if (etaMs > 0) {
+        const etaMinutes = Math.round(etaMs / 60000);
+        document.getElementById('etaValue').textContent = `${etaMinutes}m`;
+      } else {
+        document.getElementById('etaValue').textContent = '-';
+      }
+
+      document.getElementById('statsContainer').style.display = 'grid';
+
+      // Auto-refresh if running
+      if (statusText === 'running') {
+        setTimeout(loadStatus, 5000); // 5 saniyede bir refresh
+      }
+    }
+
+    // Enter key support
+    document.getElementById('runIdInput').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        loadStatus();
+      }
+    });
+
+    // Migration History
+    let autoRefreshInterval = null;
+    let currentHistory = [];
+    let selectedStatuses = [];
+    let startDate = null;
+    let endDate = null;
+    let selectedMigrationName = null;
+    let uniqueMigrationNames = [];
+    
+    // Server-Side Pagination
+    let pageSize = 25;
+    let paginationMode = 'page';
+    let currentCursor = null;
+    let cursorHistory = []; // Previous pages için cursor stack
+    let hasNextPage = false;
+    let totalCount = null;
+    let allFilteredHistory = []; // Client-side filtering için (search, date range)
+    const MAX_INFINITE_SCROLL_ITEMS = 1000; // Memory leak önleme limiti
+
+    // Teklifbul Rule v1.0 - Kod tekrarını azalt: Query params builder
+    function buildQueryParams(options = {}) {
+      const {
+        includeCursor = true,
+        includeTotal = false,
+        customPageSize = null
+      } = options;
+      
+      const params = new URLSearchParams({ 
+        pageSize: (customPageSize || pageSize).toString(),
+        includeTotal: includeTotal.toString()
+      });
+      
+      // Cursor for pagination
+      if (includeCursor && currentCursor) {
+        params.append('cursor', currentCursor);
+      }
+      
+      // Server-side filters
+      if (selectedStatuses.length === 1) {
+        params.append('status', selectedStatuses[0]);
+      }
+      if (selectedMigrationName) {
+        params.append('migrationName', selectedMigrationName);
+      }
+      if (startDate) {
+        params.append('startDate', new Date(startDate).toISOString());
+      }
+      if (endDate) {
+        params.append('endDate', new Date(endDate + 'T23:59:59.999Z').toISOString());
+      }
+      
+      return params;
+    }
+
+    async function loadHistory(resetCursor = false) {
+      // Teklifbul Rule v1.0 - Cancel previous request to prevent race conditions
+      if (historyAbortController) {
+        historyAbortController.abort();
+      }
+      historyAbortController = new AbortController();
+
+      logger.group('Loading Migration History');
+      
+      // Show loading state - Teklifbul Rule v1.0 - XSS Protection
+      const historyContent = document.getElementById('historyContent');
+      if (resetCursor || currentHistory.length === 0) {
+        historyContent.innerHTML = DOMPurify.sanitize('<div class="loading">Loading migration history...</div>');
+      }
+      
+      try {
+        const pageSizeSelect = document.getElementById('pageSizeSelect');
+        const limitSelect = document.getElementById('limitSelect');
+        pageSize = Number((pageSizeSelect && pageSizeSelect.value) || (limitSelect && limitSelect.value) || 25);
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+
+        // Reset cursor if filters changed
+        if (resetCursor) {
+          currentCursor = null;
+          cursorHistory = [];
+        }
+
+        // Build query params using helper function
+        const params = buildQueryParams({
+          includeCursor: true,
+          includeTotal: resetCursor && !currentCursor // Total count sadece ilk sayfa için
+        });
+
+        const response = await fetch(`${API_BASE_URL}/api/migration/history?${params}`, {
+          signal: historyAbortController.signal
+        });
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Failed to load history');
+        }
+
+        // Server-side pagination data
+        const migrations = data.migrations || [];
+        hasNextPage = (data.pagination && data.pagination.hasNextPage) || false;
+        totalCount = (data.pagination && data.pagination.total) || null;
+        
+        // Update current cursor from response (for next page)
+        if ((data.pagination && data.pagination.nextCursor) && !currentCursor) {
+          // First page: save cursor for next page
+          // Note: currentCursor will be set after displaying results
+        }
+
+        // Client-side filtering (search only - diğerleri server-side)
+        let filtered = migrations;
+        
+        // Multiple status filter (client-side - API'de sadece single status destekleniyor)
+        if (selectedStatuses.length > 1 && !selectedStatuses.includes('all')) {
+          filtered = filtered.filter(function(m) {
+            return selectedStatuses.includes(m.status);
+          });
+        }
+
+        // Search filter (client-side - Firestore'da text search yok)
+        if (searchTerm) {
+          filtered = filtered.filter(function(m) {
+            var name = m.migrationName || '';
+            var runId = m.runId || '';
+            return name.toLowerCase().includes(searchTerm) || runId.toLowerCase().includes(searchTerm);
+          });
+        }
+
+        allFilteredHistory = filtered;
+        currentHistory = filtered;
+        
+        // Unique migration names güncelle (tüm yüklenen data'dan)
+        updateUniqueMigrationNames(migrations);
+        
+        // Update cursor for next page
+        if (resetCursor) {
+          // Reset: get cursor from first page response
+          currentCursor = (data.pagination && data.pagination.nextCursor) || null;
+        } else {
+          // Going back: cursor already set from cursorHistory
+          // Going forward: cursor will be updated in goToNextPage
+          // For loadHistory(false), keep current cursor
+        }
+        
+        // Pagination uygula
+        if (paginationMode === 'page') {
+          // Server-side pagination, client-side slice gerekmez
+          displayHistory(filtered);
+        } else {
+          // Infinite scroll: append to existing history
+          // Teklifbul Rule v1.0 - Memory leak önleme
+          if (resetCursor) {
+            allFilteredHistory = filtered;
+          } else {
+            var newHistory = [];
+            for (var i = 0; i < allFilteredHistory.length; i++) {
+              newHistory.push(allFilteredHistory[i]);
+            }
+            for (var j = 0; j < filtered.length; j++) {
+              newHistory.push(filtered[j]);
+            }
+            allFilteredHistory = newHistory;
+            
+            // Memory limit: Eski verileri temizle
+            if (allFilteredHistory.length > MAX_INFINITE_SCROLL_ITEMS) {
+              const removeCount = allFilteredHistory.length - MAX_INFINITE_SCROLL_ITEMS;
+              allFilteredHistory = allFilteredHistory.slice(removeCount);
+              logger.info('Infinite scroll history trimmed', { 
+                removed: removeCount, 
+                remaining: allFilteredHistory.length 
+              });
+            }
+          }
+          displayHistory(allFilteredHistory);
+        }
+        
+        updateFilterTags();
+        updatePaginationUI();
+        logger.info('History loaded', { 
+          count: filtered.length, 
+          hasNextPage: hasNextPage,
+          total: totalCount,
+          cursor: currentCursor ? 'present' : 'null'
+        });
+      } catch (error) {
+        // Don't show error for aborted requests
+        if (error.name === 'AbortError') {
+          logger.info('History request aborted');
+          return;
+        }
+        
+        // Network error handling - Teklifbul Rule v1.0 - XSS Protection
+        if (error.name === 'TypeError' && error.message.includes('fetch')) {
+          logger.error('Network error loading history', error);
+          toast.error(MESSAGES.ERROR_ADMIN_MIGRATION_NETWORK);
+          historyContent.innerHTML = DOMPurify.sanitize(`
+            <div class="error">Network error: Please check your connection and try again.</div>
+          `);
+        } else {
+          logger.error('Failed to load history', error);
+          toast.error(MESSAGES.ERROR_ADMIN_MIGRATION_HISTORY_LOAD.replace('{message}', error.message));
+          const errorMsg = DOMPurify.sanitize(error.message || 'Unknown error');
+          historyContent.innerHTML = DOMPurify.sanitize(`
+            <div class="error">Error: ${errorMsg}</div>
+          `);
+        }
+      } finally {
+        historyAbortController = null;
+        logger.end();
+      }
+    }
+
+    function displayHistory(migrations) {
+      // Teklifbul Rule v1.0 - XSS Protection: Sanitize helper
+      const sanitize = (str) => DOMPurify.sanitize(String(str || ''));
+      const sanitizeAttr = (str) => DOMPurify.sanitize(String(str || ''), { ALLOWED_TAGS: [] });
+      
+      if (migrations.length === 0) {
+        document.getElementById('historyContent').innerHTML = DOMPurify.sanitize(`
+          <div class="loading">No migrations found</div>
+        `);
+        updateStatistics([]);
+        document.getElementById('pagination').style.display = 'none';
+        return;
+      }
+
+      // Statistics güncelle (tüm filtered data ile)
+      updateStatistics(allFilteredHistory);
+
+      const html = migrations.map((m) => {
+        const progressPct = m.total > 0 ? Math.round((m.processed / m.total) * 100) : 0;
+        const startedAt = m.startedAt ? new Date(m.startedAt).toLocaleString('tr-TR') : 'Unknown';
+        const finishedAt = m.finishedAt ? new Date(m.finishedAt).toLocaleString('tr-TR') : '-';
+        const duration = m.finishedAt && m.startedAt 
+          ? Math.round((new Date(m.finishedAt).getTime() - new Date(m.startedAt).getTime()) / 1000 / 60) + 'm'
+          : m.status === 'running' ? 'Running...' : '-';
+
+        // Sanitize user input - Teklifbul Rule v1.0 - XSS Protection
+        const safeRunId = sanitizeAttr(m.runId || '');
+        const safeMigrationName = sanitize(m.migrationName || 'Unknown Migration');
+        const safeStatus = sanitizeAttr(m.status || '');
+
+        return `
+          <div class="history-item ${safeStatus}" onclick="selectMigration('${safeRunId}')">
+            <div class="history-header">
+              <div class="history-title">${safeMigrationName}</div>
+              <span class="history-status ${safeStatus}">${safeStatus}</span>
+            </div>
+            <div class="history-meta">
+              <div><strong>Run ID:</strong> ${sanitize(safeRunId.substring(0, 8))}...</div>
+              <div><strong>Progress:</strong> ${progressPct}% (${m.processed}/${m.total})</div>
+              <div><strong>Success:</strong> ${m.success || 0}</div>
+              <div><strong>Failed:</strong> ${m.failed || 0}</div>
+              <div><strong>Started:</strong> ${sanitize(startedAt)}</div>
+              <div><strong>Finished:</strong> ${sanitize(finishedAt)}</div>
+              <div><strong>Duration:</strong> ${sanitize(duration)}</div>
+            </div>
+            ${m.status === 'running' ? `
+              <div class="progress-bar" style="margin-top: 12px;">
+                <div class="progress-fill" style="width: ${progressPct}%">${progressPct}%</div>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+
+      // Sanitize final HTML - Teklifbul Rule v1.0 - XSS Protection
+      document.getElementById('historyContent').innerHTML = DOMPurify.sanitize(html, {
+        ALLOWED_TAGS: ['div', 'span', 'strong'],
+        ALLOWED_ATTR: ['class', 'onclick', 'style']
+      });
+    }
+
+    function selectMigration(runId) {
+      document.getElementById('runIdInput').value = runId;
+      loadStatus();
+      // Scroll to status card
+      document.querySelector('.status-card').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Auto-refresh running migrations
+    // Teklifbul Rule v1.0 - Sadece running migrations varsa refresh yap
+    function startAutoRefresh() {
+      if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+      
+      autoRefreshInterval = setInterval(() => {
+        const hasRunning = currentHistory.some((m) => m.status === 'running');
+        if (hasRunning) {
+          document.getElementById('refreshIndicator').style.display = 'inline-block';
+          document.getElementById('refreshIndicator').classList.add('active');
+          loadHistory(false); // Cursor'ı resetleme, sadece refresh
+        } else {
+          document.getElementById('refreshIndicator').style.display = 'none';
+          document.getElementById('refreshIndicator').classList.remove('active');
+          // Running migration yoksa interval'i durdur (gereksiz istek önle)
+          if (autoRefreshInterval) {
+            clearInterval(autoRefreshInterval);
+            autoRefreshInterval = null;
+          }
+        }
+      }, 5000); // 5 saniyede bir
+    }
+
+    // Multi-select Status Filter
+    function toggleMultiSelect() {
+      const dropdown = document.getElementById('statusMultiSelect');
+      dropdown.classList.toggle('active');
+    }
+
+    function updateStatusFilter() {
+      const allCheckbox = document.getElementById('status-all');
+      const runningCheckbox = document.getElementById('status-running');
+      const completedCheckbox = document.getElementById('status-completed');
+      const failedCheckbox = document.getElementById('status-failed');
+      const cancelledCheckbox = document.getElementById('status-cancelled');
+
+      if (allCheckbox.checked) {
+        // "All" seçildi, diğerlerini kapat
+        runningCheckbox.checked = false;
+        completedCheckbox.checked = false;
+        failedCheckbox.checked = false;
+        cancelledCheckbox.checked = false;
+        selectedStatuses = [];
+        document.getElementById('statusFilterText').textContent = 'All Status';
+      } else {
+        // Diğer status'lar seçildi, "All"ı kapat
+        allCheckbox.checked = false;
+        selectedStatuses = [];
+        if (runningCheckbox.checked) selectedStatuses.push('running');
+        if (completedCheckbox.checked) selectedStatuses.push('completed');
+        if (failedCheckbox.checked) selectedStatuses.push('failed');
+        if (cancelledCheckbox.checked) selectedStatuses.push('cancelled');
+
+        if (selectedStatuses.length === 0) {
+          // Hiçbiri seçili değil, "All"ı aç
+          allCheckbox.checked = true;
+          document.getElementById('statusFilterText').textContent = 'All Status';
+        } else {
+          document.getElementById('statusFilterText').textContent = 
+            `${selectedStatuses.length} selected`;
+        }
+      }
+
+      loadHistory(true); // Reset cursor when filter changes
+    }
+
+    function updateFilterTags() {
+      const tagsContainer = document.getElementById('filterTags');
+      const tags = [];
+
+      if (selectedStatuses.length > 0 && !selectedStatuses.includes('all')) {
+        selectedStatuses.forEach(status => {
+          tags.push(`<div class="filter-tag">
+            <span>Status: ${status}</span>
+            <button onclick="removeStatusFilter('${status}')">×</button>
+          </div>`);
+        });
+      }
+
+      if (startDate) {
+        tags.push(`<div class="filter-tag">
+          <span>From: ${startDate}</span>
+          <button onclick="removeDateFilter('start')">×</button>
+        </div>`);
+      }
+
+      if (endDate) {
+        tags.push(`<div class="filter-tag">
+          <span>To: ${endDate}</span>
+          <button onclick="removeDateFilter('end')">×</button>
+        </div>`);
+      }
+
+      if (selectedMigrationName) {
+        tags.push(`<div class="filter-tag">
+          <span>Migration: ${selectedMigrationName}</span>
+          <button onclick="removeMigrationNameFilter()">×</button>
+        </div>`);
+      }
+
+      if (tags.length > 0) {
+        tagsContainer.innerHTML = tags.join('');
+        tagsContainer.style.display = 'flex';
+      } else {
+        tagsContainer.style.display = 'none';
+      }
+    }
+
+    function removeStatusFilter(status) {
+      const checkbox = document.getElementById(`status-${status}`);
+      if (checkbox) checkbox.checked = false;
+      updateStatusFilter();
+    }
+
+    function removeDateFilter(type) {
+      if (type === 'start') {
+        document.getElementById('startDate').value = '';
+        startDate = null;
+      } else {
+        document.getElementById('endDate').value = '';
+        endDate = null;
+      }
+      loadHistory(true); // Reset cursor when filter changes
+    }
+
+    function removeMigrationNameFilter() {
+      selectedMigrationName = null;
+      (document.getElementById('migrationNameInput')).value = '';
+      loadHistory(true); // Reset cursor when filter changes
+    }
+
+    // Migration Name Autocomplete
+    function updateUniqueMigrationNames(migrations) {
+      const names = new Set();
+      migrations.forEach((m) => {
+        if (m.migrationName) {
+          names.add(m.migrationName);
+        }
+      });
+      uniqueMigrationNames = Array.from(names).sort();
+    }
+
+    function setupMigrationNameAutocomplete() {
+      const input = document.getElementById('migrationNameInput');
+      const dropdown = document.getElementById('migrationNameDropdown');
+      let selectedIndex = -1;
+      let filteredNames = [];
+
+      if (!input || !dropdown) return;
+
+      // Input event handler with debounce
+      // Teklifbul Rule v1.0 - Gereksiz API isteklerini önle
+      let inputTimeout = null;
+      input.addEventListener('input', (e) => {
+        const query = (e.target).value.trim().toLowerCase();
+        
+        // Clear previous timeout
+        if (inputTimeout) clearTimeout(inputTimeout);
+        
+        if (query.length === 0) {
+          dropdown.classList.remove('active');
+          selectedMigrationName = null;
+          // Debounce: 300ms sonra loadHistory çağır
+          inputTimeout = setTimeout(() => {
+            loadHistory(true);
+          }, 300);
+          return;
+        }
+
+        // Filter migration names (client-side, API isteği yok)
+        filteredNames = uniqueMigrationNames.filter(name => 
+          name.toLowerCase().includes(query)
+        ).slice(0, 10); // Max 10 results
+
+        if (filteredNames.length === 0) {
+          dropdown.classList.remove('active');
+          return;
+        }
+
+        // Show dropdown
+        dropdown.innerHTML = filteredNames.map((name, idx) => {
+          const highlighted = name.replace(
+            new RegExp(`(${query})`, 'gi'),
+            '<strong>$1</strong>'
+          );
+          return `<div class="autocomplete-item ${idx === 0 ? 'highlight' : ''}" data-index="${idx}" data-name="${name}">${highlighted}</div>`;
+        }).join('');
+
+        dropdown.classList.add('active');
+        selectedIndex = 0;
+      });
+
+      // Keyboard navigation
+      input.addEventListener('keydown', (e) => {
+        if (!dropdown.classList.contains('active')) return;
+
+        const items = dropdown.querySelectorAll('.autocomplete-item');
+        if (items.length === 0) return;
+
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+          updateHighlight(items, selectedIndex);
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          selectedIndex = Math.max(selectedIndex - 1, 0);
+          updateHighlight(items, selectedIndex);
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          if (selectedIndex >= 0 && selectedIndex < filteredNames.length) {
+            selectMigrationName(filteredNames[selectedIndex]);
+          }
+        } else if (e.key === 'Escape') {
+          dropdown.classList.remove('active');
+          input.blur();
+        }
+      });
+
+      // Click handler for dropdown items
+      dropdown.addEventListener('click', (e) => {
+        const target = e.target;
+        const item = target.closest('.autocomplete-item');
+        if (item) {
+          const name = item.getAttribute('data-name');
+          if (name) {
+            selectMigrationName(name);
+          }
+        }
+      });
+
+      // Close dropdown when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+          dropdown.classList.remove('active');
+        }
+      });
+
+      // Focus handler
+      input.addEventListener('focus', () => {
+        if (input.value.trim().length > 0 && filteredNames.length > 0) {
+          dropdown.classList.add('active');
+        }
+      });
+    }
+
+    function updateHighlight(items, index) {
+      items.forEach((item, idx) => {
+        if (idx === index) {
+          item.classList.add('highlight');
+        } else {
+          item.classList.remove('highlight');
+        }
+      });
+    }
+
+    function selectMigrationName(name) {
+      const input = document.getElementById('migrationNameInput');
+      const dropdown = document.getElementById('migrationNameDropdown');
+      
+      if (input) {
+        input.value = name;
+      }
+      if (dropdown) {
+        dropdown.classList.remove('active');
+      }
+      
+      selectedMigrationName = name;
+      loadHistory();
+    }
+
+    // Close multi-select when clicking outside
+    document.addEventListener('click', (e) => {
+      const multiSelect = document.querySelector('.multi-select');
+      if (multiSelect && !multiSelect.contains(e.target)) {
+        document.getElementById('statusMultiSelect').classList.remove('active');
+      }
+    });
+
+    // Filter event listeners with debounce
+    // Teklifbul Rule v1.0 - Performans iyileştirmesi
+    let searchTimeout = null;
+    document.getElementById('searchInput').addEventListener('input', () => {
+      // Clear previous timeout
+      if (searchTimeout) clearTimeout(searchTimeout);
+      
+      // Debounce: 300ms sonra filtreleme yap
+      searchTimeout = setTimeout(() => {
+        // Client-side search filter (Firestore text search yok)
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        if (searchTerm) {
+          const filtered = currentHistory.filter((m) => 
+            (m.migrationName || '').toLowerCase().includes(searchTerm) ||
+            (m.runId || '').toLowerCase().includes(searchTerm)
+          );
+          displayHistory(filtered);
+        } else {
+          displayHistory(currentHistory);
+        }
+      }, 300);
+    });
+    document.getElementById('startDate').addEventListener('change', (e) => {
+      startDate = (e.target).value || null;
+      loadHistory(true); // Reset cursor when filter changes
+    });
+    document.getElementById('endDate').addEventListener('change', (e) => {
+      endDate = (e.target).value || null;
+      loadHistory(true); // Reset cursor when filter changes
+    });
+
+    // Chart instances
+    let successFailedChartInstance = null;
+    let statusChartInstance = null;
+    let timelineChartInstance = null;
+    let trendChartInstance = null;
+
+    // Chart config (loaded from JSON)
+    let chartConfig = {
+      version: '1.0.0',
+      colors: {
+        success: '#10b981',
+        failed: '#ef4444',
+        running: '#3b82f6',
+        cancelled: '#6b7280',
+        primary: '#3b82f6',
+        secondary: '#8b5cf6',
+        warning: '#f59e0b',
+        info: '#06b6d4'
+      },
+      defaults: {
+        timeRangeDays: 30,
+        lineTension: 0.3,
+        showLegend: true,
+        animation: true,
+        responsive: true,
+        maintainAspectRatio: false
+      }
+    };
+
+    // Load chart config with localStorage cache
+    // Teklifbul Rule v1.0 - Gereksiz istekleri önle
+    async function loadChartConfig() {
+      try {
+        const CACHE_KEY = 'migration-dashboard-chart-config';
+        const CACHE_VERSION = '1.0.0';
+        const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 saat
+        
+        // Check localStorage cache
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) {
+          try {
+            const cachedData = JSON.parse(cached);
+            const cacheAge = Date.now() - cachedData.timestamp;
+            
+            if (cacheAge < CACHE_DURATION && cachedData.version === CACHE_VERSION) {
+              // Use cached config
+              for (var key in cachedData.config) {
+                if (cachedData.config.hasOwnProperty(key)) {
+                  chartConfig[key] = cachedData.config[key];
+                }
+              }
+              logger.info('Chart config loaded from cache', { version: cachedData.config.version || 'unknown' });
+              return; // Cache hit, no API request
+            }
+          } catch (e) {
+            // Invalid cache, continue to fetch
+            logger.warn('Invalid chart config cache', e);
+          }
+        }
+        
+        // Fetch from API
+        const version = chartConfig.version || '1.0.0';
+        const response = await fetch(`/dashboard.chart-config.json?v=${version}`);
+        if (response.ok) {
+          const config = await response.json();
+          // Merge with defaults
+          for (var key in config) {
+            if (config.hasOwnProperty(key)) {
+              chartConfig[key] = config[key];
+            }
+          }
+          
+          // Save to cache
+          try {
+            localStorage.setItem(CACHE_KEY, JSON.stringify({
+              version: CACHE_VERSION,
+              timestamp: Date.now(),
+              config: config
+            }));
+          } catch (e) {
+            logger.warn('Failed to save chart config cache', e);
+          }
+          
+          logger.info('Chart config loaded from API', { version: config.version || 'unknown' });
+        } else {
+          logger.warn('Chart config not found, using defaults');
+        }
+      } catch (error) {
+        logger.warn('Failed to load chart config, using defaults', error);
+      }
+    }
+
+    function destroyCharts() {
+      if (successFailedChartInstance) {
+        successFailedChartInstance.destroy();
+        successFailedChartInstance = null;
+      }
+      if (statusChartInstance) {
+        statusChartInstance.destroy();
+        statusChartInstance = null;
+      }
+      if (timelineChartInstance) {
+        timelineChartInstance.destroy();
+        timelineChartInstance = null;
+      }
+      if (trendChartInstance) {
+        trendChartInstance.destroy();
+        trendChartInstance = null;
+      }
+    }
+
+    // Statistics ve Charts
+    function updateStatistics(migrations) {
+      if (migrations.length === 0) {
+        document.getElementById('statsSummary').style.display = 'none';
+        destroyCharts();
+        return;
+      }
+
+      // Summary statistics
+      const total = migrations.length;
+      const completed = migrations.filter((m) => m.status === 'completed').length;
+      const failed = migrations.filter((m) => m.status === 'failed').length;
+      const running = migrations.filter((m) => m.status === 'running').length;
+      const cancelled = migrations.filter((m) => m.status === 'cancelled').length;
+      
+      const successRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+      
+      // Average duration (sadece completed olanlar)
+      const completedMigrations = migrations.filter((m) => 
+        m.status === 'completed' && m.startedAt && m.finishedAt
+      );
+      const avgDuration = completedMigrations.length > 0
+        ? Math.round(
+            completedMigrations.reduce((sum, m) => {
+              const start = new Date(m.startedAt).getTime();
+              const end = new Date(m.finishedAt).getTime();
+              return sum + (end - start);
+            }, 0) / completedMigrations.length / 1000 / 60
+          ) + 'm'
+        : '-';
+      
+      // Total processed
+      const totalProcessed = migrations.reduce((sum, m) => sum + (m.processed || 0), 0);
+
+      // Update summary
+      document.getElementById('totalMigrations').textContent = total.toLocaleString();
+      document.getElementById('successRate').textContent = successRate + '%';
+      document.getElementById('avgDuration').textContent = avgDuration;
+      document.getElementById('totalProcessed').textContent = totalProcessed.toLocaleString();
+      document.getElementById('statsSummary').style.display = 'grid';
+
+      // Update Chart.js charts
+      updateCharts(migrations, { total, completed, failed, running, cancelled });
+    }
+
+    function updateCharts(migrations, stats) {
+      // Chart.js kontrolü
+      if (typeof Chart === 'undefined') {
+        logger.warn('Chart.js not loaded, charts will not be displayed');
+        return;
+      }
+
+      const ChartLib = window.Chart;
+
+      // 1. Success vs Failed Pie Chart
+      // Teklifbul Rule v1.0 - Performans: destroy/create yerine data update
+      const successFailedCtx = document.getElementById('successFailedChart');
+      if (successFailedCtx) {
+        if (successFailedChartInstance) {
+          // Update existing chart data instead of destroying
+          successFailedChartInstance.data.datasets[0].data = [stats.completed, stats.failed + stats.cancelled];
+          successFailedChartInstance.update('none'); // 'none' = no animation for better performance
+        } else {
+          successFailedChartInstance = new ChartLib(successFailedCtx, {
+            type: 'pie',
+            data: {
+              labels: ['Success', 'Failed'],
+              datasets: [{
+                data: [stats.completed, stats.failed + stats.cancelled],
+                backgroundColor: [chartConfig.colors.success, chartConfig.colors.failed],
+                borderWidth: 2,
+                borderColor: '#fff'
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: true,
+              plugins: {
+                legend: {
+                  position: 'bottom'
+                },
+                tooltip: {
+                  callbacks: {
+                    label: (context) => {
+                      const label = context.label || '';
+                      const value = context.parsed || 0;
+                      const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                      const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                      return `${label}: ${value} (${percentage}%)`;
+                    }
+                  }
+                }
+              }
+            }
+          });
+        }
+      }
+
+      // 2. Status Distribution Bar Chart
+      // Teklifbul Rule v1.0 - Performans: destroy/create yerine data update
+      const statusCtx = document.getElementById('statusChart');
+      if (statusCtx) {
+        if (statusChartInstance) {
+          // Update existing chart data instead of destroying
+          statusChartInstance.data.datasets[0].data = [stats.completed, stats.failed, stats.running, stats.cancelled];
+          statusChartInstance.update('none'); // 'none' = no animation for better performance
+        } else {
+          statusChartInstance = new ChartLib(statusCtx, {
+            type: 'bar',
+            data: {
+              labels: ['Completed', 'Failed', 'Running', 'Cancelled'],
+              datasets: [{
+                label: 'Count',
+                data: [stats.completed, stats.failed, stats.running, stats.cancelled],
+                backgroundColor: [
+                  chartConfig.colors.success,
+                  chartConfig.colors.failed,
+                  chartConfig.colors.running,
+                  chartConfig.colors.cancelled
+                ],
+                borderWidth: 1,
+                borderColor: '#fff'
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: true,
+              plugins: {
+                legend: {
+                  display: false
+                },
+                tooltip: {
+                  callbacks: {
+                    label: (context) => {
+                      const value = context.parsed.y || 0;
+                      const total = stats.total;
+                      const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                      return `${value} (${percentage}%)`;
+                    }
+                  }
+                }
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  ticks: {
+                    stepSize: 1
+                  }
+                }
+              }
+            }
+          });
+        }
+      }
+
+      // 3. Migration Timeline (Line Chart)
+      // Teklifbul Rule v1.0 - Performans: destroy/create yerine data update
+      const timelineCtx = document.getElementById('timelineChart');
+      if (timelineCtx && migrations.length > 0) {
+        // Group by date
+        const dateGroups = {};
+        migrations.forEach((m) => {
+          if (m.startedAt) {
+            const date = new Date(m.startedAt).toISOString().split('T')[0];
+            dateGroups[date] = (dateGroups[date] || 0) + 1;
+          }
+        });
+
+        const sortedDates = Object.keys(dateGroups).sort();
+        const timelineData = sortedDates.map(date => dateGroups[date]);
+        const timelineLabels = sortedDates.map(d => new Date(d).toLocaleDateString('tr-TR', { month: 'short', day: 'numeric' }));
+
+        if (timelineChartInstance) {
+          // Update existing chart data instead of destroying
+          timelineChartInstance.data.labels = timelineLabels;
+          timelineChartInstance.data.datasets[0].data = timelineData;
+          timelineChartInstance.update('none'); // 'none' = no animation for better performance
+        } else {
+          timelineChartInstance = new ChartLib(timelineCtx, {
+            type: 'line',
+            data: {
+              labels: timelineLabels,
+              datasets: [{
+                label: 'Migrations per Day',
+                data: timelineData,
+                borderColor: chartConfig.colors.primary,
+                backgroundColor: chartConfig.colors.primary + '1A', // Add alpha
+                fill: true,
+                tension: chartConfig.defaults.lineTension,
+                pointRadius: 4,
+                pointHoverRadius: 6
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: true,
+              plugins: {
+                legend: {
+                  display: false
+                }
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  ticks: {
+                    stepSize: 1
+                  }
+                }
+              }
+            }
+          });
+        }
+      }
+
+      // 4. Success Rate Trend (Area Chart)
+      // Teklifbul Rule v1.0 - Performans: destroy/create yerine data update
+      const trendCtx = document.getElementById('trendChart');
+      if (trendCtx && migrations.length > 0) {
+        // Group by date and calculate success rate
+        const trendData = {};
+        migrations.forEach((m) => {
+          if (m.startedAt) {
+            const date = new Date(m.startedAt).toISOString().split('T')[0];
+            if (!trendData[date]) {
+              trendData[date] = { total: 0, success: 0 };
+            }
+            trendData[date].total++;
+            if (m.status === 'completed') {
+              trendData[date].success++;
+            }
+          }
+        });
+
+        const sortedTrendDates = Object.keys(trendData).sort();
+        const successRates = sortedTrendDates.map(date => {
+          const d = trendData[date];
+          return d.total > 0 ? Math.round((d.success / d.total) * 100) : 0;
+        });
+        const trendLabels = sortedTrendDates.map(d => new Date(d).toLocaleDateString('tr-TR', { month: 'short', day: 'numeric' }));
+
+        if (trendChartInstance) {
+          // Update existing chart data instead of destroying
+          trendChartInstance.data.labels = trendLabels;
+          trendChartInstance.data.datasets[0].data = successRates;
+          trendChartInstance.update('none'); // 'none' = no animation for better performance
+        } else {
+          trendChartInstance = new ChartLib(trendCtx, {
+            type: 'line',
+            data: {
+              labels: trendLabels,
+              datasets: [{
+                label: 'Success Rate (%)',
+                data: successRates,
+                borderColor: chartConfig.colors.success,
+                backgroundColor: chartConfig.colors.success + '33', // Add alpha
+                fill: true,
+                tension: chartConfig.defaults.lineTension,
+                pointRadius: 4,
+                pointHoverRadius: 6
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: true,
+              plugins: {
+                legend: {
+                  display: false
+                },
+                tooltip: {
+                  callbacks: {
+                    label: (context) => {
+                      return `Success Rate: ${context.parsed.y}%`;
+                    }
+                  }
+                }
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  max: 100,
+                  ticks: {
+                    callback: (value) => `${value}%`
+                  }
+                }
+              }
+            }
+          });
+        }
+      }
+    }
+
+    // Export Functions
+    function exportData(format) {
+      if (allFilteredHistory.length === 0) {
+        toast.error(MESSAGES.ERROR_ADMIN_MIGRATION_EXPORT_NO_DATA);
+        return;
+      }
+
+      logger.group(`Exporting Migration History (${format.toUpperCase()})`);
+
+      try {
+        if (format === 'csv') {
+          exportToCSV(allFilteredHistory);
+        } else if (format === 'json') {
+          exportToJSON(allFilteredHistory);
+        } else if (format === 'pdf') {
+          exportToPDF(allFilteredHistory);
+        }
+        logger.info(`Export completed: ${format.toUpperCase()}`);
+        toast.success(MESSAGES.SUCCESS_ADMIN_MIGRATION_EXPORTED.replace('{format}', format.toUpperCase()));
+      } catch (error) {
+        logger.error('Export failed', error);
+        toast.error(MESSAGES.ERROR_ADMIN_MIGRATION_EXPORT_FAILED.replace('{message}', error.message));
+      } finally {
+        logger.end();
+      }
+    }
+
+    function exportToCSV(migrations) {
+      // CSV header
+      const headers = [
+        'Run ID',
+        'Migration Name',
+        'Status',
+        'Started At',
+        'Finished At',
+        'Duration (min)',
+        'Total',
+        'Processed',
+        'Success',
+        'Failed',
+        'Retried',
+        'Dry Run'
+      ];
+
+      // CSV rows
+      const rows = migrations.map(m => {
+        const startedAt = m.startedAt ? new Date(m.startedAt).toISOString() : '';
+        const finishedAt = m.finishedAt ? new Date(m.finishedAt).toISOString() : '';
+        const duration = m.finishedAt && m.startedAt
+          ? Math.round((new Date(m.finishedAt).getTime() - new Date(m.startedAt).getTime()) / 1000 / 60)
+          : '';
+
+        return [
+          m.runId || '',
+          m.migrationName || '',
+          m.status || '',
+          startedAt,
+          finishedAt,
+          duration,
+          m.total || 0,
+          m.processed || 0,
+          m.success || 0,
+          m.failed || 0,
+          m.retried || 0,
+          m.dryRun ? 'Yes' : 'No'
+        ];
+      });
+
+      // CSV content
+      const csvContent = [
+        headers.join(','),
+        rows.map(function(row) {
+          return row.map(function(cell) {
+            // Escape commas and quotes
+            const cellStr = String(cell);
+            if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
+              return `"${cellStr.replace(/"/g, '""')}"`;
+            }
+            return cellStr;
+          }).join(',');
+        })
+      ].join('\n');
+
+      // BOM for Excel UTF-8 support
+      const BOM = '\uFEFF';
+      const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `migration-history-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+
+    function exportToJSON(migrations) {
+      // Prepare export data
+      const exportData = {
+        exportedAt: new Date().toISOString(),
+        total: migrations.length,
+        migrations: migrations.map(m => ({
+          runId: m.runId,
+          migrationName: m.migrationName,
+          status: m.status,
+          startedAt: m.startedAt,
+          finishedAt: m.finishedAt,
+          duration: m.finishedAt && m.startedAt
+            ? Math.round((new Date(m.finishedAt).getTime() - new Date(m.startedAt).getTime()) / 1000 / 60)
+            : null,
+          total: m.total,
+          processed: m.processed,
+          success: m.success,
+          failed: m.failed,
+          retried: m.retried,
+          dryRun: m.dryRun
+        }))
+      };
+
+      // JSON content
+      const jsonContent = JSON.stringify(exportData, null, 2);
+      const blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `migration-history-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+
+    // XLSX Export (server-side stream)
+    let xlsxExportAbortController = null;
+
+    async function exportXLSX() {
+      logger.group('XLSX Export');
+      
+      try {
+        const btn = document.getElementById('xlsxExportBtn');
+        if (!btn) {
+          throw new Error('Export button not found');
+        }
+
+        // Get current user token (user already available from requireAuth)
+        if (!user) {
+          throw new Error('User not authenticated');
+        }
+        const token = await user.getIdToken();
+
+        // Build query params from active filters
+        // Teklifbul Rule v1.0 - Kod tekrarını azalt
+        const params = new URLSearchParams({ pageSize: '100' });
+        
+        if (selectedStatuses.length === 1) {
+          params.append('status', selectedStatuses[0]);
+        }
+        if (selectedMigrationName) {
+          params.append('migrationName', selectedMigrationName);
+        }
+        if (startDate) {
+          params.append('dateFrom', new Date(startDate).toISOString());
+        }
+        if (endDate) {
+          params.append('dateTo', new Date(endDate + 'T23:59:59.999Z').toISOString());
+        }
+
+        // Disable button and show progress
+        btn.disabled = true;
+        btn.textContent = '⏳ Exporting...';
+        toast.info(MESSAGES.INFO_ADMIN_MIGRATION_XLSX_STARTED);
+
+        // Create AbortController for cancellation
+        xlsxExportAbortController = new AbortController();
+
+        // Fetch with progress tracking
+        const response = await fetch(`${API_BASE_URL}/api/migrations/export.xlsx?${params}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          signal: xlsxExportAbortController.signal
+        });
+
+        if (!response.ok) {
+          if (response.status === 429) {
+            throw new Error('Rate limit exceeded. Please wait 1 minute before trying again.');
+          } else if (response.status === 401 || response.status === 403) {
+            throw new Error('Unauthorized. Admin access required.');
+          } else {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || `Export failed: ${response.statusText}`);
+          }
+        }
+
+        // Get filename from Content-Disposition header
+        const contentDisposition = response.headers.get('Content-Disposition');
+        let filename = `migration-export-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}.xlsx`;
+        if (contentDisposition) {
+          const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+          if (filenameMatch) {
+            filename = filenameMatch[1];
+          }
+        }
+
+        // Download blob
+        const blob = await response.blob();
+        const fileSizeMB = blob.size / (1024 * 1024);
+        
+        // Large file warning (>15MB)
+        if (fileSizeMB > 15) {
+          toast.info(MESSAGES.INFO_ADMIN_MIGRATION_LARGE_FILE.replace('{size}', fileSizeMB.toFixed(1)));
+        }
+        
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        logger.info('XLSX export completed', { filename, size: blob.size, sizeMB: fileSizeMB.toFixed(2) });
+        toast.success(MESSAGES.SUCCESS_ADMIN_MIGRATION_XLSX_COMPLETE);
+      } catch (error) {
+        if (error.name === 'AbortError') {
+          logger.info('XLSX export cancelled');
+          toast.info(MESSAGES.INFO_ADMIN_MIGRATION_XLSX_CANCELLED);
+        } else {
+          logger.error('XLSX export failed', error);
+          toast.error(MESSAGES.ERROR_ADMIN_MIGRATION_XLSX_FAILED.replace('{message}', error.message));
+        }
+      } finally {
+        const btn = document.getElementById('xlsxExportBtn');
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = '📥 Excel (XLSX)';
+        }
+        xlsxExportAbortController = null;
+        logger.end();
+      }
+    }
+
+    // Chart PNG Export
+    function exportChartPNG(chartId) {
+      logger.group(`Chart PNG Export: ${chartId}`);
+      
+      try {
+        let chartInstance = null;
+        
+        // Find chart instance
+        switch (chartId) {
+          case 'successFailedChart':
+            chartInstance = successFailedChartInstance;
+            break;
+          case 'statusChart':
+            chartInstance = statusChartInstance;
+            break;
+          case 'timelineChart':
+            chartInstance = timelineChartInstance;
+            break;
+          case 'trendChart':
+            chartInstance = trendChartInstance;
+            break;
+          default:
+            throw new Error(`Unknown chart: ${chartId}`);
+        }
+
+        if (!chartInstance) {
+          throw new Error('Chart not initialized');
+        }
+
+        // Export to PNG using Chart.js toBase64Image
+        const imageData = chartInstance.toBase64Image('image/png', 1.0);
+        if (!imageData) {
+          throw new Error('Failed to generate PNG image');
+        }
+
+        // Create download link with meaningful filename
+        const chartNameMap = {
+          'successFailedChart': 'success-vs-failed',
+          'statusChart': 'status-distribution',
+          'timelineChart': 'migration-timeline',
+          'trendChart': 'success-rate-trend'
+        };
+        const chartName = chartNameMap[chartId] || chartId;
+        const dateStr = new Date().toISOString().slice(0, 10);
+        const filename = `migration-${chartName}_${dateStr}.png`;
+        
+        const link = document.createElement('a');
+        link.href = imageData;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        logger.info('Chart PNG export completed', { chartId, filename });
+        toast.success(MESSAGES.SUCCESS_ADMIN_MIGRATION_CHART_EXPORTED.replace('{name}', chartName));
+      } catch (error) {
+        logger.error('Chart PNG export failed', error);
+        toast.error(MESSAGES.ERROR_ADMIN_MIGRATION_CHART_EXPORT.replace('{message}', error.message));
+      } finally {
+        logger.end();
+      }
+    }
+
+    function exportToPDF(migrations) {
+      // jsPDF kontrolü
+      if (typeof window === 'undefined' || !window.jspdf) {
+        throw new Error('jsPDF library not loaded. Please refresh the page.');
+      }
+
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF();
+      let y = 20;
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 14;
+      const maxWidth = pageWidth - (margin * 2);
+
+      // Başlık
+      pdf.setFontSize(18);
+      pdf.setFont(undefined, 'bold');
+      pdf.text('Migration History Report', margin, y);
+      y += 10;
+
+      // Export tarihi
+      pdf.setFontSize(10);
+      pdf.setFont(undefined, 'normal');
+      pdf.text(`Exported: ${new Date().toLocaleString('tr-TR')}`, margin, y);
+      y += 8;
+
+      // Summary
+      const total = migrations.length;
+      const completed = migrations.filter(m => m.status === 'completed').length;
+      const failed = migrations.filter(m => m.status === 'failed').length;
+      const running = migrations.filter(m => m.status === 'running').length;
+      const cancelled = migrations.filter(m => m.status === 'cancelled').length;
+
+      pdf.setFontSize(12);
+      pdf.setFont(undefined, 'bold');
+      pdf.text('Summary', margin, y);
+      y += 8;
+
+      pdf.setFontSize(10);
+      pdf.setFont(undefined, 'normal');
+      pdf.text(`Total Migrations: ${total}`, margin, y); y += 6;
+      pdf.text(`Completed: ${completed}`, margin, y); y += 6;
+      pdf.text(`Failed: ${failed}`, margin, y); y += 6;
+      pdf.text(`Running: ${running}`, margin, y); y += 6;
+      pdf.text(`Cancelled: ${cancelled}`, margin, y); y += 10;
+
+      // Tablo başlıkları
+      pdf.setFontSize(11);
+      pdf.setFont(undefined, 'bold');
+      pdf.text('Migration Details', margin, y);
+      y += 8;
+
+      // Tablo header
+      pdf.setFontSize(9);
+      pdf.setFont(undefined, 'bold');
+      const colWidths = [30, 50, 25, 30, 30, 20];
+      const colPositions = [margin, margin + 30, margin + 80, margin + 105, margin + 135, margin + 165];
+      const headers = ['Name', 'Status', 'Progress', 'Success', 'Failed', 'Duration'];
+      
+      headers.forEach((header, idx) => {
+        pdf.text(header, colPositions[idx], y);
+      });
+      y += 6;
+
+      // Header line
+      pdf.setDrawColor(200, 200, 200);
+      pdf.line(margin, y, pageWidth - margin, y);
+      y += 4;
+
+      // Tablo satırları
+      pdf.setFont(undefined, 'normal');
+      migrations.forEach((m, idx) => {
+        // Yeni sayfa kontrolü
+        if (y > pageHeight - 30) {
+          pdf.addPage();
+          y = 20;
+          
+          // Header tekrarı
+          pdf.setFontSize(9);
+          pdf.setFont(undefined, 'bold');
+          headers.forEach((header, hIdx) => {
+            pdf.text(header, colPositions[hIdx], y);
+          });
+          y += 6;
+          pdf.line(margin, y, pageWidth - margin, y);
+          y += 4;
+          pdf.setFont(undefined, 'normal');
+        }
+
+        // Migration name (kısaltılmış)
+        const name = (m.migrationName || 'Unknown').substring(0, 20);
+        pdf.text(name, colPositions[0], y);
+
+        // Status (renkli değil ama text)
+        pdf.text(m.status || '-', colPositions[1], y);
+
+        // Progress
+        const progressPct = m.total > 0 ? Math.round((m.processed / m.total) * 100) : 0;
+        pdf.text(`${progressPct}%`, colPositions[2], y);
+
+        // Success
+        pdf.text(String(m.success || 0), colPositions[3], y);
+
+        // Failed
+        pdf.text(String(m.failed || 0), colPositions[4], y);
+
+        // Duration
+        let duration = '-';
+        if (m.finishedAt && m.startedAt) {
+          const minutes = Math.round((new Date(m.finishedAt).getTime() - new Date(m.startedAt).getTime()) / 1000 / 60);
+          duration = `${minutes}m`;
+        } else if (m.status === 'running') {
+          duration = '...';
+        }
+        pdf.text(duration, colPositions[5], y);
+
+        y += 6;
+      });
+
+      // Footer
+      const totalPages = pdf.internal.pages.length - 1;
+      for (let i = 1; i <= totalPages; i++) {
+        pdf.setPage(i);
+        pdf.setFontSize(8);
+        pdf.setFont(undefined, 'normal');
+        pdf.text(
+          `Page ${i} of ${totalPages} - Migration History Report`,
+          margin,
+          pageHeight - 10
+        );
+      }
+
+      // Dosya adı
+      const filename = `migration-history-${new Date().toISOString().slice(0, 10)}.pdf`;
+      pdf.save(filename);
+    }
+
+    // Server-Side Pagination Functions
+    function updatePaginationUI() {
+      const paginationEl = document.getElementById('pagination');
+      const currentCount = currentHistory.length;
+      const hasPrevious = cursorHistory.length > 0;
+
+      if (currentCount === 0 && !hasNextPage) {
+        paginationEl.style.display = 'none';
+        return;
+      }
+
+      paginationEl.style.display = 'flex';
+
+      // Pagination text
+      const startIndex = cursorHistory.length * pageSize + 1;
+      const endIndex = startIndex + currentCount - 1;
+      const totalText = totalCount !== null 
+        ? ` of ${totalCount}` 
+        : hasNextPage 
+          ? '+' 
+          : '';
+      
+      document.getElementById('paginationText').textContent = 
+        `Showing ${startIndex}-${endIndex}${totalText}`;
+
+      // Total pages (estimated if total not available)
+      const estimatedPages = totalCount !== null 
+        ? Math.ceil(totalCount / pageSize)
+        : hasNextPage 
+          ? cursorHistory.length + 2 
+          : cursorHistory.length + 1;
+      
+      document.getElementById('totalPages').textContent = estimatedPages.toString();
+
+      // Current page (estimated)
+      const currentPage = cursorHistory.length + 1;
+      const currentPageInput = document.getElementById('currentPageInput');
+      currentPageInput.value = currentPage.toString();
+      currentPageInput.max = estimatedPages.toString();
+
+      // Button states
+      document.getElementById('firstPageBtn').disabled = !hasPrevious;
+      document.getElementById('prevPageBtn').disabled = !hasPrevious;
+      document.getElementById('nextPageBtn').disabled = !hasNextPage;
+      document.getElementById('lastPageBtn').disabled = !hasNextPage || totalCount === null;
+    }
+
+    async function goToNextPage() {
+      if (!hasNextPage) return;
+      
+      // Cancel previous request if exists
+      if (historyAbortController) {
+        historyAbortController.abort();
+      }
+      historyAbortController = new AbortController();
+      
+      // Save current cursor to history (for previous page navigation)
+      if (currentCursor) {
+        cursorHistory.push(currentCursor);
+      }
+      
+      // Build query params using helper function
+      const params = buildQueryParams({
+        includeCursor: true,
+        includeTotal: false
+      });
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/migration/history?${params}`, {
+          signal: historyAbortController.signal
+        });
+        const data = await response.json();
+
+        if (response.ok) {
+          // Update cursor and pagination state
+          currentCursor = (data.pagination && data.pagination.nextCursor) || null;
+          hasNextPage = (data.pagination && data.pagination.hasNextPage) || false;
+          
+          // Apply client-side filters
+          let filtered = data.migrations || [];
+          if (selectedStatuses.length > 1 && !selectedStatuses.includes('all')) {
+            filtered = filtered.filter((m) => selectedStatuses.includes(m.status));
+          }
+          const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+          if (searchTerm) {
+            filtered = filtered.filter((m) => 
+              (m.migrationName || '').toLowerCase().includes(searchTerm) ||
+              (m.runId || '').toLowerCase().includes(searchTerm)
+            );
+          }
+          
+          currentHistory = filtered;
+          displayHistory(filtered);
+          updatePaginationUI();
+          
+          // Scroll to top
+          document.getElementById('historyContent').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+          throw new Error(data.message || 'Failed to load next page');
+        }
+      } catch (error) {
+        if (error.name === 'AbortError') {
+          logger.info('Next page request aborted');
+          return;
+        }
+        logger.error('Failed to load next page', error);
+        toast.error(MESSAGES.ERROR_ADMIN_MIGRATION_NEXT_PAGE.replace('{message}', error.message));
+      } finally {
+        historyAbortController = null;
+      }
+    }
+
+    async function goToPreviousPage() {
+      if (cursorHistory.length === 0) return;
+      
+      // Pop last cursor from history (go back one page)
+      cursorHistory.pop();
+      currentCursor = cursorHistory.length > 0 ? cursorHistory[cursorHistory.length - 1] : null;
+      
+      // Reload with previous cursor (or null if first page)
+      // loadHistory will update hasNextPage from API response
+      await loadHistory(false);
+      
+      // Scroll to top
+      document.getElementById('historyContent').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    async function goToFirstPage() {
+      currentCursor = null;
+      cursorHistory = [];
+      await loadHistory(true); // Reset cursor, load first page
+    }
+
+    // Teklifbul Rule v1.0 - goToPage fonksiyonu (onclick handler için)
+    async function goToPage(pageNumber) {
+      if (pageNumber === 1) {
+        await goToFirstPage();
+      } else {
+        // Cursor-based pagination'da direkt sayfa atlama zor
+        // Şimdilik sadece ilk sayfaya gidebiliriz
+        toast.info(MESSAGES.INFO_ADMIN_MIGRATION_PAGE_NAV_UNAVAILABLE);
+      }
+    }
+
+    function goToLastPage() {
+      // Last page için total count gerekli, şimdilik disabled
+      toast.info(MESSAGES.INFO_ADMIN_MIGRATION_LAST_PAGE_NAV);
+    }
+
+    function goToPageInput() {
+      // Direct page navigation cursor-based pagination'da zor
+      // Şimdilik disabled, sadece Next/Previous kullanılabilir
+      toast.info(MESSAGES.INFO_ADMIN_MIGRATION_PAGE_NAV_UNAVAILABLE);
+    }
+
+    function setPaginationMode(mode) {
+      paginationMode = mode;
+      currentCursor = null;
+      cursorHistory = [];
+      
+      if (mode === 'page') {
+        // Remove infinite scroll sentinel
+        const sentinel = document.getElementById('infinite-scroll-sentinel');
+        if (sentinel) sentinel.remove();
+        if (infiniteScrollObserver) {
+          infiniteScrollObserver.disconnect();
+          infiniteScrollObserver = null;
+        }
+        loadHistory(true);
+      } else {
+        setupInfiniteScroll();
+        loadHistory(true);
+      }
+    }
+
+    // Infinite scroll handler
+    let infiniteScrollObserver = null;
+
+    function setupInfiniteScroll() {
+      if (paginationMode !== 'infinite') {
+        if (infiniteScrollObserver) {
+          infiniteScrollObserver.disconnect();
+          infiniteScrollObserver = null;
+        }
+        return;
+      }
+
+      // Remove existing observer
+      if (infiniteScrollObserver) {
+        infiniteScrollObserver.disconnect();
+      }
+
+      // Create sentinel element for intersection observer
+      const sentinel = document.createElement('div');
+      sentinel.id = 'infinite-scroll-sentinel';
+      sentinel.style.height = '20px';
+      sentinel.style.width = '100%';
+      
+      const historyContent = document.getElementById('historyContent');
+      if (historyContent && !document.getElementById('infinite-scroll-sentinel')) {
+        historyContent.appendChild(sentinel);
+      }
+
+      // Create intersection observer
+      infiniteScrollObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting && paginationMode === 'infinite' && hasNextPage) {
+            goToNextPage(); // Server-side next page
+          }
+        });
+      }, { threshold: 0.1 });
+
+      const sentinelEl = document.getElementById('infinite-scroll-sentinel');
+      if (sentinelEl) {
+        infiniteScrollObserver.observe(sentinelEl);
+      }
+    }
+
+    // Page size change handler
+    const pageSizeSelect = document.getElementById('pageSizeSelect');
+    const limitSelect = document.getElementById('limitSelect');
+    
+    if (pageSizeSelect) {
+      pageSizeSelect.addEventListener('change', (e) => {
+        pageSize = parseInt((e.target).value, 10);
+        currentCursor = null;
+        cursorHistory = [];
+        loadHistory(true);
+      });
+    }
+    
+    if (limitSelect) {
+      limitSelect.addEventListener('change', (e) => {
+        pageSize = parseInt((e.target).value, 10);
+        currentCursor = null;
+        cursorHistory = [];
+        loadHistory(true);
+      });
+    }
+
+    // Initial load
+    await loadChartConfig(); // Load chart config first
+    loadHistory(true);
+    startAutoRefresh();
+    
+    // Setup migration name autocomplete
+    setupMigrationNameAutocomplete();
+    
+    // Setup infinite scroll observer after initial load
+    setTimeout(() => {
+      if (paginationMode === 'infinite') {
+        setupInfiniteScroll();
+      }
+    }, 500);
+
+    // Teklifbul Rule v1.0 - Global fonksiyonları window'a ekle (onclick handler'lar için)
+    window.loadStatus = loadStatus;
+    window.loadHistory = loadHistory;
+    window.exportData = exportData;
+    window.exportXLSX = exportXLSX;
+    window.selectMigration = selectMigration;
+    window.toggleMultiSelect = toggleMultiSelect;
+    window.updateStatusFilter = updateStatusFilter;
+    window.goToPage = goToPage;
+    window.goToPreviousPage = goToPreviousPage;
+    window.goToNextPage = goToNextPage;
+    window.goToLastPage = goToLastPage;
+    window.goToPageInput = goToPageInput;
+    window.setPaginationMode = setPaginationMode;
+    window.exportChartPNG = exportChartPNG;
+    window.removeStatusFilter = removeStatusFilter;
+    window.removeDateFilter = removeDateFilter;
+    window.removeMigrationNameFilter = removeMigrationNameFilter;
+  </script>
+</body>
+</html>
+

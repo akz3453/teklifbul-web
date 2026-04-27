@@ -4,9 +4,19 @@
   <meta charset="utf-8" />
   <title>Stok Hareketleri</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Teklifbul Rule v1.0 - FOUC önleme: Tema hemen uygulanmalı -->
+  <script src="/assets/js/theme-init.js"></script>
   <link rel="stylesheet" href="/utils.css" />
   <style>
     body{font-family:system-ui, Arial; background:#f8fafc; color:#111827; margin:0}
+    :root{
+      /* Teklifbul Rule v1.0 - Renkler CSS değişkenleri ile */
+      --tb-primary:#2563eb;
+      --tb-secondary:#6b7280;
+      --tb-danger:#dc2626;
+      --tb-success:#16a34a;
+      --tb-white:#ffffff;
+    }
     .container{max-width:1100px;margin:0 auto;padding:20px}
     h1{margin:0 0 8px 0}
     .card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin:12px 0}
@@ -23,20 +33,109 @@
     .b-ADJUST{background:#f3e8ff;color:#6b21a8}
     .muted{color:#6b7280;font-size:12px}
     .btn{padding:10px 16px;border:0;border-radius:6px;cursor:pointer;font-weight:600}
-    .btn-primary{background:#2563eb;color:#fff}
-    .btn-secondary{background:#6b7280;color:#fff}
+    .btn-primary{background:var(--tb-primary);color:var(--tb-white)}
+    .btn-secondary{background:var(--tb-secondary);color:var(--tb-white)}
+    .btn-danger{background:var(--tb-danger);color:var(--tb-white)}
+    .btn-success{background:var(--tb-success);color:var(--tb-white)}
     .btn[disabled]{opacity:.5;cursor:not-allowed}
     .tabs{display:flex;gap:8px;margin-bottom:16px}
     .tab{flex:1;padding:12px;border:1px solid #e5e7eb;background:#f9fafb;cursor:pointer;text-align:center;border-radius:6px}
     .tab.active{background:#2563eb;color:#fff;border-color:#2563eb}
     .hidden{display:none}
+    .stock-search-results{position:absolute;z-index:1000;background:#fff;border:1px solid #d1d5db;border-radius:6px;box-shadow:0 4px 6px rgba(0,0,0,0.1);max-height:400px;overflow-y:auto;width:100%;margin-top:4px}
+    .stock-result-item:hover{background:#eff6ff !important}
+    
+    /* Koyu Mod Düzenlemeleri */
+    html[data-theme="dark"] body,
+    html.force-dark body {
+      background:#111827;
+      color:#ffffff;
+    }
+    html[data-theme="dark"] .card,
+    html.force-dark .card {
+      background:#111827;
+      border:1px solid rgba(255,255,255,0.1);
+      color:#ffffff;
+    }
+    html[data-theme="dark"] label,
+    html.force-dark label {
+      color:#d1d5db;
+    }
+    html[data-theme="dark"] input,
+    html[data-theme="dark"] select,
+    html[data-theme="dark"] textarea,
+    html.force-dark input,
+    html.force-dark select,
+    html.force-dark textarea {
+      background:#111827;
+      border:1px solid rgba(255,255,255,0.1);
+      color:#ffffff;
+    }
+    html[data-theme="dark"] table,
+    html.force-dark table {
+      background:#111827;
+    }
+    html[data-theme="dark"] th,
+    html.force-dark th {
+      background:#111827;
+      color:#ffffff;
+      border-bottom:1px solid rgba(255,255,255,0.1);
+    }
+    html[data-theme="dark"] td,
+    html.force-dark td {
+      color:#ffffff;
+      border-bottom:1px solid rgba(255,255,255,0.1);
+    }
+    html[data-theme="dark"] .muted,
+    html.force-dark .muted {
+      color:#9ca3af;
+    }
+    html[data-theme="dark"] .tab,
+    html.force-dark .tab {
+      background:#111827;
+      border:1px solid rgba(255,255,255,0.1);
+      color:#ffffff;
+    }
+    html[data-theme="dark"] .tab.active,
+    html.force-dark .tab.active {
+      background:var(--tb-primary);
+      border-color:var(--tb-primary);
+    }
+    html[data-theme="dark"] .stock-search-results,
+    html.force-dark .stock-search-results {
+      background:#111827;
+      border:1px solid rgba(255,255,255,0.1);
+    }
+    html[data-theme="dark"] .stock-result-item:hover,
+    html.force-dark .stock-result-item:hover {
+      background:#1f2937 !important;
+    }
   </style>
+  <link rel="stylesheet" href="/assets/css/layout.css" />
 </head>
 <body>
   <!-- Common Header -->
   <header id="app-header"></header>
 
   <div class="container">
+    <!-- Breadcrumb Navigation -->
+    <div class="tb-breadcrumb" id="breadcrumb">
+      <span class="tb-crumb">
+        <span class="ico">🏠</span>
+        <a href="/dashboard.html">Ana Sayfa</a>
+      </span>
+      <span class="tb-sep">›</span>
+      <span class="tb-crumb">
+        <span class="ico">📦</span>
+        <a href="/inventory-index.html">Stok Takip</a>
+      </span>
+      <span class="tb-sep">›</span>
+      <span class="tb-crumb">
+        <span class="ico">🔄</span>
+        <span>Stok Hareketleri</span>
+      </span>
+    </div>
+    
     <h1>Stok Hareketleri</h1>
     <p class="muted">Giriş, çıkış, transfer ve düzeltme hareketlerini kaydedin.</p>
 
@@ -45,16 +144,17 @@
       <div class="tab" data-tab="OUT">📤 Çıkış</div>
       <div class="tab" data-tab="TRANSFER">🔄 Transfer</div>
       <div class="tab" data-tab="ADJUST">⚖️ Düzeltme</div>
+      <div class="tab" data-tab="HISTORY">📜 Hareket Geçmişi</div>
     </div>
 
     <div class="card" id="formCard">
       <h2 style="margin:0 0 12px 0;font-size:18px" id="formTitle">Giriş Hareketi</h2>
       
       <div class="row">
-        <div>
+        <div style="position:relative">
           <label for="mvStockSKU">Stok Kodu / Arama</label>
-          <input id="mvStockSKU" placeholder="SKU veya ürün adı ara..." />
-          <div id="stockSearchResults" style="display:none; margin-top:8px; background:#f9fafb; padding:8px; border-radius:4px; max-height:200px; overflow-y:auto">
+          <input id="mvStockSKU" placeholder="SKU veya ürün adı ara... (* * ile wildcard)" />
+          <div id="stockSearchResults" class="stock-search-results" style="display:none">
           </div>
         </div>
         <div>
@@ -84,6 +184,16 @@
           <div>
             <label for="mvExtras">İlave Maliyetler (toplam)</label>
             <input type="number" step="0.01" id="mvExtras" placeholder="0.00" />
+          </div>
+        </div>
+        <div class="row" id="expiryFieldsWrap" style="display:none">
+          <div>
+            <label for="mvLotNo">Lot No <span class="muted" title="Bu alan zorunludur.">*</span></label>
+            <input id="mvLotNo" placeholder="Örn: LOT-2026-001" />
+          </div>
+          <div>
+            <label for="mvExpiryDate">Son Kullanım Tarihi <span class="muted" title="Bu alan zorunludur.">*</span></label>
+            <input type="date" id="mvExpiryDate" />
           </div>
         </div>
       </div>
@@ -116,17 +226,55 @@
 
       <div style="margin-top:16px">
         <button class="btn btn-primary" id="btnSave">Kaydet</button>
-        <button class="btn btn-secondary" id="btnCancel" onclick="document.getElementById('formCard').classList.add('hidden')">İptal</button>
+        <button class="btn btn-secondary" id="btnCancel" type="button">İptal</button>
       </div>
     </div>
 
-    <div class="card">
+    <div class="card hidden" id="historyCard">
       <h2 style="margin:0 0 12px 0;font-size:18px">Hareket Geçmişi</h2>
+      <!-- Teklifbul Rule v1.0 - Ürün bazlı filtre + tarih aralığı + Excel export -->
+      <div class="card" style="margin:0 0 12px 0; padding:12px">
+        <div class="row" style="grid-template-columns: 2fr 1fr 1fr 1fr;">
+          <div style="position:relative">
+            <label for="historyStockSearch">Ürün Seç <span class="muted" title="Bu alan zorunludur.">* (SKU / Ürün adı)</span></label>
+            <input id="historyStockSearch" placeholder="SKU veya ürün adı ara... (* * ile wildcard)" />
+            <div id="historyStockSearchResults" class="stock-search-results" style="display:none"></div>
+          </div>
+          <div>
+            <label for="historyStartDate">Başlangıç Tarihi <span class="muted" title="Bu alan zorunludur.">* </span></label>
+            <input id="historyStartDate" type="date" />
+          </div>
+          <div>
+            <label for="historyEndDate">Bitiş Tarihi <span class="muted" title="Bu alan zorunludur.">* </span></label>
+            <input id="historyEndDate" type="date" />
+          </div>
+          <div>
+            <label for="historyLocationFilter">Lokasyon</label>
+            <select id="historyLocationFilter" title="Tüm lokasyonlar veya seçili lokasyon"></select>
+          </div>
+        </div>
+
+        <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; align-items:center">
+          <button class="btn btn-primary" id="btnHistorySearch" type="button" title="Listele">Listele</button>
+          <button class="btn btn-danger" id="btnHistoryClear" type="button" title="Filtreyi temizle">Temizle</button>
+          <button class="btn btn-success" id="btnHistoryExport" type="button" title="Excel'e aktar">Excel Çıktısı Al</button>
+          <span class="muted" id="historyStatusText" aria-live="polite"></span>
+        </div>
+        <div style="margin-top:8px" id="historyProgressWrap" class="hidden" aria-live="polite">
+          <progress id="historyProgressBar" style="width:100%"></progress>
+          <div class="muted" id="historyProgressText"></div>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:8px; margin-bottom:8px">
+        <button class="btn btn-secondary" id="btnHistoryLoadMore" type="button" disabled title="Daha fazla">Daha Fazla</button>
+      </div>
+
       <div style="overflow:auto">
         <table>
           <thead>
             <tr>
-              <th>Tarih</th><th>Tür</th><th>SKU</th><th>Ürün</th><th>Lokasyon</th><th>Miktar</th><th>Birim Maliyet</th><th>Toplam</th>
+              <th>Tarih</th><th>Tür</th><th>SKU</th><th>Ürün</th><th>Kaynak Lokasyon</th><th>Hedef Lokasyon</th><th>Miktar</th><th>Birim Maliyet</th><th>Toplam</th><th>Referans</th><th>İşlemi Yapan</th>
             </tr>
           </thead>
           <tbody id="historyTable"></tbody>

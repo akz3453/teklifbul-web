@@ -39,24 +39,41 @@
       return s;
     }
 
-    await requireAuth();
-    const me = auth.currentUser;
-    const out = document.getElementById("out");
-    
-    document.getElementById("btnNew").onclick = async () => {
-      const companyId = document.getElementById("companyId").value.trim();
-      if (!companyId) return toast.error(MESSAGES.ERROR_COMPANY_ID_REQUIRED);
-      const token = randToken(12);
-      try {
-        await setDoc(doc(db,"companies",companyId,"invites",token), {
-          active: true, createdAt: new Date(), ownerId: me.uid
-        });
-        out.innerHTML = `<div class="row">Davet Kodu: <b>${token}</b>  (companyId: <b>${companyId}</b>)</div>
-        <div>Bu kodu kullanıcıya verin; <code>company-join.html</code> sayfasında kullanacak.</div>`;
-      } catch(e) {
-        toast.error(MESSAGES.ERROR_INVITE_CREATE + ": " + (e.code||e.message||e));
-      }
-    };
+    (async () => {
+      await requireAuth();
+      const me = auth.currentUser;
+      const out = document.getElementById("out");
+      
+      document.getElementById("btnNew").onclick = async () => {
+        const companyId = document.getElementById("companyId").value.trim();
+        if (!companyId) return toast.error(MESSAGES.ERROR_COMPANY_ID_REQUIRED);
+        const token = randToken(12);
+        try {
+          await setDoc(doc(db,"companies",companyId,"invites",token), {
+            active: true, createdAt: new Date(), ownerId: me.uid
+          });
+          // Teklifbul Rule v1.0 - XSS koruma: token/companyId kullanici girdisi
+          out.textContent = '';
+          const row = document.createElement('div');
+          row.className = 'row';
+          row.appendChild(document.createTextNode('Davet Kodu: '));
+          const tokB = document.createElement('b'); tokB.textContent = String(token); row.appendChild(tokB);
+          row.appendChild(document.createTextNode('  (companyId: '));
+          const cidB = document.createElement('b'); cidB.textContent = String(companyId); row.appendChild(cidB);
+          row.appendChild(document.createTextNode(')'));
+          out.appendChild(row);
+          const helpDiv = document.createElement('div');
+          helpDiv.appendChild(document.createTextNode('Bu kodu kullanıcıya verin; '));
+          const codeEl = document.createElement('code');
+          codeEl.textContent = 'company-join.html';
+          helpDiv.appendChild(codeEl);
+          helpDiv.appendChild(document.createTextNode(' sayfasında kullanacak.'));
+          out.appendChild(helpDiv);
+        } catch(e) {
+          toast.error(MESSAGES.ERROR_INVITE_CREATE + ": " + (e.code||e.message||e));
+        }
+      };
+    })();
   </script>
 </body>
 </html>

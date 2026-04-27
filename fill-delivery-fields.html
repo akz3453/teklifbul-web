@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Teslim Şekli ve Yeri Doldurma</title>
+  <style>
+    body {
+      font-family: system-ui, Arial;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f8fafc;
+    }
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 24px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    h1 {
+      color: #111827;
+      margin: 0 0 8px 0;
+    }
+    .subtitle {
+      color: #6b7280;
+      margin: 0 0 24px 0;
+    }
+    .info {
+      background: #eff6ff;
+      border-left: 4px solid #3b82f6;
+      padding: 12px;
+      margin: 16px 0;
+      border-radius: 4px;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin: 20px 0;
+    }
+    .stat {
+      background: #f9fafb;
+      padding: 16px;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #111827;
+    }
+    .stat-label {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 4px;
+    }
+    button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 14px;
+      width: 100%;
+      margin-top: 12px;
+    }
+    button:hover {
+      background: #2563eb;
+    }
+    button:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+    .log {
+      background: #1f2937;
+      color: #f9fafb;
+      padding: 16px;
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      max-height: 400px;
+      overflow-y: auto;
+      margin-top: 20px;
+    }
+    .log-entry {
+      margin: 4px 0;
+    }
+    .log-success { color: #10b981; }
+    .log-error { color: #ef4444; }
+    .log-info { color: #3b82f6; }
+    .log-warn { color: #f59e0b; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>📦 Teslim Şekli ve Yeri Doldurma</h1>
+    <p class="subtitle">Sistemdeki tüm taleplerin Teslim Şekli ve Teslim Yeri alanlarını doldurur</p>
+    
+    <div class="info">
+      <strong>⚠️ Dikkat:</strong> Bu işlem tüm talepleri güncelleyecektir. 
+      Boş olan alanlar varsayılan değerlerle doldurulacaktır:
+      <ul style="margin: 8px 0 0 20px; padding: 0;">
+        <li><strong>Teslim Şekli:</strong> "nakliye_dahil" (Nakliye Dahil)</li>
+        <li><strong>Teslim Yeri:</strong> Şirket adresi veya "Belirtilmemiş"</li>
+      </ul>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-value" id="stat-total">-</div>
+        <div class="stat-label">Toplam Talep</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="stat-empty">-</div>
+        <div class="stat-label">Boş Alan</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="stat-updated">-</div>
+        <div class="stat-label">Güncellenen</div>
+      </div>
+    </div>
+
+    <button id="btn-analyze" onclick="analyzeDemands()">📊 Talepleri Analiz Et</button>
+    <button id="btn-fill" onclick="fillDeliveryFields()" disabled>✅ Boş Alanları Doldur</button>
+
+    <div class="log" id="log" style="display: none;"></div>
+  </div>
+
+  <script type="module">
+    // Teklifbul Rule v1.0 - Tek kaynaktan auth guard yönetimi
+    import { initAuthGuard } from './assets/js/auth-guard.js';
+    import { db, auth, requireAuth } from '/firebase.js';
+    import { 
+      collection, 
+      getDocs, 
+      updateDoc, 
+      doc, 
+      writeBatch,
+      query,
+      limit
+    } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+    import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js';
+
+    const logEl = document.getElementById('log');
+    const btnAnalyze = document.getElementById('btn-analyze');
+    const btnFill = document.getElementById('btn-fill');
+
+    let analysisResults = {
+      total: 0,
+      emptyMethod: 0,
+      emptyLocation: 0,
+      emptyBoth: 0,
+      demands: []
+    };
+
+    function log(message, type = 'info') {
+      if (logEl.style.display === 'none') {
+        logEl.style.display = 'block';
+      }
+      const entry = document.createElement('div');
+      entry.className = `log-entry log-${type}`;
+      entry.textContent = `[${new Date().toLocaleTimeString('tr-TR')}] ${message}`;
+      logEl.appendChild(entry);
+      logEl.scrollTop = logEl.scrollHeight;
+      console.log(message);
+    }
+
+    async function analyzeDemands() {
+      try {
+        const user = await requireAuth();
+        log('🔍 Talepler analiz ediliyor...', 'info');
+        btnAnalyze.disabled = true;
+
+        // Tüm talepleri getir
+        const demandsRef = collection(db, 'demands');
+        const demandsSnapshot = await getDocs(demandsRef);
+        
+        analysisResults.total = demandsSnapshot.docs.length;
+        analysisResults.emptyMethod = 0;
+        analysisResults.emptyLocation = 0;
+        analysisResults.emptyBoth = 0;
+        analysisResults.demands = [];
+
+        // Şirket bilgilerini yükle (teslim yeri için)
+        const companiesMap = new Map();
+        const companiesSnapshot = await getDocs(collection(db, 'companies'));
+        companiesSnapshot.docs.forEach(doc => {
+          const data = doc.data();
+          companiesMap.set(doc.id, data);
+        });
+
+        // Kullanıcı bilgilerini yükle (creatorCompanyId için)
+        const usersMap = new Map();
+        const usersSnapshot = await getDocs(collection(db, 'users'));
+        usersSnapshot.docs.forEach(doc => {
+          const data = doc.data();
+          usersMap.set(doc.id, data);
+        });
+
+        demandsSnapshot.docs.forEach(demandDoc => {
+          const data = demandDoc.data();
+          const demandId = demandDoc.id;
+          
+          const hasMethod = data.deliveryMethod && data.deliveryMethod.trim() !== '';
+          const hasLocation = (data.deliveryLocation && (typeof data.deliveryLocation === 'string' ? data.deliveryLocation.trim() !== '' : true)) ||
+                             (data.deliveryAddress && data.deliveryAddress.trim() !== '');
+
+          if (!hasMethod) analysisResults.emptyMethod++;
+          if (!hasLocation) analysisResults.emptyLocation++;
+          if (!hasMethod && !hasLocation) analysisResults.emptyBoth++;
+
+          if (!hasMethod || !hasLocation) {
+            // Şirket bilgisini bul
+            let companyId = data.creatorCompanyId || data.companyId;
+            if (!companyId && data.createdBy) {
+              const userData = usersMap.get(data.createdBy);
+              if (userData && userData.companyId) {
+                companyId = userData.companyId;
+              }
+            }
+
+            analysisResults.demands.push({
+              id: demandId,
+              hasMethod,
+              hasLocation,
+              companyId,
+              createdBy: data.createdBy
+            });
+          }
+        });
+
+        // İstatistikleri göster
+        document.getElementById('stat-total').textContent = analysisResults.total;
+        document.getElementById('stat-empty').textContent = analysisResults.demands.length;
+        document.getElementById('stat-updated').textContent = '0';
+
+        log(`✅ Analiz tamamlandı!`, 'success');
+        log(`📊 Toplam talep: ${analysisResults.total}`, 'info');
+        log(`⚠️ Teslim Şekli boş: ${analysisResults.emptyMethod}`, 'warn');
+        log(`⚠️ Teslim Yeri boş: ${analysisResults.emptyLocation}`, 'warn');
+        log(`⚠️ Her ikisi de boş: ${analysisResults.emptyBoth}`, 'warn');
+        log(`📝 Güncellenecek talep: ${analysisResults.demands.length}`, 'info');
+
+        if (analysisResults.demands.length > 0) {
+          btnFill.disabled = false;
+        } else {
+          log('✅ Tüm talepler zaten dolu!', 'success');
+        }
+
+        btnAnalyze.disabled = false;
+      } catch (error) {
+        log(`❌ Hata: ${error.message}`, 'error');
+        console.error(error);
+        btnAnalyze.disabled = false;
+      }
+    }
+
+    async function fillDeliveryFields() {
+      try {
+        const user = await requireAuth();
+        log('🚀 Boş alanlar dolduruluyor...', 'info');
+        btnFill.disabled = true;
+        btnAnalyze.disabled = true;
+
+        if (analysisResults.demands.length === 0) {
+          log('⚠️ Güncellenecek talep yok!', 'warn');
+          btnFill.disabled = false;
+          btnAnalyze.disabled = false;
+          return;
+        }
+
+        // Şirket bilgilerini yükle
+        const companiesMap = new Map();
+        const companiesSnapshot = await getDocs(collection(db, 'companies'));
+        companiesSnapshot.docs.forEach(doc => {
+          const data = doc.data();
+          companiesMap.set(doc.id, data);
+        });
+
+        // Kullanıcı bilgilerini yükle
+        const usersMap = new Map();
+        const usersSnapshot = await getDocs(collection(db, 'users'));
+        usersSnapshot.docs.forEach(doc => {
+          const data = doc.data();
+          usersMap.set(doc.id, data);
+        });
+
+        let updated = 0;
+        let errors = 0;
+        const batchSize = 500; // Firestore batch limit
+        let currentBatch = writeBatch(db);
+        let batchCount = 0;
+
+        for (const demandInfo of analysisResults.demands) {
+          try {
+            const demandRef = doc(db, 'demands', demandInfo.id);
+            const updateData = {};
+
+            // Teslim Şekli doldur
+            if (!demandInfo.hasMethod) {
+              updateData.deliveryMethod = 'nakliye_dahil';
+            }
+
+            // Teslim Yeri doldur
+            if (!demandInfo.hasLocation) {
+              let deliveryLocation = 'Belirtilmemiş';
+              
+              // Şirket adresini bul
+              if (demandInfo.companyId) {
+                const company = companiesMap.get(demandInfo.companyId);
+                if (company) {
+                  if (company.address) {
+                    deliveryLocation = typeof company.address === 'string' 
+                      ? company.address 
+                      : `${company.address.street || ''} ${company.address.district || ''} ${company.address.city || ''}`.trim();
+                  } else if (company.city) {
+                    deliveryLocation = company.city;
+                  }
+                }
+              }
+
+              // Eğer hala boşsa, kullanıcının şirket bilgisini kontrol et
+              if (deliveryLocation === 'Belirtilmemiş' && demandInfo.createdBy) {
+                const userData = usersMap.get(demandInfo.createdBy);
+                if (userData && userData.companyId) {
+                  const company = companiesMap.get(userData.companyId);
+                  if (company && company.address) {
+                    deliveryLocation = typeof company.address === 'string' 
+                      ? company.address 
+                      : `${company.address.street || ''} ${company.address.district || ''} ${company.address.city || ''}`.trim();
+                  }
+                }
+              }
+
+              updateData.deliveryLocation = deliveryLocation;
+              updateData.deliveryAddress = deliveryLocation; // Backward compatibility
+            }
+
+            if (Object.keys(updateData).length > 0) {
+              currentBatch.update(demandRef, updateData);
+              batchCount++;
+              updated++;
+
+              // Batch limit'e ulaştıysa commit et
+              if (batchCount >= batchSize) {
+                await currentBatch.commit();
+                log(`💾 ${batchCount} talep güncellendi (batch)`, 'success');
+                currentBatch = writeBatch(db);
+                batchCount = 0;
+              }
+            }
+          } catch (error) {
+            errors++;
+            log(`❌ Talep ${demandInfo.id} güncellenemedi: ${error.message}`, 'error');
+          }
+        }
+
+        // Kalan batch'i commit et
+        if (batchCount > 0) {
+          await currentBatch.commit();
+          log(`💾 ${batchCount} talep güncellendi (son batch)`, 'success');
+        }
+
+        document.getElementById('stat-updated').textContent = updated;
+
+        log(`✅ İşlem tamamlandı!`, 'success');
+        log(`📊 Güncellenen: ${updated}`, 'info');
+        if (errors > 0) {
+          log(`⚠️ Hatalar: ${errors}`, 'warn');
+        }
+
+        btnFill.disabled = false;
+        btnAnalyze.disabled = false;
+      } catch (error) {
+        log(`❌ Hata: ${error.message}`, 'error');
+        console.error(error);
+        btnFill.disabled = false;
+        btnAnalyze.disabled = false;
+      }
+    }
+
+    // Teklifbul Rule v1.0 - Guard'ı başlat - tüm yönlendirmeler guard üzerinden yapılacak
+    initAuthGuard().catch(err => console.error('Auth guard init failed', err));
+
+    // Global scope'a fonksiyonları ekle
+    window.analyzeDemands = analyzeDemands;
+    window.fillDeliveryFields = fillDeliveryFields;
+  </script>
+</body>
+</html>
+

@@ -332,7 +332,7 @@
           
           const createLink = !result.exists
             ? `<a href="https://console.firebase.google.com/project/_/firestore/indexes?create_composite=${collName}__${fields.map(f => `${f.field}__${f.order}`).join('_')}" 
-                 target="_blank" class="create-link">📝 Firestore Console'da Oluştur</a>`
+                 target="_blank" rel="noopener noreferrer" class="create-link">📝 Firestore Console'da Oluştur</a>`
             : "";
           
           indexDiv.innerHTML = `

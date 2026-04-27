@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - NEFISOFT</title>
+  <link rel="stylesheet" href="/assets/css/admin.css">
+  <style>
+    /* Admin Panel Styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: #f5f5f5;
+      color: #333;
+    }
+
+    /* Teklifbul Rule v1.0 - Admin sayfası başlangıçta gizli, admin kontrolü sonrası gösterilecek */
+    body:not(.admin-verified) {
+      display: none !important;
+    }
+
+    #app-header {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
+    .admin-container {
+      display: flex;
+      min-height: calc(100vh - 60px);
+      margin-top: 0;
+    }
+
+    /* Sidebar */
+    .admin-sidebar {
+      width: 260px;
+      background: #1f2937;
+      color: #fff;
+      padding: 20px 0;
+      position: fixed;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .admin-sidebar-header {
+      padding: 0 20px 20px;
+      border-bottom: 1px solid #374151;
+      margin-bottom: 20px;
+    }
+
+    .admin-sidebar-header h1 {
+      font-size: 20px;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .admin-sidebar-nav {
+      list-style: none;
+      padding: 0;
+    }
+
+    .admin-sidebar-nav li {
+      margin: 0;
+    }
+
+    .admin-sidebar-nav a {
+      display: block;
+      padding: 12px 20px;
+      color: #d1d5db;
+      text-decoration: none;
+      transition: all 0.2s;
+      border-left: 3px solid transparent;
+    }
+
+    .admin-sidebar-nav a:hover {
+      background: #374151;
+      color: #fff;
+      border-left-color: #3b82f6;
+    }
+
+    .admin-sidebar-nav a.active {
+      background: #374151;
+      color: #fff;
+      border-left-color: #3b82f6;
+    }
+
+    /* Main Content */
+    .admin-main {
+      flex: 1;
+      margin-left: 260px;
+      padding: 0;
+    }
+
+    .admin-header {
+      background: #fff;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .admin-header h2 {
+      font-size: 24px;
+      font-weight: 600;
+      color: #1f2937;
+    }
+
+    .admin-header-user {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .admin-header-user-info {
+      text-align: right;
+    }
+
+    .admin-header-user-info .name {
+      font-weight: 600;
+      color: #1f2937;
+    }
+
+    .admin-header-user-info .email {
+      font-size: 14px;
+      color: #6b7280;
+    }
+
+    .btn-logout {
+      padding: 8px 16px;
+      background: #ef4444;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.2s;
+    }
+
+    .btn-logout:hover {
+      background: #dc2626;
+    }
+
+    .admin-content {
+      padding: 24px;
+    }
+
+    /* Tab Content */
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Cards */
+    .admin-card {
+      background: #fff;
+      border-radius: 8px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .admin-card h3 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: #1f2937;
+    }
+
+    /* Tables */
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .admin-table th,
+    .admin-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .admin-table th {
+      background: #f9fafb;
+      font-weight: 600;
+      color: #374151;
+      font-size: 14px;
+    }
+
+    .admin-table td {
+      font-size: 14px;
+      color: #6b7280;
+    }
+
+    .admin-table tr:hover {
+      background: #f9fafb;
+    }
+
+    /* Forms */
+    .admin-form-group {
+      margin-bottom: 20px;
+    }
+
+    .admin-form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: #374151;
+    }
+
+    .admin-form-group input,
+    .admin-form-group select,
+    .admin-form-group textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    .admin-form-group input:focus,
+    .admin-form-group select:focus,
+    .admin-form-group textarea:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: #3b82f6;
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: #2563eb;
+    }
+
+    .btn-secondary {
+      background: #6b7280;
+      color: #fff;
+    }
+
+    .btn-secondary:hover {
+      background: #4b5563;
+    }
+
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+
+    /* Search & Filters */
+    .admin-filters {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .admin-search {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .admin-search input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .badge-success {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .badge-danger {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .badge-warning {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .badge-info {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #6b7280;
+    }
+
+    /* Error */
+    .error-message {
+      background: #fee2e2;
+      color: #991b1b;
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+    }
+
+    /* Success */
+    .success-message {
+      background: #d1fae5;
+      color: #065f46;
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+    }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.4);
+    }
+
+    .modal-content {
+      background-color: #fefefe;
+      margin: 5% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 90%;
+      max-width: 800px;
+      border-radius: 8px;
+    }
+
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .close:hover,
+    .close:focus {
+      color: #000;
+    }
+
+    .btn-sm {
+      padding: 4px 8px;
+      font-size: 12px;
+      margin: 2px;
+    }
+
+    .btn-secondary {
+      background: #6b7280;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .btn-secondary:hover {
+      background: #4b5563;
+    }
+
+    .btn-primary {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .btn-primary:hover {
+      background: #2563eb;
+    }
+
+    .btn-success {
+      background: #10b981;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .btn-success:hover {
+      background: #059669;
+    }
+
+    .btn-danger {
+      background: #ef4444;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .btn-danger:hover {
+      background: #dc2626;
+    }
+
+    .btn-info {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .btn-info:hover {
+      background: #2563eb;
+    }
+
+    .badge-secondary {
+      background: #e5e7eb;
+      color: #4b5563;
+    }
+
+    /* AI Analysis Modal */
+    .ai-analysis-box {
+      background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%);
+      border: 1px solid #bae6fd;
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 16px;
+    }
+
+    .ai-analysis-box h3 {
+      color: #0369a1;
+      margin-bottom: 12px;
+    }
+
+    /* Error row hover */
+    .admin-table tbody tr {
+      transition: background 0.15s;
+    }
+
+    /* Error tab stats bar */
+    .error-stats-bar {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .error-stat-card {
+      flex: 1;
+      min-width: 120px;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 12px 16px;
+      text-align: center;
+    }
+
+    .error-stat-card .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #1f2937;
+    }
+
+    .error-stat-card .stat-label {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 4px;
+    }
+
+    .error-stat-card.critical {
+      border-color: #fca5a5;
+      background: #fef2f2;
+    }
+
+    .error-stat-card.critical .stat-value {
+      color: #dc2626;
+    }
+  </style>
+  </head>
+  <body>
+    <!-- Common Header -->
+    <header id="app-header"></header>
+    
+    <div class="admin-container">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+      <div class="admin-sidebar-header">
+        <h1>🔐 Admin Panel</h1>
+      </div>
+      <nav>
+        <ul class="admin-sidebar-nav">
+          <li><a href="#users" class="nav-link active" data-tab="users">👥 Kullanıcılar</a></li>
+          <li><a href="#subscriptions" class="nav-link" data-tab="subscriptions">📦 Paketler</a></li>
+          <li><a href="#logs" class="nav-link" data-tab="logs">📋 Loglar</a></li>
+          <li><a href="#errors" class="nav-link" data-tab="errors">🐛 Hatalar</a></li>
+          <li><a href="#settings" class="nav-link" data-tab="settings">⚙️ Sistem Ayarları</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+      <header class="admin-header">
+        <h2 id="page-title">Kullanıcılar</h2>
+        <div class="admin-header-user">
+          <div class="admin-header-user-info">
+            <div class="name" id="admin-user-name">Yükleniyor...</div>
+            <div class="email" id="admin-user-email">-</div>
+          </div>
+          <button class="btn-logout" id="btn-logout">Çıkış</button>
+        </div>
+      </header>
+
+      <div class="admin-content">
+        <!-- Users Tab -->
+        <div id="tab-users" class="tab-content active">
+          <div class="admin-card">
+            <h3>Kullanıcı Yönetimi</h3>
+            <div class="admin-filters">
+              <div class="admin-search">
+                <input type="text" id="user-search" placeholder="Ad, email veya firma ara...">
+              </div>
+              <select id="user-filter-plan">
+                <option value="all">Tüm Planlar</option>
+                <option value="free">Free</option>
+                <option value="premium">Premium</option>
+                <option value="premium_plus">Premium Plus</option>
+              </select>
+              <select id="user-filter-status">
+                <option value="all">Tüm Durumlar</option>
+                <option value="active">Aktif</option>
+                <option value="inactive">Pasif</option>
+              </select>
+              <select id="user-filter-auth">
+                <option value="all">Tüm Auth Durumları</option>
+                <option value="exists">Auth'ta Var</option>
+                <option value="missing">Auth'ta Yok</option>
+                <option value="unknown">Bilinmiyor</option>
+              </select>
+            </div>
+            <div id="users-table-container">
+              <div class="loading">Yükleniyor...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Subscriptions Tab -->
+        <div id="tab-subscriptions" class="tab-content">
+          <div class="admin-card">
+            <h3>Paket / Abonelik Yönetimi (Şirket Bazlı)</h3>
+            <div class="admin-filters">
+              <div class="admin-search">
+                <input type="text" id="subscription-search" placeholder="Şirket adı veya vergi no ara..." style="flex: 1;">
+              </div>
+              <select id="subscription-filter-plan" style="margin-left: 12px;">
+                <option value="all">Tüm Planlar</option>
+                <option value="free">Free</option>
+                <option value="premium_monthly">Premium Aylık</option>
+                <option value="premium_yearly">Premium Yıllık</option>
+                <option value="premium_plus_monthly">Premium Plus Aylık</option>
+                <option value="premium_plus_yearly">Premium Plus Yıllık</option>
+              </select>
+            </div>
+            <div id="subscriptions-table-container">
+              <div class="loading">Yükleniyor...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Logs Tab -->
+        <div id="tab-logs" class="tab-content">
+          <div class="admin-card">
+            <h3>Güvenlik & Sistem Logları</h3>
+            <div class="admin-filters">
+              <select id="log-filter-type">
+                <option value="all">Tüm Olaylar</option>
+                <option value="authFailure">Auth Hataları</option>
+                <option value="rateLimitHit">Rate Limit</option>
+                <option value="adminAction">Admin Aksiyonları</option>
+                <option value="serverError">Sunucu Hataları</option>
+              </select>
+              <select id="log-filter-period">
+                <option value="24h">Son 24 Saat</option>
+                <option value="7d">Son 7 Gün</option>
+                <option value="30d">Son 30 Gün</option>
+              </select>
+            </div>
+            <div id="logs-table-container">
+              <div class="loading">Yükleniyor...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Errors Tab -->
+        <div id="tab-errors" class="tab-content">
+          <div class="admin-card">
+            <h3>Hata Yönetimi</h3>
+            <div class="admin-filters">
+              <div class="admin-search">
+                <input type="text" id="error-search" placeholder="Mesaj, kod veya URL ara...">
+              </div>
+              <select id="error-filter-type">
+                <option value="all">Tüm Tipler</option>
+                <option value="frontend">Frontend</option>
+                <option value="backend">Backend</option>
+              </select>
+              <select id="error-filter-severity">
+                <option value="all">Tüm Önem Seviyeleri</option>
+                <option value="critical">Kritik</option>
+                <option value="high">Yüksek</option>
+                <option value="medium">Orta</option>
+                <option value="low">Düşük</option>
+              </select>
+              <select id="error-filter-resolved">
+                <option value="all">Tüm Durumlar</option>
+                <option value="false" selected>Çözülmemiş (Varsayılan)</option>
+                <option value="true">Çözülmüş</option>
+              </select>
+              <button class="btn btn-primary" id="btn-analyze-selected">Seçili Hataları Analiz Et</button>
+            </div>
+            <div id="errors-table-container">
+              <div class="loading">Yükleniyor...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div id="tab-settings" class="tab-content">
+          <div class="admin-card">
+            <h3>Sistem Ayarları</h3>
+            <form id="settings-form">
+              <div class="admin-form-group">
+                <label>Free Plan - Maksimum Teklif/Ay</label>
+                <input type="number" id="setting-free-max-offers" min="0" required>
+              </div>
+              <div class="admin-form-group">
+                <label>Premium Plan - Maksimum Teklif/Ay</label>
+                <input type="number" id="setting-premium-max-offers" min="0" required>
+              </div>
+              <div class="admin-form-group">
+                <label>Premium Plus Plan - Maksimum Teklif/Ay</label>
+                <input type="number" id="setting-premium-plus-max-offers" min="0" required>
+              </div>
+              <div style="margin-top:24px; padding:16px; background:#f0f9ff; border-left:4px solid #3b82f6; border-radius:4px;">
+                <h4 style="margin:0 0 8px 0; font-size:16px; color:#1e40af;">ℹ️ AI Token Limitleri</h4>
+                <p style="margin:0; font-size:13px; color:#6b7280; line-height:1.6;">
+                  AI token limitleri artık kullanılmıyor. Premium Plus kullanıcıları AI motoru seçip token paketi satın alarak kullanım yapıyorlar. 
+                  Token paketleri <strong>ai_token_packs</strong> collection'ında tutuluyor ve limit kontrolü token paketlerinden yapılıyor.
+                </p>
+              </div>
+              <button type="submit" class="btn btn-primary">Kaydet</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- User Delete Confirm Modal -->
+  <div id="user-delete-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:1001; align-items:center; justify-content:center;">
+    <div style="background:#fff; padding:24px; border-radius:8px; max-width:500px; width:90%;">
+      <h3 style="margin-bottom:16px; color:#dc2626;">⚠️ Kullanıcı Silme Onayı</h3>
+      <p style="margin-bottom:20px; color:#6b7280;">
+        Bu işlem <strong>geri alınamaz</strong>. Kullanıcı ve tüm verileri kalıcı olarak silinecektir.
+      </p>
+      <div style="background:#fee2e2; padding:12px; border-radius:6px; margin-bottom:20px;">
+        <div><strong>Kullanıcı ID:</strong> <span id="delete-user-id"></span></div>
+        <div><strong>Email:</strong> <span id="delete-user-email"></span></div>
+      </div>
+      <div style="display:flex; gap:12px;">
+        <button type="button" class="btn btn-danger" id="btn-confirm-delete">Evet, Sil</button>
+        <button type="button" class="btn btn-secondary" id="btn-cancel-delete">İptal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- User Edit Modal -->
+  <div id="user-edit-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+    <div style="background:#fff; padding:24px; border-radius:8px; max-width:600px; width:90%; max-height:90vh; overflow-y:auto;">
+      <h3 style="margin-bottom:20px;">Kullanıcı Düzenle</h3>
+      <div id="edit-loading-text" style="color:#6b7280; font-size:13px; margin-bottom:8px; display:none;">Yükleniyor...</div>
+      <form id="user-edit-form">
+        <input type="hidden" id="edit-user-id">
+        <div class="admin-form-group">
+          <label>Ad Soyad</label>
+          <input type="text" id="edit-user-name" required>
+        </div>
+        <div class="admin-form-group">
+          <label>Email</label>
+          <input type="email" id="edit-user-email" readonly style="background:#f3f4f6;">
+        </div>
+        <div class="admin-form-group">
+          <label>Email Doğrulama Durumu</label>
+          <select id="edit-user-email-verified">
+            <option value="true">Doğrulanmış</option>
+            <option value="false">Doğrulanmamış</option>
+          </select>
+        </div>
+        <div class="admin-form-group">
+          <label>Firma Ünvanı</label>
+          <input type="text" id="edit-user-company">
+        </div>
+        <div class="admin-form-group">
+          <label>Vergi No</label>
+          <input type="text" id="edit-user-tax-id">
+        </div>
+        <div class="admin-form-group">
+          <label>Şirkete Katılım İstek Kodu</label>
+          <input type="text" id="edit-user-join-code" placeholder="Kullanıcıyı bir şirkete aday yapmak için yazın (isteğe bağlı)">
+        </div>
+        <div class="admin-form-group">
+          <label>Durum</label>
+          <select id="edit-user-status">
+            <option value="active">Aktif</option>
+            <option value="inactive">Pasif</option>
+          </select>
+        </div>
+        <div style="display:flex; gap:12px; margin-top:20px;">
+          <button type="submit" class="btn btn-primary">Kaydet</button>
+          <button type="button" class="btn btn-secondary" id="btn-cancel-edit">İptal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Teklifbul Rule v1.0 - Admin Panel Script (harici dosyaya taşındı) -->
+  <script type="module" src="./dashboard-script.js"></script>
+
+

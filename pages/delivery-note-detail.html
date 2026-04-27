@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>İrsaliye Detayı</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Teklifbul Rule v1.0 - FOUC önleme: Tema hemen uygulanmalı -->
+  <script src="/assets/js/theme-init.js"></script>
+  <link rel="stylesheet" href="/utils.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <style>
+    body{font-family:system-ui, Arial; background:#f8fafc; color:#111827; margin:0}
+    .container{max-width:1400px;margin:0 auto;padding:20px}
+    h1{margin:0 0 8px 0}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:20px;margin:16px 0}
+    .badge{display:inline-block;padding:4px 8px;border-radius:4px;font-size:11px;font-weight:600}
+    .badge-draft{background:#e5e7eb;color:#374151}
+    .badge-ready{background:#fef3c7;color:#92400e}
+    .badge-sent{background:#dbeafe;color:#1e40af}
+    .badge-accepted{background:#dcfce7;color:#065f46}
+    .badge-rejected{background:#fee2e2;color:#991b1b}
+    .badge-cancelled{background:#fee2e2;color:#991b1b}
+    .badge-warning{background:#fef3c7;color:#92400e}
+    .badge-success{background:#dcfce7;color:#065f46}
+    .badge-info{background:#dbeafe;color:#1e40af}
+    .badge-danger{background:#fee2e2;color:#991b1b}
+    .badge-secondary{background:#e5e7eb;color:#374151}
+    .muted{color:#6b7280;font-size:12px}
+    .btn{padding:10px 20px;border:0;border-radius:6px;cursor:pointer;font-weight:600;font-size:14px;margin-right:8px;text-decoration:none;display:inline-block}
+    .btn-primary{background:#2563eb;color:#fff}
+    .btn-primary:hover{background:#1d4ed8}
+    .btn-secondary{background:#6b7280;color:#fff}
+    .btn-secondary:hover{background:#4b5563}
+    .btn-danger{background:#dc2626;color:#fff}
+    .btn-danger:hover{background:#b91c1c}
+    table{width:100%;border-collapse:collapse;margin-top:16px;background:#fff}
+    th,td{border-bottom:1px solid #e5e7eb;padding:12px;text-align:left;font-size:13px}
+    th{background:#f9fafb;font-weight:600;color:#374151}
+    tr:hover{background:#f9fafb}
+    .info-row{display:grid;grid-template-columns:200px 1fr;gap:12px;padding:8px 0;border-bottom:1px solid #e5e7eb}
+    .info-row:last-child{border-bottom:none}
+    .info-label{font-weight:600;color:#374151}
+    .summary-card{background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:16px;margin-top:16px}
+    .summary-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #bae6fd}
+    .summary-row:last-child{border-bottom:none;font-weight:700;font-size:16px}
+    
+    /* Koyu Mod */
+    html[data-theme="dark"] body,
+    html.force-dark body {
+      background:#111827;
+      color:#ffffff;
+    }
+    html[data-theme="dark"] .card,
+    html.force-dark .card {
+      background:#1f2937;
+      border:1px solid rgba(255,255,255,0.1);
+    }
+  </style>
+</head>
+<body>
+  <!-- Common Header -->
+  <header id="app-header"></header>
+
+  <div class="container">
+    <!-- Breadcrumb Navigation -->
+    <div class="tb-breadcrumb" id="breadcrumb">
+      <span class="tb-crumb">
+        <span class="ico">🏠</span>
+        <a href="/dashboard.html">Ana Sayfa</a>
+      </span>
+      <span class="tb-sep">›</span>
+      <span class="tb-crumb">
+        <span class="ico">📦</span>
+        <span>İrsaliye Detayı</span>
+      </span>
+    </div>
+    
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div>
+        <h1 style="margin:0">📦 İrsaliye Detayı</h1>
+        <p class="muted" style="margin:4px 0 0 0">İrsaliye No: <span id="deliveryNumber">-</span></p>
+      </div>
+      <div id="deliveryActions" style="display:flex; gap:8px;">
+        <!-- Aksiyon butonları buraya eklenecek -->
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-top:0">Genel Bilgiler</h2>
+      
+      <div class="info-row">
+        <div class="info-label">İrsaliye Numarası:</div>
+        <div id="deliveryNumberDetail">-</div>
+      </div>
+      <div class="info-row">
+        <div class="info-label">Durum:</div>
+        <div id="deliveryStatus">-</div>
+      </div>
+      <div class="info-row">
+        <div class="info-label">Oluşturulma Tarihi:</div>
+        <div id="createdAt">-</div>
+      </div>
+    </div>
+
+    <!-- Teklifbul Rule v1.0 - Snapshot Gösterimi -->
+    <div class="card" id="deliverySnapshotCard" style="display:none">
+      <h2 style="margin-top:0">📸 Snapshot (Oluşturulduğu Anki Durum)</h2>
+      
+      <!-- Gönderici Bilgileri -->
+      <div style="margin-bottom:24px; padding:16px; background:#f9fafb; border-radius:6px; border:1px solid #e5e7eb">
+        <h3 style="margin:0 0 12px 0; font-size:16px; font-weight:600; color:#374151">Gönderici (Satıcı)</h3>
+        <div id="deliverySellerSnapshot" style="font-size:14px; color:#1f2937; line-height:1.8">
+          <!-- Snapshot seller bilgileri buraya eklenecek -->
+        </div>
+      </div>
+
+      <!-- Alıcı Bilgileri -->
+      <div style="margin-bottom:24px; padding:16px; background:#f9fafb; border-radius:6px; border:1px solid #e5e7eb">
+        <h3 style="margin:0 0 12px 0; font-size:16px; font-weight:600; color:#374151">Alıcı (Müşteri)</h3>
+        <div id="deliveryBuyerSnapshot" style="font-size:14px; color:#1f2937; line-height:1.8">
+          <!-- Snapshot buyer bilgileri buraya eklenecek -->
+        </div>
+      </div>
+
+      <!-- Teslimat Bilgileri -->
+      <div style="margin-bottom:24px; padding:16px; background:#f0f9ff; border-radius:6px; border:1px solid #bae6fd">
+        <h3 style="margin:0 0 12px 0; font-size:16px; font-weight:600; color:#374151">Teslimat Bilgileri</h3>
+        <div id="deliveryShipment" style="font-size:14px; color:#1f2937; line-height:1.8">
+          <!-- Snapshot shipment bilgileri buraya eklenecek -->
+        </div>
+      </div>
+
+      <!-- Snapshot Items -->
+      <div style="margin-bottom:24px">
+        <h3 style="margin:0 0 12px 0; font-size:16px; font-weight:600; color:#374151">İrsaliye Kalemleri (Snapshot)</h3>
+        <table style="width:100%; border-collapse:collapse; background:#fff">
+          <thead>
+            <tr style="background:#f9fafb">
+              <th style="padding:12px; text-align:left; border-bottom:1px solid #e5e7eb; font-weight:600">SKU</th>
+              <th style="padding:12px; text-align:left; border-bottom:1px solid #e5e7eb; font-weight:600">Ürün Adı</th>
+              <th style="padding:12px; text-align:right; border-bottom:1px solid #e5e7eb; font-weight:600">Miktar</th>
+              <th style="padding:12px; text-align:left; border-bottom:1px solid #e5e7eb; font-weight:600">Birim</th>
+              <th style="padding:12px; text-align:right; border-bottom:1px solid #e5e7eb; font-weight:600">Birim Fiyat</th>
+              <th style="padding:12px; text-align:right; border-bottom:1px solid #e5e7eb; font-weight:600">KDV %</th>
+              <th style="padding:12px; text-align:right; border-bottom:1px solid #e5e7eb; font-weight:600">Tutar</th>
+            </tr>
+          </thead>
+          <tbody id="deliveryItemsTableBody">
+            <tr>
+              <td colspan="7" style="text-align:center; padding:20px; color:#6b7280">Yükleniyor...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Snapshot Totals -->
+      <div style="padding:16px; background:#f0f9ff; border-radius:6px; border:1px solid #bae6fd">
+        <h3 style="margin:0 0 12px 0; font-size:16px; font-weight:600; color:#374151">Finansal Özet (Snapshot)</h3>
+        <div id="deliveryTotals" style="font-size:14px; color:#1f2937; line-height:1.8">
+          <!-- Snapshot totals buraya eklenecek -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <script type="module">
+    import { initGlobalHeader } from '../assets/js/ui/header.js';
+    initGlobalHeader({ mount: '#app-header', activeRoute: 'invoicing' });
+  </script>
+  
+  <script type="module" src="/scripts/delivery-note-detail.js"></script>
+</body>
+</html>
+

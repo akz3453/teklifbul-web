@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Onay Bekleniyor — Teklifbul</title>
+  <title>Onay Bekleniyor — NEFISOFT</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%233b82f6' rx='6'/%3E%3Ctext x='16' y='22' font-family='Arial' font-size='18' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E" />
   <link rel="stylesheet" href="/utils.css" />
   <style>
@@ -186,7 +186,7 @@
       </div>
       <div class="status-badge status-rejected">❌ Reddedildi</div>
       <div style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 24px;">
-        <button class="btn btn-primary" onclick="location.href='./index.html?fromWaiting=true'">Ana Sayfaya Dön</button>
+        <button class="btn btn-primary" class="home-redirect-btn">Ana Sayfaya Dön</button>
         <button id="logoutBtnRejected" class="btn btn-danger" style="background: #ef4444; color: white;">
           🚪 Çıkış Yap
         </button>
@@ -198,7 +198,7 @@
       <h1>Bir Hata Oluştu</h1>
       <div class="status-message" id="errorMessage"></div>
       <div style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 24px;">
-        <button class="btn btn-primary" onclick="location.href='./index.html?fromWaiting=true'">Ana Sayfaya Dön</button>
+        <button class="btn btn-primary" class="home-redirect-btn">Ana Sayfaya Dön</button>
         <button id="logoutBtnError" class="btn btn-danger" style="background: #ef4444; color: white;">
           🚪 Çıkış Yap
         </button>
@@ -217,215 +217,358 @@
     import { doc, getDoc, onSnapshot, deleteDoc, query, collection, where, getDocs } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
     import { signOut } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
     import { registerListener, cleanupAllListeners } from "./assets/js/firebase/listener-manager.js";
+    import { resolveCompanyContext } from "./assets/js/state/company-context.js";
     
-    // Çıkış butonu - Teklifbul Rule v1.0
-    async function handleLogout() {
-      try {
-        await signOut(auth);
-        // Çıkış yapıldıktan sonra ana sayfaya yönlendir (fromWaiting parametresi ile)
-        location.href = './index.html?fromWaiting=true';
-      } catch (e) {
-        logger.error('Çıkış hatası', e);
-        toast.error(MESSAGES.ERROR_LOGOUT + ': ' + (e.message || e));
-      }
-    }
-    
-    document.getElementById('logoutBtn')?.addEventListener('click', handleLogout);
-    document.getElementById('logoutBtnRejected')?.addEventListener('click', handleLogout);
-    document.getElementById('logoutBtnError')?.addEventListener('click', handleLogout);
+    // Wrap everything in an async IIFE
+    (async () => {
+      // Ana sayfaya yönlendirme butonları - Teklifbul Rule v1.0
+      document.querySelectorAll('.home-redirect-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          location.href = './index.html?fromWaiting=true';
+        });
+      });
 
-    // Kullanıcı kontrolü - Teklifbul Rule v1.0
-    // Redirect loop önleme: Sadece bir kez kontrol et
-    let authCheckDone = false;
-    let checkInterval = null;
-    let unsubscribe = null;
-    let currentUser = null;
-    
-    // Durum kontrolü fonksiyonu - Teklifbul Rule v1.0
-    async function checkJoinStatus(user) {
-        if (!user) return; // Guard clause
-        
+      // Çıkış butonu - Teklifbul Rule v1.0
+      async function handleLogout() {
         try {
-          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          await signOut(auth);
+          // Çıkış yapıldıktan sonra ana sayfaya yönlendir (fromWaiting parametresi ile)
+          location.href = './index.html?fromWaiting=true';
+        } catch (e) {
+          logger.error('Çıkış hatası', e);
+          toast.error(MESSAGES.ERROR_LOGOUT + ': ' + (e.message || e));
+        }
+      }
+      
+      document.getElementById('logoutBtn')?.addEventListener('click', handleLogout);
+      document.getElementById('logoutBtnRejected')?.addEventListener('click', handleLogout);
+      document.getElementById('logoutBtnError')?.addEventListener('click', handleLogout);
+
+      // Yönlendirme hedefi - Teklifbul Rule v1.0
+      const urlParams = new URLSearchParams(window.location.search || '');
+      const referrerPath = (() => {
+        try {
+          if (!document.referrer) return null;
+          const refUrl = new URL(document.referrer);
+          return refUrl.pathname || null;
+        } catch (_) {
+          return null;
+        }
+      })();
+      const redirectTargetPath = urlParams.get('redirect') || referrerPath || './demands.html';
+      
+      // Kullanıcı kontrolü - Teklifbul Rule v1.0
+      // Redirect loop önleme: Sadece bir kez kontrol et
+      let authCheckDone = false;
+      let checkInterval = null;
+      let unsubscribe = null;
+      let currentUser = null;
+      
+      // Durum kontrolü fonksiyonu - Teklifbul Rule v1.0
+      async function checkJoinStatus(user) {
+          if (!user) return; // Guard clause
           
-          if (!userDoc.exists()) {
-            showError('Kullanıcı kaydı bulunamadı.');
-            return;
-          }
-
-          const userData = userDoc.data();
-          const companyJoinStatus = userData.companyJoinStatus;
-          const companyCode = userData.companyCode;
-          const companyId = userData.companyId;
-          const requestedRole = userData.requestedCompanyRole;
-
-          // Şirket bilgilerini yükle
-          if (companyId) {
+          try {
+            // Önce resolver üzerinden genel company context'i kontrol et
+            let resolvedContext = null;
             try {
-              const companyDoc = await getDoc(doc(db, 'companies', companyId));
-              if (companyDoc.exists()) {
-                const companyData = companyDoc.data();
-                document.getElementById('companyName').textContent = companyData.name || '-';
-              }
-            } catch (e) {
-              logger.warn('Şirket bilgisi yüklenemedi', e);
+              resolvedContext = await resolveCompanyContext(user, {
+                allowPending: true,
+                redirectOnPending: false
+              });
+            } catch (resolverError) {
+              logger.warn('CompanyContextResolver bekleme sayfasında hata verdi', resolverError);
             }
-          }
 
-          // Rol bilgisini göster
-          if (requestedRole) {
-            const roleLabel = requestedRole.includes('buyer') ? 'Alıcı' : 
-                            requestedRole.includes('supplier') ? 'Tedarikçi' : requestedRole;
-            document.getElementById('requestedRole').textContent = roleLabel;
-          }
-
-          // Talep tarihi
-          if (userData.createdAt) {
-            const date = userData.createdAt.toDate ? userData.createdAt.toDate() : new Date(userData.createdAt);
-            document.getElementById('requestDate').textContent = date.toLocaleDateString('tr-TR', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit'
-            });
-          }
-
-          // Durum kontrolü
-          if (companyJoinStatus === 'accepted' || companyJoinStatus === 'approved') {
-            // Onaylandı - normal akışa devam et
-            clearInterval(checkInterval);
-            if (unsubscribe) unsubscribe();
-            showAccepted();
+            const userDoc = await getDoc(doc(db, 'users', user.uid));
             
-            // 2 saniye sonra yönlendir
-            setTimeout(() => {
-              location.href = './demands.html';
-            }, 2000);
-            return;
-          }
+            if (!userDoc.exists()) {
+              showError('Kullanıcı kaydı bulunamadı.');
+              return;
+            }
 
-          if (companyJoinStatus === 'rejected') {
-            // Reddedildi - kaydı sil ve çıkış yap
-            clearInterval(checkInterval);
-            if (unsubscribe) unsubscribe();
-            showRejected();
-            
-            // Kullanıcı kaydını sil
-            try {
-              await deleteDoc(doc(db, 'users', user.uid));
+            const userData = userDoc.data();
+            const companyJoinStatus = userData.companyJoinStatus;
+            const companyCode = userData.companyCode;
+            const companyId = userData.companyId;
+            const requestedRole = userData.requestedCompanyRole;
+
+            // Şirket bilgilerini yükle
+            if (companyId) {
+              try {
+                const companyDoc = await getDoc(doc(db, 'companies', companyId));
+                if (companyDoc.exists()) {
+                  const companyData = companyDoc.data();
+                  document.getElementById('companyName').textContent = companyData.name || '-';
+                }
+              } catch (e) {
+                logger.warn('Şirket bilgisi yüklenemedi', e);
+              }
+            }
+
+            // Rol bilgisini göster - Teklifbul Rule v1.0
+            if (requestedRole) {
+              // Rol etiketlerini manuel olarak map et (getRoleLabel fonksiyonu bu sayfada yok)
+              const roleLabels = {
+                'buyer:isveren': 'İşveren (Şirket Sahibi)',
+                'buyer:yonetim_kurulu_baskani': 'Yönetim Kurulu Başkanı',
+                'buyer:yonetim_kurulu_uyesi': 'Yönetim Kurulu Üyesi',
+                'buyer:ceo': 'CEO',
+                'buyer:genel_mudur': 'Genel Müdür',
+                'buyer:genel_mudur_yardimcisi': 'Genel Müdür Yardımcısı',
+                'buyer:satinalma_muduru': 'Satın Alma Müdürü',
+                'buyer:satinalma_yetkilisi': 'Satın Alma Yetkilisi',
+                'buyer:satinalma_uzmani': 'Satın Alma Uzmanı',
+                'buyer:satinalma_uzman_yardimcisi': 'Satın Alma Uzman Yardımcısı',
+                'buyer:santiye_yetkilisi': 'Şantiye Yetkilisi',
+                'buyer:stok_depo': 'Stok / Depo Yetkilisi',
+                'buyer:muhasebe': 'Muhasebe',
+                'buyer:alici': 'Alıcı',
+                'buyer:proje_yoneticisi': 'Proje Yöneticisi',
+                'supplier:isveren': 'İşveren (Şirket Sahibi)',
+                'supplier:yonetim_kurulu_baskani': 'Yönetim Kurulu Başkanı',
+                'supplier:ceo': 'CEO',
+                'supplier:genel_mudur': 'Genel Müdür',
+                'supplier:satis_personeli': 'Satış Personeli',
+                'supplier:pazarlama_muduru': 'Pazarlama Müdürü',
+                'supplier:sirket_sahibi': 'Şirket Sahibi'
+              };
               
-              // companyJoinRequests'ten de sil
-              if (companyCode) {
-                const requestsQuery = query(
+              let roleLabel = roleLabels[requestedRole];
+              if (!roleLabel) {
+                // Fallback: Basit parse
+                if (requestedRole.includes(':')) {
+                  roleLabel = requestedRole.split(':')[1];
+                } else if (requestedRole.includes('buyer')) {
+                  roleLabel = 'Alıcı';
+                } else if (requestedRole.includes('supplier')) {
+                  roleLabel = 'Tedarikçi';
+                } else {
+                  roleLabel = requestedRole;
+                }
+              }
+              document.getElementById('requestedRole').textContent = roleLabel;
+            } else {
+              document.getElementById('requestedRole').textContent = 'Rol belirtilmemiş';
+            }
+
+            // Talep tarihi
+            if (userData.createdAt) {
+              const date = userData.createdAt.toDate ? userData.createdAt.toDate() : new Date(userData.createdAt);
+              document.getElementById('requestDate').textContent = date.toLocaleDateString('tr-TR', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              });
+            }
+
+            // Durum kontrolü
+            if (companyJoinStatus === 'approved_pending_permissions') {
+              document.querySelector('#pendingState h1').textContent = '⚠️ Yetki Onayı Bekleniyor';
+              document.querySelector('#pendingState .status-message').textContent = 'Şirket yöneticisi katılım talebinizi onayladı, ancak hesabınızın erişim yetkileri henüz yapılandırılmadı. Yetki ayarlarınız tamamlandığında otomatik olarak giriş yapabileceksiniz.';
+              let badge = document.querySelector('.status-badge.status-pending');
+              if (badge) {
+                badge.textContent = '⚠️ Yetki Bekleniyor';
+                badge.style.background = '#ffedd5';
+                badge.style.color = '#c2410c';
+              }
+              return;
+            }
+
+            if (companyJoinStatus === 'accepted' || companyJoinStatus === 'approved') {
+              // Onaylandı - normal akışa devam et
+              clearInterval(checkInterval);
+              if (unsubscribe) unsubscribe();
+              showAccepted();
+              
+              // 2 saniye sonra yönlendir
+              setTimeout(() => {
+                location.href = redirectTargetPath;
+              }, 2000);
+              return;
+            }
+
+            if (companyJoinStatus === 'rejected') {
+              // Reddedildi - kaydı sil ve çıkış yap
+              clearInterval(checkInterval);
+              if (unsubscribe) unsubscribe();
+              showRejected();
+              
+              // Kullanıcı kaydını sil
+              try {
+                await deleteDoc(doc(db, 'users', user.uid));
+                
+                // companyJoinRequests'ten de sil
+                if (companyCode) {
+                  const requestsQuery = query(
+                    collection(db, 'companyJoinRequests'),
+                    where('userId', '==', user.uid),
+                    where('companyCode', '==', companyCode)
+                  );
+                  const requestsSnapshot = await getDocs(requestsQuery);
+                  requestsSnapshot.forEach(async (requestDoc) => {
+                    await deleteDoc(doc(db, 'companyJoinRequests', requestDoc.id));
+                  });
+                }
+                
+                // Çıkış yap
+                await signOut(auth);
+              } catch (e) {
+                logger.error('Kullanıcı kaydı silinirken hata', e);
+              }
+              return;
+            }
+
+            // 4. Eğer durum hala 'pending' ise, companyJoinRequests koleksiyonunda bir kabul var mı kontrol et
+            // Teklifbul Rule v1.x - Self-Onboarding: Şirket sahibi başka kullanıcıyı güncelleyemez,
+            // bu yüzden kullanıcı burada kendi kabulünü görüp kendini günceller.
+            if (companyJoinStatus === 'pending') {
+              try {
+                const { collection, query, where, getDocs, updateDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js");
+                const q = query(
                   collection(db, 'companyJoinRequests'),
                   where('userId', '==', user.uid),
-                  where('companyCode', '==', companyCode)
+                  where('status', '==', 'accepted')
                 );
-                const requestsSnapshot = await getDocs(requestsQuery);
-                requestsSnapshot.forEach(async (requestDoc) => {
-                  await deleteDoc(doc(db, 'companyJoinRequests', requestDoc.id));
-                });
+                const querySnapshot = await getDocs(q);
+                
+                if (!querySnapshot.empty) {
+                  const requestDoc = querySnapshot.docs[0];
+                  const requestData = requestDoc.data();
+                  const approvedRole = requestData.approvedRole;
+                  const targetCompanyId = requestData.companyId;
+                  
+                  if (approvedRole && targetCompanyId) {
+                    logger.info("Katılım isteği kabul edilmiş, kullanıcı profili güncelleniyor (Self-Onboarding)", { targetCompanyId, approvedRole });
+                    
+                    // Rol dizisini oluştur
+                    const roles = [];
+                    if (approvedRole.startsWith('buyer') || approvedRole === 'both') roles.push('buyer');
+                    if (approvedRole.startsWith('supplier') || approvedRole === 'both') roles.push('supplier');
+                    
+                    const userRef = doc(db, 'users', user.uid);
+                    const updatePayload = {
+                      companyId: targetCompanyId,
+                      activeCompanyId: targetCompanyId,
+                      companies: [targetCompanyId],
+                      roles: roles,
+                      companyRoleKey: approvedRole,
+                      companyJoinStatus: 'accepted',
+                      updatedAt: serverTimestamp()
+                    };
+                    
+                    // Şirket bilgilerini de kopyala (Geriye dönük uyumluluk için)
+                    try {
+                      const companySnap = await getDoc(doc(db, 'companies', targetCompanyId));
+                      if (companySnap.exists()) {
+                        const cData = companySnap.data();
+                        if (cData.name) updatePayload.companyName = cData.name;
+                        if (cData.taxNumber) updatePayload.taxNumber = cData.taxNumber;
+                        if (cData.taxOffice) updatePayload.taxOffice = cData.taxOffice;
+                      }
+                    } catch (cErr) { logger.warn("Self-Onboarding: Şirket bilgileri alınamadı", cErr); }
+
+                    
+                    await updateDoc(userRef, updatePayload);
+                    
+                    // İsteği de temizlemek veya statüsünü değiştirmek isterseniz burada yapabilirsiniz
+                    // Ama snapshot zaten tetiklenecektir.
+                    return;
+                  }
+                }
+              } catch (reqErr) {
+                logger.warn('Katılım isteği kontrol edilirken hata', reqErr);
               }
-              
-              // Çıkış yap
-              await signOut(auth);
-            } catch (e) {
-              logger.error('Kullanıcı kaydı silinirken hata', e);
             }
-            return;
+
+            // Durum belirsiz - hata göster
+            showError('Kayıt durumu belirlenemedi. Lütfen sistem yöneticisi ile iletişime geçin.');
+          } catch (e) {
+            logger.error('Durum kontrolü hatası', e);
+            showError('Durum kontrol edilirken bir hata oluştu: ' + (e.message || e));
           }
+      }
 
-          // Beklemede - devam et
-          if (companyJoinStatus === 'pending') {
-            // Zaten pending state gösteriliyor
-            return;
-          }
+      function showAccepted() {
+          document.getElementById('pendingState').style.display = 'none';
+          document.getElementById('rejectedState').style.display = 'none';
+          document.getElementById('errorState').style.display = 'none';
+          document.getElementById('acceptedState').style.display = 'block';
+      }
 
-          // Durum belirsiz - hata göster
-          showError('Kayıt durumu belirlenemedi. Lütfen sistem yöneticisi ile iletişime geçin.');
-        } catch (e) {
-          logger.error('Durum kontrolü hatası', e);
-          showError('Durum kontrol edilirken bir hata oluştu: ' + (e.message || e));
-        }
-    }
+      function showRejected() {
+          document.getElementById('pendingState').style.display = 'none';
+          document.getElementById('acceptedState').style.display = 'none';
+          document.getElementById('errorState').style.display = 'none';
+          document.getElementById('rejectedState').style.display = 'block';
+      }
 
-    function showAccepted() {
-        document.getElementById('pendingState').style.display = 'none';
-        document.getElementById('rejectedState').style.display = 'none';
-        document.getElementById('errorState').style.display = 'none';
-        document.getElementById('acceptedState').style.display = 'block';
-    }
-
-    function showRejected() {
-        document.getElementById('pendingState').style.display = 'none';
-        document.getElementById('acceptedState').style.display = 'none';
-        document.getElementById('errorState').style.display = 'none';
-        document.getElementById('rejectedState').style.display = 'block';
-    }
-
-    function showError(message) {
-        document.getElementById('pendingState').style.display = 'none';
-        document.getElementById('acceptedState').style.display = 'none';
-        document.getElementById('rejectedState').style.display = 'none';
-        document.getElementById('errorState').style.display = 'block';
-        document.getElementById('errorMessage').textContent = message;
-        
-        if (checkInterval) clearInterval(checkInterval);
-        if (unsubscribe) unsubscribe();
-    }
-    
-    // Auth state listener - Teklifbul Rule v1.0
-    // Redirect loop önleme: Sadece bir kez kontrol et
-    const unsubscribeAuth = auth.onAuthStateChanged(async (user) => {
-      // Kullanıcı yoksa - sadece bir kez yönlendir
-      if (!user) {
-        if (!authCheckDone) {
-          authCheckDone = true;
-          // Cleanup
+      function showError(message) {
+          document.getElementById('pendingState').style.display = 'none';
+          document.getElementById('acceptedState').style.display = 'none';
+          document.getElementById('rejectedState').style.display = 'none';
+          document.getElementById('errorState').style.display = 'block';
+          document.getElementById('errorMessage').textContent = message;
+          
           if (checkInterval) clearInterval(checkInterval);
           if (unsubscribe) unsubscribe();
-          try {
-            unsubscribeAuth();
-          } catch (e) {
-            // Ignore
-          }
-          location.href = './index.html?skipAutoRedirect=true';
-        }
-        return;
       }
       
-      // User var - sadece bir kez başlat
-      if (!authCheckDone) {
-        authCheckDone = true;
-        currentUser = user;
-        
-        // İlk kontrol
-        await checkJoinStatus(user);
-
-        // Her 5 saniyede bir kontrol et
-        checkInterval = setInterval(() => checkJoinStatus(user), 5000);
-
-        // Real-time listener (opsiyonel - daha hızlı güncelleme için) - Teklifbul Rule v1.0
-        try {
-          unsubscribe = onSnapshot(doc(db, 'users', user.uid), (snapshot) => {
-            if (snapshot.exists()) {
-              checkJoinStatus(user); // User parametresini geç
+      // Auth state listener - Teklifbul Rule v1.0
+      // Redirect loop önleme: Sadece bir kez kontrol et
+      const unsubscribeAuth = auth.onAuthStateChanged(async (user) => {
+        // Kullanıcı yoksa - sadece bir kez yönlendir
+        if (!user) {
+          if (!authCheckDone) {
+            authCheckDone = true;
+            // Cleanup
+            if (checkInterval) clearInterval(checkInterval);
+            if (unsubscribe) unsubscribe();
+            try {
+              unsubscribeAuth();
+            } catch (e) {
+              // Ignore
             }
+            location.href = './index.html?skipAutoRedirect=true';
+          }
+          return;
+        }
+        
+        // User var - sadece bir kez başlat
+        if (!authCheckDone) {
+          authCheckDone = true;
+          currentUser = user;
+          
+          // İlk kontrol
+          await checkJoinStatus(user);
+
+          // Her 5 saniyede bir kontrol et
+          checkInterval = setInterval(() => checkJoinStatus(user), 5000);
+
+          // Real-time listener (opsiyonel - daha hızlı güncelleme için) - Teklifbul Rule v1.0
+          try {
+            unsubscribe = onSnapshot(doc(db, 'users', user.uid), (snapshot) => {
+              if (snapshot.exists()) {
+                checkJoinStatus(user); // User parametresini geç
+              }
+            });
+            // Register listener for cleanup
+            registerListener('company-join-waiting-user-status', unsubscribe);
+          } catch (e) {
+            logger.warn('Real-time listener başlatılamadı', e);
+          }
+          
+          // Cleanup on page unload
+          window.addEventListener('beforeunload', () => {
+            if (unsubscribe) unsubscribe();
+            if (checkInterval) clearInterval(checkInterval);
+            cleanupAllListeners();
           });
-        // Register listener for cleanup
-        registerListener('company-join-waiting-user-status', unsubscribe);
-      } catch (e) {
-        logger.warn('Real-time listener başlatılamadı', e);
-      }
-      
-      // Cleanup on page unload
-      window.addEventListener('beforeunload', () => {
-        if (unsubscribe) unsubscribe();
-        if (checkInterval) clearInterval(checkInterval);
-        cleanupAllListeners();
+        }
       });
-    });
+    })();
   </script>
 </body>
 </html>

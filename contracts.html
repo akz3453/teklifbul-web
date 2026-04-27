@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>NEFISOFT — Sözleşmeler</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  
+  <!-- PWA Meta Tags -->
+  <meta name="theme-color" content="#2563EB" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="NEFISOFT" />
+  <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+  <link rel="manifest" href="/manifest.json" />
+  
+  <!-- Teklifbul Rule v1.0 - Tema standardı: tb_theme key, FOUC önleme -->
+  <script src="/assets/js/theme-init.js"></script>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%233b82f6' rx='6'/%3E%3Ctext x='16' y='22' font-family='Arial' font-size='18' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/utils.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <style>
+    body { margin: 0; font-family: system-ui, Arial; }
+    .page-heading { margin: 20px 0; }
+    .page-title-chip { display: flex; align-items: center; gap: 12px; }
+    .page-title-icon { font-size: 32px; }
+    .page-title-text h1 { margin: 0; font-size: 24px; font-weight: 600; color: var(--text, #1f2937); }
+    html[data-theme="dark"] .page-title-text h1 { color: #ffffff; }
+    .page-title-caption { margin: 4px 0 0 0; font-size: 14px; color: var(--text-muted, #6b7280); }
+    html[data-theme="dark"] .page-title-caption { color: rgba(255,255,255,0.7); }
+    
+    .card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; background: white; margin-bottom: 20px; }
+    html[data-theme="dark"] .card { background: #111827; border: 1px solid rgba(255,255,255,0.25); color: #ffffff; }
+    
+    .filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px; }
+    .filter-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text, #1f2937); }
+    html[data-theme="dark"] .filter-group label { color: #ffffff; }
+    .filter-group select,
+    .filter-group input { width: 100%; padding: 10px; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 14px; background: white; color: #1f2937; }
+    html[data-theme="dark"] .filter-group select,
+    html[data-theme="dark"] .filter-group input { background: #1f2937; border: 1px solid rgba(255,255,255,0.25); color: #ffffff; }
+    
+    .action-buttons { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+    .btn { padding: 10px 20px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .btn-primary { background: #3b82f6; color: white; }
+    .btn-primary:hover { background: #2563eb; }
+    .btn-success { background: #10b981; color: white; }
+    .btn-success:hover { background: #059669; }
+    .btn-outline { background: transparent; border: 1px solid #e5e7eb; color: var(--text, #1f2937); }
+    html[data-theme="dark"] .btn-outline { border-color: rgba(255,255,255,0.25); color: #ffffff; }
+    
+    .table-container { overflow-x: auto; }
+    .table { width: 100%; border-collapse: collapse; }
+    .table th, .table td { border-bottom: 1px solid #e5e7eb; padding: 12px; text-align: left; font-size: 14px; }
+    html[data-theme="dark"] .table th, html[data-theme="dark"] .table td { border-bottom: 1px solid rgba(255,255,255,0.25); color: #ffffff; }
+    .table th { background: #f9fafb; font-weight: 600; color: #374151; }
+    html[data-theme="dark"] .table th { background: #111827; color: #ffffff; }
+    .table tbody tr:hover { background: #f9fafb; }
+    html[data-theme="dark"] .table tbody tr:hover { background: #1f2937; }
+    
+    .badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+    .badge.active { background: #d1fae5; color: #065f46; }
+    .badge.passive { background: #fee2e2; color: #991b1b; }
+    html[data-theme="dark"] .badge.active { background: #064e3b; color: #34d399; }
+    html[data-theme="dark"] .badge.passive { background: #7f1d1d; color: #fca5a5; }
+    
+    .action-buttons-cell { display: flex; gap: 8px; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+    
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted, #6b7280); }
+    html[data-theme="dark"] .empty-state { color: rgba(255,255,255,0.7); }
+  </style>
+</head>
+<body>
+  <!-- Common Header -->
+  <header id="app-header"></header>
+
+  <main class="container--wide" style="padding:20px 0">
+    <div class="page-heading">
+      <div class="page-title-chip" role="presentation">
+        <span class="page-title-icon" aria-hidden="true">📄</span>
+        <div class="page-title-text">
+          <h1>Sözleşmeler</h1>
+          <p class="page-title-caption">Sözleşme listesi ve yönetimi</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Ana İçerik -->
+    <div id="main-content">
+      <!-- Filtreler -->
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h3 style="margin: 0; font-size: 16px; font-weight: 600;">Filtreler</h3>
+          <button class="btn btn-outline" id="btn-clear-filters" style="padding: 6px 12px; font-size: 12px;">Filtreleri Temizle</button>
+        </div>
+        <div class="filters">
+          <div class="filter-group">
+            <label>Ara (Sözleşme Adı/No)</label>
+            <input type="text" id="filter-search" placeholder="Sözleşme adı veya numarası..." />
+          </div>
+          <div class="filter-group">
+            <label>Proje / Şantiye</label>
+            <select id="filter-site">
+              <option value="">Tümü</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Durum</label>
+            <select id="filter-status">
+              <option value="">Tümü</option>
+              <option value="active">Aktif</option>
+              <option value="passive">Pasif</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Butonlar -->
+      <div class="action-buttons">
+        <button class="btn btn-primary" id="btn-new">+ Yeni Sözleşme Oluştur</button>
+      </div>
+      
+      <!-- Tablo -->
+      <div class="card">
+        <div class="table-container">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Sözleşme No</th>
+                <th>Sözleşme Adı</th>
+                <th>Proje / Şantiye</th>
+                <th>Başlangıç Tarihi</th>
+                <th>Bitiş Tarihi</th>
+                <th>Sözleşme Tutarı</th>
+                <th>Durum</th>
+                <th>İşlemler</th>
+              </tr>
+            </thead>
+            <tbody id="contracts-table-body">
+              <tr>
+                <td colspan="8" class="empty-state">Yükleniyor...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    // Teklifbul Rule v1.0 - Auth Guard (oturum kontrolü)
+    import { initAuthGuard } from './assets/js/auth-guard.js';
+    // Teklifbul Rule v1.0
+    import { initGlobalHeader } from './assets/js/ui/header.js';
+    import { auth, waitAuthReady, db } from './firebase.js';
+    
+    // Teklifbul Rule v1.0 - Auth guard'ı başlat (oturum yoksa login'e yönlendirir)
+    initAuthGuard().catch(err => {
+      console.error('Auth guard init failed', err);
+    });
+    import { logger } from './src/shared/log/logger.js';
+    import { toast } from './src/shared/ui/toast.js';
+    import DOMPurify from 'https://cdn.jsdelivr.net/npm/dompurify@3.2.2/+esm';
+    
+    // getCurrentUser helper
+    async function getCurrentUser() {
+      if (auth.currentUser) return auth.currentUser;
+      const user = await waitAuthReady();
+      if (!user) {
+        throw new Error('not signed in');
+      }
+      return user;
+    }
+    
+    // Teklifbul Rule v1.0 - Authenticated fetch helper
+    async function authFetch(url, options = {}) {
+      const { authFetch: commonAuthFetch } = await import('/assets/js/utils/api-helpers.js');
+      return await commonAuthFetch(url, options);
+    }
+    
+    // Sayfa yükleme
+    async function init() {
+      try {
+        logger.group('Sözleşmeler Sayfası Yükleme');
+        logger.info('Sayfa başlatılıyor...');
+        
+        // Header'ı başlat
+        await initGlobalHeader({ mount: '#app-header', activeRoute: 'contracts' });
+        logger.info('Header yüklendi');
+        
+        // Event listener'ları ekle
+        document.getElementById('btn-new')?.addEventListener('click', () => {
+          window.location.href = './contract-edit.html';
+        });
+        
+        document.getElementById('btn-clear-filters')?.addEventListener('click', clearFilters);
+        
+        // Filtreler için event listener'lar
+        ['filter-search', 'filter-site', 'filter-status'].forEach(id => {
+          const element = document.getElementById(id);
+          if (element) {
+            if (id === 'filter-search') {
+              let timeout;
+              element.addEventListener('input', () => {
+                clearTimeout(timeout);
+                timeout = setTimeout(loadContracts, 500); // Debounce 500ms
+              });
+            } else {
+              element.addEventListener('change', loadContracts);
+            }
+          }
+        });
+        
+        // İlk yükleme
+        logger.info('Şantiyeler yükleniyor...');
+        await loadSites();
+        logger.info('Sözleşmeler yükleniyor...');
+        await loadContracts();
+        
+        logger.info('Sözleşmeler sayfası başarıyla yüklendi');
+        logger.end();
+      } catch (error) {
+        logger.error('Sayfa yükleme hatası', error);
+        logger.end();
+        toast.error('Sayfa yüklenirken hata oluştu: ' + (error.message || 'Bilinmeyen hata'));
+      }
+    }
+    
+    // Şantiyeleri yükle
+    async function loadSites() {
+      try {
+        logger.group('Şantiyeler Yükleniyor');
+        const user = await getCurrentUser();
+        if (!user) {
+          logger.warn('Kullanıcı bulunamadı');
+          logger.end();
+          return;
+        }
+        
+        const { db } = await import('./firebase.js');
+        const { collection, query, where, getDocs } = await import('https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js');
+        
+        if (!db) {
+          logger.warn('Firestore DB bulunamadı');
+          logger.end();
+          return;
+        }
+        
+        // Kullanıcı bilgisini API'den al
+        const userResponse = await authFetch('/api/user');
+        
+        if (!userResponse.ok) {
+          logger.warn('Kullanıcı bilgisi alınamadı', { status: userResponse.status });
+          logger.end();
+          return;
+        }
+        
+        const userData = await userResponse.json();
+        const companyId = userData?.companyId || userData?.activeCompanyId;
+        
+        if (!companyId) {
+          logger.warn('Şirket bilgisi bulunamadı');
+          logger.end();
+          return;
+        }
+        
+        logger.info('Şirket ID bulundu', { companyId });
+        
+        // stock_locations koleksiyonundan yükle
+        const sitesMap = new Map();
+        try {
+          const stockLocationsQuery = query(
+            collection(db, 'stock_locations'),
+            where('companyId', '==', companyId)
+          );
+          
+          const stockLocationsSnapshot = await getDocs(stockLocationsQuery);
+          logger.info('stock_locations yüklendi', { count: stockLocationsSnapshot.size });
+          
+          stockLocationsSnapshot.forEach(doc => {
+            const data = doc.data();
+            if ((data.type === 'warehouse' || data.type === 'site') && data.isActive !== false) {
+              const siteName = data.title || data.siteName || data.name || doc.id;
+              sitesMap.set(doc.id, {
+                id: doc.id,
+                name: siteName,
+              });
+            }
+          });
+        } catch (error) {
+          logger.warn('stock_locations yüklenirken hata', error);
+        }
+        
+        const siteSelect = document.getElementById('filter-site');
+        if (siteSelect) {
+          // Teklifbul Rule v1.0 - XSS Protection
+          siteSelect.innerHTML = DOMPurify.sanitize('<option value="">Tümü</option>', {
+            ALLOWED_TAGS: ['option'],
+            ALLOWED_ATTR: ['value']
+          });
+          
+          const sitesArray = Array.from(sitesMap.values()).sort((a, b) => 
+            (a.name || '').localeCompare(b.name || '', 'tr')
+          );
+          
+          sitesArray.forEach(site => {
+            const option = document.createElement('option');
+            option.value = site.id;
+            // Teklifbul Rule v1.0 - XSS Protection
+            const displayName = (site.name && site.name !== site.id) ? site.name : `İsimsiz Şantiye (${site.id.substring(0,6)}...)`;
+            const safeSiteName = DOMPurify.sanitize(displayName, { ALLOWED_TAGS: [] });
+            option.textContent = safeSiteName;
+            siteSelect.appendChild(option);
+          });
+          
+          logger.info('Şantiyeler select\'e eklendi', { count: sitesArray.length });
+        }
+        
+        logger.end();
+      } catch (error) {
+        logger.error('Şantiyeler yüklenirken hata', error);
+        logger.end();
+        toast.error('Şantiyeler yüklenemedi: ' + (error.message || 'Bilinmeyen hata'));
+      }
+    }
+    
+    // Sözleşmeleri yükle
+    async function loadContracts() {
+      try {
+        logger.group('Sözleşmeler Yükleniyor');
+        const user = await getCurrentUser();
+        if (!user) return;
+        
+        const params = new URLSearchParams();
+        
+        const siteId = (document.getElementById('filter-site'))?.value;
+        const status = (document.getElementById('filter-status'))?.value;
+        const search = (document.getElementById('filter-search'))?.value;
+        
+        if (siteId) params.append('siteId', siteId);
+        if (status) params.append('status', status);
+        if (search) params.append('search', search);
+        
+        const response = await authFetch(`/api/contracts?${params.toString()}`);
+        
+        if (!response.ok) {
+          throw new Error('Sözleşmeler yüklenemedi');
+        }
+        
+        const data = await response.json();
+        const contracts = data.contracts || [];
+        
+        renderContractsTable(contracts);
+        logger.info('Sözleşmeler yüklendi', { count: contracts.length });
+        logger.end();
+      } catch (error) {
+        logger.error('Sözleşmeler yüklenirken hata', error);
+        logger.end();
+        toast.error('Sözleşmeler yüklenemedi');
+        const tbody = document.getElementById('contracts-table-body');
+        if (tbody) {
+          // Teklifbul Rule v1.0 - XSS Protection
+          tbody.innerHTML = DOMPurify.sanitize('<tr><td colspan="8" class="empty-state">Hata oluştu</td></tr>', {
+            ALLOWED_TAGS: ['tr', 'td'],
+            ALLOWED_ATTR: ['colspan', 'class']
+          });
+        }
+      }
+    }
+    
+    // Sözleşmeler tablosunu render et
+    function renderContractsTable(contracts) {
+      const tbody = document.getElementById('contracts-table-body');
+      if (!tbody) return;
+      
+      if (contracts.length === 0) {
+        // Teklifbul Rule v1.0 - XSS Protection
+        tbody.innerHTML = DOMPurify.sanitize('<tr><td colspan="8" class="empty-state">Henüz sözleşme bulunmuyor</td></tr>', {
+          ALLOWED_TAGS: ['tr', 'td'],
+          ALLOWED_ATTR: ['colspan', 'class']
+        });
+        return;
+      }
+      
+      // Teklifbul Rule v1.0 - XSS Protection
+      const sanitize = (str) => DOMPurify.sanitize(String(str || ''), { ALLOWED_TAGS: [] });
+      const sanitizeAttr = (str) => DOMPurify.sanitize(String(str || ''), { ALLOWED_TAGS: [] });
+      
+      const html = contracts.map(contract => {
+        const safeId = sanitizeAttr(contract.id);
+        const safeContractNo = sanitize(contract.contractNo || '-');
+        const safeContractName = sanitize(contract.contractName || '-');
+        const safeSiteName = sanitize(contract.siteName || '-');
+        const safeStartDate = contract.startDate ? new Date(contract.startDate).toLocaleDateString('tr-TR') : '-';
+        const safeEndDate = contract.endDate ? new Date(contract.endDate).toLocaleDateString('tr-TR') : '-';
+        const safeValue = (contract.contractValue || 0).toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' });
+        const status = contract.status || 'active';
+        const statusClass = status === 'active' ? 'active' : 'passive';
+        const statusText = status === 'active' ? 'Aktif' : 'Pasif';
+        
+        return `
+          <tr>
+            <td>${safeContractNo}</td>
+            <td>${safeContractName}</td>
+            <td>${safeSiteName}</td>
+            <td>${safeStartDate}</td>
+            <td>${safeEndDate}</td>
+            <td>${safeValue}</td>
+            <td><span class="badge ${statusClass}">${statusText}</span></td>
+            <td class="action-buttons-cell">
+              <button class="btn btn-outline btn-sm" onclick="viewContract('${safeId}')">Görüntüle</button>
+              <button class="btn btn-outline btn-sm" onclick="editContract('${safeId}')">Düzenle</button>
+              <button class="btn btn-outline btn-sm" onclick="deleteContract('${safeId}')" style="color: #ef4444;">Sil</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+      
+      tbody.innerHTML = DOMPurify.sanitize(html, {
+        ALLOWED_TAGS: ['tr', 'td', 'button', 'span'],
+        ALLOWED_ATTR: ['class', 'onclick', 'style']
+      });
+    }
+    
+    // Filtreleri temizle
+    function clearFilters() {
+      (document.getElementById('filter-search')).value = '';
+      (document.getElementById('filter-site')).value = '';
+      (document.getElementById('filter-status')).value = '';
+      loadContracts();
+      toast.info('Filtreler temizlendi');
+    }
+    
+    // Global fonksiyonlar
+    window.viewContract = function(contractId) {
+      window.location.href = `./contract-detail.html?id=${contractId}`;
+    };
+    
+    window.editContract = function(contractId) {
+      window.location.href = `./contract-edit.html?id=${contractId}`;
+    };
+    
+    window.deleteContract = async function(contractId) {
+      if (!confirm('Bu sözleşmeyi silmek istediğinize emin misiniz? Pozlar da silinecektir.')) {
+        return;
+      }
+      
+      try {
+        logger.group('Sözleşme Silme');
+        const user = await getCurrentUser();
+        if (!user) {
+          toast.error('Giriş yapmanız gerekiyor');
+          return;
+        }
+        
+        const response = await authFetch(`/api/contracts/${contractId}`, {
+          method: 'DELETE'
+        });
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Sözleşme silinemedi');
+        }
+        
+        toast.success('Sözleşme başarıyla silindi');
+        logger.info('Sözleşme silindi', { contractId });
+        logger.end();
+        
+        // Listeyi yenile
+        await loadContracts();
+      } catch (error) {
+        logger.error('Sözleşme silme hatası', error);
+        logger.end();
+        toast.error('Sözleşme silinemedi: ' + (error.message || 'Bilinmeyen hata'));
+      }
+    };
+    
+    init().catch(error => {
+      logger.error('Sayfa yükleme hatası', error);
+      toast.error('Sayfa yüklenirken hata oluştu');
+    });
+  </script>
+</body>
+</html>

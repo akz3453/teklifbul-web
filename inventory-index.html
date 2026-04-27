@@ -1,27 +1,163 @@
 <!doctype html>
 <html lang="tr">
+
 <head>
   <meta charset="utf-8" />
   <title>Stok Takip Sistemi - Ana Sayfa</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Teklifbul Rule v1.0 - Tema kontrolü sayfa yüklenmeden önce (FOUC önleme) -->
+  <script src="/assets/js/theme-init.js"></script>
   <link rel="stylesheet" href="/utils.css" />
   <link rel="stylesheet" href="/assets/css/layout.css" />
   <style>
-    body{font-family:system-ui, Arial; background:#f8fafc; color:#111827; margin:0}
-    .container{max-width:1200px;margin:0 auto;padding:20px}
-    h1{margin:0 0 8px 0}
-    .subtitle{color:#6b7280;margin:0 0 32px 0}
-    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px}
-    .card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:20px;cursor:pointer;transition:all 0.2s}
-    .card:hover{box-shadow:0 4px 6px rgba(0,0,0,0.1);border-color:#2563eb}
-    .card h3{margin:0 0 12px 0;font-size:18px;color:#2563eb}
-    .card p{margin:0;color:#6b7280;font-size:14px;line-height:1.6}
-    .icon{font-size:32px;margin-bottom:12px}
-    .section{margin-top:40px}
-    .section h2{border-bottom:2px solid #e5e7eb;padding-bottom:8px;margin-bottom:20px}
-    .status{display:inline-block;padding:4px 8px;background:#dcfce7;color:#065f46;border-radius:4px;font-size:12px;font-weight:600}
+    body {
+      font-family: system-ui, Arial;
+      background: #f8fafc;
+      color: #111827;
+      margin: 0
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px
+    }
+
+    h1 {
+      margin: 0 0 8px 0
+    }
+
+    .subtitle {
+      color: #6b7280;
+      margin: 0 0 32px 0
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 20px;
+      cursor: pointer;
+      transition: all 0.2s
+    }
+
+    .card:hover {
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      border-color: #2563eb
+    }
+
+    .card h3 {
+      margin: 0 0 12px 0;
+      font-size: 18px;
+      color: #2563eb
+    }
+
+    .card p {
+      margin: 0;
+      color: #6b7280;
+      font-size: 14px;
+      line-height: 1.6
+    }
+
+    .icon {
+      font-size: 32px;
+      margin-bottom: 12px
+    }
+
+    .section {
+      margin-top: 40px
+    }
+
+    .section h2 {
+      border-bottom: 2px solid #e5e7eb;
+      padding-bottom: 8px;
+      margin-bottom: 20px
+    }
+
+    .status {
+      display: inline-block;
+      padding: 4px 8px;
+      background: #dcfce7;
+      color: #065f46;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600
+    }
+
+    /* Koyu Mod Düzenlemeleri */
+    html[data-theme="dark"] body,
+    html.force-dark body {
+      background: #111827;
+      color: #ffffff;
+    }
+
+    html[data-theme="dark"] .subtitle,
+    html.force-dark .subtitle {
+      color: #9ca3af;
+    }
+
+    html[data-theme="dark"] .card,
+    html.force-dark .card {
+      background: #111827;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+    }
+
+    html[data-theme="dark"] .card:hover,
+    html.force-dark .card:hover {
+      border-color: rgba(255, 255, 255, 0.3);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    html[data-theme="dark"] .card h3,
+    html.force-dark .card h3 {
+      color: #60a5fa;
+    }
+
+    html[data-theme="dark"] .card p,
+    html.force-dark .card p {
+      color: #d1d5db;
+    }
+
+    html[data-theme="dark"] .section h2,
+    html.force-dark .section h2 {
+      border-bottom-color: rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+    }
+
+    html[data-theme="dark"] div[style*="background:#f0f9ff"],
+    html.force-dark div[style*="background:#f0f9ff"] {
+      background: #111827 !important;
+      border-left: 4px solid #60a5fa !important;
+      color: #ffffff !important;
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    }
+
+    html[data-theme="dark"] div[style*="background:#f0f9ff"] strong,
+    html.force-dark div[style*="background:#f0f9ff"] strong {
+      color: #ffffff;
+    }
+
+    html[data-theme="dark"] .status,
+    html.force-dark .status {
+      background: #065f46;
+      color: #dcfce7;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    html[data-theme="dark"] div[style*="color:#6b7280"],
+    html.force-dark div[style*="color:#6b7280"] {
+      color: #9ca3af !important;
+    }
   </style>
 </head>
+
 <body>
   <!-- Common Header -->
   <header id="app-header"></header>
@@ -36,13 +172,13 @@
       <span class="tb-sep">›</span>
       <span class="tb-crumb">
         <span class="ico">📦</span>
-        <span>Stok Takip ve ŞMTF Sistemi</span>
+        <span>Stok Takip ve Yönetimi</span>
       </span>
     </div>
-    
-    <h1>📦 Stok Takip ve ŞMTF Sistemi</h1>
-    <p class="subtitle">Teklifbul entegrasyonlu envanter yönetim sistemi</p>
-    
+
+    <h1>📦 Stok Takip ve Yönetimi</h1>
+    <p class="subtitle">NEFISOFT entegrasyonlu envanter yönetim sistemi</p>
+
     <div style="margin-bottom:32px;padding:16px;background:#f0f9ff;border-left:4px solid #0284c7;border-radius:4px">
       <strong>Hoş Geldiniz!</strong> Bu sayfa, stok takip sisteminin tüm modüllerine erişim sağlar.
     </div>
@@ -50,31 +186,52 @@
     <div class="section">
       <h2>🛠️ Stok Yönetimi</h2>
       <div class="grid">
-        <div class="card" onclick="location.href='/pages/stock-list.html'">
+        <div class="card" data-href="/pages/stock-new.html">
+          <div class="icon">➕</div>
+          <h3>Yeni Stok Kartı Oluştur</h3>
+          <p>Tek tek stok kartı oluşturun. ERP uyumlu detaylı stok kartı girişi.</p>
+          <span class="status">✅ Hazır</span>
+        </div>
+
+        <div class="card" data-href="/pages/stock-list.html">
           <div class="icon">📋</div>
           <h3>Stok Listesi</h3>
           <p>Tüm stokları görüntüleyin, arayın ve filtreleyin. Gelişmiş arama ve Excel export.</p>
           <span class="status">✅ Hazır</span>
         </div>
-        
-        <div class="card" onclick="location.href='/pages/stock-import.html'">
+
+        <div class="card" data-href="/pages/stock-import.html">
           <div class="icon">📥</div>
           <h3>Stok İçe Aktar</h3>
           <p>Excel dosyasından toplu stok kartı yükleme. Otomatik validasyon ve index oluşturma.</p>
           <span class="status">✅ Hazır</span>
         </div>
-        
-        <div class="card" onclick="location.href='/pages/price-update.html'">
+
+        <div class="card" data-href="/pages/stock-count.html">
+          <div class="icon">🧮</div>
+          <h3>Stok Sayım</h3>
+          <p>Yıl sonu sayımı ve stok düzeltme işlemleri. Sayım oturumu yönetimi ve fark analizi.</p>
+          <span class="status">✅ Hazır</span>
+        </div>
+
+        <div class="card" data-href="/pages/price-update.html">
           <div class="icon">💰</div>
           <h3>Toplu Fiyat Güncelleme</h3>
           <p>Filtreleme ile toplu fiyat güncelleme. Excel export/import akışı.</p>
           <span class="status">✅ Hazır</span>
         </div>
-        
-        <div class="card" onclick="location.href='/pages/sku-merge.html'">
+
+        <div class="card" data-href="/pages/sku-merge.html">
           <div class="icon">🔀</div>
           <h3>SKU Birleştirme</h3>
           <p>İki farklı SKU'yu birleştirme. Duplicate SKU'ları temizleme.</p>
+          <span class="status">✅ Hazır</span>
+        </div>
+
+        <div class="card" data-href="/pages/stock-groups.html">
+          <div class="icon">🏷️</div>
+          <h3>Özel Kod Yönetimi</h3>
+          <p>Özel kod grupları oluşturun, ürünleri gruplara atayın. Toplu ürün ekleme ve filtreleme.</p>
           <span class="status">✅ Hazır</span>
         </div>
       </div>
@@ -83,7 +240,7 @@
     <div class="section">
       <h2>📊 Stok Hareketleri</h2>
       <div class="grid">
-        <div class="card" onclick="location.href='/pages/stock-movements.html'">
+        <div class="card" data-href="/pages/stock-movements.html">
           <div class="icon">🔄</div>
           <h3>Stok Hareketleri</h3>
           <p>Giriş, çıkış, transfer ve düzeltme işlemleri. Otomatik ortalama maliyet güncellemesi.</p>
@@ -95,29 +252,36 @@
     <div class="section">
       <h2>📋 Talep Yönetimi (ŞMTF/IMTF/DMTF)</h2>
       <div class="grid">
-        <div class="card" onclick="location.href='/pages/request-site.html'">
+        <div class="card" data-href="/pages/request-site.html">
           <div class="icon">🏗️</div>
-          <h3>Şantiye Malzeme Talep</h3>
-          <p>Yıldızlı arama ile ürün eşleştirme. FOUND/MULTI/NEW rozet sistemi.</p>
+          <h3>Şantiye/Depo Transfer Talebi</h3>
+          <p>Şirket içi stok transfer talebi (örn. Şantiyeden Depoya) oluşturun. Yıldızlı arama ile ürün eşleştirme.</p>
           <span class="status">✅ Hazır</span>
         </div>
-        
-        <div class="card" onclick="toast.info(MESSAGES.INFO_DEMAND_ID_REQUIRED)">
+
+        <div class="card" data-href="/pages/request-list.html">
           <div class="icon">📄</div>
-          <h3>Talep Detayı</h3>
-          <p>Talep görüntüleme, onay/red işlemleri. Satın alma entegrasyonu.</p>
-          <span class="status">⚠️ ID gerekli</span>
+          <h3>Talep Listesi (İşlem Merkezi)</h3>
+          <p>Oluşturulan transfer taleplerini görüntüleyin, yanıtlayın veya düzenleyin.</p>
+          <span class="status">✅ Hazır</span>
         </div>
       </div>
     </div>
 
     <div class="section">
-      <h2>🧾 Fatura Karşılaştırma</h2>
+      <h2>📄 Sözleşme ve Hakediş</h2>
       <div class="grid">
-        <div class="card" onclick="location.href='/pages/invoice-import.html'">
-          <div class="icon">📑</div>
-          <h3>Fatura / İrsaliye Karşılaştır</h3>
-          <p>Excel'den fatura import, teklif ile karşılaştırma. Adet/fiyat farkı tespiti.</p>
+        <div class="card" data-href="/contracts.html">
+          <div class="icon">📄</div>
+          <h3>Sözleşme Yönetimi</h3>
+          <p>Tedarikçi ve taşeron sözleşmelerini oluşturun ve yönetin. Hakedişler bu sözleşmelere bağlanır.</p>
+          <span class="status">✅ Hazır</span>
+        </div>
+
+        <div class="card" data-href="/interim-payments.html">
+          <div class="icon">💵</div>
+          <h3>Hakediş Sistemi</h3>
+          <p>Sözleşmelere bağlı hakedişleri oluşturun, onay akışını yönetin ve muhasebeleşme sürecini takip edin.</p>
           <span class="status">✅ Hazır</span>
         </div>
       </div>
@@ -126,60 +290,25 @@
     <div class="section">
       <h2>📈 Raporlar</h2>
       <div class="grid">
-        <div class="card" onclick="location.href='/pages/reports.html'">
+        <div class="card" data-href="/pages/reports.html">
           <div class="icon">📊</div>
           <h3>Stok Raporları</h3>
           <p>Min stok, maliyet altı satışlar, lokasyon bazlı stok, gerçek maliyet raporları.</p>
           <span class="status">✅ Hazır</span>
         </div>
-      </div>
-    </div>
 
-    <div class="section">
-      <h2>⚙️ Sistem</h2>
-      <div class="grid">
-        <div class="card" onclick="toast.info(MESSAGES.INFO_INIT_STOCK_DATA)">
-          <div class="icon">🔧</div>
-          <h3>Veri İnit</h3>
-          <p>Örnek lokasyon ve stok verilerini yükleyin. Tek seferlik çalıştırın.</p>
-          <span class="status">⚠️ Manual</span>
+        <div class="card" data-href="/pages/sales-reports.html">
+          <div class="icon">📈</div>
+          <h3>Satış Raporları</h3>
+          <p>Satış performansı, en çok satan ürünler, müşteri analizleri ve personel performansı.</p>
+          <span class="status">✅ Hazır</span>
         </div>
       </div>
     </div>
 
-    <div style="margin-top:40px;padding:20px;background:#fef3c7;border-radius:8px">
-      <h3 style="margin:0 0 8px 0">📚 Dokümantasyon</h3>
-      <ul style="margin:0;padding-left:20px;line-height:1.8">
-        <li><strong>INVENTORY_SYSTEM_README.md</strong> - Detaylı sistem dokümantasyonu</li>
-        <li><strong>INVENTORY_IMPLEMENTATION_SUMMARY.md</strong> - İmplementasyon özeti</li>
-        <li><strong>firestore.rules</strong> - Güvenlik kuralları (TODO: Deploy)</li>
-      </ul>
-    </div>
-
-    <div style="margin-top:20px;padding:20px;background:#dcfce7;border-radius:8px;border:2px solid #059669">
-      <h3 style="margin:0 0 8px 0">🧪 Test Sayfası</h3>
-      <p style="margin:4px 0">Tüm sistem özelliklerini test etmek için:</p>
-      <a href="/test-inventory-system.html" style="display:inline-block;margin-top:8px;padding:12px 24px;background:#059669;color:white;text-decoration:none;border-radius:6px;font-weight:600">
-        🧪 Run All Tests →
-      </a>
-    </div>
-
-    <div style="margin-top:20px;padding:16px;background:#fff;border:1px solid #e5e7eb;border-radius:8px">
-      <h3 style="margin:0 0 12px 0">🎯 Özellikler</h3>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;font-size:14px">
-        <div>✅ Yıldızlı arama (*ÇİM*32*KG*)</div>
-        <div>✅ Otomatik index oluşturma</div>
-        <div>✅ Ortalama maliyet hesaplama</div>
-        <div>✅ Excel import/export</div>
-        <div>✅ Türkçe normalizasyon</div>
-        <div>✅ Fatura karşılaştırma</div>
-        <div>✅ Lokasyon bazlı stok</div>
-        <div>✅ FOUND/MULTI/NEW rozetler</div>
-      </div>
-    </div>
 
     <div style="margin-top:20px;text-align:center;color:#6b7280;font-size:14px">
-      <p>Teklifbul &copy; 2025 - Stok Takip ve ŞMTF Sistemi</p>
+      <p>2026 NEFISOFT ©</p>
     </div>
   </div>
 
@@ -192,21 +321,67 @@
     import { MESSAGES } from './src/shared/constants/messages.js';
     // Teklifbul Rule v1.0 - Auth Guard (tek kaynaktan yönlendirme)
     import { initAuthGuard } from './assets/js/auth-guard.js';
-    
+
     import { initGlobalHeader } from './assets/js/ui/header.js';
-    
+
     // Teklifbul Rule v1.0 - Toast'u global scope'a ekle (onclick attribute'ları için)
     window.toast = toast;
-    
+
+    // Initialize auth guard (middle click desteği ile)
+    initAuthGuard().catch(err => {
+      logger.error('Auth guard init failed', err);
+    });
+
     // Initialize global header
     initGlobalHeader({ mount: '#app-header', activeRoute: 'inventory' });
-    
-    // Teklifbul Rule v1.0 - Auth guard başlat (giriş kontrolü ve otomatik yönlendirme)
-    // Kullanıcı giriş yapmamışsa login sayfasına yönlendirir
-    initAuthGuard().catch(err => {
-      logger.error('Auth guard initialization error', err);
+
+    // Card tıklama event listener'ı - Teklifbul Rule v1.0
+    document.querySelectorAll('.card[data-href]').forEach(card => {
+      card.addEventListener('click', async (event) => {
+        // Teklifbul Rule v1.0 - Direkt middle click kontrolü (import bağımsız)
+        const isMiddleClickDirect = event.type === 'auxclick' || event.button === 1 || event.which === 2 || (event.buttons !== undefined && (event.buttons & 4) === 4);
+        const isNewTabIntent = isMiddleClickDirect || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey;
+        if (isNewTabIntent) {
+          const href = card.getAttribute('data-href');
+          if (href) {
+            const tempLink = document.createElement('a');
+            tempLink.href = href;
+            tempLink.target = '_blank';
+            tempLink.style.display = 'none';
+            document.body.appendChild(tempLink);
+            tempLink.click();
+            document.body.removeChild(tempLink);
+          }
+          return;
+        }
+        // Fallback: shouldSkipPreventDefault kontrolü
+        try {
+          const { shouldSkipPreventDefault } = await import('./assets/js/utils/link-handler.js');
+          if (shouldSkipPreventDefault && shouldSkipPreventDefault(event)) {
+            const href = card.getAttribute('data-href');
+            if (href) {
+              const tempLink = document.createElement('a');
+              tempLink.href = href;
+              tempLink.target = '_blank';
+              tempLink.style.display = 'none';
+              document.body.appendChild(tempLink);
+              tempLink.click();
+              document.body.removeChild(tempLink);
+            }
+            return;
+          }
+        } catch (err) {
+          // Import başarısız, devam et
+        }
+
+        const href = card.getAttribute('data-href');
+        if (href) {
+          window.location.href = href;
+        }
+      });
     });
+
   </script>
 </body>
-</html>
 
+</html>

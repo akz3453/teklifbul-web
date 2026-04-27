@@ -4,23 +4,57 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Gelen Teklifler</title>
+  
+  <!-- Teklifbul Rule v1.0 - Tema standardı: tb_theme key, FOUC önleme -->
+  <script>
+    (function() {
+      const STORAGE_KEY = 'tb_theme';
+      const root = document.documentElement;
+      const saved = localStorage.getItem(STORAGE_KEY);
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const shouldBeDark = saved === 'dark' || (!saved && prefersDark);
+      if (shouldBeDark) {
+        root.classList.add('force-dark');
+        root.setAttribute('data-theme', 'dark');
+      } else {
+        root.classList.remove('force-dark');
+        root.removeAttribute('data-theme');
+      }
+    })();
+  </script>
+  
+  <!-- Teklifbul Rule v1.0 - Ortak CSS dosyaları kullanılıyor -->
+  <link rel="stylesheet" href="/css/ui-standard.css" />
   <style>
-    :root { --border:#e5e7eb; --muted:#f8fafc; --c1:#2563eb; }
+    /* Sayfaya özel stiller */
     body{font-family:system-ui,Arial;margin:0;color:#0f172a;background:#fff;}
-    header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border);position:sticky;top:0;background:#fff;z-index:10}
-    .container{max-width:1200px;margin:0 auto;padding:20px}
-    .filters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:12px}
-    select,input{padding:10px;border:1px solid var(--border);border-radius:8px}
-    table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden}
-    th,td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:left}
-    th{background:#f9fafb}
-    .badge{padding:2px 8px;border-radius:999px;font-size:12px;font-weight:600}
-    .b-secret{background:#dbeafe;color:#1e40af}
-    .b-open{background:#dcfce7;color:#166534}
-    .b-hybrid{background:#f3e8ff;color:#6b21a8}
-    .muted{color:#64748b}
-    .btn-link{background:none;border:0;color:var(--c1);cursor:pointer;font-weight:600}
-    .empty{padding:24px;text-align:center;color:#64748b}
+    html[data-theme="dark"] body{background:#111827;color:#ffffff;}
+    header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border,#e5e7eb);position:sticky;top:0;background:#fff;z-index:10}
+    html[data-theme="dark"] header{background:#111827;border-bottom-color:rgba(255,255,255,0.25);}
+    select,input{padding:10px;border:1px solid var(--border,#e5e7eb);border-radius:8px}
+    html[data-theme="dark"] select,
+    html[data-theme="dark"] input {
+      border-color: rgba(255,255,255,0.25);
+      background: #111827;
+      color: #ffffff;
+    }
+    .btn-detail{background:#f0f9ff;border:1px solid #3b82f6;color:#1e40af;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600}
+    .btn-detail:hover{background:#dbeafe}
+    .btn-excel{background:#10b981;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;transition:all 0.2s}
+    .btn-excel:hover{background:#059669;transform:translateY(-1px);box-shadow:0 2px 4px rgba(16,185,129,0.3)}
+    .modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center}
+    .modal.active{display:flex}
+    .modal-content{background:#fff;border-radius:12px;padding:24px;max-width:600px;max-height:80vh;overflow-y:auto;width:90%}
+    .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:12px}
+    .modal-title{font-size:20px;font-weight:700;color:#0f172a}
+    .modal-close{background:none;border:0;font-size:24px;cursor:pointer;color:#64748b;padding:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center}
+    .modal-close:hover{color:#0f172a}
+    .detail-section{margin-bottom:20px}
+    .detail-section h4{font-size:14px;font-weight:600;color:#374151;margin-bottom:8px}
+    .detail-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f3f4f6}
+    .detail-row:last-child{border-bottom:none}
+    .detail-label{color:#64748b;font-size:13px}
+    .detail-value{color:#0f172a;font-size:13px;font-weight:500;text-align:right}
   </style>
 </head>
 <body>
@@ -55,6 +89,8 @@
         <tr>
           <th>Talep</th>
           <th>Tedarikçi Firma</th>
+          <th>Telefon</th>
+          <th>E-posta</th>
           <th>Fiyat</th>
           <th>Termin</th>
           <th>Marka</th>
@@ -70,13 +106,52 @@
     <div id="empty" class="empty hidden">Henüz teklif yok.</div>
   </div>
 
+  <!-- Firma Detay Modal -->
+  <div id="supplierModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Tedarikçi Firma Detayları</h3>
+        <button class="modal-close" onclick="closeSupplierModal()">&times;</button>
+      </div>
+      <div id="supplierDetails"></div>
+    </div>
+  </div>
+
+  <script src="/vendor/xlsx.full.min.js"></script>
   <script type="module">
+    // Teklifbul Rule v1.0 - XSS Protection
+    import DOMPurify from 'https://cdn.jsdelivr.net/npm/dompurify@3.2.2/+esm';
     import { auth, db } from './firebase.js';
     import {
       collection, query, where, getDocs, getDoc, doc, orderBy, limit
     } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
     import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js';
     import { getStatusLabel, getPaymentMethodLabel } from './bid-management.js';
+    import { toast } from '/src/shared/ui/toast.js';
+    import { MESSAGES } from '/src/shared/constants/messages.js';
+    import { logger } from '/src/shared/log/logger.js';
+    import { requireCompanyContext } from './assets/js/state/company-context.js';
+    import { initPermissions, can, getBidPerms } from './assets/js/state/permissions.js';
+    
+    // Teklifbul Rule v1.0 - Teslim şekli etiketi - Sadece 3 seçenek: Nakliye Dahil, Nakliye Hariç, Özel
+    function getDeliveryMethodLabel(method) {
+      if (!method) return '-';
+      const m = String(method).toLowerCase().trim();
+      
+      // Sadece sistemdeki 3 seçeneği destekle
+      if (m === 'nakliye_dahil' || m === 'nakliye dahil') return 'Nakliye Dahil';
+      if (m === 'nakliye_haric' || m === 'nakliye hariç') return 'Nakliye Hariç';
+      if (m === 'custom' || m === 'ozel_teslimat' || m === 'özel' || m === 'özel teslimat') return 'Özel';
+      
+      // Eski değerler için fallback (artık desteklenmiyor)
+      if (m === 'delivery' || m === 'teslimat' || m === 'pickup' || m === 'alım' || m === 'kendi araçla alım') {
+        return '-';
+      }
+      
+      // Bilinmeyen değerler için "-" döndür
+      return '-';
+    }
+    const BID_PERMS = getBidPerms();
 
     const $ = (s)=>document.querySelector(s);
     const fmt = (n)=> typeof n==='number' ? new Intl.NumberFormat('tr-TR').format(n) : '—';
@@ -97,9 +172,69 @@
         const opt=document.createElement('option'); opt.value=d.id; opt.textContent=data.title||d.id; sel.appendChild(opt);
       });
     }
-    async function joinSupplierName(uid){
-      try{ const u=await getDoc(doc(db,'users', uid)); return u.exists()? (u.data().companyName || 'Bilinmeyen Firma') : 'Bilinmeyen Firma'; }catch{return 'Bilinmeyen Firma'}
+    // Teklifbul Rule v1.0 - Firma bilgileri cache
+    const SUPPLIER_CACHE = new Map();
+    
+    async function loadSupplierInfo(uid){
+      if (SUPPLIER_CACHE.has(uid)) {
+        return SUPPLIER_CACHE.get(uid);
+      }
+      
+      try {
+        // Önce user bilgisini yükle
+        const userDoc = await getDoc(doc(db, 'users', uid));
+        if (!userDoc.exists()) {
+          const defaultInfo = { name: 'Bilinmeyen Firma', phone: '—', email: '—', companyData: null };
+          SUPPLIER_CACHE.set(uid, defaultInfo);
+          return defaultInfo;
+        }
+        
+        const userData = userDoc.data();
+        const companyName = userData.companyName || userData.displayName || 'Bilinmeyen Firma';
+        
+        // Company ID'yi al
+        const companyId = userData.companyId || (userData.companies && userData.companies[0]) || null;
+        let companyData = null;
+        
+        // Company bilgilerini yükle
+        if (companyId) {
+          try {
+            const companyDoc = await getDoc(doc(db, 'companies', companyId));
+            if (companyDoc.exists()) {
+              companyData = companyDoc.data();
+            }
+          } catch (e) {
+            logger.warn('Company bilgisi yüklenemedi', e);
+          }
+        }
+        
+        // İletişim bilgilerini topla
+        const phone = companyData?.phone || companyData?.companyPhone || 
+                     (companyData?.contactPhones && companyData.contactPhones[0]) || 
+                     userData.phone || '—';
+        
+        const email = (companyData?.contactEmails && companyData.contactEmails[0]) || 
+                     companyData?.email || 
+                     userData.email || '—';
+        
+        const info = {
+          name: companyName,
+          phone: phone,
+          email: email,
+          companyData: companyData,
+          userData: userData
+        };
+        
+        SUPPLIER_CACHE.set(uid, info);
+        return info;
+      } catch (error) {
+        console.error('Supplier info load error:', error);
+        const defaultInfo = { name: 'Bilinmeyen Firma', phone: '—', email: '—', companyData: null };
+        SUPPLIER_CACHE.set(uid, defaultInfo);
+        return defaultInfo;
+      }
     }
+    
     function matchesFilters(r){
       const demandFilter=$('#f-demand').value;
       const modeFilter=$('#f-mode').value;
@@ -120,6 +255,8 @@
         tr.innerHTML=`
           <td>${r.demandTitle||r.demandId}</td>
           <td>${r.supplierName||'—'}</td>
+          <td>${r.supplierPhone||'—'}</td>
+          <td>${r.supplierEmail||'—'}</td>
           <td>₺ ${fmt(r.netPrice ?? r.price)}</td>
           <td>${r.leadTimeDays ?? '—'}</td>
           <td>${r.brand||'—'}</td>
@@ -127,9 +264,37 @@
           <td>${getStatusLabel(r.status||'pending')}</td>
           <td>${badge(r.biddingMode)}</td>
           <td>${fmtDate(r.createdAt)}</td>
-          <td><button class="btn-link" data-demand="${r.demandId}">Görüntüle →</button></td>`;
+          <td>
+            <button class="btn-detail" data-supplier-id="${r.supplierId}" data-bid-id="${r.id}">Detaylar</button>
+            <button class="btn-excel" data-bid-id="${r.id}" style="margin-left:8px;background:#10b981;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">📥 Excel</button>
+            <button class="btn-link" data-demand="${r.demandId}" style="margin-left:8px">Görüntüle →</button>
+          </td>`;
         body.appendChild(tr);
       });
+      
+      // Detay butonları
+      body.querySelectorAll('button[data-supplier-id]').forEach(b=>{
+        b.addEventListener('click', (e)=>{
+          e.stopPropagation();
+          const supplierId = e.currentTarget.dataset.supplierId;
+          const bidId = e.currentTarget.dataset.bidId;
+          showSupplierDetails(supplierId, bidId);
+        });
+      });
+      
+      // Excel indir butonları
+      body.querySelectorAll('button.btn-excel').forEach(b=>{
+        b.addEventListener('click', async (e)=>{
+          e.stopPropagation();
+          const bidId = e.currentTarget.dataset.bidId;
+          const bid = rows.find(r => r.id === bidId);
+          if (bid) {
+            await exportBidToExcel(bid);
+          }
+        });
+      });
+      
+      // Görüntüle butonları
       body.querySelectorAll('button[data-demand]').forEach(b=>{
         b.addEventListener('click', (e)=>{
           const id=e.currentTarget.dataset.demand;
@@ -137,8 +302,130 @@
         });
       });
     }
+    
+    async function showSupplierDetails(supplierId, bidId){
+      const info = await loadSupplierInfo(supplierId);
+      const companyData = info.companyData || {};
+      const userData = info.userData || {};
+      
+      let detailsHTML = `
+        <div class="detail-section">
+          <h4>Firma Bilgileri</h4>
+          <div class="detail-row">
+            <span class="detail-label">Firma Adı:</span>
+            <span class="detail-value">${info.name}</span>
+          </div>
+          ${companyData.taxNumber ? `
+          <div class="detail-row">
+            <span class="detail-label">Vergi No:</span>
+            <span class="detail-value">${companyData.taxNumber}</span>
+          </div>` : ''}
+          ${companyData.taxOffice ? `
+          <div class="detail-row">
+            <span class="detail-label">Vergi Dairesi:</span>
+            <span class="detail-value">${companyData.taxOffice}</span>
+          </div>` : ''}
+        </div>
+        
+        <div class="detail-section">
+          <h4>İletişim Bilgileri</h4>
+          <div class="detail-row">
+            <span class="detail-label">Telefon:</span>
+            <span class="detail-value">${info.phone}</span>
+          </div>
+          ${companyData.contactPhones && companyData.contactPhones.length > 1 ? `
+          <div class="detail-row">
+            <span class="detail-label">Diğer Telefonlar:</span>
+            <span class="detail-value">${companyData.contactPhones.slice(1).join(', ')}</span>
+          </div>` : ''}
+          <div class="detail-row">
+            <span class="detail-label">E-posta:</span>
+            <span class="detail-value">${info.email}</span>
+          </div>
+          ${companyData.contactEmails && companyData.contactEmails.length > 1 ? `
+          <div class="detail-row">
+            <span class="detail-label">Diğer E-postalar:</span>
+            <span class="detail-value">${companyData.contactEmails.slice(1).join(', ')}</span>
+          </div>` : ''}
+        </div>
+        
+        ${companyData.address ? `
+        <div class="detail-section">
+          <h4>Adres Bilgileri</h4>
+          <div class="detail-row">
+            <span class="detail-label">Adres:</span>
+            <span class="detail-value" style="text-align:left;max-width:60%">${companyData.address}</span>
+          </div>
+          ${companyData.city ? `
+          <div class="detail-row">
+            <span class="detail-label">Şehir:</span>
+            <span class="detail-value">${companyData.city}</span>
+          </div>` : ''}
+          ${companyData.district ? `
+          <div class="detail-row">
+            <span class="detail-label">İlçe:</span>
+            <span class="detail-value">${companyData.district}</span>
+          </div>` : ''}
+          ${companyData.postalCode ? `
+          <div class="detail-row">
+            <span class="detail-label">Posta Kodu:</span>
+            <span class="detail-value">${companyData.postalCode}</span>
+          </div>` : ''}
+        </div>` : ''}
+        
+        ${companyData.bankAccounts && companyData.bankAccounts.length > 0 ? `
+        <div class="detail-section">
+          <h4>Banka Hesapları</h4>
+          ${companyData.bankAccounts.map((acc, idx) => `
+          <div class="detail-row">
+            <span class="detail-label">Hesap ${idx + 1}:</span>
+            <span class="detail-value">${acc.bankName || ''} ${acc.accountNumber || ''} ${acc.iban || ''}</span>
+          </div>`).join('')}
+        </div>` : ''}
+      `;
+      
+      // Teklifbul Rule v1.0 - XSS Protection
+      $('#supplierDetails').innerHTML = DOMPurify.sanitize(detailsHTML, {
+        ALLOWED_TAGS: ['div', 'h4', 'span'],
+        ALLOWED_ATTR: ['class', 'style']
+      });
+      $('#supplierModal').classList.add('active');
+    }
+    
+    function closeSupplierModal(){
+      $('#supplierModal').classList.remove('active');
+    }
+    
+    // Global scope'a ekle (onclick için)
+    window.closeSupplierModal = closeSupplierModal;
+    
+    // Modal dışına tıklanınca kapat
+    document.addEventListener('DOMContentLoaded', () => {
+      const modal = $('#supplierModal');
+      if (modal) {
+        modal.addEventListener('click', (e)=>{
+          if(e.target.id === 'supplierModal'){
+            closeSupplierModal();
+          }
+        });
+      }
+    });
 
     async function loadIncoming(user){
+      // Permission guard - Teklifleri görüntüleme yetkisi yoksa sorgu çalıştırma
+      if (BID_PERMS.view && !can(BID_PERMS.view)) {
+        const msg =
+          MESSAGES.ERROR_PERMISSION_BIDS_VIEW ||
+          MESSAGES.ERROR_PERMISSION_DENIED ||
+          'Teklifleri görüntüleme yetkiniz yok.';
+        toast.error(msg);
+        logger.warn('bids-incoming: view yetkisi yok, loadIncoming iptal edildi', {
+          permKey: BID_PERMS.view,
+          uid: user.uid
+        });
+        return [];
+      }
+
       const ds=await getDocs(query(collection(db,'demands'), where('createdBy','==', user.uid)));
       const rows=[];
       for(const d of ds.docs){
@@ -148,22 +435,204 @@
         for(const b of snap.docs){
           const data={id:b.id,...b.data()};
           data.demandTitle=dem.title; data.biddingMode=dem.biddingMode || 'secret';
-          data.supplierName=await joinSupplierName(data.supplierId);
+          data.demandData = dem; // Talep bilgilerini de ekle
+          
+          // Teklifbul Rule v1.0 - Detaylı firma bilgileri yükle
+          const supplierInfo = await loadSupplierInfo(data.supplierId);
+          data.supplierName = supplierInfo.name;
+          data.supplierPhone = supplierInfo.phone;
+          data.supplierEmail = supplierInfo.email;
+          data.supplierCompanyData = supplierInfo.companyData;
+          
           rows.push(data);
         }
       }
       return rows;
     }
+    
+    // Teklifbul Rule v1.0 - Teklifi Excel formatında indir
+    async function exportBidToExcel(bid) {
+      try {
+        toast.info('Excel dosyası oluşturuluyor...');
+        
+        const wb = XLSX.utils.book_new();
+        
+        // Sayfa 1: Talep ve Teklif Özeti
+        const summary = [
+          ['TEKLİF FORMU - ÖZET BİLGİLER'],
+          [],
+          ['TALEP BİLGİLERİ'],
+          ['Talep Başlığı', bid.demandData?.title || bid.demandTitle || '-'],
+          ['Talep Kodu (SATFK)', bid.demandData?.satfk || bid.demandData?.demandCode || '-'],
+          ['Talep Tarihi', bid.demandData?.demandDate ? new Date(bid.demandData.demandDate).toLocaleDateString('tr-TR') : '-'],
+          ['Termin', bid.demandData?.dueDate ? new Date(bid.demandData.dueDate).toLocaleDateString('tr-TR') : '-'],
+          ['Şantiye', bid.demandData?.siteName || '-'],
+          ['Alım Yeri', bid.demandData?.purchaseLocation || '-'],
+          ['Para Birimi', bid.currency || bid.demandData?.currency || 'TRY'],
+          [],
+          ['TEDARİKÇİ BİLGİLERİ'],
+          ['Firma Adı', bid.supplierName || '-'],
+          ['Telefon', bid.supplierPhone || '-'],
+          ['E-posta', bid.supplierEmail || '-'],
+          ['Vergi No', bid.supplierCompanyData?.taxNumber || '-'],
+          ['Vergi Dairesi', bid.supplierCompanyData?.taxOffice || '-'],
+          ['Adres', bid.supplierCompanyData?.address || '-'],
+          [],
+          ['TEKLİF BİLGİLERİ'],
+          ['Teklif Durumu', getStatusLabel(bid.status || 'pending')],
+          ['Teklif Tarihi', bid.createdAt ? (bid.createdAt.toDate ? bid.createdAt.toDate().toLocaleDateString('tr-TR') : new Date(bid.createdAt).toLocaleDateString('tr-TR')) : '-'],
+          ['Toplam Tutar (KDV Hariç)', bid.netPrice || bid.price || 0],
+          ['Toplam Tutar (KDV Dahil)', bid.totalAmount || bid.grossPrice || bid.netPrice || 0],
+          ['Ödeme Şartları', getPaymentMethodLabel(bid.paymentMethod || 'unknown')],
+          ['Teslim Şekli', getDeliveryMethodLabel(bid.deliveryMethod || '')],
+          ['Termin (Gün)', bid.leadTimeDays || '-'],
+          ['KDV Oranı', bid.vatRate ? `%${bid.vatRate}` : '-'],
+          ['Notlar', bid.notes || bid.comments || '-']
+        ];
+        
+        const ws1 = XLSX.utils.aoa_to_sheet(summary);
+        XLSX.utils.book_append_sheet(wb, ws1, 'Özet');
+        
+        // Sayfa 2: Teklif Kalemleri
+        const items = bid.items || [];
+        if (items.length > 0) {
+          const itemRows = [
+            ['Sıra No', 'Stok Kodu', 'Ürün Adı/Tanım', 'Teklif Tanımı', 'Miktar', 'Birim', 
+             'Birim Fiyat (KDV Hariç)', 'İskonto (%)', 'KDV (%)', 'KDV Hariç Toplam', 
+             'KDV Dahil Toplam', 'Marka/Model', 'Teslim Tarihi', 'Ek Açıklama']
+          ];
+          
+          items.forEach((item, index) => {
+            const lineNo = item.lineNo || item.no || (index + 1);
+            const unitPrice = item.unitPrice || item.netPrice || item.price || 0;
+            const quantity = item.quantity || item.qty || 0;
+            const discount = item.discount || 0;
+            const vatRate = item.vatRate || bid.vatRate || 0;
+            const priceAfterDiscount = unitPrice * (1 - discount / 100);
+            const totalExclVat = priceAfterDiscount * quantity;
+            const totalInclVat = totalExclVat * (1 + vatRate / 100);
+            
+            itemRows.push([
+              lineNo,
+              item.sku || item.materialCode || '-',
+              item.description || item.name || '-',
+              item.offeredDescription || item.description || '-',
+              quantity,
+              item.unit || '-',
+              unitPrice,
+              discount,
+              vatRate,
+              totalExclVat,
+              totalInclVat,
+              item.brand || item.model || '-',
+              item.deliveryDate || item.deliveryDate || '-',
+              item.notes || item.comments || '-'
+            ]);
+          });
+          
+          const ws2 = XLSX.utils.aoa_to_sheet(itemRows);
+          XLSX.utils.book_append_sheet(wb, ws2, 'Teklif Kalemleri');
+        } else {
+          // Tek ürün teklifi
+          const singleItemRow = [
+            ['Sıra No', 'Ürün Adı', 'Miktar', 'Birim', 'Birim Fiyat (KDV Hariç)', 
+             'KDV (%)', 'KDV Hariç Toplam', 'KDV Dahil Toplam', 'Marka', 'Termin', 'Notlar'],
+            [
+              1,
+              bid.demandData?.title || bid.demandTitle || '-',
+              1,
+              'ADT',
+              bid.netPrice || bid.price || 0,
+              bid.vatRate || 0,
+              bid.netPrice || bid.price || 0,
+              bid.totalAmount || bid.grossPrice || bid.netPrice || bid.price || 0,
+              bid.brand || '-',
+              bid.leadTimeDays ? `${bid.leadTimeDays} gün` : '-',
+              bid.notes || bid.comments || '-'
+            ]
+          ];
+          const ws2 = XLSX.utils.aoa_to_sheet(singleItemRow);
+          XLSX.utils.book_append_sheet(wb, ws2, 'Teklif Kalemleri');
+        }
+        
+        // Dosya adı oluştur
+        const demandCode = bid.demandData?.satfk || bid.demandData?.demandCode || 'TEKLIF';
+        const supplierName = (bid.supplierName || 'Tedarikci').replace(/[^a-zA-Z0-9]/g, '_');
+        const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        const fileName = `${demandCode}_${supplierName}_${dateStr}.xlsx`;
+        
+        XLSX.writeFile(wb, fileName);
+        toast.success('Excel dosyası indirildi');
+      } catch (error) {
+        console.error('Excel export error:', error);
+        toast.error('Excel dosyası oluşturulamadı: ' + error.message);
+      }
+    }
 
     async function init(){
       const user=auth.currentUser;
-      await preloadDemands(user);
-      const data=await loadIncoming(user);
-      render(data);
-      ['#f-demand','#f-mode','#f-status','#f-supplier'].forEach(sel=> $(sel).addEventListener('input', ()=> render(data)));
+
+      // Company context + permissions (URL guard)
+      try {
+        const ctx = await requireCompanyContext({ redirectOnPending: true });
+        if (!ctx || !ctx.companyId) {
+          logger.warn('bids-incoming: company context alınamadı, sayfa başlatılmıyor', { ctx });
+          toast.error(
+            (MESSAGES.ERROR_COMPANY_ID_REQUIRED || 'Şirket bilgisi doğrulanamadı') +
+              '. Teklifler ekranı yüklenemedi.'
+          );
+          return;
+        }
+
+        const permState = await initPermissions({ redirectOnPending: true });
+        if (!permState) {
+          logger.warn('bids-incoming: initPermissions sonuç vermedi, sayfa başlatılmıyor');
+          return;
+        }
+
+        if (BID_PERMS.view && !can(BID_PERMS.view)) {
+          const msg =
+            MESSAGES.ERROR_PERMISSION_BIDS_VIEW ||
+            MESSAGES.ERROR_PERMISSION_DENIED ||
+            'Teklifleri görüntüleme yetkiniz yok.';
+          toast.error(msg);
+          logger.warn('bids-incoming: view yetkisi yok, URL guard tetiklendi', {
+            permKey: BID_PERMS.view,
+            companyId: permState.companyId,
+            roleKey: permState.roleKey,
+            uid: user.uid
+          });
+          window.location.href = './demands.html';
+          return;
+        }
+
+        await preloadDemands(user);
+        const data=await loadIncoming(user);
+        render(data);
+        ['#f-demand','#f-mode','#f-status','#f-supplier'].forEach(sel=> $(sel).addEventListener('input', ()=> render(data)));
+      } catch (error) {
+        logger.error('bids-incoming init error', error);
+        toast.error(
+          (MESSAGES.ERROR_LOADING_INCOMING_BIDS || 'Gelen teklifler yüklenirken hata oluştu') +
+            ': ' +
+            (error.message || error)
+        );
+      }
     }
 
-    onAuthStateChanged(auth, (u)=>{ if(!u){ window.location.href='login.html'; } else { init(); } });
+    // Teklifbul Rule v1.0 - Memory Leak Prevention: Listener cleanup
+    const authUnsubscribe = onAuthStateChanged(auth, (u) => {
+      if (!u) {
+        window.location.href = 'login.html';
+      } else {
+        init();
+      }
+    });
+    
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+      if (authUnsubscribe) authUnsubscribe();
+    });
   </script>
 </body>
 </html>

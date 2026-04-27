@@ -1,811 +1,919 @@
 <!doctype html>
 <html lang="tr">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Giriş Yap — Teklifbul</title>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%233b82f6' rx='6'/%3E%3Ctext x='16' y='22' font-family='Arial' font-size='18' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="/css/ui-standard.css" />
-  <style>
-    /* Teklifbul Rule v1.0 - Modern Login Page Styles */
-    
-    * {
-      box-sizing: border-box;
-    }
-
-    :root {
-      --primary: #2563EB;
-      --primary-dark: #1E40AF;
-      --text-dark: #111827;
-      --text-muted: #6B7280;
-      --border: #E5E7EB;
-      --bg-light: #F3F4F6;
-      --error: #DC2626;
-      --success: #10B981;
-    }
-
-    body {
-      margin: 0;
-      padding: 0;
-      min-height: 100vh;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-      background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 50%, #BFDBFE 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-
-    .login-container {
-      width: 100%;
-      max-width: 1100px;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      background: white;
-      border-radius: 16px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
-      overflow: hidden;
-      min-height: 600px;
-    }
-
-    /* Sol Panel - Logo ve Bilgiler */
-    .login-left {
-      background: linear-gradient(135deg, #2563EB 0%, #1E40AF 100%);
-      color: white;
-      padding: 60px 50px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .login-left::before {
-      content: '';
-      position: absolute;
-      top: -50%;
-      right: -50%;
-      width: 200%;
-      height: 200%;
-      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-      animation: pulse 20s infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { transform: scale(1); opacity: 0.5; }
-      50% { transform: scale(1.1); opacity: 0.3; }
-    }
-
-    .logo-container {
-      margin-bottom: 40px;
-      position: relative;
-      z-index: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 300px;
-    }
-
-    .logo-container img {
-      max-width: 100%;
-      width: 320px;
-      height: auto;
-      display: block;
-      object-fit: contain;
-      margin-bottom: 0;
-    }
-
-    .brand-title {
-      display: none;
-    }
-
-    .brand-slogan {
-      font-size: 20px;
-      font-weight: 500;
-      margin: 24px 0 12px 0;
-      opacity: 0.95;
-      position: relative;
-      z-index: 1;
-      text-align: center;
-    }
-
-    .brand-description {
-      font-size: 16px;
-      line-height: 1.6;
-      opacity: 0.9;
-      margin: 0;
-      position: relative;
-      z-index: 1;
-      text-align: center;
-    }
-
-    .features-list {
-      margin-top: 80px;
-      list-style: none;
-      padding: 0;
-      position: relative;
-      z-index: 1;
-    }
-
-    .features-list li {
-      padding: 12px 0;
-      font-size: 15px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .features-list li::before {
-      content: '✓';
-      font-size: 18px;
-      font-weight: bold;
-    }
-
-    /* Sağ Panel - Login Form */
-    .login-right {
-      padding: 60px 50px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-    }
-
-    .form-header {
-      margin-bottom: 40px;
-    }
-
-    .form-title {
-      font-size: 28px;
-      font-weight: 700;
-      color: var(--text-dark);
-      margin: 0 0 8px 0;
-    }
-
-    .form-subtitle {
-      font-size: 15px;
-      color: var(--text-muted);
-      margin: 0;
-    }
-
-    .form-group {
-      margin-bottom: 24px;
-    }
-
-    .form-label {
-      display: block;
-      font-size: 14px;
-      font-weight: 500;
-      color: var(--text-dark);
-      margin-bottom: 8px;
-    }
-
-    .input-wrapper {
-      position: relative;
-    }
-
-    .form-input {
-      width: 100%;
-      padding: 14px 16px;
-      font-size: 15px;
-      border: 2px solid var(--border);
-      border-radius: 8px;
-      background: white;
-      color: var(--text-dark);
-      transition: all 0.2s ease;
-    }
-
-    .form-input:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
-    }
-
-    .form-input.error {
-      border-color: var(--error);
-    }
-
-    .password-toggle {
-      position: absolute;
-      right: 14px;
-      top: 50%;
-      transform: translateY(-50%);
-      background: none;
-      border: none;
-      cursor: pointer;
-      color: var(--text-muted);
-      font-size: 18px;
-      padding: 4px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: color 0.2s;
-    }
-
-    .password-toggle:hover {
-      color: var(--primary);
-    }
-
-    .error-message {
-      display: none;
-      font-size: 13px;
-      color: var(--error);
-      margin-top: 6px;
-    }
-
-    .error-message.show {
-      display: block;
-    }
-
-    .remember-forgot {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 24px;
-      font-size: 14px;
-    }
-
-    .remember-me {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .remember-me input[type="checkbox"] {
-      width: 18px;
-      height: 18px;
-      cursor: pointer;
-      accent-color: var(--primary);
-    }
-
-    .remember-me label {
-      cursor: pointer;
-      color: var(--text-dark);
-      user-select: none;
-    }
-
-    .forgot-link {
-      color: var(--primary);
-      text-decoration: none;
-      font-weight: 500;
-      transition: color 0.2s;
-    }
-
-    .forgot-link:hover {
-      color: var(--primary-dark);
-      text-decoration: underline;
-    }
-
-    .btn {
-      width: 100%;
-      padding: 14px;
-      font-size: 16px;
-      font-weight: 600;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-
-    .btn-primary {
-      background: var(--primary);
-      color: white;
-      margin-bottom: 16px;
-    }
-
-    .btn-primary:hover:not(:disabled) {
-      background: var(--primary-dark);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
-    }
-
-    .btn-primary:active:not(:disabled) {
-      transform: translateY(0);
-    }
-
-    .btn-primary:disabled {
-      opacity: 0.6;
-      cursor: wait;
-    }
-
-    .btn-google {
-      background: white;
-      color: var(--text-dark);
-      border: 2px solid var(--border);
-    }
-
-    .btn-google:hover:not(:disabled) {
-      background: var(--bg-light);
-      border-color: var(--primary);
-    }
-
-    .btn-google:disabled {
-      opacity: 0.6;
-      cursor: wait;
-    }
-
-    .divider {
-      text-align: center;
-      margin: 24px 0;
-      color: var(--text-muted);
-      font-size: 14px;
-      position: relative;
-    }
-
-    .divider::before,
-    .divider::after {
-      content: '';
-      position: absolute;
-      top: 50%;
-      width: 45%;
-      height: 1px;
-      background: var(--border);
-    }
-
-    .divider::before {
-      left: 0;
-    }
-
-    .divider::after {
-      right: 0;
-    }
-
-    .signup-link {
-      text-align: center;
-      margin-top: 24px;
-      font-size: 14px;
-      color: var(--text-muted);
-    }
-
-    .signup-link a {
-      color: var(--primary);
-      text-decoration: none;
-      font-weight: 500;
-    }
-
-    .signup-link a:hover {
-      text-decoration: underline;
-    }
-
-    #status {
-      margin-top: 16px;
-      font-size: 13px;
-      color: var(--text-muted);
-      text-align: center;
-      min-height: 20px;
-    }
-
-    #logoutBtn {
-      display: none;
-      margin-top: 16px;
-    }
-
-    /* Shake Animation for Errors */
-    @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-      20%, 40%, 60%, 80% { transform: translateX(5px); }
-    }
-
-    .login-container.shake {
-      animation: shake 0.5s;
-    }
-
-    /* Footer */
-    .login-footer {
-      margin-top: 40px;
-      padding-top: 24px;
-      border-top: 1px solid var(--border);
-      text-align: center;
-    }
-
-    .footer-links {
-      display: flex;
-      justify-content: center;
-      gap: 20px;
-      flex-wrap: wrap;
-      margin-bottom: 12px;
-    }
-
-    .footer-links a {
-      color: var(--text-muted);
-      text-decoration: none;
-      font-size: 13px;
-      transition: color 0.2s;
-    }
-
-    .footer-links a:hover {
-      color: var(--primary);
-    }
-
-    .footer-copyright {
-      font-size: 12px;
-      color: var(--text-muted);
-      margin: 0;
-    }
-
-    /* Responsive Design */
-    @media (max-width: 968px) {
-      .login-container {
-        grid-template-columns: 1fr;
-        max-width: 500px;
-      }
-
-      .login-left {
-        padding: 40px 30px;
-        text-align: center;
-      }
-
-      .logo-container img {
-        margin: 0 auto 20px;
-      }
-
-      .brand-title {
-        font-size: 28px;
-      }
-
-      .brand-slogan {
-        font-size: 18px;
-      }
-
-      .features-list {
-        display: none;
-      }
-
-      .login-right {
-        padding: 40px 30px;
-      }
-    }
-
-    @media (max-width: 480px) {
-      body {
-        padding: 10px;
-      }
-
-      .login-container {
-        border-radius: 12px;
-        min-height: auto;
-      }
-
-      .login-left {
-        padding: 30px 20px;
-      }
-
-      .login-right {
-        padding: 30px 20px;
-      }
-
-      .logo-container {
-        min-height: 200px;
-      }
-      
-      .logo-container img {
-        width: 200px;
-        max-width: 100%;
-      }
-
-      .form-title {
-        font-size: 24px;
-      }
-    }
-  </style>
+  <title>NEFISOFT — Uçtan Uca Ticari Operasyon Yönetimi</title>
+
+  <!-- PWA Meta Tags -->
+  <meta name="theme-color" content="#2563EB" />
+  <meta name="description"
+    content="NEFISOFT ile işletmenizin satın alma, teklif, stok, satış, hakediş, e-fatura ve finansal operasyonlarını tek merkezden yönetin" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="NEFISOFT" />
+  <meta name="mobile-web-app-capable" content="yes" />
+
+  <!-- Icons -->
+  <link rel="icon" type="image/svg+xml"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%232563EB' rx='6'/%3E%3Ctext x='16' y='22' font-family='Arial' font-size='18' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E" />
+  <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="/manifest.json" />
+
+  <link rel="stylesheet" href="/assets/css/main.css" />
 </head>
+
 <body>
-  <div class="login-container" id="loginContainer">
-    <!-- Sol Panel - Logo ve Bilgiler -->
-    <div class="login-left">
-      <div class="logo-container">
-        <img src="/assets/images/logo.png" alt="Teklifbul Logo" />
-        <p class="brand-slogan">Teklif ve stok yönetim platformu</p>
-        <p class="brand-description">
-          Tedarik, teklif, sipariş ve stok süreçlerinizi tek ekrandan yönetin.
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-content">
+      <a href="/index.html" class="header-logo">
+        <span>NEFISOFT</span>
+      </a>
+
+      <nav class="header-nav">
+        <ul class="header-nav-links" id="desktop-nav">
+          <li><a href="#features" data-i18n="nav.features">Özellikler</a></li>
+          <li><a href="#why-nefisoft" data-i18n="nav.why">Neden NEFISOFT</a></li>
+          <li><a href="#premium" data-i18n="nav.premium">Planlar</a></li>
+          <li><a href="#references" data-i18n="nav.references">Referanslar</a></li>
+          <li><a href="/contact.html" data-i18n="nav.contact">İletişim</a></li>
+        </ul>
+
+        <div class="header-actions">
+          <a href="/login.html" class="btn btn-outline btn-sm" data-i18n="btn.login">Giriş Yap</a>
+          <a href="/signup.html" class="btn btn-accent btn-sm" data-i18n="btn.tryFree">Ücretsiz Dene</a>
+
+          <div class="lang-switch">
+            <button type="button" data-lang="tr" class="active">TR</button>
+            <button type="button" data-lang="en">EN</button>
+          </div>
+        </div>
+
+        <button class="hamburger" id="hamburger" aria-label="Menu">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </nav>
+    </div>
+
+    <!-- Mobile Menu -->
+    <nav class="mobile-menu" id="mobile-menu">
+      <ul>
+        <li><a href="#features" data-i18n="nav.features">Özellikler</a></li>
+        <li><a href="#why-nefisoft" data-i18n="nav.why">Neden NEFISOFT</a></li>
+        <li><a href="#premium" data-i18n="nav.premium">Planlar</a></li>
+        <li><a href="#references" data-i18n="nav.references">Referanslar</a></li>
+        <li><a href="/contact.html" data-i18n="nav.contact">İletişim</a></li>
+        <li><a href="/login.html" class="btn btn-outline" data-i18n="btn.login">Giriş Yap</a></li>
+        <li><a href="/signup.html" class="btn btn-accent" data-i18n="btn.tryFree">Ücretsiz Dene</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <!-- Hero Section -->
+    <section class="hero" style="padding-top: calc(var(--header-height) + var(--spacing-3xl));">
+      <div class="container">
+        <div class="hero-content">
+          <div class="hero-text">
+            <div
+              style="font-size: 1.125rem; color: var(--color-text-muted); margin-bottom: var(--spacing-md); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;">
+              Uçtan uca ticari operasyon yönetimi
+            </div>
+            <h1 style="line-height: 1.2;">NEFISOFT ile işletmenizin tüm operasyonları tek sistemde</h1>
+            <p style="font-size: var(--font-size-lg); margin-bottom: var(--spacing-lg);">
+              NEFISOFT, işletmelerin satın alma, teklif, stok, satış, hakediş, e-fatura ve
+              finansal operasyonlarını tek merkezden yöneten, tüm bu süreçleri entegre bir yapı
+              içinde birleştirerek kontrol, hız ve verimlilik sağlayan kapsamlı bir iş yazılımıdır.
+            </p>
+
+            <div
+              style="display: inline-block; padding: var(--spacing-xs) var(--spacing-md); background: var(--color-bg-light); border-radius: var(--radius-md); font-size: 0.875rem; color: var(--color-text-muted); margin-bottom: var(--spacing-lg); margin-top: 2cm;">
+              Teklifbul — NEFISOFT'un satın alma ve teklif yönetimi modülü
+            </div>
+
+            <div
+              style="display: flex; align-items: flex-start; gap: 1cm; width: 100%; margin-bottom: var(--spacing-lg); flex-wrap: nowrap;">
+              <div style="flex: 0 0 auto;">
+                <ul class="hero-features" style="margin: 0; padding: 0;">
+                  <li>Satın alma & teklif yönetimi (Teklifbul modülü)</li>
+                  <li>Stok ve depo takibi</li>
+                  <li>Satış, hakediş ve finans süreçleri</li>
+                  <li>Yapay zekâ destekli karar asistanı</li>
+                  <li>Muhasebe sistemi — Yakında</li>
+                </ul>
+
+                <div class="hero-actions" style="margin-top: var(--spacing-lg);">
+                  <a href="/signup.html" class="btn btn-accent btn-lg">Ücretsiz Dene</a>
+                  <a href="#features" class="btn btn-outline btn-lg">Özellikleri İncele</a>
+                </div>
+
+                <p style="font-size: 0.875rem; color: var(--color-text-muted); margin-top: var(--spacing-md);">
+                  Temel kullanım ücretsiz • Gelişmiş özellikler ücretli • Kredi kartı gerekmez
+                </p>
+              </div>
+
+              <div class="hero-visual-inline"
+                style="position: relative; background: var(--color-bg) !important; border-radius: var(--radius-xl); box-shadow: var(--shadow-xl); overflow: hidden !important; flex: 1; min-width: 600px; height: auto; min-height: calc(400px + 4cm); max-height: calc(600px + 4cm); margin-left: 2cm; margin-top: calc(-2cm + 1cm - 2cm); margin-bottom: -2cm;">
+                <img id="dashboard-preview-img" src="/assets/images/dashboard-preview.png"
+                  alt="NEFISOFT kontrol paneli ekran görüntüsü" loading="eager"
+                  style="width: 100% !important; height: 100% !important; min-height: calc(400px + 4cm) !important; object-fit: cover !important; object-position: top left !important; display: block !important; position: absolute !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; z-index: 2 !important; visibility: visible !important; opacity: 1 !important;" />
+              </div>
+            </div>
+          </div>
+
+          <div class="hero-visual" style="display: none !important;">
+            <!-- Eski görsel container'ı gizle -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="section" id="features">
+      <div class="container">
+        <div class="section-title">
+          <h2>NEFISOFT ile işletmenizin tüm ticari süreçlerini tek yerden yönetin</h2>
+          <p style="font-size: var(--font-size-lg); max-width: 900px; margin: 0 auto;">
+            Dağınık yazılımlar, manuel işlemler ve kontrolsüz süreçler yerine; satın almadan muhasebeye kadar tüm iş
+            akışınızı tek merkezden yönetin.
+          </p>
+        </div>
+
+        <div class="features-grid">
+          <div class="feature-card card">
+            <div class="feature-icon">📋</div>
+            <div
+              style="display: inline-block; padding: 0.25rem 0.5rem; background: var(--color-bg-light); border-radius: var(--radius-sm); font-size: 0.75rem; color: var(--color-text-muted); margin-bottom: var(--spacing-sm);">
+              Teklifbul Modülü
+            </div>
+            <h3>Satın Alma & Teklif Yönetimi</h3>
+            <p>Talep oluşturma, teklif toplama, karşılaştırma, onay, siparişe dönüşüm.</p>
+          </div>
+
+          <div class="feature-card card">
+            <div class="feature-icon">📦</div>
+            <h3>Stok & Depo Yönetimi</h3>
+            <p>Gerçek zamanlı stok takibi, minimum stok uyarıları, çoklu depo desteği.</p>
+          </div>
+
+          <div class="feature-card card">
+            <div class="feature-icon">💰</div>
+            <h3>Satış & Hakediş Yönetimi</h3>
+            <p>Satış sözleşmeleri, proje bazlı hakediş, gelir & tahsilat takibi.</p>
+          </div>
+
+          <div class="feature-card card">
+            <div class="feature-icon">🧾</div>
+            <h3>Finans & E-Fatura</h3>
+            <p>Cari hesap, fatura, ödeme ve tahsilat süreçlerinin uçtan uca yönetimi.</p>
+          </div>
+
+          <div class="feature-card card">
+            <div class="feature-icon">🤖</div>
+            <h3>Yapay Zekâ Destekli Asistan</h3>
+            <p>Fiyat karşılaştırmaları, tasarruf önerileri, satın alma ve stok karar desteği.</p>
+          </div>
+
+          <div class="feature-card card">
+            <div class="feature-icon">📊</div>
+            <h3>Raporlama & Yönetici Paneli</h3>
+            <p>Anlık panolar, performans raporları ve operasyon analizleri.</p>
+          </div>
+
+          <div class="feature-card card">
+            <div class="feature-icon">📚</div>
+            <h3>Muhasebe Modülü — Yakında</h3>
+            <p>Genel muhasebe, mizan, bilanço, entegrasyonlar.</p>
+          </div>
+        </div>
+
+        <p
+          style="text-align: center; font-size: var(--font-size-lg); color: var(--color-text-muted); margin-top: var(--spacing-xl); max-width: 800px; margin-left: auto; margin-right: auto;">
+          Tüm modüller tek sistem içinde birbiriyle konuşur; veri dağılmaz, süreçler hızlanır, işletmeniz kontrol altına
+          girer.
         </p>
       </div>
-      <ul class="features-list">
-        <li>Tedarikçiler ve alıcılar için merkezi yönetim paneli</li>
-        <li>Çoklu firma, çoklu depo ve stok takibi desteği</li>
-        <li>Teklif karşılaştırma ve analiz araçları</li>
-        <li>Güvenli ve hızlı iş akışı yönetimi</li>
-      </ul>
-    </div>
+    </section>
 
-    <!-- Sağ Panel - Login Form -->
-    <div class="login-right">
-      <div class="form-header">
-        <h2 class="form-title">Giriş Yap</h2>
-        <p class="form-subtitle">Hesabınıza giriş yaparak devam edin</p>
+    <!-- Why NEFISOFT Section -->
+    <section class="section" id="why-nefisoft" style="background: var(--color-bg-light);">
+      <div class="container">
+        <div class="section-title">
+          <h2>Neden NEFISOFT?</h2>
+          <p style="font-size: var(--font-size-lg); max-width: 900px; margin: 0 auto;">
+            NEFISOFT yalnızca süreci kaydetmez; süreci kontrol altına alır, hızlandırır ve güvenceye alır.
+          </p>
+        </div>
+
+        <div class="features-grid">
+          <div class="feature-card card">
+            <div class="feature-icon">🎯</div>
+            <h3>Gerçek Operasyon Yönetimi</h3>
+            <p>Satın alma, stok, şantiye, satış, hakediş ve finans tek merkezde.</p>
+          </div>
+
+          <div class="feature-card card">
+            <div class="feature-icon">⚠️</div>
+            <h3>Sorunlar Oluşmadan Önce Önler</h3>
+            <p>Akıllı hatırlatmalar ve gecikme takibiyle sorun çıkmadan önlem.</p>
+          </div>
+
+          <div class="feature-card card">
+            <div class="feature-icon">🔗</div>
+            <h3>Saha → Yönetim Tam Entegrasyon</h3>
+            <p>Şantiyeden gelen talep satın alma, stok ve yönetime bağlanır.</p>
+          </div>
+
+          <div class="feature-card card">
+            <div class="feature-icon">📝</div>
+            <h3>Her Şey Kayıt Altında</h3>
+            <p>Kim, neyi, ne zaman istedi/alındı/kullanıldı hepsi tek yerde.</p>
+          </div>
+
+          <div class="feature-card card">
+            <div class="feature-icon">📈</div>
+            <h3>Büyüdükçe Sizinle Büyür</h3>
+            <p>Free → Premium → Premium Plus geçişiyle ölçeklenir.</p>
+          </div>
+
+          <div class="feature-card card">
+            <div class="feature-icon">🔒</div>
+            <h3>Güvenli & Kurumsal</h3>
+            <p>Rol bazlı yetki, denetim kayıtları, ölçeklenebilir altyapı.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Link Payment Section -->
+    <section class="section" style="background: var(--color-bg);">
+      <div class="container">
+        <div class="hero-content">
+          <div class="hero-text">
+            <h2>Tek linkle teklif ve ödeme</h2>
+            <p style="font-size: var(--font-size-lg); margin-bottom: var(--spacing-lg);">Teklif onayı ve tahsilat
+              sürecini tek bir link üzerinden yönetin.</p>
+
+            <ul class="hero-features">
+              <li>Tedarikçi veya alıcıya e-posta ile ödeme linki gönderin.</li>
+              <li>Teklif onayı ve ödeme aynı ekranda tamamlansın.</li>
+              <li>Kredi / banka kartı ile ödeme (PayTR, iyzico altyapısı).</li>
+              <li>Havale / EFT ile ödeme seçenekleri ve kayıt altına alma.</li>
+            </ul>
+
+            <p
+              style="font-size: 0.8125rem; color: var(--color-text-muted); margin-top: var(--spacing-lg); line-height: 1.5;">
+              Ödeme altyapısı, Türkiye'de lisanslı ödeme kuruluşları üzerinden sağlanır.
+            </p>
+
+            <div
+              style="margin-top: var(--spacing-md); padding: var(--spacing-md); background: rgba(37, 99, 235, 0.05); border-radius: var(--radius-md); border-left: 3px solid var(--color-primary);">
+              <p
+                style="font-size: 0.875rem; font-weight: 600; color: var(--color-primary); margin-bottom: var(--spacing-xs);">
+                Yakında: Güvenli Ödeme (Escrow) + Open Banking</p>
+              <p style="font-size: 0.8125rem; color: var(--color-text-muted); margin: 0; line-height: 1.4;">Taraf
+                onayına dayalı blokeli ödeme modeli ve banka entegrasyonları.</p>
+            </div>
+          </div>
+
+          <div class="hero-visual"
+            style="display: flex; align-items: center; justify-content: center; padding: var(--spacing-2xl);">
+            <div style="text-align: center; width: 100%;">
+              <div style="font-size: 4rem; margin-bottom: var(--spacing-md);">🔗</div>
+              <p
+                style="font-weight: 600; color: var(--color-text); font-size: var(--font-size-lg); margin-bottom: var(--spacing-xs);">
+                Ödeme Linki</p>
+              <p
+                style="font-size: var(--font-size-sm); color: var(--color-text-muted); margin-bottom: var(--spacing-sm);">
+                PayTR / iyzico + Havale/EFT</p>
+              <div
+                style="display: inline-block; padding: 0.25rem 0.75rem; background: rgba(37, 99, 235, 0.1); border-radius: var(--radius-sm); font-size: 0.75rem; color: var(--color-primary); font-weight: 500; margin-top: var(--spacing-xs);">
+                Yakında: Escrow & Open Banking
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- AI Assistant Section -->
+    <section class="section" id="ai-assistant"
+      style="background: linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(251, 211, 77, 0.05) 100%); position: relative; overflow: hidden;">
+      <div
+        style="position: absolute; top: -50%; right: -20%; width: 500px; height: 500px; background: radial-gradient(circle, rgba(37, 99, 235, 0.1) 0%, transparent 70%); border-radius: 50%; animation: pulse 8s ease-in-out infinite;">
+      </div>
+      <div class="container" style="position: relative; z-index: 1;">
+        <div class="hero-content">
+          <div class="hero-text">
+            <div style="display: flex; align-items: center; gap: var(--spacing-md); margin-bottom: var(--spacing-lg);">
+              <div style="font-size: 3rem;">🤖</div>
+              <h2 data-i18n="aiSection.title" style="margin: 0;">Yapay zekâ satın alma asistanınız</h2>
+            </div>
+            <p data-i18n="aiSection.subtitle" style="font-size: var(--font-size-lg); margin-bottom: var(--spacing-xl);">
+              NEFISOFT, teklif ve stok verilerinizi analiz ederek size karar desteği sağlar.</p>
+
+            <ul class="hero-features">
+              <li data-i18n="aiSection.point1">Teklifleri otomatik kıyaslar, en avantajlı tedarikçiyi öne çıkarır.</li>
+              <li data-i18n="aiSection.point2">Minimum stok seviyelerinize göre sizi önceden uyarır.</li>
+              <li data-i18n="aiSection.point3">Geçmiş alışlarınızı inceleyerek tasarruf fırsatlarını önerir.</li>
+              <li>Metinden otomatik talep oluşturma</li>
+              <li>Talepleri takip ederek zamlanabilir ürünler için uyarı</li>
+              <li>İşleme alınmayan talepler için hatırlatıcı</li>
+            </ul>
+          </div>
+
+          <div class="hero-visual"
+            style="background: linear-gradient(135deg, rgba(37, 99, 235, 0.1) 0%, rgba(251, 211, 77, 0.1) 100%); border: 2px solid rgba(37, 99, 235, 0.2); display: flex; align-items: center; justify-content: center; padding: var(--spacing-2xl);">
+            <div
+              style="text-align: center; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--spacing-md);">
+              <div class="ai-assistant-icon"
+                style="font-size: 5rem; filter: drop-shadow(0 4px 12px rgba(37, 99, 235, 0.3)); animation: aiFloat 3s ease-in-out infinite; transform-origin: center;">
+                🤖</div>
+              <div style="display: flex; flex-direction: column; gap: var(--spacing-xs); align-items: center;">
+                <p style="font-weight: 600; color: var(--color-text); font-size: var(--font-size-lg); margin: 0;">AI
+                  Asistan</p>
+                <p style="font-size: var(--font-size-sm); color: var(--color-text-muted); margin: 0;">Akıllı karar
+                  desteği</p>
+              </div>
+              <div
+                style="margin-top: var(--spacing-sm); padding-top: var(--spacing-md); border-top: 1px solid rgba(37, 99, 235, 0.2); width: 100%;">
+                <p
+                  style="font-size: 0.75rem; color: var(--color-text-muted); font-weight: 500; margin-bottom: var(--spacing-xs); text-transform: uppercase; letter-spacing: 0.05em;">
+                  En Güçlü Yapay Zeka Sistemleri</p>
+                <div
+                  style="display: flex; flex-wrap: wrap; gap: var(--spacing-sm); justify-content: center; align-items: center;">
+                  <span
+                    style="display: inline-block; padding: 0.25rem 0.75rem; background: rgba(37, 99, 235, 0.1); border-radius: var(--radius-sm); font-size: 0.8125rem; color: var(--color-text); font-weight: 500;">OpenAI</span>
+                  <span
+                    style="display: inline-block; padding: 0.25rem 0.75rem; background: rgba(37, 99, 235, 0.1); border-radius: var(--radius-sm); font-size: 0.8125rem; color: var(--color-text); font-weight: 500;">Gemini</span>
+                  <span
+                    style="display: inline-block; padding: 0.25rem 0.75rem; background: rgba(37, 99, 235, 0.1); border-radius: var(--radius-sm); font-size: 0.8125rem; color: var(--color-text); font-weight: 500;">Groq
+                    Llama</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <style>
+        @keyframes pulse {
+
+          0%,
+          100% {
+            transform: scale(1);
+            opacity: 0.3;
+          }
+
+          50% {
+            transform: scale(1.1);
+            opacity: 0.5;
+          }
+        }
+
+        @keyframes aiFloat {
+
+          0%,
+          100% {
+            transform: translateY(0px) rotate(0deg) scale(1);
+          }
+
+          25% {
+            transform: translateY(-10px) rotate(5deg) scale(1.05);
+          }
+
+          50% {
+            transform: translateY(-15px) rotate(0deg) scale(1.1);
+          }
+
+          75% {
+            transform: translateY(-10px) rotate(-5deg) scale(1.05);
+          }
+        }
+
+        .ai-assistant-icon {
+          display: inline-block;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .ai-assistant-icon {
+            animation: none;
+          }
+        }
+      </style>
+    </section>
+
+    <!-- Premium Section -->
+    <section class="section premium-section" id="premium">
+      <div class="container">
+        <div class="section-title">
+          <h2>Planlar</h2>
+          <p>İhtiyacınıza göre seçin, büyüdükçe yükseltin.</p>
+        </div>
+
+        <div class="pricing-grid">
+          <div class="pricing-card" style="display: flex; flex-direction: column; height: 100%;">
+            <h3 class="plan-title">
+              <span class="plan-name">Free</span>
+              <span class="planStars" role="img" aria-label="Bir yıldız">★</span>
+            </h3>
+            <div class="pricing-amount"
+              style="font-weight: 600; margin-bottom: var(--spacing-md); white-space: nowrap; overflow: visible;">
+              Operasyona Sağlam Başlangıç</div>
+            <ul class="pricing-features">
+              <li>Aylık 60 talep</li>
+              <li>Teklif görüntüleme</li>
+              <li>Temel satın alma & stok kullanımı</li>
+              <li>Sınırlı raporlama</li>
+            </ul>
+            <a href="/signup.html" class="btn btn-accent" style="width: 100%; margin-top: auto;"
+              aria-label="Free plan için hemen başla">Hemen başla</a>
+          </div>
+
+          <div class="pricing-card"
+            style="display: flex; flex-direction: column; height: 100%; border: 3px solid var(--color-accent);">
+            <h3 class="plan-title">
+              <span class="plan-name">Premium</span>
+              <span class="planStars" role="img" aria-label="İki yıldız">★</span><span class="planStars" role="img"
+                aria-label="İki yıldız">★</span>
+            </h3>
+            <div class="pricing-amount"
+              style="font-weight: 600; margin-bottom: var(--spacing-md); white-space: nowrap; overflow: visible;">Aktif
+              Operasyon Modu</div>
+            <div class="pricing-amount"
+              style="font-size: 1rem; color: var(--color-text-muted); margin-bottom: var(--spacing-md);">Fiyat için
+              kayıt olunuz</div>
+            <ul class="pricing-features">
+              <li>Sınırsız talep</li>
+              <li>Gelişmiş raporlama & panolar</li>
+              <li>Satış modülü</li>
+              <li>Hakediş sistemi</li>
+              <li>Ödeme talepleri & finans takibi</li>
+              <li>Fatura işlemleri</li>
+              <li>Öncelikli destek</li>
+            </ul>
+            <a href="/signup.html" class="btn btn-accent" style="width: 100%; margin-top: auto;"
+              aria-label="Premium plan için hemen başla">Hemen başla</a>
+          </div>
+
+          <div class="pricing-card pricing-card-premium-plus"
+            style="display: flex; flex-direction: column; height: 100%;">
+            <h3 class="plan-title">
+              <span class="plan-name">Premium Plus</span>
+              <span class="planStars" role="img" aria-label="Üç yıldız">★</span><span class="planStars" role="img"
+                aria-label="Üç yıldız">★</span><span class="planStars" role="img" aria-label="Üç yıldız">★</span>
+            </h3>
+            <div class="pricing-amount"
+              style="font-weight: 600; margin-bottom: var(--spacing-md); white-space: nowrap; overflow: visible;">
+              Kurumsal & Akıllı Yönetim</div>
+            <div class="pricing-amount"
+              style="font-size: 1rem; color: var(--color-text-muted); margin-bottom: var(--spacing-md);">Fiyat için
+              kayıt olunuz</div>
+            <ul class="pricing-features">
+              <li>Premium'daki her şey</li>
+              <li>Yapay zekâ satın alma asistanı</li>
+              <li>Akıllı analiz & tahminler</li>
+              <li>Büyük ekip & yüksek hacim desteği</li>
+              <li>Token tabanlı AI kullanım modeli</li>
+              <li>Kurumsal destek</li>
+            </ul>
+            <a href="/signup.html" class="btn btn-accent" style="width: 100%; margin-top: auto;"
+              aria-label="Premium Plus plan için hemen başla">Hemen başla</a>
+          </div>
+        </div>
+
+        <p
+          style="text-align: center; font-size: 0.9375rem; color: var(--color-text); font-weight: 500; margin-top: var(--spacing-xl);">
+          Kayıt olmak ücretsizdir. Fiyat bilgileri için kayıt olduktan sonra premium hesap kısmından bilgileneceksiniz.
+        </p>
+      </div>
+    </section>
+
+    <!-- References Section -->
+    <section class="section" id="references">
+      <div class="container">
+        <div class="section-title">
+          <h2>Referanslarımız</h2>
+          <p>İlk kullanıcılarımızdan olun, özel avantajlardan yararlanın.</p>
+        </div>
+
+        <div
+          style="max-width: 800px; margin: 0 auto; background: var(--color-bg-light); border-radius: var(--radius-xl); padding: var(--spacing-2xl); text-align: center;">
+          <h3 style="font-size: var(--font-size-2xl); margin-bottom: var(--spacing-md); color: var(--color-text);">İlk
+            kullanıcılarımıza özel</h3>
+          <p
+            style="font-size: var(--font-size-lg); color: var(--color-text-muted); margin-bottom: var(--spacing-xl); line-height: 1.6;">
+            NEFISOFT'un ilk kullanıcıları, erken erişim avantajları ve özel destek paketlerinden yararlanır.
+            İhtiyacınıza göre istediğiniz özellikleri birlikte şekillendirelim. İlk destekçilerimizi unutmayız.
+          </p>
+          <a href="/contact.html" class="btn btn-accent btn-lg">İletişime Geçin</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Final CTA Section -->
+    <section class="section"
+      style="background: linear-gradient(135deg, rgba(37, 99, 235, 0.1) 0%, rgba(37, 99, 235, 0.05) 100%); padding: var(--spacing-4xl) 0;">
+      <div class="container">
+        <div style="text-align: center; max-width: 800px; margin: 0 auto;">
+          <h2 style="font-size: 2.5rem; margin-bottom: var(--spacing-lg); line-height: 1.2;">NEFISOFT ile işletmenizin
+            kontrolünü elinize alın</h2>
+          <p
+            style="font-size: var(--font-size-lg); margin-bottom: var(--spacing-xl); color: var(--color-text-muted); line-height: 1.6; max-width: 700px; margin-left: auto; margin-right: auto;">
+            Dağınık tablolar, geciken işler ve kontrolsüz operasyonlar yerine tüm ticari süreçlerinizi tek bir sistemde
+            yönetin.
+          </p>
+          <a href="/signup.html" class="btn btn-accent btn-lg"
+            style="font-size: 1.125rem; padding: var(--spacing-md) var(--spacing-xl);">Ücretsiz Başlayın</a>
+          <p
+            style="font-size: 0.875rem; color: var(--color-text-muted); margin-top: var(--spacing-lg); line-height: 1.6;">
+            Kredi kartı gerekmez • Temel kullanım ücretsiz • 2 dakikada kurulum
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-content">
+      <div class="footer-grid">
+        <div class="footer-section">
+          <h3>İletişim</h3>
+          <p><strong>Adres:</strong><br />Çengeldere Mahallesi Çavuşbaşı Cumhuriyet Caddesi No:186, Beykoz / İstanbul
+          </p>
+          <p><strong>E-posta:</strong><br /><a href="mailto:akyildizfaruk@gmail.com">akyildizfaruk@gmail.com</a></p>
+          <p><strong>Telefon:</strong><br /><a href="tel:+905323459253">0532 345 92 53</a></p>
+        </div>
+
+        <div class="footer-section">
+          <h3>Sosyal Medya</h3>
+          <ul>
+            <li><a href="https://www.youtube.com/@teklifbul" target="_blank" rel="noopener">YouTube</a></li>
+            <li><a href="https://x.com/teklifbul" target="_blank" rel="noopener">X (Twitter)</a></li>
+            <li><a href="https://www.instagram.com/teklifbul.com.tr/#" target="_blank" rel="noopener">Instagram</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-section">
+          <h3 data-i18n="footer.downloadApp">Uygulamayı indir</h3>
+          <ul>
+            <li><a href="https://play.google.com/store/apps" target="_blank" rel="noopener noreferrer"
+                data-i18n="footer.downloadGoogle">Google Play'den indir</a></li>
+            <li><a href="https://www.apple.com/app-store/" target="_blank" rel="noopener noreferrer"
+                data-i18n="footer.downloadApple">App Store'dan indir</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-section">
+          <h3 data-i18n="footer.legal">Hukuki metinler</h3>
+          <ul>
+            <li><a href="/legal/kvkk-aydinlatma.html">KVKK Aydınlatma Metni</a></li>
+            <li><a href="/legal/acik-riza.html">Açık Rıza Bilgilendirme Metni</a></li>
+            <li><a href="/legal/kvkk-politika.html">KVKK Politikası</a></li>
+            <li><a href="/legal/cerez-politikasi.html">Çerez Politikası</a></li>
+            <li><a href="/legal/mesafeli-satis.html">Mesafeli Satış Sözleşmesi</a></li>
+            <li><a href="/legal/elektronik-bilgilendirme.html">Elektronik Bilgilendirme</a></li>
+            <li><a href="/legal/tedarikci-sozlesme.html">Tedarikçi Kullanıcı Sözleşmesi</a></li>
+            <li><a href="/legal/alici-sozlesme.html">Alıcı Kullanıcı Sözleşmesi</a></li>
+          </ul>
+        </div>
       </div>
 
-      <form id="loginForm">
-        <div class="form-group">
-          <label for="email" class="form-label">E-posta</label>
-          <div class="input-wrapper">
-            <input 
-              id="email" 
-              type="email" 
-              class="form-input" 
-              placeholder="ornek@email.com" 
-              autocomplete="username"
-              required
-            />
-          </div>
-          <div class="error-message" id="emailError"></div>
-        </div>
-
-        <div class="form-group">
-          <label for="password" class="form-label">Şifre</label>
-          <div class="input-wrapper">
-            <input 
-              id="password" 
-              type="password" 
-              class="form-input" 
-              placeholder="••••••••" 
-              autocomplete="current-password"
-              required
-            />
-            <button 
-              type="button" 
-              class="password-toggle" 
-              id="passwordToggle"
-              aria-label="Şifreyi göster/gizle"
-            >
-              👁️
-            </button>
-          </div>
-          <div class="error-message" id="passwordError"></div>
-        </div>
-
-        <div class="remember-forgot">
-          <div class="remember-me">
-            <input type="checkbox" id="rememberMe" />
-            <label for="rememberMe">Beni hatırla</label>
-          </div>
-          <a href="#" class="forgot-link" id="forgotPassword">Şifremi Unuttum</a>
-        </div>
-
-        <button type="submit" id="loginBtn" class="btn btn-primary">
-          Giriş Yap
-        </button>
-
-        <div class="divider">veya</div>
-
-        <button type="button" id="googleBtn" class="btn btn-google">
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/>
-            <path d="M9 18c2.43 0 4.467-.806 5.965-2.184l-2.908-2.258c-.806.54-1.837.86-3.057.86-2.35 0-4.34-1.587-5.053-3.72H.957v2.331C2.438 15.983 5.482 18 9 18z" fill="#34A853"/>
-            <path d="M3.943 10.698c-.18-.54-.282-1.117-.282-1.698s.102-1.158.282-1.698V4.971H.957C.348 6.175 0 7.55 0 9s.348 2.825.957 4.029l2.986-2.331z" fill="#FBBC05"/>
-            <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.971L3.943 7.302C4.656 5.167 6.646 3.58 9 3.58z" fill="#EA4335"/>
-          </svg>
-          Google ile Giriş
-        </button>
-
-        <div class="signup-link">
-          Hesabın yok mu? <a href="./signup.html">Kayıt ol</a>
-        </div>
-
-        <div id="status">Oturum kapalı.</div>
-        <button id="logoutBtn" class="btn btn-primary" style="display:none">Çıkış Yap</button>
-      </form>
-
-      <div class="login-footer">
-        <div class="footer-links">
-          <a href="#" id="kvkkLink">KVKK</a>
-          <a href="#" id="privacyLink">Gizlilik Politikası</a>
-          <a href="#" id="termsLink">Kullanım Şartları</a>
-          <a href="#" id="contactLink">İletişim</a>
-        </div>
-        <p class="footer-copyright">© 2025 Teklifbul – Tüm hakları saklıdır.</p>
+      <div class="footer-bottom">
+        <p>2026 NEFISOFT ©</p>
+        <p style="font-size: 0.75rem; color: var(--color-text-muted); margin-top: var(--spacing-xs);">Teklifbul,
+          NEFISOFT'un satın alma ve teklif modülü markasıdır.</p>
       </div>
     </div>
-  </div>
+  </footer>
 
+  <!-- Scripts -->
   <script type="module">
-    // Teklifbul Rule v1.0 - Login akışı (toast + logger ile)
-    import { login, loginWithGoogle, logout, watchAuth, checkGoogleRedirect, auth } from "./firebase.js";
-    import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
-    import { toast } from "/src/shared/ui/toast.js";
-    // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
-    import { MESSAGES } from '/src/shared/constants/messages.js';
-    import { logger } from "/src/shared/log/logger.js";
+    import { initI18n } from '/assets/js/i18n.js';
+    import { initCookieConsent } from '/assets/js/cookieConsent.js';
+    import { initCommonLayout } from '/assets/js/commonLayout.js';
+    import { initChatWidget } from '/assets/js/chatWidget.js';
+    import { initPWAInstall } from '/assets/js/pwa-install.js';
 
-    const emailEl = document.getElementById("email");
-    const passEl = document.getElementById("password");
-    const loginBtn = document.getElementById("loginBtn");
-    const googleBtn = document.getElementById("googleBtn");
-    const logoutBtn = document.getElementById("logoutBtn");
-    const statusEl = document.getElementById("status");
-    const loginForm = document.getElementById("loginForm");
-    const passwordToggle = document.getElementById("passwordToggle");
-    const loginContainer = document.getElementById("loginContainer");
-    const emailError = document.getElementById("emailError");
-    const passwordError = document.getElementById("passwordError");
+    // Initialize all modules
+    initI18n('tr');
+    initCookieConsent();
+    initCommonLayout();
+    initChatWidget();
+    initPWAInstall(); // Teklifbul Rule v1.0 - PWA install prompt
 
-    // Şifre göster/gizle toggle
-    passwordToggle.addEventListener("click", () => {
-      const type = passEl.getAttribute("type") === "password" ? "text" : "password";
-      passEl.setAttribute("type", type);
-      passwordToggle.textContent = type === "password" ? "👁️" : "🙈";
-    });
+    // Teklifbul Rule v1.0 - Giriş yap tıklandığında mevcut oturumu kapat ve login sayfasına yönlendir
+    (function setupLoginRedirect() {
+      const loginLinks = document.querySelectorAll('a[href="/login.html"][data-i18n="btn.login"]');
+      if (!loginLinks.length) return;
 
-    // Form validasyonu
-    function validateEmail(email) {
-      const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      return re.test(email);
-    }
+      loginLinks.forEach((link) => {
+        // Auxclick handler (middle click)
+        link.addEventListener('auxclick', (e) => {
+          if (e.button === 1) {
+            // Middle click: normal link davranışı (yeni sekmede aç)
+            return;
+          }
+        });
 
-    function showError(element, message) {
-      element.textContent = message;
-      element.classList.add("show");
-      element.previousElementSibling.querySelector(".form-input").classList.add("error");
-    }
+        // Normal click handler
+        link.addEventListener('click', async (e) => {
+          // Ctrl+Click, Shift+Click vb. için normal link davranışına izin ver
+          if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) {
+            return;
+          }
 
-    function clearError(element) {
-      element.textContent = "";
-      element.classList.remove("show");
-      const input = element.previousElementSibling.querySelector(".form-input");
-      if (input) input.classList.remove("error");
-    }
+          // Normal click - mevcut oturumu kapat ve login sayfasına yönlendir
+          e.preventDefault();
+          try {
+            const { auth, logout } = await import('/firebase.js');
+            if (auth.currentUser) {
+              await logout();
+            }
+          } catch (err) {
+            // Sessiz geç: login sayfasına yönlendirmeye devam
+          } finally {
+            window.location.href = '/login.html';
+          }
+        });
+      });
+    })();
 
-    function clearAllErrors() {
-      clearError(emailError);
-      clearError(passwordError);
-      loginContainer.classList.remove("shake");
-    }
-
-    // Input validasyonu (real-time)
-    emailEl.addEventListener("blur", () => {
-      const email = emailEl.value.trim();
-      if (email && !validateEmail(email)) {
-        showError(emailError, "Geçerli bir e-posta adresi girin");
-      } else {
-        clearError(emailError);
-      }
-    });
-
-    emailEl.addEventListener("input", () => {
-      if (emailError.classList.contains("show")) {
-        clearError(emailError);
-      }
-    });
-
-    passEl.addEventListener("input", () => {
-      if (passwordError.classList.contains("show")) {
-        clearError(passwordError);
-      }
-    });
-
-    // Form submit handler
-    loginForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      clearAllErrors();
-
-      const email = emailEl.value.trim();
-      const password = passEl.value.trim();
-      let hasError = false;
-
-      if (!email) {
-        showError(emailError, "E-posta adresi gereklidir");
-        hasError = true;
-      } else if (!validateEmail(email)) {
-        showError(emailError, "Geçerli bir e-posta adresi girin");
-        hasError = true;
-      }
-
-      if (!password) {
-        showError(passwordError, "Şifre gereklidir");
-        hasError = true;
-      } else if (password.length < 6) {
-        showError(passwordError, "Şifre en az 6 karakter olmalıdır");
-        hasError = true;
-      }
-
-      if (hasError) {
-        loginContainer.classList.add("shake");
-        setTimeout(() => loginContainer.classList.remove("shake"), 500);
+    // Teklifbul Rule v1.0 - Dashboard preview görseli yükleme kontrolü
+    // Görsel artık flexbox ile butonun yanında, JavaScript konumlandırmaya gerek yok
+    (function setupDashboardPreview() {
+      const img = document.getElementById('dashboard-preview-img');
+      if (!img) {
+        console.error('❌ dashboard-preview-img elementi bulunamadı');
         return;
       }
 
-      await handleEmailLogin(email, password);
-    });
+      img.addEventListener('load', function () {
+        console.log('✅ Görsel yüklendi:', this.src);
+        this.style.opacity = '1';
+        this.style.visibility = 'visible';
+      });
 
-    // Check for Google redirect result on page load
-    checkGoogleRedirect().then(async user => {
-      if (user) {
-        logger.group("Google Redirect Login");
-        logger.info("Google redirect login başarılı", { email: user.email });
-        toast.success(MESSAGES.SUCCESS_LOGIN);
-        logger.end();
-        // onAuthStateChanged yönlendirir
-      }
-    });
+      img.addEventListener('error', function () {
+        console.error('❌ Görsel yüklenemedi:', this.src);
+        this.style.border = '3px solid red';
+        this.style.backgroundColor = 'yellow';
+        this.alt = 'GÖRSEL YÜKLENEMEDİ: ' + this.src;
+      });
+    })();
+  </script>
 
-    // Email/Password login handler
-    async function handleEmailLogin(email, password) {
-      logger.group("Email Login");
-      try {
-        loginBtn.disabled = true;
-        loginBtn.textContent = "Giriş yapılıyor...";
-        clearAllErrors();
+  <style>
+    /* Hero H1 - Responsive text wrapping */
+    .hero-text h1 {
+      white-space: normal;
+      word-break: keep-all;
+      hyphens: none;
+      overflow-wrap: normal;
+    }
 
-        await signInWithEmailAndPassword(auth, email, password);
-        toast.success(MESSAGES.SUCCESS_LOGIN);
-        logger.info("Giriş başarılı", { email });
-        // onAuthStateChanged yönlendirir; burada ekstra push yok
-      } catch (err) {
-        logger.error("Giriş hatası", err);
-        
-        // Hata mesajlarını kullanıcı dostu hale getir
-        let errorMessage = MESSAGES.ERROR_LOGIN;
-        if (err.code === "auth/user-not-found") {
-          errorMessage = "Bu e-posta adresi ile kayıtlı kullanıcı bulunamadı";
-        } else if (err.code === "auth/wrong-password") {
-          errorMessage = "Şifre hatalı";
-          showError(passwordError, "Şifre hatalı");
-        } else if (err.code === "auth/invalid-email") {
-          errorMessage = "Geçersiz e-posta adresi";
-          showError(emailError, "Geçersiz e-posta adresi");
-        } else if (err.code === "auth/too-many-requests") {
-          errorMessage = "Çok fazla başarısız deneme. Lütfen daha sonra tekrar deneyin";
-        }
-        
-        toast.error(errorMessage);
-        loginContainer.classList.add("shake");
-        setTimeout(() => loginContainer.classList.remove("shake"), 500);
-      } finally {
-        loginBtn.disabled = false;
-        loginBtn.textContent = "Giriş Yap";
-        logger.end();
+    @media (min-width: 1024px) {
+      .hero-text h1 {
+        white-space: nowrap;
+        overflow: visible;
       }
     }
 
-    // Google login handler
-    googleBtn.addEventListener("click", async () => {
-      logger.group("Google Login");
-      try {
-        googleBtn.disabled = true;
-        googleBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.965-2.184l-2.908-2.258c-.806.54-1.837.86-3.057.86-2.35 0-4.34-1.587-5.053-3.72H.957v2.331C2.438 15.983 5.482 18 9 18z" fill="#34A853"/><path d="M3.943 10.698c-.18-.54-.282-1.117-.282-1.698s.102-1.158.282-1.698V4.971H.957C.348 6.175 0 7.55 0 9s.348 2.825.957 4.029l2.986-2.331z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.971L3.943 7.302C4.656 5.167 6.646 3.58 9 3.58z" fill="#EA4335"/></svg> Giriş yapılıyor...';
-        clearAllErrors();
-        
-        await loginWithGoogle();
-        toast.success(MESSAGES.SUCCESS_LOGIN_GOOGLE);
-        logger.info("Google login başarılı");
-        // onAuthStateChanged yönlendirir
-      } catch (e) {
-        logger.error("Google login hatası", e);
-        toast.error(MESSAGES.ERROR_LOGIN_GOOGLE + ": " + (e.message || "Bilinmeyen hata"));
-        googleBtn.disabled = false;
-        googleBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.965-2.184l-2.908-2.258c-.806.54-1.837.86-3.057.86-2.35 0-4.34-1.587-5.053-3.72H.957v2.331C2.438 15.983 5.482 18 9 18z" fill="#34A853"/><path d="M3.943 10.698c-.18-.54-.282-1.117-.282-1.698s.102-1.158.282-1.698V4.971H.957C.348 6.175 0 7.55 0 9s.348 2.825.957 4.029l2.986-2.331z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.971L3.943 7.302C4.656 5.167 6.646 3.58 9 3.58z" fill="#EA4335"/></svg> Google ile Giriş';
-        loginContainer.classList.add("shake");
-        setTimeout(() => loginContainer.classList.remove("shake"), 500);
-      } finally {
-        logger.end();
+    @media (max-width: 1023px) {
+      .hero-text h1 {
+        white-space: normal;
+        word-break: keep-all;
       }
-    });
+    }
 
-    logoutBtn.onclick = () => logout();
+    /* Hero Visual - Full area image */
+    .hero-visual {
+      padding: 0 !important;
+      min-height: 600px !important;
+      height: 100% !important;
+    }
 
-    // Auth listener with cleanup - Teklifbul Rule v1.0
-    const authUnsubscribe = watchAuth(u => {
-      statusEl.textContent = u ? ("Oturum açık: " + (u.email || u.uid)) : "Oturum kapalı.";
-      logoutBtn.style.display = u ? "block" : "none";
-    });
-    
-    // Cleanup on page unload
-    window.addEventListener('beforeunload', () => {
-      if (authUnsubscribe) {
-        authUnsubscribe();
+    .hero-visual img {
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: contain !important;
+      object-position: center !important;
+      display: block !important;
+      position: relative !important;
+      z-index: 1 !important;
+    }
+
+    @media (max-width: 768px) {
+      .hero-visual {
+        min-height: 400px !important;
       }
-    });
+    }
 
-    // Şifremi Unuttum link handler (placeholder)
-    document.getElementById("forgotPassword").addEventListener("click", (e) => {
-      e.preventDefault();
-      toast.info("Şifre sıfırlama özelliği yakında eklenecek");
-    });
-  </script>
-  <script type="module" src="/js/ui-standard.js"></script>
+    /* Plan Stars Animation - Teklifbul Rule v1.0 - 3D Dance Animation */
+    .planStars {
+      display: inline-block;
+      color: #fbbf24;
+      font-size: 1.25rem;
+      transform-style: preserve-3d;
+      animation: starDance 2.5s ease-in-out infinite;
+      transform-origin: center center;
+    }
+
+    .planStars:nth-child(2) {
+      animation-delay: 0.1s;
+    }
+
+    .planStars:nth-child(3) {
+      animation-delay: 0.2s;
+    }
+
+    @keyframes starDance {
+
+      0%,
+      100% {
+        transform: perspective(300px) rotateY(0deg) rotateX(0deg) rotateZ(0deg) translateZ(0);
+      }
+
+      20% {
+        transform: perspective(300px) rotateY(-12deg) rotateX(5deg) rotateZ(-2deg) translateZ(8px);
+      }
+
+      40% {
+        transform: perspective(300px) rotateY(0deg) rotateX(0deg) rotateZ(0deg) translateZ(0);
+      }
+
+      60% {
+        transform: perspective(300px) rotateY(12deg) rotateX(-5deg) rotateZ(2deg) translateZ(8px);
+      }
+
+      80% {
+        transform: perspective(300px) rotateY(0deg) rotateX(0deg) rotateZ(0deg) translateZ(0);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .planStars {
+        animation: none;
+      }
+    }
+
+    /* Pricing Grid - Equal Size Cards */
+    .premium-section .pricing-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--spacing-2xl);
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .premium-section .pricing-card {
+      min-width: 0;
+      padding: var(--spacing-2xl);
+      transform: none;
+    }
+
+    .premium-section .pricing-card-premium-plus {
+      grid-column: 1 / -1;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .premium-section .pricing-amount {
+      white-space: nowrap;
+      overflow: visible;
+      text-overflow: clip;
+    }
+
+    @media (min-width: 1024px) {
+      .premium-section .pricing-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .premium-section .pricing-card-premium-plus {
+        grid-column: 1 / -1;
+        max-width: 600px;
+      }
+    }
+
+    @media (max-width: 1023px) {
+      .premium-section .pricing-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .premium-section .pricing-card-premium-plus {
+        grid-column: 1;
+        max-width: 100%;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .premium-section .pricing-card {
+        min-width: 100%;
+      }
+
+      .premium-section .pricing-amount {
+        white-space: normal;
+        font-size: 0.95rem;
+      }
+    }
+
+    /* Final CTA Trust Line - Desktop single line, mobile wrap */
+    @media (min-width: 769px) {
+      .section:has(.btn-accent.btn-lg) p:last-child {
+        white-space: nowrap;
+      }
+    }
+
+    /* Mobile Menu Styles */
+    /* Teklifbul Rule v1.0 - Mobil menü iyileştirmeleri */
+    .mobile-menu {
+      display: none;
+      position: fixed;
+      /* Fixed yap ki scroll'da da görünsün */
+      top: var(--header-height-mobile, 70px);
+      left: 0;
+      right: 0;
+      background: var(--color-bg);
+      border-top: 1px solid var(--color-border);
+      box-shadow: var(--shadow-lg);
+      padding: var(--spacing-lg);
+      z-index: 999;
+      max-height: calc(100vh - var(--header-height-mobile, 70px));
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      /* iOS smooth scroll */
+    }
+
+    .mobile-menu.open {
+      display: block;
+    }
+
+    .mobile-menu ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-md);
+      margin: 0;
+      padding: 0;
+    }
+
+    .mobile-menu ul li a {
+      display: block;
+      padding: var(--spacing-md);
+      color: var(--color-text);
+      border-radius: var(--radius-md);
+      transition: background var(--transition-fast);
+      text-decoration: none;
+      /* Teklifbul Rule v1.0 - Touch target minimum 44px */
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .mobile-menu ul li a:active {
+      background: var(--color-bg-light);
+    }
+
+    .mobile-menu ul li a:hover {
+      background: var(--color-bg-light);
+    }
+
+    @media (max-width: 768px) {
+      .header-nav-links {
+        display: none;
+      }
+
+      .header-actions .btn {
+        display: none;
+      }
+
+      .header-actions .lang-switch {
+        display: none;
+      }
+
+      .hamburger {
+        display: flex !important;
+        /* Mobilde her zaman görünür */
+      }
+    }
+
+    @media (min-width: 769px) {
+      .mobile-menu {
+        display: none !important;
+      }
+
+      .hamburger {
+        display: none !important;
+      }
+    }
+  </style>
 </body>
+
 </html>

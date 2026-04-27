@@ -2,9 +2,12 @@
 <html lang="tr">
 <head>
   <meta charset="utf-8" />
-  <title>Şantiye Malzeme Talep Formu (ŞMTF)</title>
+  <title>Şantiye/Depo Transfer Talep Formu</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Teklifbul Rule v1.0 - FOUC önleme: Tema hemen uygulanmalı -->
+  <script src="/assets/js/theme-init.js"></script>
   <link rel="stylesheet" href="/utils.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
   <style>
     body{font-family:system-ui, Arial; background:#f8fafc; color:#111827; margin:0}
     .container{max-width:1100px;margin:0 auto;padding:20px}
@@ -31,6 +34,92 @@
     .search-result div:hover{background:#e5e7eb}
     .address-modal{display:none !important}
     .address-modal[style*="flex"]{display:flex !important}
+    
+    /* Koyu Mod Düzenlemeleri */
+    html[data-theme="dark"] body,
+    html.force-dark body {
+      background:#111827;
+      color:#ffffff;
+    }
+    html[data-theme="dark"] .card,
+    html.force-dark .card {
+      background:#111827;
+      border:1px solid rgba(255,255,255,0.1);
+      color:#ffffff;
+    }
+    html[data-theme="dark"] label,
+    html.force-dark label {
+      color:#d1d5db;
+    }
+    html[data-theme="dark"] input,
+    html[data-theme="dark"] select,
+    html[data-theme="dark"] textarea,
+    html.force-dark input,
+    html.force-dark select,
+    html.force-dark textarea {
+      background:#111827;
+      border:1px solid rgba(255,255,255,0.1);
+      color:#ffffff;
+    }
+    html[data-theme="dark"] table,
+    html.force-dark table {
+      background:#111827;
+    }
+    html[data-theme="dark"] th,
+    html.force-dark th {
+      background:#111827;
+      color:#ffffff;
+      border-bottom:1px solid rgba(255,255,255,0.1);
+    }
+    html[data-theme="dark"] td,
+    html.force-dark td {
+      color:#ffffff;
+      border-bottom:1px solid rgba(255,255,255,0.1);
+    }
+    html[data-theme="dark"] .muted,
+    html.force-dark .muted {
+      color:#9ca3af;
+    }
+    html[data-theme="dark"] .search-result,
+    html.force-dark .search-result {
+      background:#111827;
+      border:1px solid rgba(255,255,255,0.1);
+    }
+    html[data-theme="dark"] .search-result div,
+    html.force-dark .search-result div {
+      border-bottom:1px solid rgba(255,255,255,0.1);
+      color:#ffffff;
+    }
+    html[data-theme="dark"] .search-result div:hover,
+    html.force-dark .search-result div:hover {
+      background:#1f2937;
+    }
+    html[data-theme="dark"] textarea[readonly],
+    html.force-dark textarea[readonly] {
+      background:#111827 !important;
+      border:1px solid rgba(255,255,255,0.1);
+      color:#ffffff !important;
+    }
+    html[data-theme="dark"] #reqDelivery,
+    html.force-dark #reqDelivery {
+      background:#111827 !important;
+      color:#ffffff !important;
+    }
+    html[data-theme="dark"] h1,
+    html[data-theme="dark"] h2,
+    html.force-dark h1,
+    html.force-dark h2 {
+      color:#ffffff;
+    }
+    html[data-theme="dark"] input:focus,
+    html[data-theme="dark"] select:focus,
+    html[data-theme="dark"] textarea:focus,
+    html.force-dark input:focus,
+    html.force-dark select:focus,
+    html.force-dark textarea:focus {
+      border-color:rgba(255,255,255,0.3);
+      outline:none;
+    }
   </style>
 </head>
 <body>
@@ -38,8 +127,26 @@
   <header id="app-header"></header>
 
   <div class="container">
-    <h1>Şantiye Malzeme Talep Formu (ŞMTF)</h1>
-    <p class="muted">Şantiyeye malzeme talebi oluşturun.</p>
+    <!-- Breadcrumb Navigation -->
+    <div class="tb-breadcrumb" id="breadcrumb">
+      <span class="tb-crumb">
+        <span class="ico">🏠</span>
+        <a href="/dashboard.html">Ana Sayfa</a>
+      </span>
+      <span class="tb-sep">›</span>
+      <span class="tb-crumb">
+        <span class="ico">📦</span>
+        <a href="/inventory-index.html">Stok Takip</a>
+      </span>
+      <span class="tb-sep">›</span>
+      <span class="tb-crumb">
+        <span class="ico">🏗️</span>
+        <span>Şantiye/Depo Transfer Talep Formu</span>
+      </span>
+    </div>
+    
+    <h1>Şantiye/Depo Transfer Talep Formu</h1>
+    <p class="muted">Şantiyeden depoya veya birimler arası stok transfer talebi oluşturun.</p>
 
     <div class="card">
       <h2 style="margin:0 0 12px 0;font-size:18px">Talep Bilgileri</h2>
@@ -49,9 +156,9 @@
           <input id="reqTitle" placeholder="Örn. Rize Şantiye Çimento Talebi" />
         </div>
         <div>
-          <label for="reqLocation">Şantiye/Depo <span style="color:#dc2626">*</span></label>
+          <label for="reqLocation">Nereden İsteniyor? (Şantiye/Depo) <span style="color:#dc2626">*</span></label>
           <div style="position:relative">
-            <input type="text" id="reqLocation" placeholder="Şantiye ara veya seçin..." autocomplete="off" />
+            <input type="text" id="reqLocation" placeholder="Talebin gideceği şantiye veya depoyu seçin..." autocomplete="off" />
             <div id="locationDropdown" class="search-result" style="position:absolute;top:100%;left:0;right:0;z-index:100;max-height:200px;overflow-y:auto;display:none;background:#fff;border:1px solid #d1d5db;border-radius:4px;box-shadow:0 4px 6px rgba(0,0,0,0.1)"></div>
           </div>
         </div>
@@ -116,10 +223,8 @@
   </div>
 
   <!-- PDF & Excel Libraries -->
-  <script type="module">
-    import '../assets/vendor/jspdf.umd.min.js';
-    import '../assets/vendor/xlsx.full.min.js';
-  </script>
+  <script src="/vendor/jspdf.umd.min.js"></script>
+  <script src="/vendor/xlsx.full.min.js"></script>
 
   <!-- Firebase -->
   <script type="module" src="/firebase.js"></script>

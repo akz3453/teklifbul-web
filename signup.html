@@ -5,102 +5,406 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Kayıt Ol</title>
   <style>
-    body { font-family: system-ui, Arial; max-width: 420px; margin: 60px auto; padding: 0 12px; }
-    h1 { margin-bottom: 16px; }
-    input, button { width: 100%; padding: 12px; margin: 8px 0; box-sizing: border-box; }
-    button { cursor: pointer; }
-    a { color: #1a56db; text-decoration: none; }
-    small { color: #666; }
+    /* Full-page layout - Teklifbul Rule v1.0 */
+    body { 
+      margin: 0; 
+      font-family: system-ui, Arial; 
+      background: linear-gradient(135deg, #eef2ff, #f9fafb);
+      min-height: 100vh;
+    }
+    
+    .page-wrapper {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    /* Brand header */
+    .brand-header {
+      background: #ffffff;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 16px 24px;
+    }
+    
+    .brand-header-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 20px;
+      font-weight: 700;
+      color: #1f2937;
+      text-decoration: none;
+    }
+    
+    .brand-logo:hover {
+      color: #3b82f6;
+    }
+    
+    .header-login {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: #6b7280;
+    }
+    
+    .header-login a {
+      color: #3b82f6;
+      text-decoration: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      transition: background 0.2s;
+    }
+    
+    .header-login a:hover {
+      background: #eff6ff;
+    }
+    
+    /* Main content */
+    main {
+      flex: 1;
+      padding: 32px 20px 40px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+    }
+    
+    /* Central card */
+    .card {
+      max-width: 960px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 32px;
+      border-radius: 16px;
+      background: #ffffff;
+      box-shadow: 0 20px 40px rgba(15,23,42,0.08);
+    }
+    
+    /* Step indicator */
+    .step-indicator {
+      margin-bottom: 24px;
+    }
+    
+    .step {
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      font-weight: 500;
+      display: inline-block;
+    }
+    
+    /* Card content - two columns on desktop */
+    .card-content {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 32px;
+    }
+    
+    @media (min-width: 900px) {
+      .card-content {
+        grid-template-columns: 3fr 2fr;
+      }
+    }
+    
+    /* Typography */
+    h1 {
+      font-size: 28px;
+      font-weight: 700;
+      color: #1f2937;
+      margin: 0 0 8px 0;
+    }
+    
+    .subtitle {
+      font-size: 15px;
+      color: #6b7280;
+      margin-bottom: 24px;
+    }
+    
+    /* Form styles */
+    .form-section {
+      margin-bottom: 24px;
+    }
+    
+    .form-section h3 {
+      font-size: 18px;
+      font-weight: 600;
+      color: #1f2937;
+      margin: 0 0 16px 0;
+    }
+    
+    label {
+      display: block;
+      font-weight: 600;
+      font-size: 14px;
+      color: #374151;
+      margin-bottom: 6px;
+    }
+    
+    input, button, select {
+      width: 100%;
+      padding: 12px;
+      margin: 0 0 16px 0;
+      box-sizing: border-box;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+    }
+    
+    input:focus, select:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+    
+    button:hover:not(:disabled) {
+      background: #2563eb;
+    }
+    
+    button:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+    
+    a {
+      color: #3b82f6;
+      text-decoration: none;
+    }
+    
+    a:hover {
+      text-decoration: underline;
+    }
+    
+    small {
+      color: #6b7280;
+      font-size: 13px;
+      display: block;
+      margin-top: 16px;
+    }
+    
+    /* Referral info */
     .referral-info {
       padding: 12px;
       background: #eff6ff;
       border-left: 4px solid #3b82f6;
       border-radius: 6px;
-      margin: 16px 0;
+      margin: 0 0 16px 0;
       font-size: 14px;
     }
+    
     .referral-info strong {
       color: #1e40af;
+    }
+    
+    /* Info block (right column) */
+    .info-block {
+      background: #f9fafb;
+      border-radius: 12px;
+      padding: 24px;
+      height: fit-content;
+    }
+    
+    .info-block h3 {
+      font-size: 18px;
+      font-weight: 600;
+      color: #1f2937;
+      margin: 0 0 16px 0;
+    }
+    
+    .info-block ul {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 20px 0;
+    }
+    
+    .info-block li {
+      padding: 8px 0;
+      font-size: 14px;
+      color: #374151;
+      line-height: 1.6;
+      position: relative;
+      padding-left: 24px;
+    }
+    
+    .info-block li:before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: #3b82f6;
+      font-weight: bold;
+    }
+    
+    .info-block p {
+      font-size: 13px;
+      color: #6b7280;
+      line-height: 1.6;
+      margin: 0;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+      .card {
+        padding: 20px;
+        margin: 0;
+        border-radius: 0;
+      }
+      
+      main {
+        padding: 0;
+      }
+      
+      h1 {
+        font-size: 24px;
+      }
     }
   </style>
 </head>
 <body>
-  <h1>Kayıt Ol</h1>
-
-  <!-- Referans Bilgisi -->
-  <div id="referralInfo" class="referral-info" style="display: none;">
-    <strong>📝 Referans ile Kayıt:</strong>
-    <div id="referralCompanyName" style="margin-top: 6px; color: #1e40af;"></div>
-  </div>
-
-  <label for="displayName">Ad Soyad <span style="color:#ef4444;">*</span></label>
-  <input id="displayName" type="text" placeholder="Ad Soyad" autocomplete="name" required />
-  <label for="email">E-posta <span style="color:#ef4444;">*</span></label>
-  <input id="email" type="email" placeholder="E-posta" autocomplete="username" required />
-  <label for="password">Şifre (min 6 karakter) <span style="color:#ef4444;">*</span></label>
-  <input id="password" type="password" placeholder="Şifre (min 6 karakter)" autocomplete="new-password" required />
-  
-  <!-- Şirket Kayıt Seçimi - Teklifbul Rule v1.0 -->
-  <div style="margin: 16px 0; padding: 12px; background: #f0f9ff; border-radius: 6px; border: 1px solid #3b82f6;">
-    <label style="font-weight: 600; margin-bottom: 8px; display: block;">Şirket İşlemi <span style="color:#ef4444;">*</span></label>
-    <div style="display: flex; gap: 8px; flex-direction: column;">
-      <label style="display: flex; align-items: center; cursor: pointer; padding: 8px; border-radius: 4px; transition: background 0.2s;">
-        <input type="radio" name="companyAction" value="new" checked style="margin-right: 8px;" />
-        <div>
-          <strong>Yeni Şirket Kur</strong>
-          <p style="margin: 4px 0 0 0; font-size: 12px; color: #6b7280;">Sistem otomatik olarak şirket kodu oluşturur</p>
+  <div class="page-wrapper">
+    <!-- Brand Header -->
+    <header class="brand-header">
+      <div class="brand-header-content">
+        <a href="./index.html" class="brand-logo">
+          <span>📋</span>
+          <span>NEFISOFT</span>
+        </a>
+        <div class="header-login">
+          <span>Zaten hesabınız var mı?</span>
+          <a href="./login.html">Giriş yap</a>
         </div>
-      </label>
-      <label style="display: flex; align-items: center; cursor: pointer; padding: 8px; border-radius: 4px; transition: background 0.2s;">
-        <input type="radio" name="companyAction" value="join" style="margin-right: 8px;" />
-        <div>
-          <strong>Mevcut Şirkete Katıl</strong>
-          <p style="margin: 4px 0 0 0; font-size: 12px; color: #6b7280;">Şirket kodunu girip rol seçin, şirket yöneticileri onaylayacak</p>
-        </div>
-      </label>
-    </div>
-    
-    <!-- Şirkete Katılma Alanları (gizli) -->
-    <div id="joinCompanyFields" style="display: none; margin-top: 12px; padding: 12px; background: white; border-radius: 6px; border: 1px solid #d1d5db;">
-      <label for="companyJoinCode" style="display: block; margin-bottom: 4px; font-size: 14px; font-weight: 600;">Şirket Kodu <span style="color:#ef4444;">*</span></label>
-      <input type="text" id="companyJoinCode" placeholder="Şirket kodunu girin" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; text-transform: uppercase; box-sizing: border-box;" maxlength="10" />
-      <p style="font-size: 12px; color: #6b7280; margin-top: 4px;">Şirket yöneticilerinden aldığınız kodu girin</p>
-      
-      <label for="companyJoinRole" style="display: block; margin-top: 12px; margin-bottom: 4px; font-size: 14px; font-weight: 600;">Şirket İçindeki Rolünüz <span style="color:#ef4444;">*</span></label>
-      <select id="companyJoinRole" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; box-sizing: border-box;">
-        <option value="">Rol seçin</option>
-        <optgroup label="Alıcı Rolleri">
-          <option value="buyer:satinalma_yetkilisi">Satın Alma Yetkilisi</option>
-          <option value="buyer:santiye_yetkilisi">Şantiye Yetkilisi</option>
-          <option value="buyer:stok_depo">Stok / Depo Yetkilisi</option>
-          <option value="buyer:muhasebe">Muhasebe</option>
-          <option value="buyer:alici">Alıcı</option>
-          <option value="buyer:genel_mudur">Genel Müdür</option>
-          <option value="buyer:genel_mudur_yardimcisi">Genel Müdür Yardımcısı</option>
-          <option value="buyer:yonetim_kurulu_baskani">Yönetim Kurulu Başkanı</option>
-          <option value="buyer:isveren">İşveren (Şirket Sahibi)</option>
-          <option value="buyer:ceo">CEO</option>
-        </optgroup>
-        <optgroup label="Tedarikçi Rolleri">
-          <option value="supplier:satis_personeli">Satış Personeli</option>
-          <option value="supplier:pazarlama_muduru">Pazarlama Müdürü</option>
-          <option value="supplier:genel_mudur">Genel Müdür</option>
-          <option value="supplier:yonetim_kurulu_baskani">Yönetim Kurulu Başkanı</option>
-          <option value="supplier:ceo">CEO</option>
-          <option value="supplier:sirket_sahibi">Şirket Sahibi</option>
-        </optgroup>
-      </select>
-      <p style="font-size: 12px; color: #6b7280; margin-top: 4px;">Şirket yöneticileri bu rolü onaylayacak veya değiştirebilecek</p>
-    </div>
-  </div>
-  
-  <button id="signupBtn">Kayıt Ol</button>
+      </div>
+    </header>
 
-  <p>Zaten üye misin? <a href="./index.html">Giriş yap</a></p>
-  <small>Not: Firebase Console → Authentication → Users ekranında yeni kullanıcıyı görebileceksin.</small>
+    <!-- Main Content -->
+    <main>
+      <div class="card">
+        <!-- Step Indicator -->
+        <div class="step-indicator">
+          <span class="step">Adım 1 / 3 – Hesap Bilgileri</span>
+        </div>
+
+        <h1>Kayıt Ol</h1>
+        <p class="subtitle">NEFISOFT'a katılın ve tedarik süreçlerinizi dijitalleştirin</p>
+
+        <div class="card-content">
+          <!-- Left Column: Form -->
+          <div class="form-column">
+            <!-- Referans Bilgisi -->
+            <div id="referralInfo" class="referral-info" style="display: none;">
+              <strong>📝 Referans ile Kayıt:</strong>
+              <div id="referralCompanyName" style="margin-top: 6px; color: #1e40af;"></div>
+            </div>
+
+            <div class="form-section">
+              <h3>Kişisel Bilgiler</h3>
+              <label for="displayName">Ad Soyad <span style="color:#ef4444;">*</span></label>
+              <input id="displayName" type="text" placeholder="Ad Soyad" autocomplete="name" required />
+              <label for="email">E-posta <span style="color:#ef4444;">*</span></label>
+              <input id="email" type="email" placeholder="E-posta" autocomplete="username" required />
+              <label for="phone">Telefon Numarası <span style="color:#ef4444;">*</span></label>
+              <input id="phone" type="tel" placeholder="05xx xxx xx xx" required />
+              <label for="password">Şifre (min 6 karakter) <span style="color:#ef4444;">*</span></label>
+              <input id="password" type="password" placeholder="Şifre (min 6 karakter)" autocomplete="new-password" required />
+            </div>
+            
+            <!-- Şirket Kayıt Seçimi - Teklifbul Rule v1.0 -->
+            <div class="form-section">
+              <h3>Şirket İşlemi</h3>
+              <div style="padding: 16px; background: #f0f9ff; border-radius: 8px; border: 1px solid #3b82f6;">
+                <div style="display: flex; gap: 8px; flex-direction: column;">
+                  <label style="display: flex; align-items: center; cursor: pointer; padding: 8px; border-radius: 4px; transition: background 0.2s;">
+                    <input type="radio" name="companyAction" value="new" checked style="margin-right: 8px; width: auto;" />
+                    <div>
+                      <strong>Yeni Şirket Kur</strong>
+                      <p style="margin: 4px 0 0 0; font-size: 12px; color: #6b7280;">Sistem otomatik olarak şirket kodu oluşturur</p>
+                    </div>
+                  </label>
+                  <label style="display: flex; align-items: center; cursor: pointer; padding: 8px; border-radius: 4px; transition: background 0.2s;">
+                    <input type="radio" name="companyAction" value="join" style="margin-right: 8px; width: auto;" />
+                    <div>
+                      <strong>Mevcut Şirkete Katıl</strong>
+                      <p style="margin: 4px 0 0 0; font-size: 12px; color: #6b7280;">Şirket kodunu girip rol seçin, şirket yöneticileri onaylayacak</p>
+                    </div>
+                  </label>
+                </div>
+                
+                <!-- Şirkete Katılma Alanları (gizli) -->
+                <div id="joinCompanyFields" style="display: none; margin-top: 12px; padding: 12px; background: white; border-radius: 6px; border: 1px solid #d1d5db;">
+                  <label for="companyJoinCode" style="display: block; margin-bottom: 4px; font-size: 14px; font-weight: 600;">Şirket Kodu <span style="color:#ef4444;">*</span></label>
+                  <input type="text" id="companyJoinCode" placeholder="Şirket kodunu girin" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; text-transform: uppercase; box-sizing: border-box;" maxlength="10" />
+                  <p style="font-size: 12px; color: #6b7280; margin-top: 4px;">Şirket yöneticilerinden aldığınız kodu girin</p>
+                  
+                  <label for="companyJoinRole" style="display: block; margin-top: 12px; margin-bottom: 4px; font-size: 14px; font-weight: 600;">Şirket İçindeki Rolünüz <span style="color:#ef4444;">*</span></label>
+                  <select id="companyJoinRole" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; box-sizing: border-box;">
+                    <option value="">Rol seçin</option>
+                    <optgroup label="Alıcı Rolleri">
+                      <option value="buyer:satinalma_yetkilisi">Satın Alma Yetkilisi</option>
+                      <option value="buyer:santiye_yetkilisi">Şantiye Yetkilisi</option>
+                      <option value="buyer:stok_depo">Stok / Depo Yetkilisi</option>
+                      <option value="buyer:muhasebe">Muhasebe</option>
+                      <option value="buyer:alici">Alıcı</option>
+                      <option value="buyer:genel_mudur">Genel Müdür</option>
+                      <option value="buyer:genel_mudur_yardimcisi">Genel Müdür Yardımcısı</option>
+                      <option value="buyer:yonetim_kurulu_baskani">Yönetim Kurulu Başkanı</option>
+                      <option value="buyer:isveren">İşveren (Şirket Sahibi)</option>
+                      <option value="buyer:ceo">CEO</option>
+                    </optgroup>
+                    <optgroup label="Tedarikçi Rolleri">
+                      <option value="supplier:satis_personeli">Satış Personeli</option>
+                      <option value="supplier:pazarlama_muduru">Pazarlama Müdürü</option>
+                      <option value="supplier:genel_mudur">Genel Müdür</option>
+                      <option value="supplier:yonetim_kurulu_baskani">Yönetim Kurulu Başkanı</option>
+                      <option value="supplier:ceo">CEO</option>
+                      <option value="supplier:sirket_sahibi">Şirket Sahibi</option>
+                    </optgroup>
+                  </select>
+                  <p style="font-size: 12px; color: #6b7280; margin-top: 4px;">Şirket yöneticileri bu rolü onaylayacak veya değiştirebilecek</p>
+                </div>
+              </div>
+            </div>
+            
+            <button id="signupBtn">Kayıt Ol</button>
+
+            <small>Devam ederek <a href="#">KVKK Aydınlatma Metni</a> ve <a href="#">Kullanıcı Sözleşmesi</a>'ni kabul etmiş olursunuz.</small>
+          </div>
+
+          <!-- Right Column: Info Block -->
+          <div class="info-block">
+            <h3>Neden Nefisoft?</h3>
+            <ul>
+              <li>Tedarik, teklif ve stok yönetimi tek ekranda</li>
+              <li>Çoklu firma ve çoklu depo desteği</li>
+              <li>Yapay zekâ destekli satın alma analizi</li>
+              <li>Tek linkle teklif onayı ve tahsilat (yakında)</li>
+            </ul>
+            <p>Hesabınızı oluşturduktan sonra şirket rolünüzü ve detaylarınızı adım adım tamamlayabilirsiniz.</p>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
 
     <script type="module">
-    import { register, updateUserProfile } from "./firebase.js";
+    import { register, updateUserProfile, logout } from "./firebase.js";
     import { db } from "./firebase.js";
     // Teklifbul Rule v1.0 - Structured Logging
     import { logger } from './src/shared/log/logger.js';
@@ -108,14 +412,42 @@
     import { toast } from './src/shared/ui/toast.js';
     // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
     import { MESSAGES } from './src/shared/constants/messages.js';
-    import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+    import { doc, getDoc, setDoc, updateDoc, serverTimestamp, collection, query, where, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+    import { sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+
+    const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5174';
 
     const displayNameEl = document.getElementById("displayName");
     const emailEl = document.getElementById("email");
+    const phoneEl = document.getElementById("phone");
     const passEl  = document.getElementById("password");
     const btn     = document.getElementById("signupBtn");
     const referralInfo = document.getElementById("referralInfo");
     const referralCompanyName = document.getElementById("referralCompanyName");
+    // Şirket işlemi alanları - Teklifbul Rule v1.0
+    const companyJoinCode = document.getElementById('companyJoinCode');
+    const companyJoinRole = document.getElementById('companyJoinRole');
+
+    // Telefon numarası normalizasyonu (örn: 0532 123 4567 -> +905321234567)
+    const normalizePhone = (p) => {
+      let cleaned = p.replace(/\D/g, ''); // Sadece rakamlar
+      // Türkiye numarası ise ve 0 ile başlıyorsa (05xx)
+      if (cleaned.length === 11 && cleaned.startsWith('0')) {
+        cleaned = cleaned.substring(1);
+      }
+      // 90 ile başlıyorsa ve 12 haneyse
+      else if (cleaned.length === 12 && cleaned.startsWith('90')) {
+        cleaned = cleaned.substring(2);
+      }
+      
+      // Standart 10 hane kaldıysa +90 ekle
+      if (cleaned.length === 10) {
+        return '+90' + cleaned;
+      }
+      
+      // Diğer durumlarda olduğu gibi döndür (başında + yoksa ekle)
+      return p.startsWith('+') ? p : '+' + cleaned;
+    };
 
     // URL parametresinden referans kodunu al
     const urlParams = new URLSearchParams(window.location.search);
@@ -224,36 +556,114 @@
     loadReferralInfo();
     
     // Şirket işlemi seçimi - Teklifbul Rule v1.0
-    const companyActionRadios = document.querySelectorAll('input[name="companyAction"]');
-    const joinCompanyFields = document.getElementById('joinCompanyFields');
-    const companyJoinCode = document.getElementById('companyJoinCode');
-    const companyJoinRole = document.getElementById('companyJoinRole');
-    
-    companyActionRadios.forEach(radio => {
-      radio.addEventListener('change', () => {
-        if (radio.value === 'join') {
-          joinCompanyFields.style.display = 'block';
-          companyJoinCode.required = true;
-          companyJoinRole.required = true;
-        } else {
-          joinCompanyFields.style.display = 'none';
-          companyJoinCode.required = false;
-          companyJoinRole.required = false;
-          companyJoinCode.value = '';
-          companyJoinRole.value = '';
-        }
+    function initCompanyActionToggle() {
+      const companyActionRadios = document.querySelectorAll('input[name="companyAction"]');
+      const joinCompanyFields = document.getElementById('joinCompanyFields');
+      
+      // Global değişkenleri kontrol et (sayfa yüklenmeden önce null olabilir)
+      if (!companyActionRadios.length || !joinCompanyFields) {
+        logger.warn('Şirket işlemi toggle elementleri bulunamadı, tekrar deneniyor...');
+        setTimeout(initCompanyActionToggle, 100);
+        return;
+      }
+      
+      // companyJoinCode ve companyJoinRole global değişkenlerini kontrol et
+      if (!companyJoinCode || !companyJoinRole) {
+        logger.warn('Şirket kodu ve rol alanları henüz yüklenmedi, tekrar deneniyor...');
+        setTimeout(initCompanyActionToggle, 100);
+        return;
+      }
+      
+      // İlk yüklemede doğru durumu ayarla
+      const checkedRadio = document.querySelector('input[name="companyAction"]:checked');
+      if (checkedRadio && checkedRadio.value === 'join') {
+        joinCompanyFields.style.display = 'block';
+        companyJoinCode.required = true;
+        companyJoinRole.required = true;
+      } else {
+        joinCompanyFields.style.display = 'none';
+        companyJoinCode.required = false;
+        companyJoinRole.required = false;
+      }
+      
+      companyActionRadios.forEach(radio => {
+        radio.addEventListener('change', () => {
+          if (radio.value === 'join') {
+            joinCompanyFields.style.display = 'block';
+            companyJoinCode.required = true;
+            companyJoinRole.required = true;
+            logger.info('Şirkete katılma alanları gösterildi', { 
+              joinCodeValue: companyJoinCode.value, 
+              joinRoleValue: companyJoinRole.value 
+            });
+          } else {
+            joinCompanyFields.style.display = 'none';
+            companyJoinCode.required = false;
+            companyJoinRole.required = false;
+            companyJoinCode.value = '';
+            companyJoinRole.value = '';
+            logger.info('Şirkete katılma alanları gizlendi');
+          }
+        });
       });
-    });
+    }
+    
+    // Sayfa yüklendiğinde veya DOM hazır olduğunda başlat
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initCompanyActionToggle);
+    } else {
+      initCompanyActionToggle();
+    }
 
     btn.onclick = async () => {
+      // Teklifbul Rule v1.0 - Çift tıklama önleme
+      if (btn.disabled) {
+        return;
+      }
+      
       try {
-        if (!displayNameEl.value || !emailEl.value || !passEl.value) {
-          throw new Error("Ad Soyad, E-posta ve şifre gerekli.");
+        // Butonu devre dışı bırak
+        btn.disabled = true;
+        btn.textContent = 'Kaydediliyor...';
+        
+        if (!displayNameEl.value || !emailEl.value || !phoneEl.value || !passEl.value) {
+          throw new Error("Ad Soyad, E-posta, Telefon ve şifre gerekli.");
         }
+
+        // Telefon numarası benzersizlik kontrolü
+        const rawPhone = phoneEl.value.trim();
+        const normalizedPhone = normalizePhone(rawPhone);
+        
+        logger.info('Telefon numarası kontrol ediliyor', { normalizedPhone });
+        
+        const phoneQuery = query(
+          collection(db, 'users'), 
+          where('contactPhones', 'array-contains', normalizedPhone)
+        );
+        const phoneSnap = await getDocs(phoneQuery);
+        
+        if (!phoneSnap.empty) {
+          throw new Error("Bu telefon numarası zaten bir hesapta kullanılıyor. Lütfen başka bir numara girin veya giriş yapın.");
+        }
+
+        // Teklifbul Rule v1.0 - reCAPTCHA v3 kaldırıldı, App Check kullanılıyor
+        // App Check Firebase tarafından otomatik olarak yönetiliyor
         
         // Kayıt işlemi
         const userCredential = await register(emailEl.value, passEl.value);
         const user = userCredential.user;
+        
+        // Email doğrulama mesajı: "Şirkete Katıl" akışında burada gönderilir,
+        // "Yeni Şirket Kur" akışında role-select.html'de şirket kaydından sonra gönderilir.
+        const companyActionForEmail = document.querySelector('input[name="companyAction"]:checked')?.value || 'new';
+        if (companyActionForEmail === 'join') {
+          try {
+            await sendEmailVerification(user);
+            logger.info("Email doğrulama mesajı gönderildi (şirkete katılma akışı)", { email: user.email });
+          } catch (verifyErr) {
+            logger.warn("Email doğrulama mesajı gönderilemedi", verifyErr);
+          }
+        }
         
         // Kullanıcı adını güncelle - Teklifbul Rule v1.0
         await updateUserProfile(user, {
@@ -311,6 +721,8 @@
                 const userRef = doc(db, 'users', user.uid);
                 await setDoc(userRef, {
                   displayName: displayNameEl.value.trim(), // Teklifbul Rule v1.0 - Ad Soyad
+                  email: emailEl.value.trim(),
+                  contactPhones: [normalizedPhone],
                   referralCode: pendingReferralCode,
                   referralCompanyId: pendingReferralCompanyId,
                   referralUsedAt: serverTimestamp(),
@@ -351,6 +763,7 @@
           await setDoc(userRef, {
             displayName: displayNameEl.value.trim(), // Teklifbul Rule v1.0 - Ad Soyad
             email: emailEl.value.trim(),
+            contactPhones: [normalizedPhone],
             createdAt: serverTimestamp()
           }, { merge: true });
         }
@@ -360,15 +773,20 @@
         
         if (companyAction === 'join') {
           // Mevcut şirkete katılma - direkt bekleme sayfasına yönlendir
+          if (!companyJoinCode || !companyJoinRole) {
+            throw new Error("Şirket kodu ve rol alanları bulunamadı. Lütfen sayfayı yenileyin.");
+          }
+          
           const joinCode = companyJoinCode.value.trim().toUpperCase();
           const joinRole = companyJoinRole.value;
+          
+          logger.info('Şirkete katılma bilgileri', { joinCode, joinRole, companyAction });
           
           if (!joinCode || !joinRole) {
             throw new Error("Şirket kodu ve rol seçimi zorunludur.");
           }
           
           // Şirketi kontrol et
-          const { collection, query, where, getDocs, addDoc } = await import("https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js");
           const companyQuery = query(
             collection(db, 'companies'),
             where('code', '==', joinCode)
@@ -386,76 +804,59 @@
           // Rol tipini belirle (buyer/supplier)
           const requestedRoleSimple = joinRole.includes('supplier') ? 'supplier' : 'buyer';
           
-          // Kullanıcı profilini kaydet (pending status)
+          // Kullanıcı profilini kaydet (başvuru bekliyor - henüz şirkete düşmedi)
           const userRef = doc(db, 'users', user.uid);
           await setDoc(userRef, {
             displayName: displayNameEl.value.trim(),
             email: emailEl.value.trim(),
-            companyCode: joinCode,
-            companyId: companyId,
-            companyJoinStatus: 'pending',
+            contactPhones: [normalizedPhone],
+            companyCode: joinCode, 
+            companyJoinStatus: 'email_unverified',
             requestedCompanyRole: joinRole,
-            roles: [requestedRoleSimple], // Geçici olarak rol ekle
+            requestedCompanyId: companyId, // Login ekranında isteği gönderirken lazım
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp()
           }, { merge: true });
           
-          // companyJoinRequests koleksiyonuna istek ekle
-          await addDoc(collection(db, 'companyJoinRequests'), {
-            companyCode: joinCode,
-            companyId: companyId,
-            userId: user.uid,
-            userEmail: emailEl.value.trim(),
-            requestedRole: requestedRoleSimple,
-            requestedCompanyRole: joinRole,
-            status: 'pending',
-            createdAt: serverTimestamp()
-          });
+          // Teklifbul Rule v1.0 - Otomatik onay kontrolü (güvenlik için pending olarak başlatılır)
+          const autoApprove = companyData.autoApproveJoinRequests === true;
+          if (autoApprove) {
+            logger.warn('Şirket otomatik onay aktif, ancak e-posta onayı bekleniyor', { companyId });
+          }
           
-          // Şirket sahiplerine bildirim gönder
-          const notificationRef = doc(collection(db, 'companies', companyId, 'notifications'));
-          await setDoc(notificationRef, {
-            type: 'pending_member_request',
-            userId: user.uid,
-            userEmail: emailEl.value.trim(),
-            requestedRole: joinRole,
-            message: `${emailEl.value.trim()} şirketinize katılmak için onay bekliyor.`,
-            createdAt: serverTimestamp(),
-            read: false
-          });
+          // E-posta onayı tamamlanmadan yöneticinin ekranına başvuru DÜŞMEYECEKTİR.
+          // Bu işlemler login.html'de mail onaylandığında gerçekleştirilecektir.
           
-          // pendingMembers koleksiyonuna da ekle (eski sistem uyumluluğu için)
-          const pendingRequestRef = doc(collection(db, 'companies', companyId, 'pendingMembers'));
-          await setDoc(pendingRequestRef, {
-            userId: user.uid,
-            userEmail: emailEl.value.trim(),
-            requestedRole: joinRole,
-            requestedAt: serverTimestamp(),
-            status: 'pending'
-          });
-          
-          // Direkt bekleme sayfasına yönlendir - Teklifbul Rule v1.0
-          // Merkezi mesajlar ile değiştirildi - şirket ismi dinamik olarak yerleştiriliyor
-          toast.success(MESSAGES.SUCCESS_SIGNUP_COMPANY_REQUEST.replace('{name}', companyData.name));
-          location.href = './company-join-waiting.html';
-          return;
+          // Direkt bekleme sayfasına yönlendir
+          toast.success("Bilgileriniz kaydedildi. Lütfen e-postanızı doğrulayın.");
+            
+            // Teklifbul Rule v1.0 - Kullanıcıyı çıkış yaptır ve login sayfasına yönlendir
+            // Email doğrulaması gerektiğini belirt
+            try { await logout(); } catch(e) { logger.warn('Logout hatası', e); }
+            sessionStorage.setItem('emailVerificationRequired', 'true');
+            toast.success("Kayıt başarılı! Lütfen e-posta kutunuzu kontrol edin ve doğrulama linkine tıklayın.");
+            location.href = './login.html';
+            return;
         } else {
-          // Yeni şirket kurulacak - role-select'e yönlendir
+          // Yeni şirket kurulacak - logout YAPMADAN direkt role-select'e yönlendir
+          // Kullanıcı önce şirketini kuracak, sonra email onayına yönlendirilecek
           let redirectParams = new URLSearchParams();
           if (pendingReferralCode) {
             redirectParams.set('ref', pendingReferralCode);
           }
           
-          toast.success(MESSAGES.SUCCESS_SIGNUP);
-          
-          const redirectUrl = redirectParams.toString() 
+          toast.success("Hesabınız oluşturuldu! Şimdi şirket bilgilerinizi tamamlayın.");
+          const roleSelectUrl = redirectParams.toString() 
             ? `./role-select.html?${redirectParams.toString()}`
             : './role-select.html';
-          location.href = redirectUrl;
+          location.href = roleSelectUrl;
         }
       } catch (e) {
         logger.error("Kayıt hatası", e);
         toast.error(MESSAGES.ERROR_SIGNUP + ": " + (e.message || e));
+        // Hata durumunda butonu tekrar aktif et
+        btn.disabled = false;
+        btn.textContent = 'Kayıt Ol';
       }
     };
   </script>

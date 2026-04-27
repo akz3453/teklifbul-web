@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="tr">
+
+<head>
+  <meta charset="utf-8" />
+  <title>Satışlar</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Teklifbul Rule v1.0 - FOUC önleme: Tema hemen uygulanmalı -->
+  <script src="/assets/js/theme-init.js"></script>
+  <link rel="stylesheet" href="/utils.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <link rel="stylesheet" href="/css/ui-standard.css" />
+  <style>
+    body {
+      font-family: system-ui, Arial;
+      background: #f8fafc;
+      color: #111827;
+      margin: 0
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px
+    }
+
+    h1 {
+      margin: 0 0 8px 0
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 16px 0
+    }
+
+    .search-box {
+      position: relative;
+      margin-bottom: 16px
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 16px 20px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 18px;
+      height: 56px;
+      box-sizing: border-box
+    }
+
+    .search-box input:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1)
+    }
+
+    .filters {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px
+    }
+
+    .filter-group label {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #374151
+    }
+
+    .filter-group input,
+    .filter-group select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+      background: #fff
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid #e5e7eb;
+      padding: 12px;
+      text-align: left;
+      font-size: 13px
+    }
+
+    th {
+      background: #f9fafb;
+      font-weight: 600;
+      color: #374151;
+      position: sticky;
+      top: 0;
+      z-index: 10
+    }
+
+    tr:hover {
+      background: #f9fafb
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600
+    }
+
+    .badge-saved {
+      background: #dbeafe;
+      color: #1e40af
+    }
+
+    .badge-invoiced {
+      background: #dcfce7;
+      color: #065f46
+    }
+
+    .badge-cancelled {
+      background: #fee2e2;
+      color: #991b1b
+    }
+
+    .badge-archived {
+      background: #f3f4f6;
+      color: #6b7280
+    }
+
+    .badge-warning {
+      background: #fef3c7;
+      color: #92400e
+    }
+
+    .badge-success {
+      background: #dcfce7;
+      color: #065f46
+    }
+
+    .badge-info {
+      background: #dbeafe;
+      color: #1e40af
+    }
+
+    .badge-danger {
+      background: #fee2e2;
+      color: #991b1b
+    }
+
+    .badge-secondary {
+      background: #e5e7eb;
+      color: #374151
+    }
+
+    .badge-muted {
+      background: #f3f4f6;
+      color: #6b7280
+    }
+
+    .muted {
+      color: #6b7280;
+      font-size: 12px
+    }
+
+    .btn {
+      padding: 16px 20px;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 15px;
+      margin-right: 8px;
+      text-decoration: none;
+      display: inline-block;
+      min-height: 56px;
+      box-sizing: border-box;
+      white-space: nowrap;
+      height: 56px
+    }
+
+    .btn-primary {
+      background: #2563eb;
+      color: #fff;
+      border-color: #2563eb
+    }
+
+    .btn-primary:hover {
+      background: #1d4ed8;
+      border-color: #1d4ed8
+    }
+
+    .btn-secondary {
+      background: #6b7280;
+      color: #fff
+    }
+
+    .btn-secondary:hover {
+      background: #4b5563
+    }
+
+    /* Koyu Mod */
+    html[data-theme="dark"] body,
+    html.force-dark body {
+      background: #111827;
+      color: #ffffff;
+    }
+
+    html[data-theme="dark"] .card,
+    html.force-dark .card {
+      background: #1f2937;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    html[data-theme="dark"] .search-box input,
+    html.force-dark .search-box input {
+      background: #1f2937;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+    }
+
+    html[data-theme="dark"] table,
+    html.force-dark table {
+      background: #1f2937;
+    }
+
+    html[data-theme="dark"] th,
+    html.force-dark th {
+      background: #1f2937;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    html[data-theme="dark"] td,
+    html.force-dark td {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Common Header -->
+  <header id="app-header"></header>
+
+  <div class="container">
+    <!-- Breadcrumb Navigation -->
+    <div class="tb-breadcrumb" id="breadcrumb">
+      <span class="tb-crumb">
+        <span class="ico">🏠</span>
+        <a href="/dashboard.html">Ana Sayfa</a>
+      </span>
+      <span class="tb-sep">›</span>
+      <span class="tb-crumb">
+        <span class="ico">💰</span>
+        <span>Satışlar</span>
+      </span>
+    </div>
+
+    <h1>💰 Satışlar</h1>
+    <p class="muted">Satışları görüntüleyin, arayın ve yönetin.</p>
+
+    <!-- TABS -->
+    <div class="tabs" style="display:flex;gap:12px;margin-bottom:24px;">
+      <a href="/pages/sale-new.html" class="btn" style="flex:1;text-align:center;background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;height:auto;padding:12px;border-radius:8px;transition:all 0.2s;">✨ Yeni Satış Kaydı</a>
+      <a href="/pages/sales.html" class="btn" style="flex:1;text-align:center;background:#2563eb;color:#fff;border:1px solid #2563eb;height:auto;padding:12px;border-radius:8px;box-shadow:0 4px 6px -1px rgba(37, 99, 235, 0.2);transition:all 0.2s;">📋 Satış Listesi</a>
+    </div>
+
+    <div class="card" id="salesListContainer">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:16px">
+        <!-- Özel Arama Kutucukları -->
+        <div class="search-box" style="margin-bottom:0;">
+          <label style="font-size:12px;font-weight:600;color:#374151;margin-bottom:4px;display:block;">Satış No</label>
+          <input type="text" id="searchSaleNo" placeholder="Örn: SL-1234" style="height:44px;padding:8px 12px;font-size:14px;" />
+        </div>
+        <div class="search-box" style="margin-bottom:0;">
+          <label style="font-size:12px;font-weight:600;color:#374151;margin-bottom:4px;display:block;">Müşteri</label>
+          <input type="text" id="searchCustomer" placeholder="Müşteri adı veya kodu" style="height:44px;padding:8px 12px;font-size:14px;" />
+        </div>
+        <div class="search-box" style="margin-bottom:0;">
+          <label style="font-size:12px;font-weight:600;color:#374151;margin-bottom:4px;display:block;">Tutar</label>
+          <input type="number" id="searchAmount" placeholder="Tam eşleşen tutar" style="height:44px;padding:8px 12px;font-size:14px;" step="0.01" />
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px">
+        <div class="filter-group">
+          <label>Durum</label>
+          <select id="statusFilter">
+            <option value="all">Tümü</option>
+            <option value="saved">Faturalanmadı</option>
+            <option value="invoiced">Faturalandı</option>
+            <option value="cancelled">İptal Edildi</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Müşteri</label>
+          <select id="customerFilter" title="Müşteriye göre filtrele">
+            <option value="all">Tümü</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Başlangıç Tarihi</label>
+          <input type="date" id="startDateFilter" />
+        </div>
+        <div class="filter-group">
+          <label>Bitiş Tarihi</label>
+          <input type="date" id="endDateFilter" />
+        </div>
+        <div class="filter-group">
+          <label>Min Tutar</label>
+          <input type="number" id="minAmountFilter" step="0.01" min="0" placeholder="0" />
+        </div>
+        <div class="filter-group">
+          <label>Max Tutar</label>
+          <input type="number" id="maxAmountFilter" step="0.01" min="0" placeholder="∞" />
+        </div>
+        <div class="filter-group" style="display:flex;align-items:flex-end">
+          <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:0">
+            <input type="checkbox" id="showArchived" />
+            <span>Arşivlenmiş</span>
+          </label>
+        </div>
+        <div class="filter-group" style="display:flex;align-items:flex-end">
+          <button class="btn btn-secondary" id="btnResetFilters" style="height:38px;width:100%">Sıfırla</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bulk Actions -->
+    <div id="bulkActionsContainer"
+      style="display:none;margin-bottom:16px;padding:12px;background:#f0f9ff;border-radius:6px;border:1px solid #bae6fd">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span id="bulkSelectionCount" style="font-weight:600;color:#1e40af">0 satış seçildi</span>
+        <button class="btn btn-secondary" id="btnBulkArchive" style="padding:6px 12px;font-size:12px">Toplu
+          Arşivle</button>
+        <button class="btn btn-danger" id="btnBulkDelete" style="padding:6px 12px;font-size:12px">Toplu Sil</button>
+        <button class="btn btn-secondary" id="btnBulkDeselect" style="padding:6px 12px;font-size:12px">Seçimi
+          Kaldır</button>
+      </div>
+    </div>
+
+    <table id="salesTable">
+      <thead>
+        <tr>
+          <th style="width:40px">
+            <input type="checkbox" id="selectAllSales" style="cursor:pointer" />
+          </th>
+          <th data-sort="saleNumber" style="cursor:pointer" title="Sıralamak için tıkla">Satış No <span class="sort-icon"></span></th>
+          <th data-sort="customerName" style="cursor:pointer" title="Sıralamak için tıkla">Müşteri <span class="sort-icon"></span></th>
+          <th data-sort="totalAmount" style="cursor:pointer" title="Sıralamak için tıkla">Tutar <span class="sort-icon"></span></th>
+          <th>Durum</th>
+          <th data-sort="createdAt" style="cursor:pointer" title="Sıralamak için tıkla">Tarih <span class="sort-icon"></span></th>
+          <th>Kalem</th>
+          <th style="width:250px;min-width:250px">İşlemler</th>
+        </tr>
+      </thead>
+      <tbody id="salesTableBody">
+        <tr>
+          <td colspan="8" style="text-align:center;padding:40px;color:#6b7280">Satışlar yükleniyor...</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Pagination Controls (Shared) -->
+    <div id="paginationContainer" style="display:none; justify-content:center; align-items:center; gap:16px; margin:20px auto; max-width:600px;">
+      <button id="btnPrevPage" class="btn btn-outline" style="padding:8px 16px; font-size:13px; font-weight:600; flex:0 0 auto; height:40px;">← Geri</button>
+      <div style="display:flex; align-items:center; gap:12px; color:#0f172a; white-space:nowrap; background:white; padding:8px 20px; border-radius:12px; border:1px solid #e5e7eb; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); height:40px;">
+        <span id="pageInfo" style="font-size:13px; font-weight:700;">Sayfa 1</span>
+        <span style="color:#cbd5e1;">|</span>
+        <span id="totalItemsInfo" style="font-size:12px; color:#64748b;">Toplam: 0</span>
+      </div>
+      <button id="btnNextPage" class="btn btn-outline" style="padding:8px 16px; font-size:13px; font-weight:600; flex:0 0 auto; height:40px;">İleri →</button>
+      <button class="btn btn-secondary" id="btnLoadMore" style="margin-left:8px;display:none">Daha Fazla Yükle</button>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <script type="module">
+    import { initGlobalHeader } from '../assets/js/ui/header.js';
+    initGlobalHeader({ mount: '#app-header', activeRoute: 'sales' });
+  </script>
+
+  <script type="module" src="/scripts/sales.js"></script>
+</body>
+
+</html>

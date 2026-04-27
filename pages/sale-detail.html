@@ -1,0 +1,704 @@
+<!doctype html>
+<html lang="tr">
+
+<head>
+  <meta charset="utf-8" />
+  <title>Satış Detayı</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Teklifbul Rule v1.0 - FOUC önleme: Tema hemen uygulanmalı -->
+  <script src="/assets/js/theme-init.js"></script>
+  <link rel="stylesheet" href="/utils.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <style>
+    body {
+      font-family: system-ui, Arial;
+      background: #f8fafc;
+      color: #111827;
+      margin: 0
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px
+    }
+
+    h1 {
+      margin: 0 0 8px 0
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 16px 0
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600
+    }
+
+    .badge-draft {
+      background: #e5e7eb;
+      color: #374151
+    }
+
+    .badge-pending_approval {
+      background: #fef3c7;
+      color: #92400e
+    }
+
+    .badge-approved {
+      background: #dcfce7;
+      color: #065f46
+    }
+
+    .badge-delivered {
+      background: #dbeafe;
+      color: #1e40af
+    }
+
+    .badge-invoiced {
+      background: #dcfce7;
+      color: #065f46
+    }
+
+    .badge-cancelled {
+      background: #fee2e2;
+      color: #991b1b
+    }
+
+    .badge-archived {
+      background: #f3f4f6;
+      color: #6b7280
+    }
+
+    .badge-warning {
+      background: #fef3c7;
+      color: #92400e
+    }
+
+    .badge-success {
+      background: #dcfce7;
+      color: #065f46
+    }
+
+    .badge-info {
+      background: #dbeafe;
+      color: #1e40af
+    }
+
+    .badge-danger {
+      background: #fee2e2;
+      color: #991b1b
+    }
+
+    .badge-secondary {
+      background: #e5e7eb;
+      color: #374151
+    }
+
+    .badge-muted {
+      background: #f3f4f6;
+      color: #6b7280
+    }
+
+    .muted {
+      color: #6b7280;
+      font-size: 12px
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border: 0;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      margin-right: 8px;
+      text-decoration: none;
+      display: inline-block
+    }
+
+    .btn-primary {
+      background: #2563eb;
+      color: #fff
+    }
+
+    .btn-primary:hover {
+      background: #1d4ed8
+    }
+
+    .btn-secondary {
+      background: #6b7280;
+      color: #fff
+    }
+
+    .btn-secondary:hover {
+      background: #4b5563
+    }
+
+    .btn-danger {
+      background: #dc2626;
+      color: #fff
+    }
+
+    .btn-danger:hover {
+      background: #b91c1c
+    }
+
+    .btn-success {
+      background: #16a34a;
+      color: #fff
+    }
+
+    .btn-success:hover {
+      background: #15803d
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+      background: #fff
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid #e5e7eb;
+      padding: 12px;
+      text-align: left;
+      font-size: 13px
+    }
+
+    th {
+      background: #f9fafb;
+      font-weight: 600;
+      color: #374151
+    }
+
+    tr:hover {
+      background: #f9fafb
+    }
+
+    .info-row {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      gap: 12px;
+      padding: 8px 0;
+      border-bottom: 1px solid #e5e7eb
+    }
+
+    .info-row:last-child {
+      border-bottom: none
+    }
+
+    .info-label {
+      font-weight: 600;
+      color: #374151
+    }
+
+    .summary-card {
+      background: #f0f9ff;
+      border: 1px solid #bae6fd;
+      border-radius: 6px;
+      padding: 16px;
+      margin-top: 16px
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #bae6fd
+    }
+
+    .summary-row:last-child {
+      border-bottom: none;
+      font-weight: 700;
+      font-size: 16px
+    }
+
+    /* Koyu Mod */
+    html[data-theme="dark"] body,
+    html.force-dark body {
+      background: #111827;
+      color: #ffffff;
+    }
+
+    html[data-theme="dark"] .card,
+    html.force-dark .card {
+      background: #1f2937;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    html[data-theme="dark"] table,
+    html.force-dark table {
+      background: #1f2937;
+    }
+
+    html[data-theme="dark"] th,
+    html.force-dark th {
+      background: #1f2937;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    html[data-theme="dark"] td,
+    html.force-dark td {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    html[data-theme="dark"] .info-row,
+    html.force-dark .info-row {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    html[data-theme="dark"] .summary-card,
+    html.force-dark .summary-card {
+      background: #1e3a5f;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Common Header -->
+  <header id="app-header"></header>
+
+  <div class="container">
+    <!-- Breadcrumb Navigation -->
+    <div class="tb-breadcrumb" id="breadcrumb">
+      <span class="tb-crumb">
+        <span class="ico">🏠</span>
+        <a href="/dashboard.html">Ana Sayfa</a>
+      </span>
+      <span class="tb-sep">›</span>
+      <span class="tb-crumb">
+        <span class="ico">💰</span>
+        <a href="/pages/sales.html">Satışlar</a>
+      </span>
+      <span class="tb-sep">›</span>
+      <span class="tb-crumb">
+        <span class="ico">📄</span>
+        <span>Satış Detayı</span>
+      </span>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div>
+        <h1 style="margin:0">📄 Satış Detayı</h1>
+        <p class="muted" style="margin:4px 0 0 0">Satış No: <span id="saleNumber">-</span></p>
+      </div>
+      <div id="saleActions">
+        <!-- Butonlar scripts/sales.js tarafından render edilecek -->
+      </div>
+    </div>
+
+    <!-- Teklifbul Rule v1.0 - E-Belge Kilidi Badge -->
+    <div id="edocLockBadge" class="card"
+      style="display:none; background:#fff3cd; border:1px solid #ffc107; margin-bottom:16px">
+      <div style="display:flex; align-items:start; gap:12px">
+        <div style="font-size:24px; line-height:1">🔒</div>
+        <div style="flex:1">
+          <h3 style="margin:0 0 8px 0; color:#856404; font-size:16px; font-weight:600">E-Belge Kilidi</h3>
+          <div id="edocLockText" style="color:#856404; font-size:14px; line-height:1.6; margin-bottom:4px">
+            <!-- Metin scripts/sales.js tarafından doldurulacak -->
+          </div>
+          <div id="edocLockDate" style="color:#6b7280; font-size:12px; margin-top:8px">
+            <!-- Tarih scripts/sales.js tarafından doldurulacak -->
+          </div>
+          <!-- Teklifbul Rule v1.0 - Son Belge Durumları -->
+          <div id="edocLockStatuses"
+            style="margin-top:6px; font-size:14px; display:none; color:#856404; line-height:1.8">
+            <!-- Durumlar scripts/sales.js tarafından doldurulacak -->
+          </div>
+          <!-- Teklifbul Rule v1.0 - E-Belge Linkleri -->
+          <div id="edocLockLinks" style="margin-top:12px; display:none; font-size:13px">
+            <!-- Linkler scripts/sales.js tarafından doldurulacak -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-top:0">Genel Bilgiler</h2>
+
+      <div class="info-row">
+        <div class="info-label">Satış Numarası:</div>
+        <div id="saleNumberDetail">-</div>
+      </div>
+      <div class="info-row">
+        <div class="info-label">Müşteri:</div>
+        <div id="customerName">-</div>
+      </div>
+      <div class="info-row">
+        <div class="info-label">Müşteri Kodu:</div>
+        <div id="customerCode">-</div>
+      </div>
+      <div class="info-row">
+        <div class="info-label">Durum:</div>
+        <div id="saleStatus">-</div>
+      </div>
+      <div class="info-row">
+        <div class="info-label">Oluşturulma Tarihi:</div>
+        <div id="createdAt">-</div>
+      </div>
+      <div class="info-row">
+        <div class="info-label">Para Birimi:</div>
+        <div id="currency">-</div>
+      </div>
+      <div class="info-row" id="exchangeRateRow" style="display:none">
+        <div class="info-label">Döviz Kuru:</div>
+        <div id="exchangeRate">-</div>
+      </div>
+      <div class="info-row">
+        <div class="info-label">Notlar:</div>
+        <div id="notes">-</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-top:0">Satış Kalemleri</h2>
+
+      <table id="saleItemsTable">
+        <thead>
+          <tr>
+            <th>SKU</th>
+            <th>Ürün Adı</th>
+            <th>Miktar</th>
+            <th>Birim</th>
+            <th>Lokasyon</th>
+            <th>Birim Fiyat</th>
+            <th>KDV %</th>
+            <th>İndirim %</th>
+            <th>Tutar</th>
+          </tr>
+        </thead>
+        <tbody id="saleItemsTableBody">
+          <tr>
+            <td colspan="9" style="text-align:center;padding:40px;color:#6b7280">Yükleniyor...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-top:0">Finansal Özet</h2>
+
+      <div class="summary-card">
+        <div class="summary-row">
+          <span>Ara Toplam (KDV Hariç):</span>
+          <span id="subtotal">0,00 TRY</span>
+        </div>
+        <div class="summary-row">
+          <span>Toplam İndirim:</span>
+          <span id="totalDiscount">0,00 TRY</span>
+        </div>
+        <div class="summary-row">
+          <span>Toplam KDV:</span>
+          <span id="totalVat">0,00 TRY</span>
+        </div>
+        <div class="summary-row">
+          <span>Genel Toplam:</span>
+          <span id="totalAmount">0,00 TRY</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="approvalInfoCard" style="display:none">
+      <h2 style="margin-top:0">Onay Bilgileri</h2>
+      <div class="info-row">
+        <div class="info-label">Gönderen:</div>
+        <div id="submittedBy">-</div>
+      </div>
+      <div class="info-row">
+        <div class="info-label">Gönderilme Tarihi:</div>
+        <div id="submittedAt">-</div>
+      </div>
+      <div class="info-row" id="approvedInfoRow" style="display:none">
+        <div class="info-label">Onaylayan:</div>
+        <div id="approvedBy">-</div>
+      </div>
+      <div class="info-row" id="approvedAtRow" style="display:none">
+        <div class="info-label">Onay Tarihi:</div>
+        <div id="approvedAt">-</div>
+      </div>
+    </div>
+
+    <!-- Teklifbul Rule v1.0 - Belgeler Bölümü -->
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h2 style="margin:0">📄 Belgeler</h2>
+        <div style="display:flex; gap:8px;">
+          <button id="btnCreateInvoiceFromSale" class="btn btn-primary" style="display:none;">
+            📄 Fatura Oluştur
+          </button>
+          <button id="btnCreateDeliveryFromSale" class="btn btn-primary" style="display:none;">
+            📦 İrsaliye Oluştur
+          </button>
+        </div>
+      </div>
+
+      <!-- Faturalar -->
+      <div style="margin-bottom:24px;">
+        <h3 style="margin:0 0 12px 0; font-size:16px; font-weight:600; color:#374151;">Faturalar</h3>
+        <div id="invoiceListContainer">
+          <div style="text-align:center; padding:20px; color:#6b7280; font-size:14px;">
+            Fatura yükleniyor...
+          </div>
+        </div>
+      </div>
+
+      <!-- İrsaliyeler -->
+      <div>
+        <h3 style="margin:0 0 12px 0; font-size:16px; font-weight:600; color:#374151;">İrsaliyeler</h3>
+        <div id="deliveryListContainer">
+          <div style="text-align:center; padding:20px; color:#6b7280; font-size:14px;">
+            İrsaliye yükleniyor...
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <script type="module">
+    import { initGlobalHeader } from '../assets/js/ui/header.js';
+    initGlobalHeader({ mount: '#app-header', activeRoute: 'sales' });
+  </script>
+
+  <script type="module" src="/scripts/sales.js"></script>
+  <script type="module" src="/scripts/sale-approval.js"></script>
+  <script type="module" src="/scripts/sales-documents.js"></script>
+  <script type="module">
+    // Sale detail specific logic
+    import { state, loadSaleDetail, renderSaleDetail, renderSaleItems, renderSaleActions, formatCurrency, formatDate, getStatusLabel, getStatusBadgeClass } from '/scripts/sales.js';
+    import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+    // Teklifbul Rule v1.0 - XSS Protection: Import DOMPurify
+    import DOMPurify from 'https://cdn.jsdelivr.net/npm/dompurify@3.2.2/+esm';
+    import { db } from '/firebase.js';
+    import { toast } from '/src/shared/ui/toast.js';
+
+    // Teklifbul Rule v1.0 - sale-approval.js fonksiyonlarını doğrudan import et
+    // Bu sayede modül yüklenmeden event listener eklenmeye çalışılmaz
+    await import('/scripts/sale-approval.js');
+
+    // Teklifbul Rule v1.0 - sales.js initialization tamamlandıktan sonra çalıştır
+    async function initSaleDetailPage() {
+      await loadSaleDetail();
+      if (state.currentSale) {
+        renderSaleDetailPage(state.currentSale);
+      }
+    }
+
+    // Load sale detail - state.companyId hazır olduğunda çalıştır
+    if (state.companyId) {
+      // Company ID zaten hazır
+      initSaleDetailPage();
+    } else {
+      // Company ID hazır olana kadar bekle
+      window.addEventListener('companyIdReady', (event) => {
+        initSaleDetailPage();
+      }, { once: true });
+
+      // Fallback: 2 saniye sonra tekrar kontrol et (eğer event gelmezse)
+      setTimeout(() => {
+        if (state.companyId && !state.currentSale) {
+          initSaleDetailPage();
+        }
+      }, 2000);
+    }
+
+    function renderSaleDetailPage(sale) {
+      // General info
+      document.getElementById('saleNumber').textContent = sale.saleNumber || '';
+      document.getElementById('saleNumberDetail').textContent = sale.saleNumber || '';
+      document.getElementById('customerName').textContent = sale.customerName || '';
+      document.getElementById('customerCode').textContent = sale.customerCode || '';
+      // Teklifbul Rule v1.0 - XSS Protection: Sanitize status badge
+      const safeStatus = DOMPurify.sanitize(getStatusBadgeClass(sale.status), { ALLOWED_TAGS: [] });
+      const safeStatusLabel = DOMPurify.sanitize(getStatusLabel(sale.status), { ALLOWED_TAGS: [] });
+      document.getElementById('saleStatus').innerHTML = DOMPurify.sanitize(`<span class="badge badge-${safeStatus}">${safeStatusLabel}</span>`, {
+        ALLOWED_TAGS: ['span'],
+        ALLOWED_ATTR: ['class']
+      });
+      document.getElementById('createdAt').textContent = formatDate(sale.createdAt);
+      document.getElementById('currency').textContent = sale.currency || 'TRY';
+
+      if (sale.exchangeRate) {
+        document.getElementById('exchangeRateRow').style.display = 'grid';
+        document.getElementById('exchangeRate').textContent = `${sale.exchangeRate} (${sale.exchangeRateSource || 'MANUAL'})`;
+      }
+
+      document.getElementById('notes').textContent = sale.notes || '-';
+
+      // Items
+      renderSaleItems(sale.items || []);
+
+      // Financial summary
+      const currency = sale.currency || 'TRY';
+      document.getElementById('subtotal').textContent = formatCurrency(sale.subtotal || 0, currency);
+      document.getElementById('totalDiscount').textContent = formatCurrency(sale.totalDiscount || 0, currency);
+      document.getElementById('totalVat').textContent = formatCurrency(sale.totalVat || 0, currency);
+      document.getElementById('totalAmount').textContent = formatCurrency(sale.totalAmount || 0, currency);
+
+      // Approval info
+      if (sale.approval) {
+        document.getElementById('approvalInfoCard').style.display = 'block';
+        document.getElementById('submittedBy').textContent = sale.approval.submittedBy || '-';
+        document.getElementById('submittedAt').textContent = formatDate(sale.approval.submittedAt);
+
+        if (sale.approval.approvedBy) {
+          document.getElementById('approvedInfoRow').style.display = 'grid';
+          document.getElementById('approvedAtRow').style.display = 'grid';
+          document.getElementById('approvedBy').textContent = sale.approval.approvedBy || '-';
+          document.getElementById('approvedAt').textContent = formatDate(sale.approval.approvedAt);
+        }
+      }
+
+      // Actions (duruma göre butonlar)
+      renderSaleActions(sale);
+
+      // Buton event listener'larını ekle (race protection için)
+      attachActionButtonListeners(sale.id);
+    }
+
+    // Global functions for action buttons (sale-approval.js'den import edilecek)
+    // window.approveSale, window.rejectSale, window.cancelSale, window.submitForApproval
+    // sale-approval.js modülü tarafından sağlanıyor
+
+    window.createDeliveryNote = async function (saleId) {
+      // İrsaliye oluşturma sayfasına yönlendir
+      window.location.href = `/pages/delivery-note-new.html?saleId=${saleId}`;
+    };
+
+    window.createInvoice = async function (saleId) {
+      // Fatura oluşturma sayfasına yönlendir
+      window.location.href = `/pages/invoice-new.html?saleId=${saleId}`;
+    };
+
+    // Action button event listener'larını ekle (race protection için)
+    async function attachActionButtonListeners(saleId) {
+      // Teklifbul Rule v1.0 - sale-approval.js modülünün yüklenmesini bekle
+      // window fonksiyonları henüz hazır değilse kısa bir bekleme yap
+      if (!window.approveSale || !window.rejectSale) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+
+      // Onayla butonu
+      const approveBtn = document.getElementById('btnApproveSale');
+      if (approveBtn && approveBtn.getAttribute('data-sale-id') === saleId) {
+        // Mevcut listener'ları kaldır (çakışmayı önle)
+        const newApproveBtn = approveBtn.cloneNode(true);
+        approveBtn.parentNode.replaceChild(newApproveBtn, approveBtn);
+
+        newApproveBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (window.approveSale) {
+            window.approveSale(saleId, newApproveBtn);
+          } else {
+            console.error('approveSale fonksiyonu bulunamadı');
+            toast.error('Onay fonksiyonu yüklenemedi. Sayfayı yenileyin.');
+          }
+        });
+      }
+
+      // Reddet butonu
+      const rejectBtn = document.getElementById('btnRejectSale');
+      if (rejectBtn && rejectBtn.getAttribute('data-sale-id') === saleId) {
+        const newRejectBtn = rejectBtn.cloneNode(true);
+        rejectBtn.parentNode.replaceChild(newRejectBtn, rejectBtn);
+
+        newRejectBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (window.rejectSale) {
+            window.rejectSale(saleId, newRejectBtn);
+          } else {
+            console.error('rejectSale fonksiyonu bulunamadı');
+            toast.error('Red fonksiyonu yüklenemedi. Sayfayı yenileyin.');
+          }
+        });
+      }
+
+      // İptal butonu
+      const cancelBtn = document.getElementById('btnCancelSale');
+      if (cancelBtn && cancelBtn.getAttribute('data-sale-id') === saleId) {
+        const newCancelBtn = cancelBtn.cloneNode(true);
+        cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+
+        newCancelBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (window.cancelSale) {
+            window.cancelSale(saleId, newCancelBtn);
+          } else {
+            console.error('cancelSale fonksiyonu bulunamadı');
+            toast.error('İptal fonksiyonu yüklenemedi. Sayfayı yenileyin.');
+          }
+        });
+      }
+
+      // Onaya gönder butonu
+      const submitBtn = document.getElementById('btnSubmitForApproval');
+      if (submitBtn && submitBtn.getAttribute('data-sale-id') === saleId) {
+        const newSubmitBtn = submitBtn.cloneNode(true);
+        submitBtn.parentNode.replaceChild(newSubmitBtn, submitBtn);
+
+        newSubmitBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (window.submitForApproval) {
+            window.submitForApproval(saleId, newSubmitBtn);
+          } else {
+            console.error('submitForApproval fonksiyonu bulunamadı');
+            toast.error('Onaya gönder fonksiyonu yüklenemedi. Sayfayı yenileyin.');
+          }
+        });
+      }
+
+      // Geri Yükle butonu (silinmiş satışlar için)
+      const restoreBtn = document.getElementById('btnRestoreSale');
+      if (restoreBtn && restoreBtn.getAttribute('data-sale-id') === saleId) {
+        const newRestoreBtn = restoreBtn.cloneNode(true);
+        restoreBtn.parentNode.replaceChild(newRestoreBtn, restoreBtn);
+
+        newRestoreBtn.addEventListener('click', async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          // handleRestoreSale fonksiyonu scripts/sales.js'den import edilecek
+          const { handleRestoreSale } = await import('/scripts/sales.js');
+          if (handleRestoreSale) {
+            await handleRestoreSale(saleId);
+          }
+        });
+      }
+
+      // Fatura Oluştur butonu (Teklifbul Rule v1.0 - CSP fix)
+      const createInvoiceBtn = document.getElementById('btnCreateInvoiceAction');
+      if (createInvoiceBtn && createInvoiceBtn.getAttribute('data-sale-id') === saleId) {
+        const newCreateInvoiceBtn = createInvoiceBtn.cloneNode(true);
+        createInvoiceBtn.parentNode.replaceChild(newCreateInvoiceBtn, createInvoiceBtn);
+
+        newCreateInvoiceBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (window.createInvoice) {
+            window.createInvoice(saleId);
+          } else {
+            // Fallback redirection
+            window.location.href = `/pages/invoice-new.html?saleId=${saleId}`;
+          }
+        });
+      }
+    }
+  </script>
+</body>
+
+</html>

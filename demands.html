@@ -4,6 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Talepler</title>
+  <!-- Teklifbul Rule v1.0 - Tema standardı: tb_theme key, FOUC önleme -->
+  <script src="/assets/js/theme-init.js"></script>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%233b82f6' rx='6'/%3E%3Ctext x='16' y='22' font-family='Arial' font-size='18' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E" />
   <link rel="stylesheet" href="/utils.css" />
   <link rel="stylesheet" href="/assets/css/layout.css" />
@@ -18,30 +20,24 @@
     <div class="container">
       <div class="header-left">
         <nav class="breadcrumb">
-          <a href="./dashboard.html">Dashboard</a>
+          <a href="./dashboard.html"><span style="font-size:16px;margin-right:4px;">📊</span>Kontrol Paneli</a>
           <span class="separator">›</span>
-          <span class="current">Talepler</span>
+          <span class="current"><span style="font-size:16px;margin-right:4px;">📋</span>Talepler</span>
         </nav>
-      </div>
-      <div class="header-right">
-        <a href="#" class="company-chip" id="companyChip">
-          <div class="company-icon">T</div>
-          <div>
-            <div class="company-name" id="companyName">Yükleniyor...</div>
-            <div class="company-email" id="companyEmail">-</div>
-          </div>
-        </a>
       </div>
     </div>
   </header>
 
   <div class="container--wide" style="padding:0 20px 20px">
-    <nav class="tb-breadcrumb">
-      <span class="tb-crumb"><span class="ico">🏠</span><a href="./index.html">Ana Sayfa</a></span>
-      <span class="tb-sep">›</span>
-      <span class="tb-crumb"><span class="ico">📄</span><a href="./demands.html">Talepler</a></span>
-    </nav>
-    <h1 class="page-title">Tüm Talepler</h1>
+    <div class="page-heading">
+      <div class="page-title-chip" role="presentation">
+        <span class="page-title-icon" aria-hidden="true">📋</span>
+        <div class="page-title-text">
+          <h1 class="page-title" style="margin:0;">Talepler</h1>
+          <p class="page-title-caption">Tüm talepleri görüntüleyin ve yönetin</p>
+        </div>
+      </div>
+    </div>
     
     <!-- Toolbar -->
     <div class="toolbar card">
@@ -54,9 +50,6 @@
             <button type="button" id="clearSearchBtn" class="btn btn-outline">Temizle</button>
           </form>
         </div>
-        <div class="toolbar-right">
-          <a href="./demand-new.html" class="btn btn-primary" id="newDemandBtn">+ Yeni Talep</a>
-        </div>
       </div>
     </div>
 
@@ -67,13 +60,24 @@
     <button id="tabDraft" class="tab">Taslak Talepler</button>
   </div>
   <style>
-    .tab{padding:8px 12px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;cursor:pointer;font-weight:600;color:#111827}
-    .tab:hover{background:#f3f4f6}
+    /* Açık mod - Teklifbul Rule v1.0 */
+    .tab{padding:8px 12px;border:1px solid #e5e7eb;border-radius:8px;background:#ffffff;cursor:pointer;font-weight:600;color:#1f2937;transition:all 0.2s}
+    .tab:hover{background:#2563eb;color:#ffffff;border-color:#2563eb}
     .tab.active{background:#2563eb;color:#ffffff;border-color:#2563eb}
+    /* Koyu mod */
+    html[data-theme="dark"] .tab{background:#111827;color:#ffffff;border-color:rgba(255,255,255,0.25)}
+    html[data-theme="dark"] .tab:hover{background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.4)}
+    html[data-theme="dark"] .tab.active{background:#2563eb;color:#ffffff;border-color:#2563eb}
     .hidden{display:none}
-    table{width:100%;border-collapse:collapse;table-layout:auto}
+    table{width:100%;border-collapse:separate;border-spacing:0;table-layout:auto}
     th,td{padding:12px 8px;border-bottom:1px solid #e5e7eb;text-align:left}
-    th{background:#f9fafb;font-weight:600}
+    html[data-theme="dark"] th,html[data-theme="dark"] td{border-bottom-color:rgba(255,255,255,0.25)}
+    /* Açık mod - Teklifbul Rule v1.0 */
+    th{background:#ffffff;font-weight:600;color:#1f2937}
+    /* Koyu mod */
+    html[data-theme="dark"] th{background:#111827;color:#ffffff;border:1px solid rgba(255,255,255,0.25);padding:8px 12px;border-radius:4px;margin:2px}
+    html[data-theme="dark"] thead th:first-child{border-top-left-radius:4px;border-bottom-left-radius:4px}
+    html[data-theme="dark"] thead th:last-child{border-top-right-radius:4px;border-bottom-right-radius:4px}
     td{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     /* Kategori hücresi sarılsın, uzun listeler sayfaya sığsın */
     .td-cats{white-space:normal;word-break:break-word;max-width:380px}
@@ -81,21 +85,202 @@
     .search-form{display:flex;gap:8px;align-items:center}
     .search-label{font-size:13px;font-weight:600;color:#374151}
     .search-input{padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;min-width:340px}
+    html[data-theme="dark"] .search-label{color:#ffffff}
+    html[data-theme="dark"] .search-input{background:#111827;border-color:rgba(255,255,255,0.25);color:#ffffff}
+    html[data-theme="dark"] .search-input::placeholder{color:rgba(255,255,255,0.6)}
+    html[data-theme="dark"] .search-input::-webkit-input-placeholder{color:rgba(255,255,255,0.6)}
+    html[data-theme="dark"] .search-input::-moz-placeholder{color:rgba(255,255,255,0.6)}
+    html[data-theme="dark"] .search-input:-ms-input-placeholder{color:rgba(255,255,255,0.6)}
+    /* Açık mod - Teklifbul Rule v1.0 - Butonlar */
+    .btn-primary {
+      background:#2563eb !important;
+      border-color:#2563eb !important;
+      color:#ffffff !important;
+    }
+    .btn-primary:hover {
+      background:#1d4ed8 !important;
+      border-color:#1d4ed8 !important;
+      color:#ffffff !important;
+    }
+    .btn-outline {
+      background:#ffffff !important;
+      border-color:#2563eb !important;
+      color:#2563eb !important;
+    }
+    .btn-outline:hover {
+      background:#eff6ff !important;
+      border-color:#2563eb !important;
+      color:#2563eb !important;
+    }
+    /* Koyu mod */
+    html[data-theme="dark"] .btn-primary{background:#111827;border-color:rgba(255,255,255,0.25);color:#ffffff}
+    html[data-theme="dark"] .btn-primary:hover{background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.4);transform:translateY(-1px)}
+    html[data-theme="dark"] .btn-outline{background:#111827;border-color:rgba(255,255,255,0.25);color:#ffffff}
+    html[data-theme="dark"] .btn-outline:hover{background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.4);transform:translateY(-1px)}
+    /* Tüm butonlar için genel hover efekti - Temizle butonundaki gibi */
+    html[data-theme="dark"] button:not(.tab.active):not(.btn-danger):not(.btn-success):not(.btn-warning):not(.btn-primary),
+    html[data-theme="dark"] a.btn:not(.btn-primary):not(.btn-danger):not(.btn-success):not(.btn-warning) {
+      background:#111827;
+      border-color:rgba(255,255,255,0.25);
+      color:#ffffff;
+      transition:all 0.2s;
+    }
+    html[data-theme="dark"] button:not(.tab.active):not(.btn-danger):not(.btn-success):not(.btn-warning):not(.btn-primary):hover,
+    html[data-theme="dark"] a.btn:not(.btn-primary):not(.btn-danger):not(.btn-success):not(.btn-warning):hover {
+      background:rgba(255,255,255,0.1);
+      border-color:rgba(255,255,255,0.4);
+      transform:translateY(-1px);
+    }
+    /* Açık mod - Teklifbul Rule v1.0 */
+    .card,
+    .toolbar {
+      background:#ffffff;
+      color:#1f2937;
+    }
+    /* Koyu mod */
+    html[data-theme="dark"] .card,
+    html[data-theme="dark"] .toolbar {
+      background:#111827;
+      border:1px solid rgba(255,255,255,0.25);
+    }
+    /* Başlıklar ve bölümler için beyaz çerçeveler */
+    html[data-theme="dark"] .page-header,
+    html[data-theme="dark"] section:not(.hidden),
+    html[data-theme="dark"] .table-responsive {
+      border:1px solid rgba(255,255,255,0.25);
+      border-radius:8px;
+      padding:12px;
+      margin-bottom:16px;
+    }
+    html[data-theme="dark"] .page-title {
+      border-bottom:1px solid rgba(255,255,255,0.25);
+      padding-bottom:12px;
+      margin-bottom:16px;
+    }
     @media(max-width:640px){.search-input{min-width:200px;width:100%}}
     /* Category chips */
     .cat-chip{display:inline-block;background:#e0f2fe;color:#0277bd;padding:2px 6px;margin:0 4px 4px 0;border-radius:12px;font-size:12px;white-space:nowrap}
+    html[data-theme="dark"] .cat-chip{background:#111827;color:#ffffff;border:1px solid rgba(255,255,255,0.25)}
     .cat-more{position:relative;display:inline-block}
     .cat-toggle{background:transparent;border:0;color:#2563eb;cursor:pointer;font-size:12px;padding:0 4px}
     .cat-more .cat-tip{display:none;position:absolute;left:0;top:115%;background:#ffffff;border:1px solid #e5e7eb;box-shadow:0 8px 20px rgba(0,0,0,.08);padding:8px;border-radius:8px;max-width:360px;z-index:50;white-space:normal}
+    html[data-theme="dark"] .filters-container{background:#111827;border:1px solid rgba(255,255,255,0.25)}
+    html[data-theme="dark"] .filters-container label{color:#ffffff}
+    html[data-theme="dark"] .filters-container select{background:#111827;border-color:rgba(255,255,255,0.25);color:#ffffff}
+    html[data-theme="dark"] .cat-more .cat-tip{background:#111827;border-color:rgba(255,255,255,0.25);color:#ffffff}
     .cat-more:hover .cat-tip{display:block}
+    /* Açık mod - Teklifbul Rule v1.0 - Badge stilleri */
+    .badge {
+      background:#ffffff !important;
+      color:#1f2937 !important;
+      border:1px solid #1f2937 !important;
+      padding:2px 6px !important;
+      border-radius:4px !important;
+      display:inline-block !important;
+      font-size:12px !important;
+    }
+    .badge.success {
+      background:#dcfce7 !important;
+      color:#166534 !important;
+      border-color:#166534 !important;
+    }
+    .badge.warn {
+      background:#fef3c7 !important;
+      color:#92400e !important;
+      border-color:#92400e !important;
+    }
+    /* Koyu mod */
+    html[data-theme="dark"] .badge {
+      background:#111827 !important;
+      color:#ffffff !important;
+      border:1px solid rgba(255,255,255,0.25) !important;
+    }
+    html[data-theme="dark"] .badge.success {
+      background:#111827 !important;
+      color:#ffffff !important;
+      border-color:rgba(255,255,255,0.25) !important;
+    }
+    html[data-theme="dark"] .badge.warn {
+      background:#111827 !important;
+      color:#ffffff !important;
+      border-color:rgba(255,255,255,0.25) !important;
+    }
+    /* Açık mod - Teklifbul Rule v1.0 - Filters container ve section titles */
+    .filters-container {
+      background:#ffffff !important;
+      border:1px solid #e5e7eb !important;
+      color:#1f2937 !important;
+    }
+    .filters-container label {
+      color:#1f2937 !important;
+    }
+    .section-title {
+      background:#ffffff !important;
+      border:1px solid #e5e7eb !important;
+      color:#1f2937 !important;
+    }
+    /* Açık mod - Inline style'ları override et */
+    .filters-container[style*="background:#111827"],
+    .section-title[style*="background:#111827"],
+    div[style*="background: #111827"]:not(html[data-theme="dark"] *) {
+      background:#ffffff !important;
+      border-color:#e5e7eb !important;
+      color:#1f2937 !important;
+    }
+    span[style*="color:#ffffff"]:not(html[data-theme="dark"] *),
+    div[style*="color:#ffffff"]:not(html[data-theme="dark"] *),
+    h3[style*="color: #ffffff"]:not(html[data-theme="dark"] *),
+    p[style*="color: #ffffff"]:not(html[data-theme="dark"] *) {
+      color:#1f2937 !important;
+    }
+    span[style*="background: #111827"]:not(html[data-theme="dark"] *),
+    div[style*="background: #111827"]:not(html[data-theme="dark"] *) {
+      background:#ffffff !important;
+      border-color:#e5e7eb !important;
+      color:#1f2937 !important;
+    }
+    /* Koyu mod */
+    /* Açık mod - Teklifbul Rule v1.0 */
+    .filters-container {
+      background:#ffffff !important;
+      border:1px solid #e5e7eb !important;
+      color:#1f2937 !important;
+    }
+    .filters-container label {
+      color:#1f2937 !important;
+    }
+    .filters-container select {
+      background:#ffffff !important;
+      border:1px solid #d1d5db !important;
+      color:#1f2937 !important;
+    }
+    /* Koyu mod */
+    html[data-theme="dark"] .filters-container {
+      background:#111827 !important;
+      border:1px solid rgba(255,255,255,0.25) !important;
+      color:#ffffff !important;
+    }
+    html[data-theme="dark"] .filters-container label {
+      color:#ffffff !important;
+    }
+    html[data-theme="dark"] .filters-container select {
+      background:#111827 !important;
+      border:1px solid rgba(255,255,255,0.25) !important;
+      color:#ffffff !important;
+    }
+    html[data-theme="dark"] .section-title {
+      background:#111827 !important;
+      border:1px solid rgba(255,255,255,0.25) !important;
+      color:#ffffff !important;
+    }
   </style>
 
   <!-- Filters and Grouping Controls -->
-  <div style="display:flex; gap:16px; margin:16px 0; flex-wrap:wrap; align-items:center; padding:12px; background:#f9fafb; border-radius:6px;">
+  <div style="display:flex; gap:12px; margin:16px 0; flex-wrap:wrap; align-items:center; padding:12px; background:#ffffff; border-radius:6px; border:1px solid #e5e7eb;" class="filters-container">
     <!-- Gelen Talepler için filtreler -->
-    <div id="incoming-filters" class="hidden">
-      <label for="f-incoming-status" style="font-size:13px; font-weight:600; margin-right:6px;">Durum:</label>
-      <select id="f-incoming-status" style="padding:6px; border-radius:4px;">
+    <div id="incoming-filters" class="hidden" style="display:flex; align-items:center; gap:6px;">
+      <label for="f-incoming-status" style="font-size:13px; font-weight:600; color:#1f2937; min-width:70px;">Durum:</label>
+      <select id="f-incoming-status" style="padding:6px 10px; border-radius:4px; border:1px solid #d1d5db; background:#ffffff; color:#1f2937; font-size:13px; min-width:140px;">
         <option value="">— Tümü —</option>
         <option value="pending">Bekleyen</option>
         <option value="viewed">Görüldü</option>
@@ -104,26 +289,31 @@
     </div>
     
     <!-- Giden Talepler için filtreler -->
-    <div id="outgoing-filters">
-      <label for="f-status" style="font-size:13px; font-weight:600; margin-right:6px;">Durum:</label>
-      <select id="f-status" style="padding:6px; border-radius:4px;">
-        <option value="">— Tümü —</option>
-        <option value="draft">Taslak</option>
-        <option value="published">Gönderildi</option>
-      </select>
-      
-      <!-- Kullanıcı filtresi - Kendi talepleri vs şirketin diğer kullanıcılarının talepleri -->
-      <label for="f-user" style="font-size:13px; font-weight:600; margin-left:12px; margin-right:6px;">Kullanıcı:</label>
-      <select id="f-user" style="padding:6px; border-radius:4px;">
+    <div id="outgoing-filters" class="hidden" style="display:flex; align-items:center; gap:6px;">
+      <label for="f-user" style="font-size:13px; font-weight:600; color:#1f2937; min-width:70px;">Kullanıcı:</label>
+      <select id="f-user" style="padding:6px 10px; border-radius:4px; border:1px solid #d1d5db; background:#ffffff; color:#1f2937; font-size:13px; min-width:140px;">
         <option value="">— Tümü —</option>
         <option value="own">Kendi Taleplerim</option>
         <option value="others">Şirket Diğer Kullanıcıları</option>
       </select>
     </div>
+
+    <!-- Ortak Filtreler (Search & Category) -->
+    <div style="display:flex; align-items:center; gap:6px;">
+      <label for="f-keyword" style="font-size:13px; font-weight:600; color:#1f2937; min-width:70px;">Ara:</label>
+      <input type="text" id="f-keyword" placeholder="Başlık ara..." style="padding:6px 10px; border-radius:4px; border:1px solid #d1d5db; background:#ffffff; color:#1f2937; font-size:13px; min-width:140px;">
+    </div>
+
+    <div style="display:flex; align-items:center; gap:6px;">
+      <label for="f-category" style="font-size:13px; font-weight:600; color:#1f2937; min-width:70px;">Kategori:</label>
+      <select id="f-category" style="padding:6px 10px; border-radius:4px; border:1px solid #d1d5db; background:#ffffff; color:#1f2937; font-size:13px; min-width:140px;">
+        <option value="">— Tümü —</option>
+      </select>
+    </div>
     
-    <div>
-      <label for="f-priority" style="font-size:13px; font-weight:600; margin-right:6px;">Öncelik:</label>
-      <select id="f-priority" style="padding:6px; border-radius:4px;">
+    <div style="display:flex; align-items:center; gap:6px;">
+      <label for="f-priority" style="font-size:13px; font-weight:600; color:#1f2937; min-width:70px;">Öncelik:</label>
+      <select id="f-priority" style="padding:6px 10px; border-radius:4px; border:1px solid #d1d5db; background:#ffffff; color:#1f2937; font-size:13px; min-width:140px;">
         <option value="">— Tümü —</option>
         <option value="price">Fiyat</option>
         <option value="speed">Hız</option>
@@ -131,9 +321,9 @@
       </select>
     </div>
     
-    <div>
-      <label for="f-biddingmode" style="font-size:13px; font-weight:600; margin-right:6px;">Talep Tipi:</label>
-      <select id="f-biddingmode" style="padding:6px; border-radius:4px;">
+    <div style="display:flex; align-items:center; gap:6px;">
+      <label for="f-biddingmode" style="font-size:13px; font-weight:600; color:#1f2937; min-width:70px;">Talep Tipi:</label>
+      <select id="f-biddingmode" style="padding:6px 10px; border-radius:4px; border:1px solid #d1d5db; background:#ffffff; color:#1f2937; font-size:13px; min-width:140px;">
         <option value="">— Tümü —</option>
         <option value="secret">Gizli</option>
         <option value="open">Açık Artırma</option>
@@ -141,9 +331,9 @@
       </select>
     </div>
     
-    <div id="group-controls" style="display:flex; gap:8px; align-items:center;">
-      <label for="f-group" style="font-size:13px; font-weight:600;">Grupla:</label>
-      <select id="f-group" style="padding:6px; border-radius:4px;">
+    <div id="group-controls" style="display:flex; align-items:center; gap:6px;">
+      <label for="f-group" style="font-size:13px; font-weight:600; color:#1f2937; min-width:70px;">Grupla:</label>
+      <select id="f-group" style="padding:6px 10px; border-radius:4px; border:1px solid #d1d5db; background:#ffffff; color:#1f2937; font-size:13px; min-width:140px;">
         <option value="">— Yok —</option>
         <option value="site">Şantiye</option>
         <option value="category">Kategori</option>
@@ -153,11 +343,27 @@
         <option value="month">Oluşturma Ayı</option>
       </select>
     </div>
+
+    <!-- Paging and Sorting (Shared) -->
+    <div style="display:flex; align-items:center; gap:6px; margin-left:auto; flex-wrap:wrap;">
+      <label for="f-pageSize" style="font-size:13px; font-weight:600; color:#1f2937;">Sayı:</label>
+      <select id="f-pageSize" style="padding:6px 10px; border-radius:4px; border:1px solid #d1d5db; background:#ffffff; color:#1f2937; font-size:13px; width:70px;">
+        <option value="10" selected>10</option>
+        <option value="30">30</option>
+        <option value="50">50</option>
+      </select>
+
+      <label for="f-sort" style="margin-left:12px; font-size:13px; font-weight:600; color:#1f2937;">Sırala:</label>
+      <select id="f-sort" style="padding:6px 10px; border-radius:4px; border:1px solid #d1d5db; background:#ffffff; color:#1f2937; font-size:13px; min-width:140px;">
+        <option value="createdAt_desc" selected>En Yeni</option>
+        <option value="createdAt_asc">En Eski</option>
+      </select>
+    </div>
   </div>
 
   <!-- Incoming Demands Section -->
   <section id="incomingDemands">
-    <div style="margin: 8px 0 4px 0; font-weight: 700; color:#111827;">Teklif Verilenler</div>
+    <div style="margin: 8px 0 4px 0; font-weight: 700; color:#ffffff; padding:8px 12px; border:1px solid rgba(255,255,255,0.25); border-radius:6px; background:#111827;" class="section-title">Teklif Verilenler</div>
     <div class="table-responsive">
       <table>
         <thead>
@@ -167,7 +373,7 @@
       </table>
     </div>
 
-    <div style="margin: 16px 0 4px 0; font-weight: 700; color:#111827;">Bekleyenler</div>
+    <div style="margin: 16px 0 4px 0; font-weight: 700; color:#ffffff; padding:8px 12px; border:1px solid rgba(255,255,255,0.25); border-radius:6px; background:#111827;" class="section-title">Bekleyenler</div>
     <div class="table-responsive">
       <table>
         <thead>
@@ -177,6 +383,8 @@
       </table>
     </div>
     <div id="incomingEmpty" class="hidden" style="padding:16px;color:#64748b">Gelen talep yok.</div>
+  </section>
+
   </section>
 
   <!-- Outgoing Demands Section -->
@@ -192,9 +400,9 @@
 
   <!-- Draft Demands Section -->
   <section id="draftDemands" class="hidden">
-    <div style="margin-bottom: 16px; padding: 12px; background: #fef3c7; border: 1px solid #f59e0b; border-radius: 6px;">
-      <h3 style="margin: 0 0 8px 0; color: #92400e; font-size: 16px;">📝 Taslak Talepler</h3>
-      <p style="margin: 0; color: #92400e; font-size: 14px;">
+    <div style="margin-bottom: 16px; padding: 12px; background: #111827; border: 1px solid rgba(255,255,255,0.25); border-radius: 6px;">
+      <h3 style="margin: 0 0 8px 0; color: #ffffff; font-size: 16px;">📝 Taslak Talepler</h3>
+      <p style="margin: 0; color: #ffffff; font-size: 14px;">
         Henüz onaylanmamış talepleriniz. Bu talepleri düzenleyebilir, onaylayabilir veya silebilirsiniz.
       </p>
     </div>
@@ -209,52 +417,45 @@
         <tbody id="draftRows"></tbody>
       </table>
     </div>
-    <div id="draftBulkActions" style="margin-top:8px; display:flex; gap:8px;">
-      <button id="btnDeleteSelectedDrafts" style="padding:6px 10px; background:#ef4444; color:#fff; border:none; border-radius:4px; cursor:pointer;">Seçilenleri Sil</button>
-      <button id="btnClearDraftSelection" style="padding:6px 10px; background:#e5e7eb; color:#111827; border:none; border-radius:4px; cursor:pointer;">Seçimi Temizle</button>
+    <div id="draftBulkActions" style="margin-top:8px; display:flex; gap:8px; align-items:center;">
+
+      <button id="btnDeleteSelectedDrafts" style="padding:6px 12px; background:#ef4444; color:#fff; border:none; border-radius:4px; cursor:pointer; margin-left:auto; font-weight:600;">Seçilenleri Sil</button>
     </div>
     <div id="draftEmpty" class="hidden" style="padding:16px;color:#64748b">Taslak talebiniz yok.</div>
-    <div id="loadMoreDraftsBtn" class="hidden" style="text-align: center; margin: 20px 0;">
-      <button onclick="loadMoreDrafts()" style="padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">
-        📄 Daha Fazla Yükle
-      </button>
-    </div>
   </section>
 
-  <!-- Regular Table View (hidden by default) -->
-  <div class="table-responsive">
-    <table class="table" id="tbl" style="display:none;">
-    <thead>
-      <tr>
-        <th>SATFK</th>
-        <th>Başlık</th>
-        <th>Kategoriler</th>
-        <th>Termin</th>
-        <th>Öncelik</th>
-        <th>Talep Tipi</th>
-        <th>Şantiye</th>
-        <th>Durum</th>
-        <th>Oluşturma</th>
-        <th>Aksiyonlar</th>
-      </tr>
-    </thead>
-    <tbody id="demands-body"></tbody>
-    </table>
+  <!-- Pagination Controls (Shared) -->
+  <div id="pagination-controls" class="hidden" style="display:flex; justify-content:center; align-items:center; gap:16px; margin:20px auto; max-width:600px;">
+    <button id="btnPrev" class="btn btn-outline" style="padding:8px 16px; font-size:13px; font-weight:600; flex:0 0 auto; height:40px;">← Geri</button>
+    <div style="display:flex; align-items:center; gap:12px; color:#0f172a; white-space:nowrap; background:white; padding:8px 20px; border-radius:12px; border:1px solid #e5e7eb; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); height:40px;">
+      <span id="pageInfo" style="font-size:13px; font-weight:700;">Sayfa 1</span>
+      <span style="color:#cbd5e1;">|</span>
+      <span id="totalItemsInfo" style="font-size:12px; color:#64748b;">Toplam: 0</span>
+    </div>
+    <button id="btnNext" class="btn btn-outline" style="padding:8px 16px; font-size:13px; font-weight:600; flex:0 0 auto; height:40px;">İleri →</button>
   </div>
 
   <!-- Grouped View Container -->
   <div id="grouped-container" style="display:none;"></div>
   
   <!-- Pagination -->
-  <div id="pager" style="margin:20px 0; text-align:center;"></div>
+  <div id="pager" style="margin:20px 0; text-align:center; display:none;"></div>
   </div><!-- End container -->
 
   <!-- Main Script -->
   <script type="module">
-    import { initGlobalHeader } from './assets/js/ui/header.js';
-    import { db, auth } from "./firebase.js";
-    // Teklifbul Rule v1.0 - Structured Logging
+    // Teklifbul Rule v1.0 - Structured Logging (auth guard'dan önce import edilmeli)
     import { logger } from './src/shared/log/logger.js';
+    // Teklifbul Rule v1.0 - Auth Guard (oturum kontrolü)
+    import { initAuthGuard } from './assets/js/auth-guard.js';
+    // Teklifbul Rule v1.0 - Tek kaynaktan auth guard yönetimi
+    import { initGlobalHeader } from './assets/js/ui/header.js';
+    import { db, auth, waitAuthReady } from "./firebase.js";
+    
+    // Teklifbul Rule v1.0 - Auth guard'ı başlat (oturum yoksa login'e yönlendirir)
+    initAuthGuard().catch(err => {
+      logger.error('Auth guard init failed', err);
+    });
     // Teklifbul Rule v1.0 - Toast Notification System
     import { toast } from './src/shared/ui/toast.js';
     // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
@@ -315,1482 +516,60 @@
           companyIconEl.textContent = firstLetter;
         }
         
-        logger.info('Company chip updated', { companyName });
+        logger.debug('Company chip updated', { companyName });
       } catch (error) {
         logger.error('Company chip fill error', error);
       }
     }
     
     // Initialize company chip
+    // Teklifbul Rule v1.0 - Auth guard auth state'i yönetiyor, burada sadece mevcut user'ı kontrol et
     if (auth.currentUser) {
       await fillCompanyChip();
     } else {
-      const unsub = auth.onAuthStateChanged(async (user) => {
-        if (user) {
-          await fillCompanyChip();
-          unsub();
-        }
-      });
+      // Auth guard auth state değişikliklerini yönetiyor, burada sadece kısa bir süre bekle
+      // Eğer user yoksa auth guard yönlendirecek
+      const user = await waitAuthReady();
+      if (user) {
+        await fillCompanyChip();
+      }
     }
   </script>
+
+  <!-- Ulaşılan Firmalar Modal (Added for Outgoing Demands) -->
+  <div id="reachedFirmsModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center;">
+    <div class="modal-content" style="background: white; border-radius: 8px; max-width: 600px; width: 90%; max-height: 85vh; display: flex; flex-direction: column; padding: 0; position: relative;">
+      <!-- Header -->
+      <div style="padding: 16px 20px; border-bottom: 1px solid #e5e7eb; display:flex; justify-content: space-between; align-items: center; background: #f8fafc; border-radius: 8px 8px 0 0;">
+        <div>
+          <h3 id="reachedFirmsTitle" style="margin:0; color: #0f172a; font-size: 18px;">🏢 Ulaşılan Firmalar</h3>
+          <p id="reachedFirmsSubtitle" style="margin:4px 0 0 0; font-size:13px; color:#64748b;">Bu talebin iletildiği tedarikçiler</p>
+        </div>
+        <button id="closeReachedFirmsModal" style="background:#ef4444; border:none; border-radius:4px; padding:4px 8px; font-size: 20px; color: #ffffff; cursor:pointer; line-height: 1; font-weight: bold;">&times;</button>
+      </div>
+      
+      <!-- Body -->
+      <div style="padding: 20px; overflow-y: auto; flex: 1;">
+        <div id="reachedFirmsLoading" style="text-align: center; padding: 20px; color: #64748b; display: none;">
+          Yükleniyor...
+        </div>
+        <div id="reachedFirmsList" style="display: flex; flex-direction: column; gap: 10px;">
+          <!-- Firma listesi buraya gelecek -->
+        </div>
+        <div id="reachedFirmsEmpty" style="text-align: center; padding: 20px; color: #64748b; display: none;">
+          Bu talep henüz hiçbir firmaya ulaştırılmamış.
+        </div>
+        <!-- Load More -->
+        <div style="text-align: center; margin-top: 16px;">
+          <button id="btnLoadMoreFirms" class="btn btn-outline hidden" style="padding: 8px 16px; font-size: 13px;">Daha Fazla Yükle ⟳</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Main Demands Script -->
-  <script type="module">
-    import { db, requireAuth, logout } from "./firebase.js";
-    import {
-      collection, getDocs, getDoc, query, where, deleteDoc, doc, orderBy, limit, startAfter,
-      updateDoc, arrayUnion, serverTimestamp, writeBatch, addDoc
-    } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
-    // Teklifbul Rule v1.0 - Structured Logging
-    import { logger } from './src/shared/log/logger.js';
-    // Teklifbul Rule v1.0 - Toast Notification System
-    import { toast } from './src/shared/ui/toast.js';
-    // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
-    import { MESSAGES } from './src/shared/constants/messages.js';
-    // CRITICAL: Import new ID-based category system
-    import { 
-      getAllCategories, 
-      getNameById,
-      normalizeToIds 
-    } from "./src/categories/category-service.js";
-    // Import match service for supplier matching
-    import { matchSuppliers } from "./src/matching/match-service.js";
-    
-    // Main async function
-    async function initDemandsPage() {
-
-    // --- UI refs ---
-    const tbody        = document.getElementById("demands-body");
-    const groupedWrap  = document.getElementById("grouped-container");
-    const pager        = document.getElementById("pager");
-    const fStatus      = document.getElementById("f-status");
-    const fPriority    = document.getElementById("f-priority");
-    const fBiddingMode = document.getElementById("f-biddingmode");
-    const fGroup       = document.getElementById("f-group");
-    
-    // Gelen talepler için filtreler
-    const fIncomingStatus = document.getElementById("f-incoming-status");
-    const incomingFilters = document.getElementById("incoming-filters");
-    const outgoingFilters = document.getElementById("outgoing-filters");
-
-    // --- Auth ---
-    const user = await requireAuth();
-    const uid  = user.uid;
-    
-    // Readonly mod kontrolü - Teklifbul Rule v1.0
-    const urlParams = new URLSearchParams(window.location.search);
-    const isReadOnly = urlParams.get('readonly') === 'true';
-    
-    // Kullanıcı durumu kontrolü
-    let userIsPending = false;
-    try {
-      const userDoc = await getDoc(doc(db, 'users', user.uid));
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        userIsPending = userData.companyJoinStatus === 'pending' || userData.companyJoinStatus === 'rejected';
-      }
-    } catch (e) {
-      logger.warn('User status check failed', e);
-    }
-    
-    const readonlyMode = isReadOnly || userIsPending;
-    
-    // Readonly modunda uyarı göster ve butonları gizle
-    if (readonlyMode) {
-      const readonlyBanner = document.createElement('div');
-      readonlyBanner.style.cssText = 'background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 16px; margin: 16px 0; text-align: center;';
-      readonlyBanner.innerHTML = `
-        <div style="display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;">
-          <span style="font-size: 24px;">⏳</span>
-          <div>
-            <strong style="color: #92400e; font-size: 16px;">Onay Bekleniyor</strong>
-            <p style="color: #92400e; font-size: 14px; margin: 4px 0 0 0;">
-              Şirket yöneticileri kaydınızı onaylayana kadar sadece görüntüleme yapabilirsiniz. İşlem yapamazsınız.
-            </p>
-            <a href="./company-join-waiting.html" style="color: #92400e; text-decoration: underline; font-size: 13px; margin-top: 8px; display: inline-block;">
-              Bekleme durumunu kontrol et →
-            </a>
-          </div>
-        </div>
-      `;
-      const container = document.querySelector('.container--wide');
-      if (container) {
-        const toolbar = container.querySelector('.toolbar');
-        if (toolbar) {
-          container.insertBefore(readonlyBanner, toolbar);
-        } else {
-          container.insertBefore(readonlyBanner, container.firstChild);
-        }
-      }
-      
-      // Yeni Talep butonunu gizle
-      const newDemandBtn = document.getElementById('newDemandBtn');
-      if (newDemandBtn) {
-        newDemandBtn.style.display = 'none';
-      }
-    }
-
-    // Durum çevirisi fonksiyonu
-    function translateStatus(status) {
-      const statusMap = {
-        'draft': 'Taslak',
-        'approved': 'Onaylandı',
-        'published': 'Yayınlandı',
-        'sent': 'Gönderildi',
-        'pending': 'Bekleyen',
-        'viewed': 'Görüldü',
-        'responded': 'Yanıtlandı',
-        'rejected': 'Reddedildi',
-        'cancelled': 'İptal Edildi',
-        'completed': 'Tamamlandı',
-        'in_progress': 'Devam Ediyor',
-        'closed': 'Kapatıldı'
-      };
-      return statusMap[status] || status || 'Bilinmeyen';
-    }
-
-    // State
-    let merged = [];
-    const PAGE_SIZE = 20;
-    let currentPage = 0;
-    
-    // Draft pagination state
-    let lastDraftDoc = null;
-    let accumulatedDrafts = [];
-    let isLoadingDrafts = false;
-    let draftsFinished = false;
-    const DRAFT_PAGE_SIZE = 10;
-
-    // Helper: slug normalize (tr-friendly)
-    function toSlug(name){
-      if (!name) return '';
-      return String(name)
-        .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-        .replace(/[şŞ]/g,'s').replace(/[ıİ]/g,'i').replace(/[ğĞ]/g,'g')
-        .replace(/[çÇ]/g,'c').replace(/[öÖ]/g,'o').replace(/[üÜ]/g,'u')
-        .toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
-    }
-
-    // Prefer real company name over placeholders
-    function pickCompanyName({ demandRow, creatorProfile, companyDoc }) {
-      const candidates = [
-        demandRow?.companyName,
-        demandRow?.company?.name,
-        companyDoc?.name,
-        creatorProfile?.companyName,
-        creatorProfile?.company?.name,
-        creatorProfile?.settings?.companyName,
-        creatorProfile?.profile?.companyName,
-        creatorProfile?.companyTitle,
-        creatorProfile?.company_name
-      ]
-      .map(v => (typeof v === 'string' ? v.trim() : v))
-      .filter(Boolean);
-
-      const cleaned = candidates.find(n => n && n.toLowerCase() !== 'kendi firmam');
-      return cleaned || '—';
-    }
-
-    // Render categories: show top 3 chips, expandable to all
-    // CRITICAL: Accept categoryIds, categoryTags, or legacy formats and convert to display names
-    function renderCategoriesCell(cats = []){
-      if (!cats || cats.length === 0) return '-';
-      
-      // Normalize to IDs first (handles IDs, slugs, names)
-      const categoryIds = normalizeToIds(Array.isArray(cats) ? cats : []);
-      
-      // Convert IDs to display names
-      const displayNames = categoryIds.map(id => getNameById(id)).filter(Boolean);
-      
-      if (displayNames.length === 0) return '-';
-      
-      const top = displayNames.slice(0,3);
-      const rest = displayNames.slice(3);
-      const chip = (t) => `<span class="cat-chip">${t}</span>`;
-      let html = top.map(chip).join(' ');
-      if (rest.length) {
-        const payload = encodeURIComponent(JSON.stringify(rest));
-        const tipHtml = rest.map(chip).join(' ');
-        html += ` <span class="cat-more"><button class="cat-toggle" data-rest="${payload}">+${rest.length}</button><div class="cat-tip">${tipHtml}</div></span>`;
-      }
-      return html;
-    }
-    // Expand handler (event delegation)
-    document.addEventListener('click', (e)=>{
-      const btn = e.target.closest?.('.cat-toggle');
-      if (!btn) return;
-      const wrap = btn.parentElement; if (!wrap) return;
-      try {
-        const rest = JSON.parse(decodeURIComponent(btn.getAttribute('data-rest') || '%5B%5D'));
-        const current = Array.from(wrap.querySelectorAll('.cat-chip')).map(n=>n.textContent);
-        const all = [...current, ...rest];
-        wrap.innerHTML = all.map(t=>`<span class=\"cat-chip\">${t}</span>`).join(' ');
-      } catch(_){}
-    });
-
-    // OPTIMIZED: Load first item meta only for first 10 demands (lazy loading for performance)
-    async function loadFirstItemMeta(rows){
-      // Only load for first 10 to reduce requests
-      const rowsToLoad = rows.slice(0, 10);
-      const cache = new Map();
-      
-      await Promise.all(rowsToLoad.map(async (r)=>{
-        try{
-          const qItem = query(collection(db,'demands', r.id, 'items'), orderBy('lineNo','asc'), limit(1));
-          const s = await getDocs(qItem);
-          if (!s.empty){
-            const it = s.docs[0].data();
-            const img = it.imageUrl || it.image || null;
-            const target = it.targetUnitPrice || it.targetPrice || r.targetPrice || null;
-            r._firstItem = { name: it.name || it.description || '', imageUrl: img, target };
-            cache.set(r.id, r._firstItem);
-          } else {
-            r._firstItem = { name: '', imageUrl: null, target: r.targetPrice || null };
-          }
-        }catch(e){ r._firstItem = { name:'', imageUrl:null, target: r.targetPrice || null }; }
-      }));
-      
-      // For remaining rows, set empty firstItem
-      rows.slice(10).forEach(r => {
-        if (!r._firstItem) {
-          r._firstItem = { name: '', imageUrl: null, target: r.targetPrice || null };
-        }
-      });
-      
-      return rows;
-    }
-
-    // Tab functionality
-    function showTab(which){
-      document.getElementById('tabIncoming').classList.toggle('active', which==='incoming');
-      document.getElementById('tabOutgoing').classList.toggle('active', which==='outgoing');
-      document.getElementById('tabDraft').classList.toggle('active', which==='draft');
-      
-      document.getElementById('incomingDemands').classList.toggle('hidden', which!=='incoming');
-      document.getElementById('outgoingDemands').classList.toggle('hidden', which!=='outgoing');
-      document.getElementById('draftDemands').classList.toggle('hidden', which!=='draft');
-      
-      // Filtreleri göster/gizle
-      if (which === 'incoming') {
-        incomingFilters.classList.remove('hidden');
-        outgoingFilters.classList.add('hidden');
-      } else if (which === 'outgoing') {
-        incomingFilters.classList.add('hidden');
-        outgoingFilters.classList.remove('hidden');
-      } else if (which === 'draft') {
-        incomingFilters.classList.add('hidden');
-        outgoingFilters.classList.add('hidden');
-      }
-      
-      // Hide the old table view when showing tabs
-      document.getElementById('tbl').classList.add('hidden');
-      document.getElementById('pager').style.display = 'none';
-      document.getElementById('grouped-container').style.display = 'none';
-    }
-    
-    document.getElementById('tabIncoming')?.addEventListener('click', ()=> showTab('incoming'));
-    document.getElementById('tabOutgoing')?.addEventListener('click', ()=> showTab('outgoing'));
-    document.getElementById('tabDraft')?.addEventListener('click', ()=> showTab('draft'));
-    
-    // Search functionality
-    document.getElementById('searchBtn')?.addEventListener('click', (e)=>{ e.preventDefault?.(); searchBySATFK(); });
-    document.getElementById('searchForm')?.addEventListener('submit', (e)=>{ e.preventDefault(); searchBySATFK(); });
-    document.getElementById('clearSearchBtn')?.addEventListener('click', clearSearch);
-    document.getElementById('searchInput')?.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') searchBySATFK();
-    });
-    
-    // Search by SATFK function
-    async function searchBySATFK() {
-      const searchInput = document.getElementById('searchInput');
-      const satfk = searchInput.value.trim();
-      
-      if (!satfk) {
-        toast.warn(MESSAGES.WARN_SATFK_REQUIRED);
-        return;
-      }
-      
-      // Validate SATFK format
-      if (!satfk.match(/^SATFK-\d{8}-[0-9A-Z]+$/)) {
-        toast.error(MESSAGES.ERROR_SATFK_INVALID);
-        return;
-      }
-      
-      try {
-        // Search in all demands
-        const q = query(
-          collection(db, 'demands'),
-          where('satfk', '==', satfk)
-        );
-        
-        const snap = await getDocs(q);
-        
-        if (snap.empty) {
-          toast.warn(MESSAGES.WARN_SATFK_NOT_FOUND);
-          return;
-        }
-        
-        const demand = snap.docs[0].data();
-        const demandId = snap.docs[0].id;
-        
-        // Redirect to demand detail
-        const readonlyParam = readonlyMode ? '&readonly=true' : '';
-        window.location.href = `./demand-detail.html?id=${demandId}${readonlyParam}`;
-        
-      } catch (error) {
-        logger.error('Arama hatası', error);
-        toast.error(MESSAGES.ERROR_SEARCH);
-      }
-    }
-    
-    // Clear search function
-    function clearSearch() {
-      document.getElementById('searchInput').value = '';
-    }
-    
-    // Get URL parameters once for the entire page (already defined above)
-    // urlParams is already defined at line 369, reusing it here
-    
-    // Check for search parameter in URL
-    const searchQuery = urlParams.get('q');
-    if (searchQuery) {
-      document.getElementById('searchInput').value = searchQuery;
-      searchBySATFK();
-    }
-
-    // Render function for draft demands (with action buttons)
-    async function renderDraft(rows, tbodySel, emptySel){
-      const tb = document.querySelector(tbodySel); 
-      if (!tb) return;
-      tb.innerHTML = '';
-      
-      if (rows.length === 0) {
-        document.querySelector(emptySel).classList.remove('hidden');
-        return;
-      }
-      
-      document.querySelector(emptySel).classList.add('hidden');
-      
-      for (const r of rows) {
-        const tr = document.createElement('tr');
-        tr.dataset.id = r.id;
-        
-        const d = r.dueDate ? new Date(r.dueDate) : null;
-        const statusText = translateStatus(r.statusText || r.status || 'draft');
-        
-        // OPTIMIZED: Use pre-loaded bid count instead of querying
-        const bidCount = r._bidCount !== undefined ? r._bidCount : 0;
-        
-        const bidDisplay = bidCount > 0 
-          ? `<span style="background:#d1fae5;color:#065f46;padding:2px 6px;border-radius:4px;font-size:12px">${bidCount} teklif</span>`
-          : '<span style="color:#6b7280;font-size:12px">Henüz teklif yok</span>';
-        
-        tr.innerHTML = `
-          <td style="text-align:center"><input type="checkbox" class="draft-select" data-id="${r.id}"></td>
-          <td>${r.satfk || '-'}</td>
-          <td>${r.title || '-'}</td>
-          <td class="td-cats"><div class="cat-wrap">${renderCategoriesCell(r.categoryIds || r.categoryTags || [])}</div></td>
-          <td>${d? d.toLocaleDateString('tr-TR') : '-'}</td>
-          <td><span style="background: #fef3c7; color: #92400e; padding: 4px 8px; border-radius: 4px; font-size: 12px;">${statusText}</span></td>
-          <td>${bidDisplay}</td>
-          <td>
-            <button onclick="editDraftDemand('${r.id}')" style="padding: 4px 8px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; margin-right: 4px;">
-              ✏️ Düzenle
-            </button>
-            <button onclick="approveDraftDemand('${r.id}')" style="padding: 4px 8px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; margin-right: 4px;">
-              ✅ Onayla
-            </button>
-            <button onclick="deleteDraftDemand('${r.id}')" style="padding: 4px 8px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
-              🗑️ Sil
-            </button>
-          </td>
-        `;
-        tb.appendChild(tr);
-      }
-    }
-
-    // Render function for tab tables
-    async function render(rows, tbodySel, emptySel){
-      const tb = document.querySelector(tbodySel); 
-      if (!tb) return;
-      tb.innerHTML = '';
-      const emptyEl = document.querySelector(emptySel);
-      if (!rows.length){ 
-        if (emptyEl) emptyEl.classList.remove('hidden'); 
-        return; 
-      }
-      if (emptyEl) emptyEl.classList.add('hidden');
-      const isIncoming = (tbodySel === '#incomingRows');
-      
-      for (const r of rows) {
-        // Normalize due date across different field shapes
-        let d = null;
-        if (r.dueDate?.toDate) d = r.dueDate.toDate();
-        else if (r.dueDate) d = new Date(r.dueDate);
-        else if (r.deadline?.toDate) d = r.deadline.toDate();
-        else if (r.deadline) d = new Date(r.deadline);
-        const tr = document.createElement('tr');
-        
-        // REFACTORED: Durum gösterimi - sadece status alanı kullanılıyor
-        const statusText = translateStatus(r.status || 'draft');
-        
-        // OPTIMIZED: Use pre-loaded bid count instead of querying
-        const bidCount = r._bidCount !== undefined ? r._bidCount : 0;
-        
-        const bidDisplay = bidCount > 0 
-          ? `<span style="background:#d1fae5;color:#065f46;padding:2px 6px;border-radius:4px;font-size:12px">${bidCount} teklif</span>`
-          : '<span style="color:#6b7280;font-size:12px">Henüz teklif yok</span>';
-        
-        // Firma bilgisi sadece gelen taleplerde gösterilir
-        const companyName = r.companyName || r.company?.name || 'Bilinmeyen Firma';
-        const companyTd = isIncoming ? `<td><span style=\"background:#e0f2fe;color:#0277bd;padding:2px 6px;border-radius:4px;font-size:12px\">${companyName}</span></td>` : '';
-
-        // Tablo sütunları hedef tabloya göre hizalanır
-        const detailLink = (src) => {
-          const baseUrl = `demand-detail.html?id=${encodeURIComponent(r.id)}&source=${src}`;
-          return readonlyMode ? `${baseUrl}&readonly=true` : baseUrl;
-        };
-        const fi = r._firstItem || {};
-        const thumb = fi.imageUrl ? `<img src="${fi.imageUrl}" alt="" style=\"width:44px;height:44px;object-fit:cover;border-radius:6px;border:1px solid #e5e7eb;margin-right:8px;\">` : '';
-        const titleBlock = `
-          <div style=\"display:flex;align-items:center;\">
-            ${thumb}
-            <div>
-              <div style=\"font-weight:600;color:#111827;\">${r.title || '-'}</div>
-              ${fi.target || r.targetPrice ? `<div style=\\\"font-size:12px;color:#6b7280;\\\">Hedef: ${(fi.target || r.targetPrice)}</div>` : ''}
-            </div>
-          </div>`;
-        tr.innerHTML = isIncoming
-          ? `
-          <td>${r.satfk || '-'}</td>
-          <td>${titleBlock}</td>
-          ${companyTd}
-          <td class="td-cats"><div class="cat-wrap">${renderCategoriesCell(r.categoryIds || r.categoryTags || [])}</div></td>
-          <td>${d? d.toLocaleDateString('tr-TR') : '-'}</td>
-          <td>${statusText}</td>
-          <td>${bidDisplay}</td>
-          <td><a href="${detailLink('incoming')}">Görüntüle →</a></td>`
-          : `
-          <td>${r.satfk || '-'}</td>
-          <td>${titleBlock}</td>
-          <td class="td-cats"><div class="cat-wrap">${renderCategoriesCell(r.categoryIds || r.categoryTags || [])}</div></td>
-          <td>${d? d.toLocaleDateString('tr-TR') : '-'}</td>
-          <td>${statusText}</td>
-          <td>${bidDisplay}</td>
-          <td><a href="${detailLink('outgoing')}">Görüntüle →</a></td>`;
-        
-        // Data attributes ekle (refactored - sadece gerekli alanlar)
-        tr.dataset.id = r.id;
-        tr.dataset.status = r.status || 'draft';
-        
-        tb.appendChild(tr);
-      }
-    }
-
-    // Load incoming demands (assigned to supplier)
-    let INCOMING_ALL_ROWS = [];
-
-    function fmtDateCell(d){ return d? d.toLocaleDateString('tr-TR') : '-'; }
-
-    function demandRowHtml(r, isIncoming){
-      const d = r._dueDate || null;
-      const statusText = translateStatus(r.status || 'published');
-      const bidCount = typeof r._bidCount === 'number' ? r._bidCount : 0;
-      const bidDisplay = bidCount > 0 
-        ? `<span style="background:#d1fae5;color:#065f46;padding:2px 6px;border-radius:4px;font-size:12px">${bidCount} teklif</span>`
-        : '<span style="color:#6b7280;font-size:12px">Henüz teklif yok</span>';
-      const companyName = r.companyName || r.company?.name || 'Bilinmeyen Firma';
-      const companyTd = isIncoming ? `<td><span style=\"background:#e0f2fe;color:#0277bd;padding:2px 6px;border-radius:4px;font-size:12px\">${companyName}</span></td>` : '';
-      const detailLink = (src) => {
-        const baseUrl = `demand-detail.html?id=${encodeURIComponent(r.id)}&source=${src}`;
-        return readonlyMode ? `${baseUrl}&readonly=true` : baseUrl;
-      };
-      const fi = r._firstItem || {};
-      const thumb = fi.imageUrl ? `<img src="${fi.imageUrl}" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:6px;border:1px solid #e5e7eb;margin-right:8px;">` : '';
-      const titleBlock = `
-        <div style="display:flex;align-items:center;">
-          ${thumb}
-          <div>
-            <div style="font-weight:600;color:#111827;">${r.title || '-'}</div>
-            ${fi.target || r.targetPrice ? `<div style=\"font-size:12px;color:#6b7280;\">Hedef: ${(fi.target || r.targetPrice)}</div>` : ''}
-          </div>
-        </div>`;
-      return `
-        <td>${r.satfk || '-'}</td>
-        <td>${titleBlock}</td>
-        ${companyTd}
-        <td class="td-cats"><div class="cat-wrap">${renderCategoriesCell(r.categoryTags)}</div></td>
-        <td>${fmtDateCell(d)}</td>
-        <td>${statusText}</td>
-        <td>${bidDisplay}</td>
-        <td><a href="${detailLink('incoming')}">Görüntüle →</a></td>`;
-    }
-
-    // OPTIMIZED: This function is now integrated into loadIncoming for batch processing
-    // Kept for backward compatibility but should use batch approach instead
-    async function markOwnBidFlags(rows, u){
-      // If hasOwnBid is already set (from batch processing), skip
-      if (rows.length > 0 && rows[0].hasOwnBid !== undefined) {
-        return rows;
-      }
-      
-      // Fallback: batch query if not already done
-      const demandIds = rows.map(r => r.id).slice(0, 10);
-      if (demandIds.length === 0) return rows;
-      
-      try {
-        const bidsQuery = query(
-          collection(db, 'bids'),
-          where('demandId', 'in', demandIds),
-          where('supplierId', '==', u.uid)
-        );
-        const snap = await getDocs(bidsQuery);
-        const ownBidSet = new Set(snap.docs.map(d => d.data().demandId));
-        rows.forEach(r => {
-          r.hasOwnBid = ownBidSet.has(r.id);
-        });
-      } catch (e) {
-        rows.forEach(r => { r.hasOwnBid = false; });
-      }
-      return rows;
-    }
-
-    function renderIncomingGroups(rows){
-      const bodyGiven = document.getElementById('incomingRowsGiven');
-      const bodyWaiting = document.getElementById('incomingRowsWaiting');
-      const emptyEl = document.getElementById('incomingEmpty');
-      if (bodyGiven) bodyGiven.innerHTML = '';
-      if (bodyWaiting) bodyWaiting.innerHTML = '';
-      const filtered = rows || [];
-      const given = filtered.filter(r => r.hasOwnBid);
-      const waiting = filtered.filter(r => !r.hasOwnBid);
-      if ((given.length + waiting.length) === 0) { if (emptyEl) emptyEl.classList.remove('hidden'); return; } else { if (emptyEl) emptyEl.classList.add('hidden'); }
-      if (bodyGiven) {
-        for (const r of given) {
-          const tr = document.createElement('tr');
-          tr.dataset.id = r.id;
-          tr.dataset.status = r.status || 'published';
-          // Normalize due date for display cache
-          let d=null; if (r.dueDate?.toDate) d=r.dueDate.toDate(); else if (r.dueDate) d=new Date(r.dueDate); else if (r.deadline?.toDate) d=r.deadline.toDate(); else if (r.deadline) d=new Date(r.deadline); r._dueDate=d;
-          tr.innerHTML = demandRowHtml(r, true);
-          bodyGiven.appendChild(tr);
-        }
-      }
-      if (bodyWaiting) {
-        for (const r of waiting) {
-          const tr = document.createElement('tr');
-          tr.dataset.id = r.id;
-          tr.dataset.status = r.status || 'published';
-          let d=null; if (r.dueDate?.toDate) d=r.dueDate.toDate(); else if (r.dueDate) d=new Date(r.dueDate); else if (r.deadline?.toDate) d=r.deadline.toDate(); else if (r.deadline) d=new Date(r.deadline); r._dueDate=d;
-          tr.innerHTML = demandRowHtml(r, true);
-          bodyWaiting.appendChild(tr);
-        }
-      }
-    }
-
-    // REFACTORED: Gelen talepler - sadece tedarikçi görür
-    async function loadIncoming(u){
-      try {
-        // Get current user's supplier categories
-        // Check multiple field names for backward compatibility
-        const meDoc = await getDoc(doc(db, 'users', u.uid));
-        const myData = meDoc.exists() ? meDoc.data() : {};
-        
-        // CRITICAL: Get supplier categories in ID format (new system)
-        // Priority: supplierCategoryIds > supplierCategoryKeys (slugs) > supplierCategories (names)
-        let mySupplierCategoryTokens = [];
-        if (Array.isArray(myData.supplierCategoryIds) && myData.supplierCategoryIds.length > 0) {
-          mySupplierCategoryTokens = myData.supplierCategoryIds;
-        } else if (Array.isArray(myData.supplierCategoryKeys) && myData.supplierCategoryKeys.length > 0) {
-          mySupplierCategoryTokens = myData.supplierCategoryKeys;
-        } else if (Array.isArray(myData.supplierCategories) && myData.supplierCategories.length > 0) {
-          mySupplierCategoryTokens = myData.supplierCategories;
-        }
-        
-        // Normalize all tokens to IDs
-        const mySupplierCategoryIds = normalizeToIds(mySupplierCategoryTokens).slice(0, 10); // Firestore limit
-        
-        // Reduced logging: Only log summary
-        if (mySupplierCategoryIds.length === 0) {
-          logger.warn("No supplier categories found for user. Incoming demands may be empty.");
-        } else {
-          logger.info(`User has ${mySupplierCategoryIds.length} supplier categories (IDs)`);
-        }
-        
-        if (mySupplierCategoryIds.length === 0) {
-          logger.warn("Kullanıcının tedarikçi kategorisi yok, gelen talep gösterilemez");
-          document.querySelector('#incomingEmpty').classList.remove('hidden');
-          document.querySelector('#incomingEmpty').textContent = 'Tedarikçi kategorisi seçmelisiniz. Ayarlar sayfasından kategorilerinizi seçin.';
-          return;
-        }
-        
-        // Get user's company ID
-        const userCompanyId = myData.companyId;
-        
-        // Query: isPublished=true AND (supplierCategoryIds OR categoryIds OR legacy fields) hasAny AND creatorCompanyId != userCompanyId
-        // Note: Published demands have status='published' or 'approved' and isPublished=true
-        // CRITICAL: Try categoryIds first (new system), then fallback to legacy fields
-        let snap;
-        try {
-          // Primary: Use categoryIds (new ID-based system)
-          const incomingQ = query(
-            collection(db, 'demands'),
-            where('isPublished', '==', true),
-            where('categoryIds', 'array-contains-any', mySupplierCategoryIds),
-            orderBy('createdAt', 'desc'),
-            limit(50)
-          );
-          snap = await getDocs(incomingQ);
-          logger.info(`Found ${snap.docs.length} published demands with categoryIds match`);
-        } catch (err) {
-          // Check if it's an index error
-          if (err.code === 'failed-precondition') {
-            logger.warn("categoryIds index not found. Using fallback", err.message);
-          } else {
-            logger.warn("categoryIds query failed", err.message);
-          }
-          
-          // Fallback 1: Try legacy categoryTags if categoryIds query fails
-          // Note: Demands use 'categoryIds', not 'supplierCategoryIds'
-          // supplierCategoryIds is a field on users collection, not demands
-          try {
-            // Convert category IDs to slugs for legacy matching
-            const allCategories = getAllCategories();
-            const legacySlugs = mySupplierCategoryIds.map(id => {
-              const cat = allCategories.find(c => c.id === id);
-              return cat ? cat.slug : null;
-            }).filter(Boolean);
-            
-            if (legacySlugs.length > 0) {
-              const incomingQ = query(
-                collection(db, 'demands'),
-                where('isPublished', '==', true),
-                where('categoryTags', 'array-contains-any', legacySlugs.slice(0, 10)),
-                orderBy('createdAt', 'desc'),
-                limit(50)
-              );
-              snap = await getDocs(incomingQ);
-              logger.info(`Found ${snap.docs.length} published demands with categoryTags match (fallback)`);
-            } else {
-              throw new Error('No legacy slugs available');
-            }
-          } catch (err2) {
-            // All query attempts failed
-            logger.error("All category query attempts failed", err2.message);
-            if (err2.code === 'failed-precondition') {
-              logger.error("Firestore index required. Please:");
-              logger.error("   1. Click the link in the error message above to create the index manually");
-              logger.error("   2. Or run: firebase deploy --only firestore:indexes");
-              logger.error("   3. Wait a few minutes for the index to build, then refresh the page.");
-            }
-            snap = { docs: [] };
-          }
-        }
-        
-        // Filter out own company's demands and log category matching
-        const rows = snap.docs
-          .map(d => {
-            const data = d.data();
-            // Match categories silently (no per-demand logging)
-            return { id: d.id, ...data };
-          })
-          .filter(d => {
-            // Kendi şirketinin taleplerini gösterme (silent filter)
-            if (d.creatorCompanyId && userCompanyId && d.creatorCompanyId === userCompanyId) {
-              return false;
-            }
-            return true;
-          });
-        
-        logger.info(`Processed ${rows.length} incoming demands`, { filtered: snap.docs.length - rows.length });
-        
-        // DEBUG: Show sample demand categories for comparison
-        if (snap.docs.length > 0 && rows.length === 0) {
-          logger.warn("WARNING: Published demands exist but none match user categories!");
-          logger.info("Sample demand categories from database");
-          snap.docs.slice(0, 3).forEach(d => {
-            const data = d.data();
-            const demandCats = data.supplierCategoryKeys || data.categoryTags || [];
-            logger.info(`Demand ${d.id}`, {
-              supplierCategoryKeys: demandCats,
-              hasMatch: demandCats.some(cat => mySupplierCatKeys.includes(cat)),
-              userCompanyId: userCompanyId,
-              creatorCompanyId: data.creatorCompanyId
-            });
-          });
-        }
-        
-        // OPTIMIZED: Load bid counts in batch (single query instead of N queries)
-        // Fetch all bids for all demands at once, then map to demands
-        const demandIds = rows.map(r => r.id);
-        const bidCountsMap = new Map();
-        const ownBidMap = new Map();
-        
-        if (demandIds.length > 0) {
-          try {
-            // Batch query: get all bids for these demands in one query
-            const bidsQuery = query(
-              collection(db, 'bids'),
-              where('demandId', 'in', demandIds.slice(0, 10)) // Firestore 'in' limit is 10
-            );
-            const allBidsSnap = await getDocs(bidsQuery);
-            
-            // Count bids per demand
-            allBidsSnap.docs.forEach(bidDoc => {
-              const bidData = bidDoc.data();
-              const dId = bidData.demandId;
-              bidCountsMap.set(dId, (bidCountsMap.get(dId) || 0) + 1);
-              
-              // Check if user has bid
-              if (bidData.supplierId === u.uid) {
-                ownBidMap.set(dId, true);
-              }
-            });
-            
-            // If more than 10 demands, query remaining in batches
-            if (demandIds.length > 10) {
-              for (let i = 10; i < demandIds.length; i += 10) {
-                const batch = demandIds.slice(i, i + 10);
-                try {
-                  const batchQuery = query(
-                    collection(db, 'bids'),
-                    where('demandId', 'in', batch)
-                  );
-                  const batchSnap = await getDocs(batchQuery);
-                  batchSnap.docs.forEach(bidDoc => {
-                    const bidData = bidDoc.data();
-                    const dId = bidData.demandId;
-                    bidCountsMap.set(dId, (bidCountsMap.get(dId) || 0) + 1);
-                    if (bidData.supplierId === u.uid) {
-                      ownBidMap.set(dId, true);
-                    }
-                  });
-                } catch (e) { logger.warn('Batch bid query error', e); }
-              }
-            }
-          } catch (e) {
-            logger.warn('Bulk bid query failed, using fallback', e);
-          }
-        }
-        
-        // Apply bid counts and own bid flags
-        rows.forEach(r => {
-          r._bidCount = bidCountsMap.get(r.id) || 0;
-          r.hasOwnBid = ownBidMap.has(r.id) || false;
-        });
-        
-        await loadFirstItemMeta(rows);
-        
-        INCOMING_ALL_ROWS = rows;
-        
-        // Apply incoming status filter if set
-        await applyIncomingFilters();
-        
-        logger.info(`Incoming demands loaded`, { total: rows.length, rendered: INCOMING_ALL_ROWS.length });
-      } catch (err){
-        logger.error('incoming load error', err);
-        showIndexHint(err);
-      
-        // Show detailed error information
-        const emptyEl = document.querySelector('#incomingEmpty');
-        if (emptyEl) {
-          emptyEl.classList.remove('hidden');
-          emptyEl.innerHTML = `
-            <div style="padding: 20px; background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px;">
-              <h4 style="margin-top: 0; color: #92400e;">Gelen talepler yüklenemedi</h4>
-              <p><strong>Hata:</strong> ${err.message || err}</p>
-              <p>Lütfen aşağıdaki kontrol listesini inceleyin:</p>
-              <ul style="text-align: left;">
-                <li>İnternet bağlantınızı kontrol edin</li>
-                <li>Firebase authentication'ın doğru çalıştığından emin olun</li>
-                <li>Şirket bilgilerinizin doğru ayarlandığından emin olun</li>
-                <li>Tedarikçi kategorilerinizin seçili olduğundan emin olun (Ayarlar → Tedarikçi Kategorileri)</li>
-                <li>Firestore güvenlik kurallarının doğru yapılandırıldığından emin olun</li>
-              </ul>
-              <p><a href="./settings.html" style="color: #3b82f6;">Ayarlar sayfasına git →</a></p>
-            </div>
-          `;
-        }
-      }
-    }
-    
-    // REFACTORED: Filtreler kaldırıldı - sadece 3 basit sorgu kullanılıyor
-
-    // Hata mesajı index için
-    function showIndexHint(err) {
-      const emptyEl = document.querySelector('#incomingEmpty');
-      if (emptyEl) {
-        if (String(err.message || err).includes('index')) {
-          emptyEl.textContent = 'Firestore dizini hazırlanıyor. Konsoldaki "Create index" linkine tıklayıp Ready olunca sayfayı yenileyin.';
-        } else {
-          emptyEl.textContent = 'Gelen talepler yüklenemedi.';
-        }
-        emptyEl.classList.remove('hidden');
-      }
-    }
-
-    // REFACTORED: Giden talepler - kullanıcının şirketi yazarı, published
-    async function loadOutgoing(u){
-      try {
-        // Get user's company ID
-        const userDoc = await getDoc(doc(db, 'users', u.uid));
-        const userData = userDoc.exists() ? userDoc.data() : {};
-        const userCompanyId = userData.companyId;
-        
-        if (!userCompanyId) {
-          logger.warn("Kullanıcının companyId yok");
-          document.querySelector('#outgoingEmpty').classList.remove('hidden');
-          document.querySelector('#outgoingEmpty').textContent = 'Şirket bilgisi bulunamadı.';
-          return;
-        }
-        
-        // Query: creatorCompanyId == userCompanyId AND isPublished == true
-        // Note: Published demands have status='published' and isPublished=true
-        const outgoingQ = query(
-          collection(db, 'demands'),
-          where('creatorCompanyId', '==', userCompanyId),
-          where('isPublished', '==', true),
-          orderBy('createdAt', 'desc'),
-          limit(50)
-        );
-        
-        const snap = await getDocs(outgoingQ);
-        const rows = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        
-        // OPTIMIZED: Load bid counts in batch
-        const demandIds = rows.map(r => r.id);
-        const bidCountsMap = new Map();
-        
-        if (demandIds.length > 0) {
-          try {
-            // Batch query bids for all demands
-            for (let i = 0; i < demandIds.length; i += 10) {
-              const batch = demandIds.slice(i, i + 10);
-              const bidsQuery = query(
-                collection(db, 'bids'),
-                where('demandId', 'in', batch)
-              );
-              const bidsSnap = await getDocs(bidsQuery);
-              bidsSnap.docs.forEach(bidDoc => {
-                const dId = bidDoc.data().demandId;
-                bidCountsMap.set(dId, (bidCountsMap.get(dId) || 0) + 1);
-              });
-            }
-          } catch (e) {
-            logger.warn('Outgoing bid count query failed', e);
-          }
-        }
-        
-        // Apply bid counts
-        rows.forEach(r => {
-          r._bidCount = bidCountsMap.get(r.id) || 0;
-        });
-        
-        logger.info(`Loaded ${rows.length} published outgoing demands`);
-        await loadFirstItemMeta(rows);
-        await render(rows, '#outgoingRows', '#outgoingEmpty');
-      } catch (err){
-        logger.error('outgoing load error', err);
-        const emptyEl = document.querySelector('#outgoingEmpty');
-        if (emptyEl) {
-          if (String(err.message || err).includes('index')) {
-            emptyEl.textContent = 'Firestore dizini hazırlanıyor. Konsoldaki "Create index" linkine tıklayıp Ready olunca sayfayı yenileyin.';
-          } else {
-            // Show detailed error information
-            emptyEl.innerHTML = `
-              <div style="padding: 20px; background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px;">
-                <h4 style="margin-top: 0; color: #92400e;">Giden talepler yüklenemedi</h4>
-                <p><strong>Hata:</strong> ${err.message || err}</p>
-                <p>Lütfen aşağıdaki kontrol listesini inceleyin:</p>
-                <ul style="text-align: left;">
-                  <li>İnternet bağlantınızı kontrol edin</li>
-                  <li>Firebase authentication'ın doğru çalıştığından emin olun</li>
-                  <li>Şirket bilgilerinizin doğru ayarlandığından emin olun</li>
-                  <li>Firestore güvenlik kurallarının doğru yapılandırıldığından emin olun</li>
-                </ul>
-                <p><a href="./settings.html" style="color: #3b82f6;">Ayarlar sayfasına git →</a></p>
-              </div>
-            `;
-          }
-          emptyEl.classList.remove('hidden');
-        }
-      }
-    }
-
-    // REFACTORED: Taslak talepler - kullanıcının şirketi yazarı, draft veya withdrawn
-    async function loadDraftPaged(u, { append = false } = {}){
-      if (isLoadingDrafts) return;
-      
-      try {
-        isLoadingDrafts = true;
-        logger.info("Loading draft demands for user", { uid: u.uid, append });
-        
-        // İlk yüklemede listeyi sıfırla
-        if (!append) {
-          accumulatedDrafts = [];
-          lastDraftDoc = null;
-          draftsFinished = false;
-        }
-        
-        // Get user's company ID
-        const userDoc = await getDoc(doc(db, 'users', u.uid));
-        const userData = userDoc.exists() ? userDoc.data() : {};
-        const userCompanyId = userData.companyId;
-        
-        if (!userCompanyId) {
-          logger.warn("Kullanıcının companyId yok");
-          document.querySelector('#draftEmpty').classList.remove('hidden');
-          document.querySelector('#draftEmpty').textContent = 'Şirket bilgisi bulunamadı.';
-          return;
-        }
-        
-        // Build query with cursor
-        let q = query(
-          collection(db, 'demands'),
-          where('creatorCompanyId', '==', userCompanyId),
-          where('status', 'in', ['draft', 'withdrawn']),
-          orderBy('updatedAt', 'desc'),
-          limit(DRAFT_PAGE_SIZE)
-        );
-        
-        // Add cursor if we have a last document
-        if (lastDraftDoc) {
-          q = query(
-            collection(db, 'demands'),
-            where('creatorCompanyId', '==', userCompanyId),
-            where('status', 'in', ['draft', 'withdrawn']),
-            orderBy('updatedAt', 'desc'),
-            startAfter(lastDraftDoc),
-            limit(DRAFT_PAGE_SIZE)
-          );
-        }
-        
-        const snap = await getDocs(q);
-        logger.info(`Found ${snap.docs.length} draft/withdrawn demands`);
-        
-        const draftRows = snap.docs.map(d => {
-          const demandData = { id: d.id, ...d.data() };
-          demandData.statusText = translateStatus(demandData.status || 'draft');
-          return demandData;
-        });
-        
-        // Verileri birleştir
-        accumulatedDrafts = [...accumulatedDrafts, ...draftRows];
-        
-        // Son dökümanı kaydet
-        if (snap.docs.length > 0) {
-          lastDraftDoc = snap.docs[snap.docs.length - 1];
-        }
-        
-        // Sayfa bitince finished flag'i set et
-        if (snap.docs.length < DRAFT_PAGE_SIZE) {
-          draftsFinished = true;
-        }
-        
-        // Render
-        await renderDraft(accumulatedDrafts, '#draftRows', '#draftEmpty');
-        
-        // Sayfa bitince "Daha Fazla" butonunu gizle
-        const loadMoreBtn = document.getElementById('loadMoreDraftsBtn');
-        if (draftsFinished) {
-          if (loadMoreBtn) loadMoreBtn.classList.add('hidden');
-        } else {
-          if (loadMoreBtn) loadMoreBtn.classList.remove('hidden');
-        }
-        
-      } catch (err){
-        logger.error('draft load error', err);
-        const emptyEl = document.querySelector('#draftEmpty');
-        if (emptyEl) {
-          if (String(err.message || err).includes('index')) {
-            emptyEl.textContent = 'Firestore dizini hazırlanıyor. Konsoldaki "Create index" linkine tıklayıp Ready olunca sayfayı yenileyin.';
-          } else {
-            emptyEl.textContent = 'Taslak talepler yüklenemedi.';
-          }
-          emptyEl.classList.remove('hidden');
-        }
-      } finally {
-        isLoadingDrafts = false;
-      }
-    }
-    
-    // Backward compatibility wrapper
-    async function loadDraft(u, append = false) {
-      return loadDraftPaged(u, { append });
-    }
-    
-    // Daha fazla taslak yükleme fonksiyonu
-    window.loadMoreDrafts = function() {
-      loadDraftPaged(user, { append: true });
-    };
-
-    // Taslak talepler için action fonksiyonları
-    window.editDraftDemand = function(demandId) {
-      location.href = `./demand-new.html?edit=${demandId}`;
-    };
-    
-    window.approveDraftDemand = async function approveDraftDemand(demandId, companyId = null) {
-      if (!confirm('Bu talebi onaylayıp yayınlamak istediğinizden emin misiniz?')) {
-        return;
-      }
-      
-      try {
-        // Path seçimi: companyId verilmişse company altı, değilse global
-        const ref = companyId
-          ? doc(db, "companies", companyId, "demands", demandId)
-          : doc(db, "demands", demandId);
-
-        // Talep durumunu 'published' yap ve yayınla
-        await updateDoc(ref, {
-          status: 'published',
-          published: true,
-          isPublished: true,
-          statusHistory: arrayUnion({
-            status: 'published',
-            timestamp: Date.now(),
-            userId: user.uid,
-            note: 'Taslak onaylandı ve yayınlandı'
-          }),
-          updatedAt: serverTimestamp(),
-          approvedAt: serverTimestamp()
-        });
-        
-        logger.info("Draft approved", { path: ref.path });
-        
-        // Tedarikçi eşleştirmesi yap
-        await publishDemandAndMatchSuppliers(demandId);
-        
-        toast.success(MESSAGES.SUCCESS_DEMAND_APPROVED_SENT);
-        loadDraft(user); // Listeyi yenile
-        
-      } catch (error) {
-        logger.error('Talep onaylama hatası (approveDraftDemand)', error);
-        toast.error(MESSAGES.ERROR_DEMAND_APPROVE + ': ' + (error && error.message ? error.message : error));
-      }
-    };
-
-    // Toplu silme yardımcıları
-    const draftSelectAll = document.getElementById('draftSelectAll');
-    const btnDeleteSelectedDrafts = document.getElementById('btnDeleteSelectedDrafts');
-    const btnClearDraftSelection = document.getElementById('btnClearDraftSelection');
-
-    if (draftSelectAll) {
-      draftSelectAll.addEventListener('change', () => {
-        document.querySelectorAll('.draft-select').forEach(ch => ch.checked = draftSelectAll.checked);
-      });
-    }
-
-    if (btnClearDraftSelection) {
-      btnClearDraftSelection.addEventListener('click', () => {
-        if (draftSelectAll) draftSelectAll.checked = false;
-        document.querySelectorAll('.draft-select').forEach(ch => ch.checked = false);
-      });
-    }
-
-    if (btnDeleteSelectedDrafts) {
-      btnDeleteSelectedDrafts.addEventListener('click', async () => {
-        const ids = Array.from(document.querySelectorAll('.draft-select:checked')).map(ch => ch.getAttribute('data-id'));
-        if (!ids.length) { toast.warn(MESSAGES.WARN_DRAFT_SELECT_REQUIRED); return; }
-        if (!confirm(`${ids.length} taslak talebi silmek istediğinize emin misiniz?`)) return;
-        for (const id of ids) {
-          await deleteDraftDemand(id);
-        }
-      });
-    }
-
-    // Taslak talep silme - Detaylı temizlik yapan versiyon (kullanılan)
-    window.deleteDraftDemand = async function deleteDraftDemand(demandId) {
-      if (!confirm('Bu taslak talebi kalıcı olarak silmek istiyor musunuz? Bu işlem geri alınamaz.')) return;
-      try {
-        // Alt koleksiyon: items
-        try {
-          const itemsSnap = await getDocs(collection(db, 'demands', demandId, 'items'));
-          await Promise.all(itemsSnap.docs.map(d => deleteDoc(doc(db, 'demands', demandId, 'items', d.id))));
-        } catch (e) { logger.warn('items cleanup warn', e); }
-
-        // bids (top-level)
-        try {
-          const bidsSnap = await getDocs(query(collection(db, 'bids'), where('demandId','==', demandId)));
-          await Promise.all(bidsSnap.docs.map(d => deleteDoc(doc(db, 'bids', d.id))));
-        } catch (e) { logger.warn('bids cleanup warn', e); }
-
-        // recipients (top-level)
-        try {
-          const recSnap = await getDocs(query(collection(db, 'demandRecipients'), where('demandId','==', demandId)));
-          await Promise.all(recSnap.docs.map(d => deleteDoc(doc(db, 'demandRecipients', d.id))));
-        } catch (e) { logger.warn('recipients cleanup warn', e); }
-
-        // Ana doküman
-        await deleteDoc(doc(db, 'demands', demandId));
-
-        // UI'dan kaldır
-        const tr = document.querySelector(`#draftRows tr[data-id="${demandId}"]`);
-        if (tr) tr.remove();
-        accumulatedDrafts = accumulatedDrafts.filter(x => x.id !== demandId);
-        if (accumulatedDrafts.length === 0) {
-          const emptyEl = document.querySelector('#draftEmpty');
-          if (emptyEl) emptyEl.classList.remove('hidden');
-        }
-        toast.success(MESSAGES.SUCCESS_DRAFT_DELETED_ALT);
-        loadDraft(user); // Listeyi yenile
-      } catch (err) {
-        logger.error('deleteDraft error', err);
-        toast.error(MESSAGES.ERROR_DRAFT_DELETE + ': ' + (err.message || err));
-      }
-    };
-
-    // Tedarikçi eşleştirme fonksiyonu
-    async function publishDemandAndMatchSuppliers(demandId) {
-      try {
-        logger.info("Publishing demand and matching suppliers", { demandId });
-        
-        // Talep verilerini al
-        const demandDoc = await getDoc(doc(db, 'demands', demandId));
-        if (!demandDoc.exists()) {
-          throw new Error('Talep bulunamadı');
-        }
-        
-        const demandData = demandDoc.data();
-        
-        // CRITICAL: Use categoryIds from new system, normalize if needed
-        let categoryIds = demandData.categoryIds || [];
-        let categoryTags = demandData.categoryTags || [];
-        
-        // If categoryIds is empty but categoryTags exists, normalize
-        if (categoryIds.length === 0 && categoryTags.length > 0) {
-          categoryIds = normalizeToIds(categoryTags);
-        }
-        
-        const groups = demandData.groupIds || [];
-        
-        logger.info('Demand category data', { categoryIds, categoryTags, groups });
-        
-        // Use match-service for category-based supplier matching
-        const matchedSuppliers = await matchSuppliers(db, { 
-          categoryIds: categoryIds,
-          legacySlugs: categoryTags
-        });
-        
-        const allSuppliers = new Set();
-        
-        // Add matched suppliers
-        matchedSuppliers.forEach(supplier => {
-          if (supplier.uid && supplier.uid !== demandData.createdBy) {
-            allSuppliers.add(supplier.uid);
-          }
-        });
-        
-        logger.info('Found suppliers', { count: allSuppliers.size });
-        
-        // demandRecipients kayıtları oluştur
-        const recipientPromises = Array.from(allSuppliers).map(supplierId => 
-          addDoc(collection(db, 'demandRecipients'), {
-            demandId: demandId,
-            buyerId: demandData.createdBy,
-            supplierId: supplierId,
-            matchedAt: serverTimestamp(),
-            categories: categoryIds,
-            categoryTags: categoryTags,
-            status: 'matched',
-            createdAt: serverTimestamp()
-          })
-        );
-        
-        await Promise.all(recipientPromises);
-        
-        logger.info(`Created ${recipientPromises.length} demandRecipients records`);
-        
-      } catch (error) {
-        logger.error('Error in publishDemandAndMatchSuppliers', error);
-        throw error;
-      }
-    }
-
-    // Always load data
-    await loadIncoming(user);
-    await loadOutgoing(user);
-    await loadDraft(user);
-
-    // Check URL parameters for dashboard navigation
-    const filter = urlParams.get('filter');
-    
-    if (filter) {
-      // Apply filter based on URL parameter
-      if (filter === 'inbox') {
-        showTab('incoming');
-      } else if (filter === 'outgoing') {
-        showTab('outgoing');
-      } else if (filter === 'draft') {
-        showTab('draft');
-        loadDraft(user); // Taslak talepleri yükle
-      }
-    } else {
-      // Default behavior
-      showTab('incoming');
-    }
-
-    // --- Filters ---
-    [fStatus, fPriority, fBiddingMode, fGroup].forEach(el => el && el.addEventListener("change", applyFilters));
-    
-    // Gelen talepler için filtreler
-    async function applyIncomingFilters() {
-      if (!INCOMING_ALL_ROWS || !INCOMING_ALL_ROWS.length) {
-        logger.warn("applyIncomingFilters: INCOMING_ALL_ROWS is empty");
-        return;
-      }
-      const statusFilter = fIncomingStatus?.value || "";
-      let filtered = [...INCOMING_ALL_ROWS];
-      
-      if (statusFilter && statusFilter !== "" && statusFilter !== "—Tümü—") {
-        // Status filter is for bid status, not demand status
-        // For now, we filter by whether user has bid or not
-        if (statusFilter === "responded") {
-          // User has responded = has bid
-          filtered = filtered.filter(r => r.hasOwnBid === true);
-        } else if (statusFilter === "pending") {
-          // User hasn't responded yet = no bid
-          filtered = filtered.filter(r => !r.hasOwnBid || r.hasOwnBid === false);
-        }
-        // "viewed" filter would require tracking view status separately
-      }
-      
-      renderIncomingGroups(filtered);
-    }
-    
-    // Giden talepler için filtreler (outgoing için)
-    async function applyOutgoingFilters() {
-      // Outgoing filters would go here if needed
-      logger.info("Outgoing filters applied");
-    }
-    
-    fIncomingStatus?.addEventListener("change", async () => await applyIncomingFilters());
-    fStatus?.addEventListener("change", async () => await applyOutgoingFilters());
-
-    // Initial render
-    applyFilters();
-
-    // ====================
-    // Apply Filters
-    // ====================
-    function applyFilters(){
-      let rows = [...merged];
-
-      // Durum
-      const status = fStatus?.value || "";
-      if (status==="draft") {
-        rows = rows.filter(d => d.status === 'draft' || (!d.published && !d.isPublished));
-      } else if (status==="published") {
-        rows = rows.filter(d => d.status !== 'draft' && (d.published || d.isPublished));
-      }
-
-      // Öncelik
-      const prio = fPriority?.value || "";
-      if (prio) rows = rows.filter(d => (d.priority||"")=== prio);
-
-      // Talep Tipi
-      const mode = fBiddingMode?.value || "";
-      if (mode) rows = rows.filter(d => (d.biddingMode||"secret")===mode);
-
-      const groupBy = fGroup?.value || "";
-      if (groupBy) {
-        renderGrouped(buildGroups(rows, groupBy));
-        bindDeleteButtons("#grouped-container");
-      } else {
-        currentPage = 0;
-        renderTable(rows);
-        renderPagination(rows);
-        bindDeleteButtons("#demands-body");
-      }
-    }
-
-    // ====================
-    // Grouping Functions
-    // ====================
-    function groupKey(rec, by) {
-      switch (by) {
-        case "site":
-          return rec.siteName || "— (Şantiye yok) —";
-        case "status":
-          // Önce status alanını kontrol et, sonra published/isPublished
-          const isDraft = rec.status === 'draft' || (!rec.published && !rec.isPublished);
-          return isDraft ? "Taslak" : "Gönderildi";
-        case "priority":
-          return rec.priority || "—";
-        case "biddingmode": {
-          const mode = rec.biddingMode || "secret";
-          const labels = { secret: "Gizli", open: "Açık Artırma", hybrid: "Hibrit" };
-          return labels[mode] || "Gizli";
-        }
-        case "category": {
-          const cats = [
-            ...(Array.isArray(rec.categoryTags) ? rec.categoryTags : []),
-            ...(rec.customCategory ? [rec.customCategory] : [])
-          ];
-          return cats.length ? cats : ["— (Kategori yok) —"];
-        }
-        case "month": {
-          const d = rec.createdAt?.toDate?.();
-          if (!d) return "— (Tarih yok) —";
-          const m = (d.getMonth() + 1).toString().padStart(2, "0");
-          return `${d.getFullYear()}-${m}`;
-        }
-        default:
-          return "";
-      }
-    }
-
-    function buildGroups(rows, by) {
-      const map = new Map();
-      for (const r of rows) {
-        const k = groupKey(r, by);
-        const keys = Array.isArray(k) ? k : [k];
-        keys.forEach(key => {
-          if (!map.has(key)) map.set(key, []);
-          map.get(key).push(r);
-        });
-      }
-      return map; // Map<groupName, Record[]>
-    }
-
-    function renderGrouped(groupsMap) {
-      const wrap = document.getElementById("grouped-container");
-      const tbody = document.getElementById("demands-body");
-      const pager = document.getElementById("pager");
-      wrap.innerHTML = "";
-      wrap.style.display = "";
-      tbody.innerHTML = "";
-      pager.style.display = "none"; // Hide pagination in grouped view
-
-      // Sort groups by name
-      const entries = [...groupsMap.entries()].sort((a, b) => a[0].localeCompare(b[0], "tr"));
-
-      for (const [gname, list] of entries) {
-        // Group header (collapsible)
-        const openId = Math.random().toString(36).slice(2, 8);
-        const header = document.createElement("div");
-        header.style.cssText = "margin:12px 0 4px 0; font-weight:600; cursor:pointer; font-size:16px;";
-        header.innerHTML = `${gname} <span style="opacity:.7">(${list.length})</span>`;
-        const cont = document.createElement("div");
-        cont.id = `grp-${openId}`;
-
-        // Mini table
-        const tbl = document.createElement("table");
-        tbl.className = "table";
-        const head = document.createElement("thead");
-        head.innerHTML = document.querySelector("thead").innerHTML;
-        const body = document.createElement("tbody");
-        list
-          .sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0))
-          .forEach(d => body.appendChild(rowHtml(d)));
-        tbl.appendChild(head);
-        tbl.appendChild(body);
-        cont.appendChild(tbl);
-
-        // Toggle
-        let visible = true;
-        header.onclick = () => {
-          visible = !visible;
-          cont.style.display = visible ? "" : "none";
-        };
-
-        wrap.appendChild(header);
-        wrap.appendChild(cont);
-      }
-    }
-
-    // --- Row HTML (gerçek <td>'ler!) ---
-    function rowHtml(d){
-      const tr = document.createElement("tr");
-
-      const cats = [
-        ...(Array.isArray(d.categoryTags)?d.categoryTags:[]),
-        ...(d.customCategory?[d.customCategory]:[])
-      ];
-      const catsHtml = cats.slice(0,3).map(c=>`<span class="badge">${c}</span>`).join(" ") + (cats.length>3?` +${cats.length-3}`:""  );
-
-      const mode = d.biddingMode || "secret";
-      const modeLabel = ({secret:"Gizli", open:"Açık", hybrid:"Hibrit"})[mode] || "Gizli";
-
-      const isOwner = d.createdBy === uid;
-      const created = d.createdAt?.toDate?.()?.toLocaleDateString?.("tr-TR") || "-";
-
-      tr.innerHTML = `
-        <td>${d.satfk || "-"}</td>
-        <td><a href="./demand-detail.html?id=${d.id}${readonlyMode ? '&readonly=true' : ''}">${d.title || "-"}</a></td>
-        <td>${catsHtml || "-"}</td>
-        <td>${d.dueDate || "-"}</td>
-        <td>${d.priority || "-"}</td>
-        <td>${modeLabel}</td>
-        <td>${d.siteName || "-"}</td>
-        <td>${(d.status === 'draft' || (!d.published && !d.isPublished)) ? '<span class="badge warn">Taslak</span>' : '<span class="badge success">Gönderildi</span>'}</td>
-        <td>${created}</td>
-        <td>${isOwner ? `<button class="danger small" data-id="${d.id}">Sil</button>` : ""}</td>
-      `;
-      return tr;
-    }
-
-    // --- Table render ---
-    function renderTable(list){
-      groupedWrap.style.display = "none";
-      tbody.innerHTML = "";
-      pager.style.display = "";
-
-      const start = currentPage * PAGE_SIZE;
-      list.slice(start, start+PAGE_SIZE).forEach(d => tbody.appendChild(rowHtml(d)));
-    }
-    function renderPagination(list){
-      const total = list.length;
-      const totalPages = Math.max(1, Math.ceil(total/PAGE_SIZE));
-      if (totalPages<=1){ pager.innerHTML = `Toplam ${total} talep`; return; }
-      pager.innerHTML = `
-        <button ${currentPage<=0?"disabled":""} id="prevBtn">← Önceki</button>
-        <span> Sayfa ${currentPage+1} / ${totalPages} (Toplam ${total} talep) </span>
-        <button ${currentPage>=totalPages-1?"disabled":""} id="nextBtn">Sonraki →</button>
-      `;
-      const prev = document.getElementById("prevBtn");
-      const next = document.getElementById("nextBtn");
-      if (prev) prev.onclick = ()=>{ if (currentPage>0){ currentPage--; renderTable(list); renderPagination(list); bindDeleteButtons("#demands-body"); } };
-      if (next) next.onclick = ()=>{ if (currentPage<totalPages-1){ currentPage++; renderTable(list); renderPagination(list); bindDeleteButtons("#demands-body"); } };
-    }
-
-    // --- Delete bind (owner only) ---
-    function bindDeleteButtons(scopeSelector){
-      document.querySelectorAll(`${scopeSelector} button.danger`).forEach(btn=>{
-        btn.onclick = async ()=>{
-          const id = btn.getAttribute("data-id");
-          if (!confirm("Bu talebi silmek istiyor musunuz?")) return;
-          try{
-            await deleteDoc(doc(db,"demands", id));
-            merged = merged.filter(x=>x.id!==id);
-            applyFilters();
-            toast.success(MESSAGES.SUCCESS_DEMAND_DELETED);
-          }catch(e){ toast.error(MESSAGES.ERROR_DELETE + ": " + (e.message||e)); }
-        };
-      });
-    }
-    
-    // Listen for company changes - inside async IIFE to access functions
-    window.addEventListener('company:changed', async (e) => {
-      const { companyId } = e.detail;
-      logger.info('Company changed, reloading data', { companyId });
-      
-      try {
-        const currentUser = user || await requireAuth();
-        await loadIncoming(currentUser);
-        await loadOutgoing(currentUser);
-        await loadDraft(currentUser);
-      } catch (err) {
-        logger.error('Error reloading data after company change', err);
-      }
-    });
-    
-    }
-    
-    // Initialize page
-    initDemandsPage().catch(err => {
-      logger.error('Failed to initialize demands page', err);
-    });
-  </script>
+  <!-- Main Demands Script -->
+  <script type="module" src="./assets/js/demands-main.js"></script>
 
   <!-- Theme Script -->
   <script type="module" src="/assets/js/theme.js" defer></script>

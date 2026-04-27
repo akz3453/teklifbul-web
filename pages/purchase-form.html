@@ -1,34 +1,143 @@
 <!doctype html>
 <html lang="tr">
+
 <head>
   <meta charset="utf-8" />
   <title>Satın Alma Formu Yükleme (İç Talep)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Teklifbul Rule v1.0 - FOUC önleme: Tema hemen uygulanmalı -->
+  <script src="/assets/js/theme-init.js"></script>
   <link rel="stylesheet" href="/utils.css" />
   <style>
-    body{font-family:system-ui, Arial; background:#f8fafc; color:#111827; margin:0}
-    .container{max-width:1100px;margin:0 auto;padding:20px}
-    h1{margin:0 0 8px 0}
-    .card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin:12px 0}
-    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    label{font-size:12px;color:#374151;font-weight:600;display:block;margin-bottom:6px}
-    input,select,textarea{width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:14px}
-    table{width:100%;border-collapse:collapse}
-    th,td{border-bottom:1px solid #e5e7eb;padding:8px;text-align:left;font-size:13px}
-    th{background:#f9fafb}
-    .badge{display:inline-block;border-radius:14px;padding:2px 8px;font-size:12px}
-    .b-found{background:#dcfce7;color:#065f46;border:1px solid #86efac}
-    .b-multi{background:#fef9c3;color:#854d0e;border:1px solid #fde68a}
-    .b-new{background:#f3e8ff;color:#6b21a8;border:1px solid #e9d5ff}
-    .warn{color:#b45309}
-    .err{color:#b91c1c}
-    .muted{color:#6b7280;font-size:12px}
-    .btn{padding:10px 16px;border:0;border-radius:6px;cursor:pointer;font-weight:600}
-    .btn-primary{background:#2563eb;color:#fff}
-    .btn-secondary{background:#6b7280;color:#fff}
-    .btn[disabled]{opacity:.5;cursor:not-allowed}
+    body {
+      font-family: system-ui, Arial;
+      background: #f8fafc;
+      color: #111827;
+      margin: 0
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 20px
+    }
+
+    h1 {
+      margin: 0 0 8px 0
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 16px;
+      margin: 12px 0
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px
+    }
+
+    label {
+      font-size: 12px;
+      color: #374151;
+      font-weight: 600;
+      display: block;
+      margin-bottom: 6px
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid #e5e7eb;
+      padding: 8px;
+      text-align: left;
+      font-size: 13px
+    }
+
+    th {
+      background: #f9fafb
+    }
+
+    .badge {
+      display: inline-block;
+      border-radius: 14px;
+      padding: 2px 8px;
+      font-size: 12px
+    }
+
+    .b-found {
+      background: #dcfce7;
+      color: #065f46;
+      border: 1px solid #86efac
+    }
+
+    .b-multi {
+      background: #fef9c3;
+      color: #854d0e;
+      border: 1px solid #fde68a
+    }
+
+    .b-new {
+      background: #f3e8ff;
+      color: #6b21a8;
+      border: 1px solid #e9d5ff
+    }
+
+    .warn {
+      color: #b45309
+    }
+
+    .err {
+      color: #b91c1c
+    }
+
+    .muted {
+      color: #6b7280;
+      font-size: 12px
+    }
+
+    .btn {
+      padding: 10px 16px;
+      border: 0;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600
+    }
+
+    .btn-primary {
+      background: #2563eb;
+      color: #fff
+    }
+
+    .btn-secondary {
+      background: #6b7280;
+      color: #fff
+    }
+
+    .btn[disabled] {
+      opacity: .5;
+      cursor: not-allowed
+    }
   </style>
 </head>
+
 <body>
   <!-- Common Header -->
   <header id="app-header"></header>
@@ -77,10 +186,32 @@
       </div>
     </div>
 
+    <!-- Tedarikçi E-posta Bölümü -->
+    <div class="card" style="border: 2px solid #2563eb; background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);">
+      <h2 style="margin:0 0 12px 0;font-size:18px; color: #1d4ed8;">📧 Tedarikçiye Mail Gönder</h2>
+      <p class="muted" style="margin-bottom: 12px;">Talep oluşturulunca tedarikçiye otomatik teklif talebi e-postası
+        gönderilir.</p>
+      <div class="row">
+        <div>
+          <label for="pfSupplierEmail">Tedarikçi E-posta Adresi</label>
+          <input id="pfSupplierEmail" type="email" placeholder="ornek@tedarikci.com" />
+        </div>
+        <div style="display: flex; align-items: flex-end; padding-bottom: 8px;">
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <input type="checkbox" id="pfSendEmail" checked />
+            <span>Talebi oluştururken mail gönder</span>
+          </label>
+        </div>
+      </div>
+      <p class="muted" style="margin-top: 8px;">💡 Birden fazla tedarikçiye göndermek için talep detay sayfasını
+        kullanın.</p>
+    </div>
+
     <div class="card">
       <h2 style="margin:0 0 12px 0;font-size:18px">Excel Yükle</h2>
       <input id="pfFile" type="file" accept=".xls,.xlsx,.csv" />
-      <p class="muted" style="margin-top:6px">Desteklenen başlıklar: Sıra No | Malzeme Kodu | Malzeme Tanımı | Marka/Model | Miktar | Birim | Ambardaki Miktar | Ürün Görseli | İstenilen Teslim Tarihi | Açıklama</p>
+      <p class="muted" style="margin-top:6px">Desteklenen başlıklar: Sıra No | Stok Kodu | Malzeme Tanımı | Marka/Model
+        | Miktar | Birim | Ambardaki Miktar | Ürün Görseli | İstenilen Teslim Tarihi | Açıklama</p>
     </div>
 
     <div class="card">
@@ -90,7 +221,17 @@
         <table id="previewTable">
           <thead>
             <tr>
-              <th>No</th><th>SKU</th><th>Ad</th><th>Marka/Model</th><th>Miktar</th><th>Birim</th><th>Depo</th><th>Görsel</th><th>Teslim</th><th>Açıklama</th><th>Eşleşme</th>
+              <th>No</th>
+              <th>SKU</th>
+              <th>Ad</th>
+              <th>Marka/Model</th>
+              <th>Miktar</th>
+              <th>Birim</th>
+              <th>Depo</th>
+              <th>Görsel</th>
+              <th>Teslim</th>
+              <th>Açıklama</th>
+              <th>Eşleşme</th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -123,6 +264,5 @@
   <!-- Main -->
   <script type="module" src="/scripts/purchase-form.js"></script>
 </body>
+
 </html>
-
-

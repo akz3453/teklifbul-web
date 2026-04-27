@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="tr">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Şirket İçi Talep Detayı</title>
+  <link rel="icon" type="image/svg+xml"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%233b82f6' rx='6'/%3E%3Ctext x='16' y='22' font-family='Arial' font-size='18' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/utils.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <link rel="stylesheet" href="/css/ui-standard.css" />
+  <style>
+    .summary-card {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 16px 0;
+    }
+
+    .items-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 13px;
+    }
+
+    .items-table th,
+    .items-table td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+
+    .items-table th {
+      background: #f3f4f6;
+      font-weight: 600;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 12px;
+      margin: 20px 0;
+      flex-wrap: wrap;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .status-pending {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .status-in_progress {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .status-completed {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .status-cancelled {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+  </style>
+</head>
+
+<body>
+  <header id="app-header"></header>
+
+  <div class="container--wide" style="padding:20px 0">
+    <h1 id="pageTitle">Şirket İçi Talep Detayı</h1>
+
+    <div id="loading" style="text-align:center; padding:40px;">
+      <p>Yükleniyor...</p>
+    </div>
+
+    <div id="demandContent" style="display:none;">
+      <div class="summary-card">
+        <h2 id="demandTitle">-</h2>
+        <div style="margin-top:12px;">
+          <p><strong>Durum:</strong> <span id="demandStatus">-</span></p>
+          <p><strong>Oluşturan:</strong> <span id="demandCreatedBy">-</span></p>
+          <p id="processedByRow" style="display:none;"><strong>İşleme Alan:</strong> <span
+              id="demandProcessedBy">-</span></p>
+          <p><strong>Oluşturulma:</strong> <span id="demandCreatedAt">-</span></p>
+        </div>
+        <div id="demandDescription" style="margin-top:12px; padding:12px; background:#fff; border-radius:6px;">
+          <strong>Açıklama:</strong>
+          <p id="descriptionText" style="margin-top:8px; color:#4b5563;">-</p>
+        </div>
+      </div>
+
+      <h3>Talep Kalemleri</h3>
+      <table class="items-table">
+        <thead>
+          <tr>
+            <th>Sıra</th>
+            <th>Stok Kodu</th>
+            <th>Malzeme Tanımı</th>
+            <th>Marka/Model</th>
+            <th>Miktar</th>
+            <th>Birim</th>
+            <th>Teslim Tarihi</th>
+          </tr>
+        </thead>
+        <tbody id="itemsBody"></tbody>
+      </table>
+
+      <div class="action-buttons" id="actionButtons">
+        <!-- Butonlar dinamik olarak eklenecek -->
+      </div>
+    </div>
+
+    <div id="errorMessage" style="display:none; padding:20px; background:#fee2e2; border-radius:8px; color:#991b1b;">
+      <h3>Hata</h3>
+      <p id="errorText"></p>
+    </div>
+  </div>
+
+  <script type="module">
+    // Teklifbul Rule v1.0 - İç Talep Detay Sayfası
+    import { initAuthGuard } from './assets/js/auth-guard.js';
+    import { logger } from './src/shared/log/logger.js';
+    
+    // Yönlendirme boş sayfa görünmeden yapılsın
+    initAuthGuard().catch(err => {
+      logger.error('Auth guard init failed', err);
+    });
+
+    import { initGlobalHeader } from './assets/js/ui/header.js';
+    import { db, auth, requireAuth } from './firebase.js';
+    import { doc, getDoc, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+    import { toast } from './src/shared/ui/toast.js';
+    // Teklifbul Rule v1.0 - XSS Protection: Import DOMPurify
+    import DOMPurify from 'https://cdn.jsdelivr.net/npm/dompurify@3.2.2/+esm';
+
+    // Initialize global header
+    initGlobalHeader({ mount: '#app-header', activeRoute: 'internal-demand-detail' });
+
+    const user = await requireAuth();
+    let companyId = null;
+    let userProfile = null;
+    let internalDemand = null;
+
+    // Satın alma rolleri kontrolü
+    const PURCHASING_ROLES = [
+      'buyer:satinalma_uzman_yardimcisi',
+      'buyer:satinalma_uzmani',
+      'buyer:satinalma_yetkilisi',
+      'buyer:satinalma_muduru',
+      'buyer:genel_mudur_yardimcisi',
+      'buyer:genel_mudur',
+      'buyer:ceo',
+      'buyer:yonetim_kurulu_uyesi',
+      'buyer:yonetim_kurulu_baskani',
+      'buyer:isveren'
+    ];
+
+    async function init() {
+      try {
+        logger.group('İç talep detay sayfası başlatılıyor');
+
+        // URL'den ID al
+        const urlParams = new URLSearchParams(window.location.search);
+        const demandId = urlParams.get('id');
+
+        if (!demandId) {
+          showError('Talep ID bulunamadı');
+          logger.end();
+          return;
+        }
+
+        // Kullanıcı profili
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          userProfile = userDoc.data();
+          companyId = userProfile.companyId;
+        }
+
+        if (!companyId) {
+          showError('Şirket bilgisi bulunamadı');
+          logger.end();
+          return;
+        }
+
+        // İç talep verisini yükle
+        const demandDoc = await getDoc(doc(db, 'internalDemands', demandId));
+        if (!demandDoc.exists()) {
+          showError('Talep bulunamadı');
+          logger.end();
+          return;
+        }
+
+        internalDemand = { id: demandDoc.id, ...demandDoc.data() };
+
+        // Şirket kontrolü
+        if (internalDemand.companyId !== companyId) {
+          showError('Bu talebe erişim yetkiniz yok');
+          logger.end();
+          return;
+        }
+
+        // Rol kontrolü - Satın alma rolleri, oluşturan veya işleme alan görebilir
+        const userRoleKey = userProfile.companyRoleKey || userProfile.companyRole || '';
+        const hasPurchasingRole = PURCHASING_ROLES.includes(userRoleKey);
+        const isCreator = internalDemand.createdById === user.uid;
+        const isProcessor = internalDemand.processedById === user.uid;
+        const hasPermission = hasPurchasingRole || isCreator || isProcessor;
+
+        if (!hasPermission) {
+          showError('Bu sayfayı görüntülemek için satın alma yetkisi gereklidir');
+          logger.end();
+          return;
+        }
+
+        renderDemand();
+        setupActions();
+        logger.end();
+      } catch (error) {
+        logger.error('Sayfa başlatma hatası', error);
+        showError('Sayfa yüklenirken hata oluştu: ' + (error.message || error));
+      }
+    }
+
+    function renderDemand() {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('demandContent').style.display = 'block';
+
+      // Başlık
+      document.getElementById('demandTitle').textContent = internalDemand.title || 'Başlıksız';
+      document.getElementById('pageTitle').textContent = internalDemand.title || 'Şirket İçi Talep Detayı';
+
+      // Durum
+      const statusBadge = getStatusBadge(internalDemand.status);
+      document.getElementById('demandStatus').innerHTML = statusBadge;
+
+      // Oluşturan
+      document.getElementById('demandCreatedBy').textContent = internalDemand.createdByName || 'Bilinmiyor';
+
+      // İşleme alan (varsa)
+      if (internalDemand.processedBy) {
+        document.getElementById('processedByRow').style.display = 'block';
+        document.getElementById('demandProcessedBy').textContent = internalDemand.processedBy;
+      }
+
+      // Oluşturulma tarihi
+      const createdAt = internalDemand.createdAt?.toDate
+        ? new Date(internalDemand.createdAt.toDate()).toLocaleString('tr-TR')
+        : '-';
+      document.getElementById('demandCreatedAt').textContent = createdAt;
+
+      // Açıklama
+      const description = internalDemand.description || 'Açıklama yok';
+      document.getElementById('descriptionText').textContent = description;
+
+      // Kalemler
+      const itemsBody = document.getElementById('itemsBody');
+      itemsBody.innerHTML = '';
+
+      if (!internalDemand.items || internalDemand.items.length === 0) {
+        // Teklifbul Rule v1.0 - XSS Protection: Sanitize empty state HTML
+        itemsBody.innerHTML = DOMPurify.sanitize('<tr><td colspan="7" style="text-align:center; padding:20px; color:#6b7280;">Kalem bulunamadı</td></tr>', {
+          ALLOWED_TAGS: ['tr', 'td'],
+          ALLOWED_ATTR: ['colspan', 'style']
+        });
+      } else {
+        internalDemand.items.forEach((item, index) => {
+          const row = document.createElement('tr');
+          const dueDate = item.dueDate ? new Date(item.dueDate).toLocaleDateString('tr-TR') : '-';
+          // Teklifbul Rule v1.0 - XSS Protection: Sanitize item data
+          const safeSku = DOMPurify.sanitize(item.sku || '-', { ALLOWED_TAGS: [] });
+          const safeName = DOMPurify.sanitize(item.itemName || '', { ALLOWED_TAGS: [] });
+          const safeBrandModel = DOMPurify.sanitize(item.brandModel || '-', { ALLOWED_TAGS: [] });
+          const safeUnit = DOMPurify.sanitize(item.unit || '', { ALLOWED_TAGS: [] });
+          row.innerHTML = DOMPurify.sanitize(`
+            <td>${index + 1}</td>
+            <td>${safeSku}</td>
+            <td>${safeName}</td>
+            <td>${safeBrandModel}</td>
+            <td>${item.quantity || 0}</td>
+            <td>${safeUnit}</td>
+            <td>${dueDate}</td>
+          `, {
+            ALLOWED_TAGS: ['td'],
+            ALLOWED_ATTR: []
+          });
+          itemsBody.appendChild(row);
+        });
+      }
+    }
+
+    function getStatusBadge(status) {
+      const badges = {
+        pending: '<span class="status-badge status-pending">Bekliyor</span>',
+        in_progress: '<span class="status-badge status-in_progress">İşlemde</span>',
+        completed: '<span class="status-badge status-completed">Tamamlandı</span>',
+        cancelled: '<span class="status-badge status-cancelled">İptal</span>'
+      };
+      return badges[status] || status;
+    }
+
+    function setupActions() {
+      const actionButtons = document.getElementById('actionButtons');
+      actionButtons.innerHTML = '';
+
+      // Kullanıcı yetkisi kontrolü
+      const userRoleKey = userProfile.companyRoleKey || userProfile.companyRole || '';
+      const hasPurchasingRole = PURCHASING_ROLES.includes(userRoleKey);
+
+      if (hasPurchasingRole) {
+        // Satın alma rolleri işlem yapabilir
+        if (internalDemand.status === 'pending') {
+          // Bekleyen talep - İşleme al butonu
+          const takeBtn = document.createElement('button');
+          takeBtn.className = 'btn btn-primary';
+          takeBtn.textContent = 'İşleme Al';
+          takeBtn.onclick = takeDemand;
+          actionButtons.appendChild(takeBtn);
+        } else if (internalDemand.status === 'in_progress') {
+          // İşlemdeki talep - Normal talep oluştur butonu
+          const createBtn = document.createElement('button');
+          createBtn.className = 'btn btn-primary';
+          createBtn.textContent = 'Tedarikçilere Gönder';
+          createBtn.onclick = createExternalDemand;
+          actionButtons.appendChild(createBtn);
+        }
+      }
+
+      // Geri dön butonu (herkes görebilir)
+      const backBtn = document.createElement('button');
+      backBtn.className = 'btn btn-secondary';
+      backBtn.textContent = 'Geri Dön';
+      backBtn.onclick = () => window.location.href = '/internal-demands.html';
+      actionButtons.appendChild(backBtn);
+    }
+
+    async function takeDemand() {
+      try {
+        logger.group('Talep işleme alınıyor');
+        const demandRef = doc(db, 'internalDemands', internalDemand.id);
+        await updateDoc(demandRef, {
+          status: 'in_progress',
+          processedBy: userProfile.displayName || userProfile.email || 'Kullanıcı',
+          processedById: user.uid,
+          processedAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+
+        toast.success('Talep işleme alındı');
+        logger.info('Talep işleme alındı', { demandId: internalDemand.id });
+        logger.end();
+
+        // Sayfayı yenile
+        internalDemand.status = 'in_progress';
+        internalDemand.processedBy = userProfile.displayName || userProfile.email || 'Kullanıcı';
+        renderDemand();
+        setupActions();
+      } catch (error) {
+        logger.error('Talep işleme alma hatası', error);
+        toast.error('Talep işleme alınırken hata oluştu');
+        logger.end();
+      }
+    }
+
+    async function createExternalDemand() {
+      try {
+        logger.group('Normal talep oluşturuluyor');
+
+        // İç talep verilerini normal talep formatına dönüştür
+        // Firestore Timestamp'lerini string'e çevir (JSON.stringify için)
+        const items = (internalDemand.items || []).map(item => {
+          const itemCopy = { ...item };
+          // Timestamp'i string'e çevir
+          if (item.dueDate) {
+            if (item.dueDate.toDate) {
+              itemCopy.dueDate = item.dueDate.toDate().toISOString();
+            } else if (item.dueDate instanceof Date) {
+              itemCopy.dueDate = item.dueDate.toISOString();
+            } else {
+              itemCopy.dueDate = item.dueDate;
+            }
+          }
+          return itemCopy;
+        });
+
+        // terminDate'i string'e çevir
+        let terminDateStr = null;
+        if (internalDemand.terminDate) {
+          if (internalDemand.terminDate.toDate) {
+            terminDateStr = internalDemand.terminDate.toDate().toISOString().split('T')[0];
+          } else if (internalDemand.terminDate instanceof Date) {
+            terminDateStr = internalDemand.terminDate.toISOString().split('T')[0];
+          } else {
+            terminDateStr = internalDemand.terminDate;
+          }
+        }
+
+        const demandData = {
+          title: internalDemand.title,
+          description: internalDemand.description,
+          items: items,
+          internalDemandId: internalDemand.id,
+          createdByName: internalDemand.createdByName || 'Kullanıcı', // Talep Eden için
+          unloadingMethod: internalDemand.unloadingMethod || null, // İndirme Şekli
+          deliveryMethod: internalDemand.deliveryMethod || null, // Teslimat Şekli
+          siteName: internalDemand.siteName || null, // Şantiye
+          siteAddress: internalDemand.siteAddress || null, // Şantiye Adresi (teslimat adresi olacak)
+          terminDate: terminDateStr, // Termin Tarihi
+          demandDate: internalDemand.demandDate || (internalDemand.createdAt && internalDemand.createdAt.toDate ? internalDemand.createdAt.toDate().toISOString().split('T')[0] : new Date().toISOString().split('T')[0]) // Talep Tarihi
+        };
+
+        // localStorage'a kaydet
+        localStorage.setItem('internalDemandData', JSON.stringify(demandData));
+
+        // demand-new.html'e yönlendir
+        window.location.href = '/demand-new.html?fromInternal=true';
+
+        logger.info('Normal talep oluşturma sayfasına yönlendiriliyor', { internalDemandId: internalDemand.id });
+        logger.end();
+      } catch (error) {
+        logger.error('Normal talep oluşturma hatası', error);
+        toast.error('Talep oluşturulurken hata oluştu');
+        logger.end();
+      }
+    }
+
+    function showError(message) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('errorMessage').style.display = 'block';
+      document.getElementById('errorText').textContent = message;
+    }
+
+    await init();
+  </script>
+</body>
+
+</html>

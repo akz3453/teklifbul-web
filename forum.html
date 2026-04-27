@@ -1,0 +1,751 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Forum — NEFISOFT</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%232563EB' rx='6'/%3E%3Ctext x='16' y='22' font-family='Arial' font-size='18' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  <style>
+    .forum-container {
+      display: grid;
+      grid-template-columns: 250px 1fr;
+      gap: var(--spacing-xl);
+      padding-top: calc(var(--header-height) + var(--spacing-xl));
+    }
+    
+    .forum-sidebar {
+      background: var(--color-bg-light);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-lg);
+      height: fit-content;
+      position: sticky;
+      top: calc(var(--header-height) + var(--spacing-lg));
+    }
+    
+    .forum-sidebar h3 {
+      margin-bottom: var(--spacing-md);
+      font-size: var(--font-size-lg);
+    }
+    
+    .forum-categories {
+      list-style: none;
+    }
+    
+    .forum-categories li {
+      margin-bottom: var(--spacing-sm);
+    }
+    
+    .forum-categories a {
+      display: block;
+      padding: var(--spacing-sm) var(--spacing-md);
+      color: var(--color-text);
+      border-radius: var(--radius-md);
+      transition: background var(--transition-fast);
+    }
+    
+    .forum-categories a:hover,
+    .forum-categories a.active {
+      background: var(--color-primary);
+      color: white;
+    }
+    
+    .forum-subcategories {
+      margin-top: var(--spacing-md);
+      padding-left: var(--spacing-md);
+      list-style: none;
+      display: none;
+    }
+    
+    .forum-subcategories.show {
+      display: block;
+    }
+    
+    .forum-main {
+      background: var(--color-bg);
+    }
+    
+    .forum-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--spacing-xl);
+    }
+    
+    .topics-list {
+      list-style: none;
+    }
+    
+    .topic-item {
+      background: var(--color-bg);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-lg);
+      margin-bottom: var(--spacing-md);
+      transition: all var(--transition-base);
+    }
+    
+    .topic-item:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+    
+    .topic-title {
+      font-size: var(--font-size-lg);
+      font-weight: 600;
+      margin-bottom: var(--spacing-sm);
+      color: var(--color-text);
+    }
+    
+    .topic-meta {
+      display: flex;
+      gap: var(--spacing-md);
+      font-size: var(--font-size-sm);
+      color: var(--color-text-muted);
+    }
+    
+    .topic-preview {
+      margin-top: var(--spacing-sm);
+      color: var(--color-text-muted);
+      font-size: var(--font-size-sm);
+    }
+    
+    .new-topic-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(17, 24, 39, 0.6);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+      padding: var(--spacing-2xl);
+      backdrop-filter: blur(4px);
+    }
+    
+    .new-topic-modal.show {
+      display: flex;
+    }
+    
+    .new-topic-content {
+      background: var(--color-bg);
+      border-radius: var(--radius-2xl);
+      padding: var(--spacing-2xl);
+      max-width: 760px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 30px 80px rgba(15, 23, 42, 0.2);
+      border: 1px solid var(--color-border);
+    }
+    
+    .new-topic-content h2 {
+      margin-bottom: var(--spacing-xl);
+      font-size: var(--font-size-2xl);
+    }
+    
+    .new-topic-form {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-lg);
+    }
+    
+    .form-row {
+      display: flex;
+      gap: var(--spacing-lg);
+      flex-wrap: wrap;
+    }
+    
+    .form-row .form-group {
+      flex: 1;
+      min-width: 220px;
+    }
+    
+    .form-row.full-width .form-group {
+      flex: 1 1 100%;
+    }
+    
+    .new-topic-form .form-label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: var(--spacing-xs);
+      color: var(--color-text);
+    }
+    
+    .new-topic-form .form-input,
+    .new-topic-form select,
+    .new-topic-form textarea {
+      width: 100%;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-md);
+      font-size: var(--font-size-base);
+      font-family: var(--font-family);
+      background: var(--color-bg);
+      transition: border var(--transition-fast), box-shadow var(--transition-fast);
+    }
+    
+    .new-topic-form .form-input:focus,
+    .new-topic-form select:focus,
+    .new-topic-form textarea:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+    
+    .editor-wrapper {
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      background: var(--color-bg-light);
+    }
+    
+    .editor-toolbar {
+      display: flex;
+      gap: var(--spacing-sm);
+      padding: var(--spacing-sm);
+      background: var(--color-bg);
+      border-bottom: 1px solid var(--color-border);
+    }
+    
+    .editor-toolbar button {
+      border: 1px solid var(--color-border);
+      background: white;
+      padding: 6px 10px;
+      border-radius: var(--radius-sm);
+      font-size: var(--font-size-sm);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+    
+    .editor-toolbar button:hover {
+      background: var(--color-primary);
+      color: white;
+      border-color: var(--color-primary);
+    }
+    
+    .editor-wrapper textarea {
+      border: none;
+      border-radius: 0;
+      background: transparent;
+      min-height: 220px;
+      resize: vertical;
+    }
+    
+    .editor-hint {
+      padding: var(--spacing-sm) var(--spacing-md);
+      font-size: var(--font-size-sm);
+      color: var(--color-text-muted);
+      border-top: 1px dashed var(--color-border);
+      background: white;
+    }
+    
+    .message-icons {
+      background: var(--color-bg-light);
+      border-radius: var(--radius-lg);
+      border: 1px dashed var(--color-border);
+      padding: var(--spacing-md);
+    }
+    
+    .message-icons span {
+      font-weight: 600;
+    }
+    
+    .icon-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--spacing-md);
+      margin-top: var(--spacing-sm);
+    }
+    
+    .icon-option {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-xs);
+      font-size: var(--font-size-lg);
+      cursor: pointer;
+    }
+    
+    .icon-option input {
+      accent-color: var(--color-primary);
+    }
+    
+    .extra-options {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-sm);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-md);
+      background: var(--color-bg-light);
+      font-size: var(--font-size-sm);
+    }
+    
+    .extra-options label {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      cursor: pointer;
+    }
+    
+    .extra-options input {
+      accent-color: var(--color-primary);
+    }
+    
+    .new-topic-note {
+      margin-top: var(--spacing-sm);
+      padding: var(--spacing-md);
+      background: rgba(249, 115, 22, 0.08);
+      border-left: 4px solid var(--color-warning);
+      border-radius: var(--radius-md);
+      font-size: var(--font-size-sm);
+      color: var(--color-text);
+    }
+    
+    .form-actions {
+      display: flex;
+      gap: var(--spacing-md);
+      margin-top: var(--spacing-md);
+    }
+    
+    .form-actions .btn {
+      flex: 1;
+      padding: var(--spacing-md);
+      font-size: var(--font-size-base);
+    }
+    
+    @media (max-width: 768px) {
+      .forum-container {
+        grid-template-columns: 1fr;
+      }
+      
+      .forum-sidebar {
+        position: static;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-content">
+      <a href="/index.html" class="header-logo">
+        <span>NEFISOFT</span>
+      </a>
+      
+      <nav class="header-nav">
+        <ul class="header-nav-links" id="desktop-nav">
+          <li><a href="/index.html#features" data-i18n="nav.features">Özellikler</a></li>
+          <li><a href="/index.html#premium" data-i18n="nav.premium">Premium</a></li>
+          <li><a href="/forum.html" data-i18n="nav.forum">Forum</a></li>
+          <li><a href="/index.html#references" data-i18n="nav.references">Referanslar</a></li>
+          <li><a href="/contact.html" data-i18n="nav.contact">İletişim</a></li>
+        </ul>
+        
+        <div class="header-actions">
+          <a href="/contact.html" class="btn btn-secondary btn-sm" data-i18n="nav.contact">İletişim</a>
+          <a href="/signup.html" class="btn btn-accent btn-sm" data-i18n="btn.tryFree">Ücretsiz Dene</a>
+          <a href="/login.html" class="btn btn-outline btn-sm" data-i18n="btn.login">Giriş Yap</a>
+          
+          <div class="lang-switch">
+            <button data-lang="tr" class="active">TR</button>
+            <button data-lang="en">EN</button>
+          </div>
+        </div>
+        
+        <button class="hamburger" id="hamburger" aria-label="Menu">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </nav>
+    </div>
+    
+    <!-- Mobile Menu -->
+    <nav class="mobile-menu" id="mobile-menu">
+      <ul>
+        <li><a href="/index.html#features" data-i18n="nav.features">Özellikler</a></li>
+        <li><a href="/index.html#premium" data-i18n="nav.premium">Premium</a></li>
+        <li><a href="/forum.html" data-i18n="nav.forum">Forum</a></li>
+        <li><a href="/index.html#references" data-i18n="nav.references">Referanslar</a></li>
+        <li><a href="/contact.html" data-i18n="nav.contact">İletişim</a></li>
+        <li><a href="/signup.html" class="btn btn-accent" data-i18n="btn.tryFree">Ücretsiz Dene</a></li>
+        <li><a href="/login.html" class="btn btn-outline" data-i18n="btn.login">Giriş Yap</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <div class="container">
+      <div class="forum-container">
+        <!-- Sidebar -->
+        <aside class="forum-sidebar">
+          <h3 data-i18n="forum.categories">Kategoriler</h3>
+          <ul class="forum-categories">
+            <li><a href="#" data-category="regions" data-i18n="forum.regions">Bölgeler</a></li>
+            <li><a href="#" data-category="trade" data-i18n="forum.trade">Ticaret</a></li>
+            <li><a href="#" data-category="tech" data-i18n="forum.tech">Teknoloji</a></li>
+            <li><a href="#" data-category="games" data-i18n="forum.games">Oyun</a></li>
+            <li><a href="#" data-category="politics" data-i18n="forum.politics">Siyaset</a></li>
+            <li><a href="#" data-category="sports" data-i18n="forum.sports">Spor</a></li>
+            <li><a href="#" data-category="news" data-i18n="forum.news">Haber</a></li>
+          </ul>
+          
+          <!-- Subcategories (shown when regions is selected) -->
+          <ul class="forum-subcategories" id="regions-subcategories">
+            <li><a href="#" data-subcategory="karadeniz">Karadeniz</a></li>
+            <li><a href="#" data-subcategory="marmara">Marmara</a></li>
+            <li><a href="#" data-subcategory="ege">Ege</a></li>
+            <li><a href="#" data-subcategory="icanadolu">İç Anadolu</a></li>
+            <li><a href="#" data-subcategory="doganadolu">Doğu Anadolu</a></li>
+            <li><a href="#" data-subcategory="guneydogu">Güneydoğu Anadolu</a></li>
+            <li><a href="#" data-subcategory="akdeniz">Akdeniz</a></li>
+          </ul>
+        </aside>
+        
+        <!-- Main Content -->
+        <div class="forum-main">
+          <div class="forum-header">
+            <div>
+              <h1 data-i18n="forum.title">Forum</h1>
+              <p data-i18n="forum.subtitle">Tecrübelerinizi paylaşın, sorularınızı sorun</p>
+            </div>
+            <button class="btn btn-primary" id="newTopicBtn" data-i18n="forum.newTopic">Yeni konu aç</button>
+          </div>
+          
+          <ul class="topics-list" id="topicsList">
+            <!-- Topics will be populated by JavaScript -->
+            <li class="topic-item">
+              <div class="topic-title">Örnek Konu Başlığı</div>
+              <div class="topic-meta">
+                <span>Yazar: Kullanıcı Adı</span>
+                <span>Tarih: 15 Ocak 2025</span>
+              </div>
+              <div class="topic-preview">Bu bir örnek konu içeriğidir. Forum yakında aktif olacak ve kullanıcılar konu açabilecek.</div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- New Topic Modal -->
+  <div class="new-topic-modal" id="newTopicModal">
+    <div class="new-topic-content">
+      <h2 data-i18n="forum.newTopic">Yeni konu aç</h2>
+      <form id="newTopicForm" class="new-topic-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="topicTitle" class="form-label" data-i18n="forum.topicTitle">Başlık</label>
+            <input type="text" id="topicTitle" class="form-input" placeholder="Başlığı yazın" required />
+          </div>
+          <div class="form-group">
+            <label for="topicCategory" class="form-label" data-i18n="forum.topicCategory">Kategori seçimi</label>
+            <select id="topicCategory" class="form-input" required>
+              <option value="">Kategori seçin</option>
+              <option value="regions" data-i18n="forum.regions">Bölgeler</option>
+              <option value="trade" data-i18n="forum.trade">Ticaret</option>
+              <option value="tech" data-i18n="forum.tech">Teknoloji</option>
+              <option value="games" data-i18n="forum.games">Oyun</option>
+              <option value="politics" data-i18n="forum.politics">Siyaset</option>
+              <option value="sports" data-i18n="forum.sports">Spor</option>
+              <option value="news" data-i18n="forum.news">Haber</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="form-row full-width">
+          <div class="form-group" style="flex: 1;">
+            <label for="topicContent" class="form-label" data-i18n="forum.topicContent">Mesaj içeriği</label>
+            <div class="editor-wrapper">
+              <div class="editor-toolbar">
+                <button type="button"><strong>B</strong></button>
+                <button type="button"><em>I</em></button>
+                <button type="button">U</button>
+                <button type="button">• Liste</button>
+                <button type="button">1. Liste</button>
+                <button type="button">🔗</button>
+                <button type="button">😊</button>
+                <button type="button">🖼️</button>
+              </div>
+              <textarea id="topicContent" rows="9" required placeholder="Mesajınızı yazın..."></textarea>
+              <div class="editor-hint">Not: Bu editör görsel amaçlıdır; gönderimler ön yüz tarafında saklanmaz.</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="message-icons">
+          <span>Mesaj simgesi</span>
+          <div class="icon-options">
+            <label class="icon-option"><input type="radio" name="icon" value="none" checked />🚫</label>
+            <label class="icon-option"><input type="radio" name="icon" value="smile" />😊</label>
+            <label class="icon-option"><input type="radio" name="icon" value="idea" />💡</label>
+            <label class="icon-option"><input type="radio" name="icon" value="warning" />⚠️</label>
+            <label class="icon-option"><input type="radio" name="icon" value="info" />ℹ️</label>
+          </div>
+        </div>
+        
+        <div class="extra-options">
+          <label><input type="checkbox" checked /> Yazılan linklere otomatik [URL] kodu ekle</label>
+          <label><input type="checkbox" /> İmzamı ekle</label>
+          <label><input type="checkbox" /> E-posta bildirimi almak istiyorum</label>
+        </div>
+        
+        <div class="new-topic-note" data-i18n="forum.topicNote">
+          Kullanıcılar yeni konu açabilir ancak konular yönetici onayı sonrası yayımlanacaktır.
+        </div>
+        
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" data-i18n="forum.newTopic">Yeni konuyu gönder</button>
+          <button type="button" class="btn btn-secondary" id="cancelTopicBtn">İptal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-content">
+      <div class="footer-grid">
+        <div class="footer-section">
+          <h3>İletişim</h3>
+          <p data-i18n="footer.address">Çengeldere Mahallesi Çavuşbaşı Cumhuriyet Caddesi No:186, Beykoz / İstanbul</p>
+          <p><a href="mailto:akyildizfaruk@gmail.com" data-i18n="footer.email">akyildizfaruk@gmail.com</a></p>
+          <p><a href="tel:+905323459253" data-i18n="footer.phone">0532 345 92 53</a></p>
+        </div>
+        
+        <div class="footer-section">
+          <h3>Sosyal Medya</h3>
+          <ul>
+            <li><a href="https://www.youtube.com/@teklifbul" target="_blank" rel="noopener">YouTube</a></li>
+            <li><a href="https://x.com/teklifbul" target="_blank" rel="noopener">X (Twitter)</a></li>
+            <li><a href="https://www.instagram.com/teklifbul.com.tr/#" target="_blank" rel="noopener">Instagram</a></li>
+          </ul>
+        </div>
+        
+        <div class="footer-section">
+          <h3 data-i18n="footer.downloadApp">Uygulamayı indir</h3>
+          <ul>
+            <li><a href="#" data-i18n="footer.downloadGoogle">Google Play'den indir</a></li>
+            <li><a href="#" data-i18n="footer.downloadApple">App Store'dan indir</a></li>
+          </ul>
+        </div>
+        
+        <div class="footer-section">
+          <h3 data-i18n="footer.legal">Hukuki metinler</h3>
+          <ul>
+            <li><a href="/legal/kvkk-aydinlatma.html">KVKK Aydınlatma Metni</a></li>
+            <li><a href="/legal/acik-riza.html">Açık Rıza Bilgilendirme Metni</a></li>
+            <li><a href="/legal/kvkk-politika.html">KVKK Politikası</a></li>
+            <li><a href="/legal/cerez-politikasi.html">Çerez Politikası</a></li>
+            <li><a href="/legal/mesafeli-satis.html">Mesafeli Satış Sözleşmesi</a></li>
+            <li><a href="/legal/elektronik-bilgilendirme.html">Elektronik Bilgilendirme</a></li>
+            <li><a href="/legal/tedarikci-sozlesme.html">Tedarikçi Kullanıcı Sözleşmesi</a></li>
+            <li><a href="/legal/alici-sozlesme.html">Alıcı Kullanıcı Sözleşmesi</a></li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="footer-bottom">
+        <p>2026 NEFISOFT ©</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script type="module">
+    import { initI18n } from '/assets/js/i18n.js';
+    import { initCookieConsent } from '/assets/js/cookieConsent.js';
+    import { initCommonLayout } from '/assets/js/commonLayout.js';
+    import { initChatWidget } from '/assets/js/chatWidget.js';
+    
+    // Initialize all modules
+    initI18n('tr');
+    initCookieConsent();
+    initCommonLayout();
+    initChatWidget();
+    
+    // Forum functionality
+    const categoryLinks = document.querySelectorAll('.forum-categories a[data-category]');
+    const subcategories = document.getElementById('regions-subcategories');
+    const topicsList = document.getElementById('topicsList');
+    const newTopicBtn = document.getElementById('newTopicBtn');
+    const newTopicModal = document.getElementById('newTopicModal');
+    const newTopicForm = document.getElementById('newTopicForm');
+    const cancelTopicBtn = document.getElementById('cancelTopicBtn');
+    
+    // Category selection
+    categoryLinks.forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        
+        // Remove active class from all
+        categoryLinks.forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+        
+        const category = link.dataset.category;
+        
+        // Show/hide subcategories
+        if (category === 'regions') {
+          subcategories.classList.add('show');
+        } else {
+          subcategories.classList.remove('show');
+          // Load topics for this category
+          loadTopics(category);
+        }
+      });
+    });
+    
+    // Subcategory selection
+    subcategories.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const subcategory = link.dataset.subcategory;
+        loadTopics('regions', subcategory);
+      });
+    });
+    
+    // Load topics (dummy data)
+    function loadTopics(category, subcategory = null) {
+      topicsList.innerHTML = '';
+      
+      // Dummy topics
+      const dummyTopics = [
+        { title: `${category} kategorisinde örnek konu 1`, author: 'Kullanıcı1', date: '10 Ocak 2025', preview: 'Bu bir örnek konu içeriğidir.' },
+        { title: `${category} kategorisinde örnek konu 2`, author: 'Kullanıcı2', date: '12 Ocak 2025', preview: 'Forum yakında aktif olacak.' },
+        { title: `${category} kategorisinde örnek konu 3`, author: 'Kullanıcı3', date: '14 Ocak 2025', preview: 'Kullanıcılar konu açabilecek ve yönetici onayı sonrası yayımlanacak.' }
+      ];
+      
+      dummyTopics.forEach(topic => {
+        const li = document.createElement('li');
+        li.className = 'topic-item';
+        li.innerHTML = `
+          <div class="topic-title">${topic.title}</div>
+          <div class="topic-meta">
+            <span>Yazar: ${topic.author}</span>
+            <span>Tarih: ${topic.date}</span>
+          </div>
+          <div class="topic-preview">${topic.preview}</div>
+        `;
+        topicsList.appendChild(li);
+      });
+    }
+    
+    // New topic modal
+    newTopicBtn.addEventListener('click', () => {
+      newTopicModal.classList.add('show');
+    });
+    
+    cancelTopicBtn.addEventListener('click', () => {
+      newTopicModal.classList.remove('show');
+      newTopicForm.reset();
+    });
+    
+    newTopicModal.addEventListener('click', (e) => {
+      if (e.target === newTopicModal) {
+        newTopicModal.classList.remove('show');
+        newTopicForm.reset();
+      }
+    });
+    
+    newTopicForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      // For now, just show alert
+      alert('Konu gönderildi! Yönetici onayı sonrası yayımlanacaktır.');
+      newTopicModal.classList.remove('show');
+      newTopicForm.reset();
+    });
+    
+    // Load initial topics
+    loadTopics('regions');
+  </script>
+  
+  <style>
+    /* Mobile Menu Styles */
+    .mobile-menu {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: var(--color-bg);
+      border-top: 1px solid var(--color-border);
+      box-shadow: var(--shadow-lg);
+      padding: var(--spacing-lg);
+    }
+    
+    .mobile-menu.open {
+      display: block;
+    }
+    
+    .mobile-menu ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-md);
+    }
+    
+    .mobile-menu ul li a {
+      display: block;
+      padding: var(--spacing-md);
+      color: var(--color-text);
+      border-radius: var(--radius-md);
+      transition: background var(--transition-fast);
+    }
+    
+    .mobile-menu ul li a:hover {
+      background: var(--color-bg-light);
+    }
+    
+    @media (max-width: 768px) {
+      .header-nav-links {
+        display: none;
+      }
+      
+      .header-actions .btn {
+        display: none;
+      }
+      
+      .header-actions .lang-switch {
+        display: none;
+      }
+    }
+    
+    @media (min-width: 769px) {
+      .mobile-menu {
+        display: none !important;
+      }
+    }
+  </style>
+
+  <script>
+    // Forum kategorisi seçimi - Teklifbul Rule v1.0
+    document.addEventListener('DOMContentLoaded', function() {
+      const categoryLinks = document.querySelectorAll('.forum-categories a[data-category]');
+      const subcategoryLists = document.querySelectorAll('.forum-subcategories');
+
+      categoryLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+
+          // Aktif sınıfını kaldır
+          categoryLinks.forEach(l => l.classList.remove('active'));
+
+          // Alt kategorileri gizle
+          subcategoryLists.forEach(list => list.classList.remove('show'));
+
+          // Seçilen kategoriye aktif sınıfı ekle
+          this.classList.add('active');
+
+          // İlgili alt kategorileri göster
+          const category = this.getAttribute('data-category');
+          const subcategoryList = document.getElementById(category + '-subcategories');
+          if (subcategoryList) {
+            subcategoryList.classList.add('show');
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>
+

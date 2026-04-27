@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>Bildirimler | Teklifbul</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="/assets/js/theme-init.js"></script>
+  <link rel="stylesheet" href="/utils.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <style>
+    body { font-family: system-ui, Arial; background: #f8fafc; color: #111827; margin: 0; }
+    .container { max-width: 800px; margin: 0 auto; padding: 40px 20px; }
+    .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+    .notif-item { padding: 20px; border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: transform 0.1s, box-shadow 0.1s; position: relative; display: flex; gap: 16px; align-items: flex-start; }
+    .notif-item:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); z-index: 10; }
+    .notif-content { flex: 1; }
+    .notif-title { font-weight: 700; font-size: 15px; margin-bottom: 4px; color: #1f2937; }
+    .notif-body { font-size: 14px; color: #4b5563; line-height: 1.5; }
+    .notif-meta { margin-top: 8px; font-size: 12px; color: #9ca3af; display: flex; gap: 12px; }
+    .delete-btn { background: #fee2e2; color: #ef4444; border: none; border-radius: 6px; padding: 6px 10px; cursor: pointer; font-size: 12px; opacity: 0; transition: opacity 0.2s; }
+    .notif-item:hover .delete-btn { opacity: 1; }
+    .notif-item:hover .delete-btn:hover { background: #fecaca; }
+    
+    .unread-dot { width: 8px; height: 8px; background: #3b82f6; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
+    
+    html[data-theme="dark"] body { background: #111827; color: #f9fafb; }
+    html[data-theme="dark"] .card { background: #1f2937; border-color: #374151; }
+    html[data-theme="dark"] .notif-item { border-color: #374151; }
+    html[data-theme="dark"] .notif-title { color: #f9fafb; }
+    html[data-theme="dark"] .notif-body { color: #d1d5db; }
+    html[data-theme="dark"] .delete-btn { background: rgba(239, 68, 68, 0.2); }
+  </style>
+</head>
+<body>
+  <header id="app-header"></header>
+
+  <div class="container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+      <h1>🔔 Bildirimler</h1>
+      <button id="deleteAllBtn" class="btn btn-outline btn-sm" style="color: #ef4444; border-color: #fecaca;">Tümünü Sil</button>
+    </div>
+
+    <div class="card">
+      <div id="notificationsList">
+        <div style="padding: 60px; text-align: center; color: #9ca3af;">Bildirimler yükleniyor...</div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/firebase.js"></script>
+  <script type="module">
+    import { initGlobalHeader } from '/assets/js/ui/header.js';
+    initGlobalHeader({ mount: '#app-header' });
+  </script>
+  <script type="module" src="/scripts/notifications.js"></script>
+</body>
+</html>

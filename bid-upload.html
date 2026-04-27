@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teklif Yükleme - Teklifbul</title>
+    <title>Teklif Yükleme - NEFISOFT</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -236,7 +236,7 @@
         import { db, auth } from './firebase.js';
         // Teklifbul Rule v1.0 - Structured Logging
         import { logger } from './src/shared/log/logger.js';
-        import { doc, getDoc, collection, addDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+        import { doc, getDoc, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
 
         // Global variables
         let demandData = null;
@@ -460,11 +460,21 @@
         // Process individual bid file
         async function processBidFile(file) {
             try {
+                // Get supplier company ID
+                const userDoc = await getDoc(doc(db, 'users', user.uid));
+                const userData = userDoc.exists() ? userDoc.data() : {};
+                const supplierCompanyId = userData.activeCompanyId || (userData.companies && userData.companies[0]) || null;
+                const buyerCompanyId = demandData.creatorCompanyId || (demandData.companies && demandData.companies[0]) || null;
+
                 // Create bid document
                 const bidData = {
                     demandId: demandData.id,
                     supplierId: user.uid,
+                    supplierCompanyId: supplierCompanyId,
                     supplierName: user.displayName || user.email,
+                    buyerId: demandData.createdBy || demandData.creatorId,
+                    buyerCompanyId: buyerCompanyId,
+                    involvedCompanyIds: [buyerCompanyId, supplierCompanyId].filter(Boolean),
                     fileName: file.name,
                     fileSize: file.size,
                     status: 'submitted',

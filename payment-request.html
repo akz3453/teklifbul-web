@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ödeme Talep Et - NEFISOFT</title>
+  <!-- Teklifbul Rule v1.0 - Tema standardı: tb_theme key, FOUC önleme -->
+  <script src="/assets/js/theme-init.js"></script>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%233b82f6' rx='6'/%3E%3Ctext x='16' y='22' font-family='Arial' font-size='18' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/utils.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  
+  <style>
+    :root { --c1:#2563eb; --muted:#f3f4f6; --border:#e5e7eb; }
+    body { font-family: system-ui, Arial; margin:0; background:#fff; color:#111827; }
+    html[data-theme="dark"] body { background:#111827; color:#ffffff; }
+    /* Header görünürlüğü için */
+    #app-header { min-height: 60px; }
+    .container { max-width:900px; margin:0 auto; padding:20px; }
+    .card { background:#ffffff; border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:20px; }
+    html[data-theme="dark"] .card { background:#111827; border-color:rgba(255,255,255,0.25); }
+    h1 { margin:0 0 8px 0; font-size:24px; color:#1f2937; }
+    html[data-theme="dark"] h1 { color:#ffffff; }
+    .muted { color:#6b7280; font-size:14px; }
+    html[data-theme="dark"] .muted { color:rgba(255,255,255,0.7); }
+    label { display:block; font-weight:600; font-size:14px; color:#374151; margin-bottom:6px; }
+    html[data-theme="dark"] label { color:#ffffff; }
+    input, select, textarea { width:100%; padding:10px; border:1px solid var(--border); border-radius:6px; font-size:14px; box-sizing:border-box; }
+    html[data-theme="dark"] input, html[data-theme="dark"] select, html[data-theme="dark"] textarea { background:#111827; border-color:rgba(255,255,255,0.25); color:#ffffff; }
+    .btn { padding:12px 24px; border:none; border-radius:6px; font-weight:600; cursor:pointer; font-size:14px; transition:all 0.2s; }
+    .btn-primary { background:#f59e0b; color:white; }
+    .btn-primary:hover { background:#d97706; }
+    .btn-secondary { background:#6b7280; color:white; }
+    .btn-secondary:hover { background:#4b5563; }
+    .form-grid { display:grid; gap:16px; }
+    .form-row { display:grid; grid-template-columns: 2fr 1fr 1fr auto; gap:12px; align-items:end; }
+    @media (max-width: 768px) {
+      .form-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Common Header -->
+  <header id="app-header"></header>
+
+  <div class="container">
+    <nav class="tb-breadcrumb">
+      <span class="tb-crumb"><span class="ico">🏠</span><a href="./index.html">Ana Sayfa</a></span>
+      <span class="tb-sep">›</span>
+      <span class="tb-crumb"><span class="ico">💰</span><a href="./bids.html">Teklifler</a></span>
+      <span class="tb-sep">›</span>
+      <span class="tb-crumb"><span class="ico">💵</span><span>Ödeme Talep Et</span></span>
+    </nav>
+    
+    <h1>💰 Firmalardan Ödeme Talep Et</h1>
+    <p class="muted">Onaylanmış teklifleriniz için firmalardan ödeme talep edebilirsiniz.</p>
+
+    <div class="card" style="background:#fef3c7; border-color:#f59e0b;">
+      <!-- Onaylanmış Tekliflerden Seç -->
+      <div style="margin-bottom:16px; padding:12px; background:white; border-radius:6px; border:1px solid #e5e7eb;">
+        <label style="font-size:12px; color:#78350f; margin-bottom:8px; display:block; font-weight:600;">⚡ Onaylanmış Tekliflerden Otomatik Doldur</label>
+        <select id="paymentRequest_approvedBidId" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:6px; font-size:14px;">
+          <option value="">Onaylanmış teklif seçin (otomatik doldurma için)...</option>
+        </select>
+        <p class="muted" style="margin:8px 0 0 0; font-size:11px; color:#78350f;">
+          Bir teklif seçtiğinizde firma, tutar ve açıklama otomatik doldurulacaktır.
+        </p>
+      </div>
+      
+      <div class="form-grid">
+        <div class="form-row">
+          <div>
+            <label style="font-size:12px; color:#78350f; margin-bottom:4px; display:block;">Firma Seçin</label>
+            <select id="paymentRequest_companyId" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:6px; font-size:14px;">
+              <option value="">Firma seçin...</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:12px; color:#78350f; margin-bottom:4px; display:block;">Tutar (₺)</label>
+            <input type="number" id="paymentRequest_amount" placeholder="0.00" step="0.01" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:6px; font-size:14px;">
+          </div>
+          <div>
+            <label style="font-size:12px; color:#78350f; margin-bottom:4px; display:block;">Termin</label>
+            <input type="date" id="paymentRequest_dueDate" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:6px; font-size:14px;">
+          </div>
+          <button type="button" id="btnRequestPayment" class="btn btn-primary" style="white-space:nowrap;">
+            📤 Talep Et
+          </button>
+        </div>
+        <div>
+          <label style="font-size:12px; color:#78350f; margin-bottom:4px; display:block;">Açıklama (İsteğe Bağlı)</label>
+          <textarea id="paymentRequest_description" placeholder="Ödeme talebi için açıklama..." rows="3" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:6px; font-size:14px; resize:vertical;"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ödeme Geçmişi -->
+    <div class="card">
+      <h2 style="margin:0 0 16px 0; font-size:18px;">📋 Ödeme Talep Geçmişi</h2>
+      <div id="paymentHistoryList" style="display:flex; flex-direction:column; gap:12px;">
+        <p class="muted" style="text-align:center; padding:20px;">Yükleniyor...</p>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    // Teklifbul Rule v1.0 - Structured Logging
+    import { logger } from './src/shared/log/logger.js';
+    import { toast } from './src/shared/ui/toast.js';
+    import { MESSAGES } from './src/shared/constants/messages.js';
+    import { initGlobalHeader } from './assets/js/ui/header.js';
+    import { requireCompanyContext } from './assets/js/state/company-context.js';
+    import { initPermissions, can, requireExistingPerm } from './assets/js/state/permissions.js';
+    import { getPaymentsPerms } from './assets/js/state/permissions.js';
+    import { waitAuthReady } from './firebase.js';
+    import { db } from './firebase.js';
+    async function getFirestoreModules() {
+      if (window.__firestoreModules) return window.__firestoreModules;
+      window.__firestoreModules = await import('https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js');
+      return window.__firestoreModules;
+    }
+    import DOMPurify from 'https://cdn.jsdelivr.net/npm/dompurify@3.2.2/+esm';
+
+    const $ = (sel) => document.querySelector(sel);
+    const $$ = (sel) => document.querySelectorAll(sel);
+
+    // Initialize
+    (async () => {
+      try {
+        logger.group('Ödeme Talep Sayfası Yükleme');
+        
+        // Auth & Company Context - Header'dan önce yükle
+        const user = await waitAuthReady();
+        if (!user) {
+          logger.warn('Ödeme talep sayfası: Kullanıcı bulunamadı');
+          window.location.href = './index.html';
+          return;
+        }
+
+        const ctx = await requireCompanyContext({ redirectOnPending: true });
+        if (!ctx || !ctx.companyId) {
+          logger.warn('Ödeme talep sayfası: Company context alınamadı');
+          toast.error('Şirket bilgisi doğrulanamadı');
+          window.location.href = './bids.html';
+          return;
+        }
+
+        const permState = await initPermissions({ redirectOnPending: true });
+        if (!permState) {
+          logger.warn('Ödeme talep sayfası: Permissions alınamadı');
+          return;
+        }
+
+        // Header - Auth ve Company Context'ten sonra yükle
+        // Header'ın mount point'ini kontrol et
+        const headerEl = document.querySelector('#app-header');
+        if (!headerEl) {
+          logger.warn('Header mount point bulunamadı');
+        } else {
+          try {
+            // Header'ı yükle (eğer zaten yüklenmişse, initGlobalHeader sessizce return eder)
+            const headerResult = await initGlobalHeader({ mount: '#app-header', activeRoute: 'bids' });
+            if (headerResult) {
+              logger.info('Header başarıyla yüklendi', { headerElement: headerResult });
+            } else {
+              logger.info('Header zaten yüklenmiş veya yüklenemedi');
+            }
+          } catch (headerError) {
+            logger.error('Header yükleme hatası', headerError);
+            // Header hatası sayfanın çalışmasını engellemez
+          }
+        }
+
+        // URL parametrelerini kontrol et (bidId varsa otomatik doldur)
+        const urlParams = new URLSearchParams(window.location.search);
+        const bidId = urlParams.get('bidId');
+        const demandId = urlParams.get('demandId');
+
+        // Firmaları ve onaylanmış teklifleri yükle
+        await loadCompaniesForPaymentRequest(user.uid);
+        await loadApprovedBidsForPaymentRequest(user.uid);
+        await loadPaymentHistory(user.uid);
+
+        // Eğer URL'de bidId varsa, otomatik doldur
+        if (bidId) {
+          await autoFillFromBidId(bidId, demandId);
+        }
+
+        logger.info('Ödeme talep sayfası yüklendi');
+        logger.end();
+      } catch (e) {
+        logger.error('Ödeme talep sayfası yükleme hatası', e);
+        toast.error('Sayfa yüklenirken hata oluştu');
+        logger.end();
+      }
+    })();
+
+    // Teklifbul Rule v1.0 - URL'den gelen bidId ile otomatik doldurma
+    async function autoFillFromBidId(bidId, demandId) {
+      try {
+        logger.group('Teklif ID\'den Otomatik Doldurma');
+        const { doc, getDoc } = await getFirestoreModules();
+        
+        // Teklifi yükle
+        const bidDoc = await getDoc(doc(db, 'bids', bidId));
+        if (!bidDoc.exists()) {
+          logger.warn('Teklif bulunamadı', { bidId });
+          toast.warn('Teklif bulunamadı');
+          return;
+        }
+
+        const bidData = bidDoc.data();
+        
+        // Demand bilgisini yükle
+        const demandDocId = demandId || bidData.demandId;
+        if (!demandDocId) {
+          logger.warn('Demand ID bulunamadı');
+          return;
+        }
+
+        const demandDoc = await getDoc(doc(db, 'demands', demandDocId));
+        if (!demandDoc.exists()) {
+          logger.warn('Demand bulunamadı', { demandId: demandDocId });
+          return;
+        }
+
+        const demandData = demandDoc.data();
+        
+        // Alıcı firma bilgisini al
+        const buyerCompanyId = demandData.companyId;
+        if (!buyerCompanyId) {
+          logger.warn('Alıcı firma ID bulunamadı');
+          return;
+        }
+
+        const buyerCompanyDoc = await getDoc(doc(db, 'companies', buyerCompanyId));
+        const buyerCompanyName = buyerCompanyDoc.exists() 
+          ? (buyerCompanyDoc.data().companyName || buyerCompanyDoc.data().name) 
+          : 'Bilinmeyen Şirket';
+
+        // Toplam tutarı hesapla
+        const items = Array.isArray(bidData.items) ? bidData.items : [];
+        const totalAmount = items.reduce((sum, item) => {
+          return sum + (parseFloat(item.quantity || 0) * parseFloat(item.unitPrice || item.netPrice || 0));
+        }, 0) || parseFloat(bidData.totalAmount || bidData.netPrice || 0);
+
+        // Formu doldur
+        const companySelect = $('#paymentRequest_companyId');
+        const amountInput = $('#paymentRequest_amount');
+        const descriptionTextarea = $('#paymentRequest_description');
+        const approvedBidSelect = $('#paymentRequest_approvedBidId');
+
+        if (companySelect) {
+          companySelect.value = buyerCompanyId;
+        }
+        if (amountInput) {
+          amountInput.value = totalAmount.toFixed(2);
+        }
+        if (descriptionTextarea) {
+          descriptionTextarea.value = `Talep: ${demandData.title || ''} - Teklif No: ${bidId}`;
+        }
+        if (approvedBidSelect) {
+          approvedBidSelect.value = bidId;
+        }
+
+        // Termin tarihini varsayılan olarak 30 gün sonrasına ayarla
+        const dueDateInput = $('#paymentRequest_dueDate');
+        if (dueDateInput && !dueDateInput.value) {
+          const futureDate = new Date();
+          futureDate.setDate(futureDate.getDate() + 30);
+          dueDateInput.value = futureDate.toISOString().split('T')[0];
+        }
+
+        logger.info('Teklif bilgileri otomatik dolduruldu', { bidId, buyerCompanyId, totalAmount });
+        toast.info('Teklif bilgileri otomatik dolduruldu');
+        logger.end();
+      } catch (e) {
+        logger.error('Teklif ID\'den otomatik doldurma hatası', e);
+        toast.error('Otomatik doldurma yapılamadı');
+        logger.end();
+      }
+    }
+
+    // Ödeme Talep Formu için Firmaları Yükle
+    async function loadCompaniesForPaymentRequest(userId) {
+      try {
+        const companySelect = $('#paymentRequest_companyId');
+        if (!companySelect) return;
+
+        const paymentsPerms = getPaymentsPerms();
+        const paymentsCreateKey = paymentsPerms && paymentsPerms.create;
+
+        // Başarılı ticaret yapılan firmaları yükle
+        const { doc, getDoc, collection, query, where, getDocs, addDoc, serverTimestamp } = await getFirestoreModules();
+        const userDoc = await getDoc(doc(db, 'users', userId));
+        if (!userDoc.exists()) return;
+        
+        const userData = userDoc.data();
+        const companyId = userData.companyId || (userData.companies && userData.companies[0]);
+        if (!companyId) return;
+        
+        // Bu şirketin tedarikçi olduğu onaylanmış teklifleri bul
+        const bidsRef = collection(db, 'bids');
+        const bidsQuery = query(
+          bidsRef,
+          where('supplierCompanyId', '==', companyId),
+          where('status', 'in', ['accepted', 'approved'])
+        );
+        const bidsSnapshot = await getDocs(bidsQuery);
+        
+        // Partner şirketleri topla
+        const partnerCompanyIds = new Set();
+        for (const bidDoc of bidsSnapshot.docs) {
+          const bidData = bidDoc.data();
+          if (bidData.demandId) {
+            const demandDoc = await getDoc(doc(db, 'demands', bidData.demandId));
+            if (demandDoc.exists()) {
+              const demandData = demandDoc.data();
+              if (demandData.companyId && demandData.companyId !== companyId) {
+                partnerCompanyIds.add(demandData.companyId);
+              }
+            }
+          }
+        }
+        
+        // Partner şirket bilgilerini yükle - Teklifbul Rule v1.0 - XSS Protection
+        const safeDefaultOption = DOMPurify.sanitize('<option value="">Firma seçin...</option>', { ALLOWED_TAGS: ['option'], ALLOWED_ATTR: ['value'] });
+        companySelect.innerHTML = safeDefaultOption;
+        for (const partnerCompanyId of partnerCompanyIds) {
+          const partnerCompanyDoc = await getDoc(doc(db, 'companies', partnerCompanyId));
+          if (partnerCompanyDoc.exists()) {
+            const partnerData = partnerCompanyDoc.data();
+            const option = document.createElement('option');
+            // Teklifbul Rule v1.0 - XSS Protection - textContent kullan (güvenli)
+            option.value = DOMPurify.sanitize(partnerCompanyId || '', { ALLOWED_TAGS: [] });
+            option.textContent = partnerData.companyName || partnerData.name || 'Bilinmeyen Şirket';
+            companySelect.appendChild(option);
+          }
+        }
+        
+        // Ödeme talep butonu event listener
+        const btnRequestPayment = $('#btnRequestPayment');
+        if (btnRequestPayment) {
+          // UI guard - ödeme talebi oluşturma (fail-closed)
+          if (!paymentsCreateKey) {
+            const msg = (MESSAGES.ERROR_PERMISSION_TEMPLATE_MISSING || 'Yetki şablonu eksik.');
+            btnRequestPayment.disabled = true;
+            btnRequestPayment.title = msg;
+          } else if (!can(paymentsCreateKey)) {
+            const msg = (MESSAGES.ERROR_PERMISSION_PAYMENTS_CREATE || MESSAGES.ERROR_PERMISSION_DENIED || MESSAGES.ERROR_PERMISSION) ?? 'Ödeme talebi oluşturma yetkiniz yok.';
+            btnRequestPayment.disabled = true;
+            btnRequestPayment.title = msg;
+          }
+
+          btnRequestPayment.addEventListener('click', async () => {
+            const companyId = companySelect.value;
+            const amount = parseFloat($('#paymentRequest_amount')?.value || 0);
+            const dueDate = $('#paymentRequest_dueDate')?.value;
+            const description = $('#paymentRequest_description')?.value || '';
+            const approvedBidId = $('#paymentRequest_approvedBidId')?.value || '';
+            
+            if (!companyId || !amount || !dueDate) {
+              toast.error(MESSAGES.ERROR_REQUIRED_FIELDS || 'Lütfen tüm zorunlu alanları doldurun.');
+              return;
+            }
+            
+            try {
+              // Permission Write Guard - ödeme talebi oluşturma (fail-closed)
+              const ok = await requireExistingPerm(paymentsCreateKey, {
+                toastMessage: (MESSAGES.ERROR_PERMISSION_PAYMENTS_CREATE || MESSAGES.ERROR_PERMISSION_DENIED || MESSAGES.ERROR_PERMISSION) ?? 'Ödeme talebi oluşturma yetkiniz yok.'
+              });
+              if (!ok) {
+                logger.warn('Ödeme talebi oluşturma: payments.create izni yok', { permKey: paymentsCreateKey });
+                return;
+              }
+
+              // Şirket bilgisini al
+              const companyDoc = await getDoc(doc(db, 'companies', companyId));
+              const companyName = companyDoc.exists() ? (companyDoc.data().companyName || companyDoc.data().name) : 'Bilinmeyen Şirket';
+              
+              // Ödeme talebi oluştur
+              await addDoc(collection(db, 'paymentRequests'), {
+                requesterUserId: userId,
+                companyId: companyId,
+                companyName: companyName,
+                amount: amount,
+                dueDate: dueDate,
+                description: description,
+                approvedBidId: approvedBidId || null,
+                status: 'pending',
+                createdAt: serverTimestamp()
+              });
+              
+              toast.success(MESSAGES.SUCCESS_PAYMENT_REQUEST_CREATED || 'Ödeme talebi başarıyla oluşturuldu');
+              
+              // Formu temizle
+              companySelect.value = '';
+              $('#paymentRequest_amount').value = '';
+              $('#paymentRequest_dueDate').value = '';
+              $('#paymentRequest_description').value = '';
+              $('#paymentRequest_approvedBidId').value = '';
+              
+              // Ödeme geçmişini yenile
+              await loadPaymentHistory(userId);
+            } catch (err) {
+              logger.error('Ödeme talebi oluşturma hatası', err);
+              toast.error((MESSAGES.ERROR_PAYMENT_REQUEST_CREATE || 'Ödeme talebi oluşturulamadı') + ': ' + err.message);
+            }
+          });
+        }
+      } catch (e) {
+        logger.error('Firmalar yükleme hatası', e);
+      }
+    }
+
+    // Onaylanmış Tekliflerden Otomatik Doldurma
+    async function loadApprovedBidsForPaymentRequest(userId) {
+      try {
+        const approvedBidSelect = $('#paymentRequest_approvedBidId');
+        if (!approvedBidSelect) return;
+        
+        const { doc, getDoc, collection, query, where, getDocs } = await getFirestoreModules();
+        const userDoc = await getDoc(doc(db, 'users', userId));
+        if (!userDoc.exists()) return;
+        
+        const userData = userDoc.data();
+        const companyId = userData.companyId || (userData.companies && userData.companies[0]);
+        if (!companyId) return;
+        
+        // Bu şirketin tedarikçi olduğu onaylanmış teklifleri bul
+        const bidsRef = collection(db, 'bids');
+        const bidsQuery = query(
+          bidsRef,
+          where('supplierCompanyId', '==', companyId),
+          where('status', 'in', ['accepted', 'approved'])
+        );
+        const bidsSnapshot = await getDocs(bidsQuery);
+        
+        // Client-side sorting - createdAt'e göre sırala
+        const bidsArray = bidsSnapshot.docs.map(doc => ({ 
+          id: doc.id, 
+          data: doc.data(), 
+          createdAt: doc.data().createdAt 
+        }));
+        bidsArray.sort((a, b) => {
+          const aTime = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt?.seconds ? a.createdAt.seconds * 1000 : 0);
+          const bTime = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt?.seconds ? b.createdAt.seconds * 1000 : 0);
+          return bTime - aTime; // Descending order
+        });
+        
+        // İlk 50'yi al
+        const sortedBids = bidsArray.slice(0, 50);
+        
+        approvedBidSelect.innerHTML = '<option value="">Onaylanmış teklif seçin (otomatik doldurma için)...</option>';
+        
+        // Sıralanmış bids'leri kullan
+        for (const bidItem of sortedBids) {
+          const bidData = bidItem.data;
+          const bidDocId = bidItem.id;
+          const demandDoc = await getDoc(doc(db, 'demands', bidData.demandId)).catch(() => null);
+          if (!demandDoc || !demandDoc.exists()) continue;
+          
+          const demandData = demandDoc.data();
+          const buyerCompanyDoc = await getDoc(doc(db, 'companies', demandData.companyId)).catch(() => null);
+          const buyerCompanyName = buyerCompanyDoc && buyerCompanyDoc.exists() 
+            ? (buyerCompanyDoc.data().companyName || buyerCompanyDoc.data().name) 
+            : 'Bilinmeyen Şirket';
+          
+          const totalAmount = bidData.items?.reduce((sum, item) => {
+            return sum + (parseFloat(item.quantity || 0) * parseFloat(item.unitPrice || item.netPrice || 0));
+          }, 0) || parseFloat(bidData.totalAmount || bidData.netPrice || 0);
+          
+          const option = document.createElement('option');
+          option.value = bidDocId;
+          option.textContent = `${buyerCompanyName} - ${demandData.title || 'Talep'} - ₺${totalAmount.toFixed(2)}`;
+          option.dataset.companyId = demandData.companyId;
+          option.dataset.amount = totalAmount;
+          option.dataset.description = `Talep: ${demandData.title || ''} - Teklif No: ${bidDocId}`;
+          approvedBidSelect.appendChild(option);
+        }
+        
+        // Otomatik doldurma event listener
+        approvedBidSelect.addEventListener('change', (e) => {
+          const selectedOption = e.target.options[e.target.selectedIndex];
+          if (selectedOption.value) {
+            const companySelect = $('#paymentRequest_companyId');
+            const amountInput = $('#paymentRequest_amount');
+            const descriptionTextarea = $('#paymentRequest_description');
+            
+            if (companySelect) companySelect.value = selectedOption.dataset.companyId || '';
+            if (amountInput) amountInput.value = parseFloat(selectedOption.dataset.amount || 0).toFixed(2);
+            if (descriptionTextarea) descriptionTextarea.value = selectedOption.dataset.description || '';
+            
+            // Termin tarihini varsayılan olarak 30 gün sonrasına ayarla
+            const dueDateInput = $('#paymentRequest_dueDate');
+            if (dueDateInput && !dueDateInput.value) {
+              const futureDate = new Date();
+              futureDate.setDate(futureDate.getDate() + 30);
+              dueDateInput.value = futureDate.toISOString().split('T')[0];
+            }
+          }
+        });
+      } catch (e) {
+        logger.error('Onaylanmış teklifler yükleme hatası', e);
+      }
+    }
+
+    // Ödeme Geçmişini Yükle
+    async function loadPaymentHistory(userId) {
+      try {
+        const historyContainer = $('#paymentHistoryList');
+        if (!historyContainer) return;
+
+        const { collection, query, where, getDocs, orderBy, limit } = await getFirestoreModules();
+        const paymentRequestsRef = collection(db, 'paymentRequests');
+        const q = query(
+          paymentRequestsRef,
+          where('requesterUserId', '==', userId),
+          orderBy('createdAt', 'desc'),
+          limit(20)
+        );
+        const snapshot = await getDocs(q);
+        
+        if (snapshot.empty) {
+          historyContainer.innerHTML = '<p class="muted" style="text-align:center; padding:20px;">Henüz ödeme talebi oluşturulmamış.</p>';
+          return;
+        }
+
+        const requests = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        historyContainer.innerHTML = requests.map(req => {
+          const date = req.createdAt?.toDate ? req.createdAt.toDate().toLocaleDateString('tr-TR') : '—';
+          const status = req.status === 'pending' ? 'Beklemede' : req.status === 'approved' ? 'Onaylandı' : req.status === 'rejected' ? 'Reddedildi' : req.status || 'Bilinmeyen';
+          const statusColor = req.status === 'pending' ? '#f59e0b' : req.status === 'approved' ? '#10b981' : req.status === 'rejected' ? '#ef4444' : '#6b7280';
+          
+          return `
+            <div style="padding:16px; background:white; border-radius:8px; border:1px solid #e5e7eb; display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <div style="font-weight:600; color:#1f2937; margin-bottom:4px;">${DOMPurify.sanitize(req.companyName || 'Bilinmeyen Şirket')}</div>
+                <div style="font-size:13px; color:#6b7280;">Tutar: ₺${parseFloat(req.amount || 0).toFixed(2)}</div>
+                <div style="font-size:12px; color:#6b7280; margin-top:4px;">Termin: ${req.dueDate || '—'} | Oluşturulma: ${date}</div>
+              </div>
+              <div>
+                <span style="padding:4px 12px; background:${statusColor}; color:white; border-radius:12px; font-size:12px; font-weight:600;">${DOMPurify.sanitize(status)}</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } catch (e) {
+        logger.error('Ödeme geçmişi yükleme hatası', e);
+        $('#paymentHistoryList').innerHTML = '<p class="muted" style="text-align:center; padding:20px;">Ödeme geçmişi yüklenirken hata oluştu.</p>';
+      }
+    }
+  </script>
+</body>
+</html>
+

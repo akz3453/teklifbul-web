@@ -4,7 +4,10 @@
   <meta charset="utf-8" />
   <title>Toplu Fiyat Güncelleme</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Teklifbul Rule v1.0 - FOUC önleme: Tema hemen uygulanmalı -->
+  <script src="/assets/js/theme-init.js"></script>
   <link rel="stylesheet" href="/utils.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
   <style>
     body{font-family:system-ui, Arial; background:#f8fafc; color:#111827; margin:0}
     .container{max-width:1100px;margin:0 auto;padding:20px}
@@ -17,10 +20,161 @@
     th,td{border-bottom:1px solid #e5e7eb;padding:8px;text-align:left;font-size:13px}
     th{background:#f9fafb}
     .muted{color:#6b7280;font-size:12px}
-    .btn{padding:10px 16px;border:0;border-radius:6px;cursor:pointer;font-weight:600}
+    .btn{padding:10px 16px;border:0;border-radius:6px;cursor:pointer;font-weight:600;font-size:14px}
     .btn-primary{background:#2563eb;color:#fff}
     .btn-secondary{background:#6b7280;color:#fff}
     .btn[disabled]{opacity:.5;cursor:not-allowed}
+    input[type="file"]{padding:10px 12px;border:2px solid #22c55e;border-radius:6px;font-size:14px;background:white;color:#111827;cursor:pointer}
+    input[type="file"]::-webkit-file-upload-button{background:#22c55e;color:white;border:none;padding:6px 12px;border-radius:4px;margin-right:8px;cursor:pointer;font-size:13px}
+    input[type="file"]::-webkit-file-upload-button:hover{background:#16a34a}
+    
+    /* Koyu Mod Düzenlemeleri */
+    html[data-theme="dark"] body,
+    html.force-dark body {
+      background:#111827;
+      color:#ffffff;
+    }
+    html[data-theme="dark"] .card,
+    html.force-dark .card {
+      background:#111827;
+      border:1px solid rgba(255,255,255,0.1);
+      color:#ffffff;
+    }
+    html[data-theme="dark"] label,
+    html.force-dark label {
+      color:#d1d5db;
+    }
+    html[data-theme="dark"] input,
+    html[data-theme="dark"] select,
+    html.force-dark input,
+    html.force-dark select {
+      background:#111827;
+      border:1px solid rgba(255,255,255,0.1);
+      color:#ffffff;
+    }
+    html[data-theme="dark"] table,
+    html.force-dark table {
+      background:#111827;
+    }
+    html[data-theme="dark"] th,
+    html.force-dark th {
+      background:#111827;
+      color:#ffffff;
+      border-bottom:1px solid rgba(255,255,255,0.1);
+    }
+    html[data-theme="dark"] td,
+    html.force-dark td {
+      color:#ffffff;
+      border-bottom:1px solid rgba(255,255,255,0.1);
+    }
+    html[data-theme="dark"] .muted,
+    html.force-dark .muted {
+      color:#9ca3af;
+    }
+    html[data-theme="dark"] div[style*="background:#f0f9ff"],
+    html.force-dark div[style*="background:#f0f9ff"] {
+      background:#111827 !important;
+      border:1px solid rgba(255,255,255,0.1) !important;
+    }
+    html[data-theme="dark"] div[style*="background:#f0f9ff"] label,
+    html[data-theme="dark"] div[style*="background:#f0f9ff"] span,
+    html.force-dark div[style*="background:#f0f9ff"] label,
+    html.force-dark div[style*="background:#f0f9ff"] span {
+      color:#ffffff !important;
+    }
+    html[data-theme="dark"] div[style*="background:#f0f9ff"] input[type="number"],
+    html.force-dark div[style*="background:#f0f9ff"] input[type="number"] {
+      background:#111827 !important;
+      border:1px solid rgba(255,255,255,0.1) !important;
+    }
+    /* Teklifbul Rule v1.0 - Excel içe aktarma bölümü koyu mod düzenlemeleri */
+    html[data-theme="dark"] div[style*="background:#f0fdf4"],
+    html.force-dark div[style*="background:#f0fdf4"] {
+      background:#111827 !important;
+      border:1px solid rgba(255,255,255,0.1) !important;
+      padding:12px !important;
+      border-radius:6px !important;
+      margin:12px 0 !important;
+    }
+    html[data-theme="dark"] div[style*="background:#f0fdf4"] label,
+    html.force-dark div[style*="background:#f0fdf4"] label {
+      color:#ffffff !important;
+      font-size:13px !important;
+      font-weight:600 !important;
+      margin-bottom:6px !important;
+      display:block !important;
+    }
+    html[data-theme="dark"] div[style*="background:#f0fdf4"] p,
+    html.force-dark div[style*="background:#f0fdf4"] p {
+      color:#9ca3af !important;
+      margin:6px 0 0 0 !important;
+      font-size:11px !important;
+    }
+    html[data-theme="dark"] div[style*="background:#f0fdf4"] input[type="file"],
+    html.force-dark div[style*="background:#f0fdf4"] input[type="file"] {
+      background:#111827 !important;
+      border:2px solid rgba(255,255,255,0.2) !important;
+      color:#ffffff !important;
+      padding:10px 12px !important;
+      border-radius:6px !important;
+      font-size:14px !important;
+    }
+    html[data-theme="dark"] div[style*="background:#f0fdf4"] input[type="file"]::-webkit-file-upload-button,
+    html.force-dark div[style*="background:#f0fdf4"] input[type="file"]::-webkit-file-upload-button {
+      background:#2563eb !important;
+      color:#ffffff !important;
+      border:none !important;
+      padding:6px 12px !important;
+      border-radius:4px !important;
+      margin-right:8px !important;
+      cursor:pointer !important;
+      font-size:13px !important;
+    }
+    html[data-theme="dark"] div[style*="background:#f0fdf4"] input[type="file"]::-webkit-file-upload-button:hover,
+    html.force-dark div[style*="background:#f0fdf4"] input[type="file"]::-webkit-file-upload-button:hover {
+      background:#1d4ed8 !important;
+      color:#ffffff !important;
+    }
+    html[data-theme="dark"] div[style*="background:#f0df4"],
+    html.force-dark div[style*="background:#f0df4"] {
+      background:#111827 !important;
+      border:1px solid rgba(255,255,255,0.1) !important;
+    }
+    html[data-theme="dark"] div[style*="background:#f0df4"] label,
+    html[data-theme="dark"] div[style*="background:#f0df4"] p,
+    html.force-dark div[style*="background:#f0df4"] label,
+    html.force-dark div[style*="background:#f0df4"] p {
+      color:#ffffff !important;
+    }
+    html[data-theme="dark"] input[type="file"],
+    html.force-dark input[type="file"] {
+      background:#111827 !important;
+      border:1px solid rgba(255,255,255,0.1) !important;
+      color:#ffffff !important;
+    }
+    html[data-theme="dark"] h1,
+    html[data-theme="dark"] h2,
+    html.force-dark h1,
+    html.force-dark h2 {
+      color:#ffffff;
+    }
+    html[data-theme="dark"] div[style*="color:#0c4a6e"],
+    html.force-dark div[style*="color:#0c4a6e"] {
+      color:#ffffff !important;
+    }
+    html[data-theme="dark"] div[style*="color:#166534"],
+    html.force-dark div[style*="color:#166534"] {
+      color:#ffffff !important;
+    }
+    html[data-theme="dark"] div[style*="background:white"],
+    html.force-dark div[style*="background:white"] {
+      background:#111827 !important;
+    }
+    html[data-theme="dark"] div[style*="background:white"] input,
+    html.force-dark div[style*="background:white"] input {
+      background:#111827 !important;
+      color:#ffffff !important;
+    }
   </style>
 </head>
 <body>
@@ -28,6 +182,24 @@
   <header id="app-header"></header>
 
   <div class="container">
+    <!-- Breadcrumb Navigation -->
+    <div class="tb-breadcrumb" id="breadcrumb">
+      <span class="tb-crumb">
+        <span class="ico">🏠</span>
+        <a href="/dashboard.html">Ana Sayfa</a>
+      </span>
+      <span class="tb-sep">›</span>
+      <span class="tb-crumb">
+        <span class="ico">📦</span>
+        <a href="/inventory-index.html">Stok Takip</a>
+      </span>
+      <span class="tb-sep">›</span>
+      <span class="tb-crumb">
+        <span class="ico">💰</span>
+        <span>Toplu Fiyat Güncelleme</span>
+      </span>
+    </div>
+    
     <h1>Toplu Fiyat Güncelleme</h1>
     <p class="muted">Stok ürünlerinin fiyatlarını toplu olarak güncelleyin.</p>
 
@@ -35,15 +207,23 @@
       <h2 style="margin:0 0 12px 0;font-size:18px">Filtreler</h2>
       <div class="row">
         <div>
-          <label for="filterCode">Özel Kod 1</label>
-          <input id="filterCode" placeholder="Filtrele (opsiyon)" />
+          <label for="filterWarehouse">Depo</label>
+          <select id="filterWarehouse">
+            <option value="">Tüm Depolar</option>
+          </select>
         </div>
+        <div>
+          <label for="filterCode">Özel Kod</label>
+          <select id="filterCode">
+            <option value="">Tüm Özel Kodlar</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
         <div>
           <label for="filterBrand">Marka</label>
           <input id="filterBrand" placeholder="Filtrele (opsiyon)" />
         </div>
-      </div>
-      <div class="row">
         <div>
           <label for="filterUnit">Birim</label>
           <select id="filterUnit">
@@ -54,20 +234,76 @@
             <option value="LT">LT</option>
           </select>
         </div>
+      </div>
+      <div class="row">
         <div>
-          <button class="btn btn-primary" id="btnLoad" style="margin-top:25px">Yükle ve İndir</button>
+          <label for="filterSearch">Ürün Adı / Stok Kodu Ara</label>
+          <input id="filterSearch" placeholder="Ürün adı veya stok kodu yazın..." />
         </div>
+        <div>
+          <label for="filterBrand">Marka</label>
+          <input id="filterBrand" placeholder="Filtrele (opsiyon)" />
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <button class="btn btn-primary" id="btnLoad" style="margin-top:25px">🔍 Filtrelenen Ürünleri Göster</button>
+        </div>
+        <div></div>
       </div>
     </div>
 
-    <div class="card">
-      <h2 style="margin:0 0 12px 0;font-size:18px">Fiyat Güncelleme</h2>
+    <div class="card" id="productsCard" style="display:none">
+      <h2 style="margin:0 0 12px 0;font-size:18px">Listelenen Ürünler</h2>
       <div id="updateInfo" class="muted">Henüz stok yüklenmedi.</div>
+      
+      <!-- Yüzde Zam Alanı -->
+      <div style="background:#f0f9ff; padding:12px; border-radius:6px; margin:12px 0; border:1px solid #bae6fd">
+        <div style="display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap">
+          <div style="flex:1; min-width:300px">
+            <label for="percentageIncrease" style="font-size:13px; font-weight:600; color:#0c4a6e; margin-bottom:6px; display:block">📈 Yüzde Zam Oranı</label>
+            <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px">
+              <input type="number" id="percentageIncrease" step="0.01" placeholder="Örn: 10 (yüzde 10 zam)" 
+                     style="flex:1; min-width:200px; padding:10px 12px; border:2px solid #0ea5e9; border-radius:6px; font-size:14px; background:white; color:#111827" />
+              <button class="btn btn-primary" id="btnApplyPercentage" style="padding:10px 16px; font-size:13px; white-space:nowrap; min-width:auto">Zam Uygula</button>
+            </div>
+            <div style="display:flex; gap:16px; margin-bottom:6px">
+              <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:#0c4a6e; cursor:pointer; font-weight:500">
+                <input type="checkbox" id="applyToPurchase" checked style="width:18px; height:18px; cursor:pointer; accent-color:#0ea5e9" />
+                <span>Alım Fiyatı</span>
+              </label>
+              <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:#0c4a6e; cursor:pointer; font-weight:500">
+                <input type="checkbox" id="applyToSale" checked style="width:18px; height:18px; cursor:pointer; accent-color:#0ea5e9" />
+                <span>Satış Fiyatı</span>
+              </label>
+            </div>
+            <p style="margin:0; font-size:11px; color:#6b7280">Listelenen tüm ürünlere belirtilen oranda zam yapılacaktır. Seçtiğiniz fiyat tiplerine uygulanır.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Excel İçe Aktar -->
+      <div style="background:#f0fdf4; padding:12px; border-radius:6px; margin:12px 0; border:1px solid #86efac">
+        <label style="font-size:13px; font-weight:600; color:#166534; margin-bottom:6px; display:block">📥 Excel Dosyasını İçe Aktar</label>
+        <div style="display:flex; gap:8px; align-items:center">
+          <input type="file" id="excelFileInput" accept=".xlsx,.xls" 
+                 style="flex:1; min-width:200px; padding:10px 12px; border:2px solid #22c55e; border-radius:6px; font-size:14px; background:white; color:#111827" />
+          <button class="btn btn-primary" id="btnImportExcel" style="padding:10px 16px; font-size:13px; white-space:nowrap; min-width:auto">Excel'i İçe Aktar</button>
+        </div>
+        <p style="margin:6px 0 0 0; font-size:11px; color:#6b7280">Excel'de yaptığınız değişiklikleri yükleyin. Yeni değerler otomatik algılanacaktır.</p>
+      </div>
+
+      <!-- Butonlar -->
+      <div style="display:flex; gap:8px; margin:12px 0; flex-wrap:wrap">
+        <button class="btn btn-secondary" id="btnDownloadExcel">📥 Listelenen Ürünleri İndir</button>
+      </div>
+
+      <!-- Tablo -->
       <div style="overflow:auto">
         <table id="updateTable" style="display:none">
           <thead>
             <tr>
-              <th>SKU</th><th>Ürün</th><th>Birim</th><th>Eski Alım</th><th>Yeni Alım</th><th>Eski Satış</th><th>Yeni Satış</th>
+              <th>SKU</th><th>Ürün</th><th>Birim</th><th>Depo</th><th>Eski Alım</th><th>Yeni Alım</th><th>Eski Satış</th><th>Yeni Satış</th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -77,7 +313,7 @@
 
     <div style="display:flex; gap:8px; justify-content:flex-end">
       <button class="btn btn-secondary" id="btnBack" onclick="history.back()">Geri</button>
-      <button class="btn btn-primary" id="btnApply" disabled>Güncelle</button>
+      <button class="btn btn-primary" id="btnApply" disabled style="display:none">💾 Kaydet</button>
     </div>
   </div>
 

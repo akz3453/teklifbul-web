@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teklif Ver | Nefisoft</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #64748b;
+            margin-bottom: 24px;
+        }
+
+        .demand-info {
+            background: #f1f5f9;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+
+        .demand-info p {
+            margin: 8px 0;
+            color: #334155;
+        }
+
+        .demand-info strong {
+            color: #1e293b;
+        }
+
+        .upload-zone {
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .upload-zone:hover,
+        .upload-zone.dragover {
+            border-color: #2563eb;
+            background: #eff6ff;
+        }
+
+        .upload-zone input {
+            display: none;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 16px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 24px;
+            transition: background 0.3s;
+        }
+
+        .btn-submit:hover {
+            background: #1d4ed8;
+        }
+
+        .btn-submit:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        .error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+        }
+
+        .success {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #16a34a;
+            padding: 16px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px;
+        }
+
+        .loading-spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid #e2e8f0;
+            border-top-color: #2563eb;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .file-name {
+            margin-top: 16px;
+            color: #16a34a;
+            font-weight: 500;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div id="loading" class="loading">
+            <div class="loading-spinner"></div>
+            <p>Token doğrulanıyor...</p>
+        </div>
+
+        <div id="error" class="error" style="display: none;">
+            <strong>Hata:</strong> <span id="errorMessage"></span>
+        </div>
+
+        <div id="content" style="display: none;">
+            <h1>📋 Teklif Ver</h1>
+            <p class="subtitle">Aşağıdaki talep için teklifinizi gönderin</p>
+
+            <div class="demand-info">
+                <p><strong>Talep Kodu:</strong> <span id="demandCode">-</span></p>
+                <p><strong>Başlık:</strong> <span id="demandTitle">-</span></p>
+                <p><strong>Talep Eden:</strong> <span id="demandRequester">-</span></p>
+                <p><strong>Kalem Sayısı:</strong> <span id="itemCount">-</span></p>
+            </div>
+
+            <div class="upload-zone" id="uploadZone">
+                <div class="upload-icon">📎</div>
+                <p><strong>Doldurduğunuz Excel dosyasını buraya sürükleyin</strong></p>
+                <p style="color: #64748b; font-size: 14px;">veya dosya seçmek için tıklayın</p>
+                <input type="file" id="fileInput" accept=".xlsx,.xls">
+                <div class="file-name" id="fileName" style="display: none;"></div>
+            </div>
+
+            <button class="btn-submit" id="submitBtn" disabled>Teklifi Gönder</button>
+        </div>
+
+        <div id="success" class="success" style="display: none;">
+            <div style="font-size: 48px; margin-bottom: 16px;">✅</div>
+            <h2>Teklifiniz Gönderildi!</h2>
+            <p>Talep sahibi en kısa sürede sizinle iletişime geçecektir.</p>
+        </div>
+    </div>
+
+    <script type="module">
+        // Get token from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+
+        const loadingEl = document.getElementById('loading');
+        const errorEl = document.getElementById('error');
+        const errorMessageEl = document.getElementById('errorMessage');
+        const contentEl = document.getElementById('content');
+        const successEl = document.getElementById('success');
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileNameEl = document.getElementById('fileName');
+        const submitBtn = document.getElementById('submitBtn');
+
+        let selectedFile = null;
+        let demandData = null;
+
+        // Validate token
+        async function validateToken() {
+            if (!token) {
+                showError('Geçersiz link. Token bulunamadı.');
+                return;
+            }
+
+            try {
+                // Call API to validate token
+                const response = await fetch(`/api/bid-invites/${token}`);
+                if (!response.ok) {
+                    const err = await response.json();
+                    showError(err.message || 'Token geçersiz veya süresi dolmuş.');
+                    return;
+                }
+
+                const data = await response.json();
+                demandData = data;
+
+                // Populate demand info
+                document.getElementById('demandCode').textContent = data.demand.satfk || '-';
+                document.getElementById('demandTitle').textContent = data.demand.title || '-';
+                document.getElementById('demandRequester').textContent = data.demand.creatorCompanyName || '-';
+                document.getElementById('itemCount').textContent = data.itemCount || '0';
+
+                // Show content
+                loadingEl.style.display = 'none';
+                contentEl.style.display = 'block';
+
+            } catch (e) {
+                console.error(e);
+                showError('Sunucu ile bağlantı kurulamadı.');
+            }
+        }
+
+        function showError(message) {
+            loadingEl.style.display = 'none';
+            errorMessageEl.textContent = message;
+            errorEl.style.display = 'block';
+        }
+
+        // File upload handling
+        uploadZone.addEventListener('click', () => fileInput.click());
+
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+                alert('Lütfen Excel dosyası seçin (.xlsx veya .xls)');
+                return;
+            }
+            selectedFile = file;
+            fileNameEl.textContent = `✓ ${file.name}`;
+            fileNameEl.style.display = 'block';
+            submitBtn.disabled = false;
+        }
+
+        // Submit bid
+        submitBtn.addEventListener('click', async () => {
+            if (!selectedFile || !token) return;
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Gönderiliyor...';
+
+            try {
+                // Convert file to base64
+                const base64 = await fileToBase64(selectedFile);
+
+                // Send to API
+                const response = await fetch('/api/submit-bid', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        token,
+                        fileName: selectedFile.name,
+                        fileContent: base64
+                    })
+                });
+
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.message || 'Teklif gönderilemedi');
+                }
+
+                // Show success
+                contentEl.style.display = 'none';
+                successEl.style.display = 'block';
+
+            } catch (e) {
+                console.error(e);
+                alert('Hata: ' + e.message);
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Teklifi Gönder';
+            }
+        });
+
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => {
+                    const result = reader.result;
+                    // Remove data URL prefix
+                    const base64 = result.split(',')[1];
+                    resolve(base64);
+                };
+                reader.onerror = reject;
+            });
+        }
+
+        // Initialize
+        validateToken();
+    </script>
+</body>
+
+</html>

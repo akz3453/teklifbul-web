@@ -54,7 +54,7 @@
   </div>
 
   <script type="module">
-    import { auth, db } from './firebase.js';
+    import { auth, db } from '../firebase.js';
     import { 
       doc, 
       getDoc, 
@@ -114,13 +114,37 @@
         const userDoc = await getDoc(doc(db, 'users', user.uid));
         if (userDoc.exists()) {
           const userData = userDoc.data();
+          
+          // Rolleri belirle - Teklifbul Rule v1.2.13 - Multi-role desteği
+          let roleDisplay = 'Belirtilmemiş';
+          if (Array.isArray(userData.roles) && userData.roles.length > 0) {
+            const roleLabels = userData.roles.map(r => {
+              if (r === 'buyer') return 'Alıcı';
+              if (r === 'supplier') return 'Tedarikçi';
+              if (r === 'both') return 'Alıcı & Tedarikçi';
+              return r;
+            });
+            roleDisplay = roleLabels.join(', ');
+          } else if (userData.role) {
+            if (userData.role === 'buyer') roleDisplay = 'Alıcı';
+            else if (userData.role === 'supplier') roleDisplay = 'Tedarikçi';
+            else roleDisplay = userData.role;
+          }
+          
+          // Aktif durumu - Teklifbul Rule v1.2.13 - Açıklama eklendi
+          const isActive = userData.isActive !== false; // Varsayılan: true
+          const activeDisplay = isActive ? 'Evet' : 'Hayır';
+          const activeDescription = isActive 
+            ? ' (Kullanıcı aktif, talep eşleştirmelerinde görünür)' 
+            : ' (Kullanıcı pasif, talep eşleştirmelerinde göz ardı edilir)';
+          
           userInfoEl.innerHTML = `
             <div class="success-box">
               <strong>Kullanıcı Profili:</strong><br>
               Ad: ${userData.name || userData.displayName || 'Belirtilmemiş'}<br>
               Email: ${userData.email || user.email || 'Belirtilmemiş'}<br>
-              Rol: ${userData.role || 'Belirtilmemiş'}<br>
-              Aktif: ${userData.isActive ? 'Evet' : 'Hayır'}<br>
+              Rol: ${roleDisplay}<br>
+              Aktif: ${activeDisplay}${activeDescription}<br>
               Şirket ID: ${userData.companyId || 'Belirtilmemiş'}
             </div>
           `;
@@ -150,16 +174,61 @@
       
       try {
         const companyDoc = await getDoc(doc(db, 'companies', userData.companyId));
+        let companyData = {};
+        let invoiceAddressParts = {};
+        
         if (companyDoc.exists()) {
-          const companyData = companyDoc.data();
+          companyData = companyDoc.data();
+          invoiceAddressParts = companyData.invoiceAddressParts || {};
+        }
+        
+        // Teklifbul Rule v1.2.22 - Eğer companies'de invoiceAddressParts yoksa, users collection'ından çek
+        if ((!invoiceAddressParts || Object.keys(invoiceAddressParts).length === 0) && user.uid) {
+          try {
+            const userDoc = await getDoc(doc(db, 'users', user.uid));
+            if (userDoc.exists()) {
+              const userDataFromUsers = userDoc.data();
+              invoiceAddressParts = userDataFromUsers.invoiceAddressParts || invoiceAddressParts;
+              log("Fatura adresi users collection'ından alındı");
+            }
+          } catch (userError) {
+            log("Users collection'ından fatura adresi alınamadı: " + userError.message);
+          }
+        }
+        
+        if (companyDoc.exists() || invoiceAddressParts) {
+          // İlçe bilgisini fatura adresinden al - Teklifbul Rule v1.2.22
+          const district = companyData.district || 
+                          (invoiceAddressParts?.ilce) || 
+                          'Belirtilmemiş';
+          
+          // İlçe kodunu fatura adresinden al
+          const ilceKodu = companyData.ilceKodu || 
+                          (invoiceAddressParts?.ilceKodu) || 
+                          'Belirtilmemiş';
+          
+          // Fatura adresi bilgilerini göster - Teklifbul Rule v1.2.22
+          const addressInfo = [];
+          if (invoiceAddressParts.sokak) addressInfo.push(`Sokak: ${invoiceAddressParts.sokak}`);
+          if (invoiceAddressParts.cadde) addressInfo.push(`Cadde: ${invoiceAddressParts.cadde}`);
+          if (invoiceAddressParts.kapi || invoiceAddressParts.kapiNo) addressInfo.push(`Kapı No: ${invoiceAddressParts.kapi || invoiceAddressParts.kapiNo}`);
+          if (invoiceAddressParts.daire) addressInfo.push(`Daire: ${invoiceAddressParts.daire}`);
+          if (invoiceAddressParts.mahalle) addressInfo.push(`Mahalle: ${invoiceAddressParts.mahalle}`);
+          if (invoiceAddressParts.ilce) addressInfo.push(`İlçe: ${invoiceAddressParts.ilce}`);
+          if (invoiceAddressParts.il) addressInfo.push(`İl: ${invoiceAddressParts.il}`);
+          if (invoiceAddressParts.postaKodu) addressInfo.push(`Posta Kodu: ${invoiceAddressParts.postaKodu}`);
+          if (companyData.taxOffice || userData.taxOffice) addressInfo.push(`Vergi Dairesi: ${companyData.taxOffice || userData.taxOffice || ''}`);
+          if (companyData.taxNumber) addressInfo.push(`Vergi No: ${companyData.taxNumber}`);
+          
           companyInfoEl.innerHTML = `
             <div class="success-box">
               <strong>Şirket Bilgileri:</strong><br>
               ID: ${userData.companyId}<br>
               Ad: ${companyData.name || 'Belirtilmemiş'}<br>
               Vergi No: ${companyData.taxNumber || 'Belirtilmemiş'}<br>
-              İlçe: ${companyData.district || 'Belirtilmemiş'}<br>
-              İlçe Kodu: ${companyData.ilceKodu || 'Belirtilmemiş'}
+              İlçe: ${district}<br>
+              İlçe Kodu: ${ilceKodu}<br>
+              ${addressInfo.length > 0 ? `<br><strong>Fatura Adresi:</strong><br>${addressInfo.join('<br>')}` : ''}
             </div>
           `;
           log("Şirket bilgileri yüklendi");

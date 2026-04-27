@@ -4,6 +4,8 @@
   <meta charset="utf-8" />
   <title>Stok Kartı İçe Aktar</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Teklifbul Rule v1.0 - FOUC önleme: Tema hemen uygulanmalı -->
+  <script src="/assets/js/theme-init.js"></script>
   <link rel="stylesheet" href="/utils.css" />
   <style>
     body{font-family:system-ui, Arial; background:#f8fafc; color:#111827; margin:0}
@@ -22,11 +24,66 @@
     .warn{color:#b45309}
     .err{color:#b91c1c}
     .muted{color:#6b7280;font-size:12px}
-    .btn{padding:10px 16px;border:0;border-radius:6px;cursor:pointer;font-weight:600}
+    .btn{padding:10px 20px;border:0;border-radius:6px;cursor:pointer;font-weight:600;font-size:14px;width:160px;transition:all 0.2s;box-sizing:border-box}
     .btn-primary{background:#2563eb;color:#fff}
+    .btn-primary:hover:not([disabled]){background:#1d4ed8}
     .btn-secondary{background:#6b7280;color:#fff}
+    .btn-secondary:hover:not([disabled]){background:#4b5563}
     .btn[disabled]{opacity:.5;cursor:not-allowed}
-    input[type=file]{width:100%}
+    .btn-group{display:flex;gap:12px;align-items:center}
+    input[type=file]{width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:14px}
+    
+    /* Koyu Mod Düzenlemeleri */
+    html[data-theme="dark"] body,
+    html.force-dark body {
+      background:#111827;
+      color:#ffffff;
+    }
+    html[data-theme="dark"] .card,
+    html.force-dark .card {
+      background:#111827;
+      border:1px solid rgba(255,255,255,0.1);
+      color:#ffffff;
+    }
+    html[data-theme="dark"] .help,
+    html.force-dark .help {
+      background:#111827;
+      border-left:3px solid #60a5fa;
+      border:1px solid rgba(255,255,255,0.1);
+    }
+    html[data-theme="dark"] .help h3,
+    html.force-dark .help h3 {
+      color:#60a5fa;
+    }
+    html[data-theme="dark"] .help p,
+    html.force-dark .help p {
+      color:#d1d5db;
+    }
+    html[data-theme="dark"] table,
+    html.force-dark table {
+      background:#111827;
+    }
+    html[data-theme="dark"] th,
+    html.force-dark th {
+      background:#111827;
+      color:#ffffff;
+      border-bottom:1px solid rgba(255,255,255,0.1);
+    }
+    html[data-theme="dark"] td,
+    html.force-dark td {
+      color:#ffffff;
+      border-bottom:1px solid rgba(255,255,255,0.1);
+    }
+    html[data-theme="dark"] .muted,
+    html.force-dark .muted {
+      color:#9ca3af;
+    }
+    html[data-theme="dark"] input[type=file],
+    html.force-dark input[type=file] {
+      background:#111827;
+      border:1px solid rgba(255,255,255,0.1);
+      color:#ffffff;
+    }
   </style>
 </head>
 <body>
@@ -34,17 +91,38 @@
   <header id="app-header"></header>
 
   <div class="container">
+    <!-- Breadcrumb Navigation -->
+    <div class="tb-breadcrumb" id="breadcrumb">
+      <span class="tb-crumb">
+        <span class="ico">🏠</span>
+        <a href="/dashboard.html">Ana Sayfa</a>
+      </span>
+      <span class="tb-sep">›</span>
+      <span class="tb-crumb">
+        <span class="ico">📦</span>
+        <a href="/inventory-index.html">Stok Takip</a>
+      </span>
+      <span class="tb-sep">›</span>
+      <span class="tb-crumb">
+        <span class="ico">📥</span>
+        <span>Stok İçe Aktar</span>
+      </span>
+    </div>
+    
     <h1>Stok Kartı İçe Aktar</h1>
     <p class="muted">Excel dosyanızdan stok kartlarını toplu olarak içe aktarın.</p>
 
     <div class="card">
       <h2 style="margin:0 0 12px 0;font-size:18px">Excel Dosyası</h2>
-      <input id="stockFile" type="file" accept=".xls,.xlsx" />
+      <div class="btn-group" style="margin-bottom:12px">
+        <button class="btn btn-secondary" id="btnDownloadTemplate">📥 Şablon İndir</button>
+        <input id="stockFile" type="file" accept=".xls,.xlsx" style="flex:1" />
+      </div>
       
       <div class="help">
         <h3>📋 Beklenen Kolonlar:</h3>
-        <p>Stok Kodu | Ürün Adı | Marka | Model | Birim | KDV Oranı | Alım Fiyatı | Satış Fiyatı | Özel Kod 1 | Özel Kod 2 | Özel Kod 3</p>
-        <p style="margin-top:8px"><strong>Not:</strong> İlk satır başlık olmalı. Stok Kodu ve Ürün Adı zorunludur.</p>
+        <p>Sıra | Stok Kodu | Ürün Adı | <strong>Barkod</strong> | Marka | Model | Birim | KDV Oranı | Alım Fiyatı | Satış Fiyatı | Özel Kod 1 | Özel Kod 2 | Özel Kod 3 | <strong>Depo Kodu</strong> | Maksimum Yerleşim Kapasitesi | Minimum Stok Seviyesi | Kayıt Tarihi | Son Güncelleme Tarihi</p>
+        <p style="margin-top:8px"><strong>Not:</strong> İlk satır başlık olmalı. Stok Kodu ve Ürün Adı zorunludur. <strong>Depo Kodu</strong> opsiyoneldir - şablonu indirdiğinizde mevcut depo kodlarınız dropdown'dan seçilebilir. Şablonu indirip doldurarak kullanabilirsiniz.</p>
       </div>
     </div>
 
@@ -55,7 +133,7 @@
         <table id="previewTable" style="display:none">
           <thead>
             <tr>
-              <th>SKU</th><th>Ürün Adı</th><th>Marka</th><th>Model</th><th>Birim</th><th>KDV %</th><th>Alım</th><th>Satış</th><th>Durum</th>
+              <th>SKU</th><th>Ürün Adı</th><th>Barkod</th><th>Marka</th><th>Model</th><th>Birim</th><th>KDV %</th><th>Alım</th><th>Satış</th><th>Depo Kodu</th><th>Durum</th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -68,7 +146,7 @@
       <div id="statsInfo" class="muted">Henüz dosya yüklenmedi.</div>
     </div>
 
-    <div style="display:flex; gap:8px; justify-content:flex-end">
+    <div class="btn-group" style="justify-content:flex-end;margin-top:16px">
       <button class="btn btn-secondary" id="btnBack" onclick="history.back()">Geri</button>
       <button class="btn btn-primary" id="btnImport" disabled>İçe Aktar</button>
     </div>
@@ -76,6 +154,8 @@
 
   <!-- XLSX CDN -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- ExcelJS CDN - Stil desteği için -->
+  <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
   <!-- Firebase -->
   <script type="module" src="/firebase.js"></script>
   <!-- Header -->

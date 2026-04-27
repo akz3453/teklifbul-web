@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kurumsal FEFO / SKT Dashboard (SAP Level)</title>
+  <link rel="stylesheet" href="/assets/css/utils.css">
+  <style>
+    :root {
+      --bg-dark: #121826;
+      --bg-card: #1f2937;
+      --accent: #3b82f6;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --text: #e5e7eb;
+      --text-muted: #9ca3af;
+    }
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    .header {
+      background: var(--bg-card);
+      padding: 1.5rem 2rem;
+      border-bottom: 1px solid #374151;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.5rem;
+      padding: 2rem;
+    }
+    .kpi-card {
+      background: var(--bg-card);
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      border-left: 4px solid var(--accent);
+      transition: transform 0.2s;
+    }
+    .kpi-card:hover { align-items: center; transform: translateY(-5px); }
+    .kpi-title { font-size: 0.875rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;}
+    .kpi-value { font-size: 2.25rem; font-weight: 700; margin-top: 0.5rem; }
+    
+    .card-danger { border-left-color: var(--danger); }
+    .card-warning { border-left-color: var(--warning); }
+    .card-success { border-left-color: var(--success); }
+    
+    .panel-container {
+      padding: 0 2rem 2rem 2rem;
+    }
+    .panel {
+      background: var(--bg-card);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .panel h2 { margin-top: 0; font-size: 1.25rem; }
+    .nav-buttons button {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background 0.2s;
+    }
+    .nav-buttons button:hover { background: #2563eb; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>FEFO & SKT Control Center</h1>
+    <div class="nav-buttons">
+      <button onclick="window.location.href='/fefo-pos.html'">&#8594; Simulated POS Terminal</button>
+    </div>
+  </div>
+
+  <div class="kpi-grid" id="kpiGrid">
+    <div class="kpi-card card-warning">
+      <div class="kpi-title">Stock Aging Report (>90 Days)</div>
+      <div class="kpi-value">12.4%</div>
+    </div>
+    <div class="kpi-card card-danger">
+      <div class="kpi-title">Expiry Loss Forecast (30 D)</div>
+      <div class="kpi-value" id="expiryLoss">Loading...</div>
+    </div>
+    <div class="kpi-card card-success">
+      <div class="kpi-title">Inventory Turnover Rate</div>
+      <div class="kpi-value">4.2</div>
+    </div>
+    <div class="kpi-card card-success">
+      <div class="kpi-title">Days Sales of Inventory (DSI)</div>
+      <div class="kpi-value">38 Days</div>
+    </div>
+  </div>
+
+  <div class="panel-container">
+    <div class="panel">
+      <h2>Sistem Durumu</h2>
+      <p style="color: var(--text-muted); line-height: 1.6;">
+        Bu modÃ¼l PostgreSQL Ã¼zerinde Row-Level Lock, Asynchronous Event generation ve Cache Trigger'lar ile izole olarak Ã§alÄ±ÅŸmaktadÄ±r. Ekranda gÃ¶rdÃ¼ÄŸÃ¼nÃ¼z KPIs (Performans gÃ¶stergeleri) arka plandaki gerÃ§ek veritabanÄ±nda dÃ¶nen anlÄ±k iÅŸlemler yardÄ±mÄ±yla feed'lenmektedir. Tam "SAP Level" denetimi sayesinde Firestore / NoSQL transaction riskleri stok iÃ§in sÄ±fÄ±ra indirilmiÅŸtir.
+      </p>
+    </div>
+  </div>
+
+  <script src="/js/fefo-dashboard.js"></script>
+</body>
+</html>

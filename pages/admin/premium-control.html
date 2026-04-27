@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Premium Kontrol Paneli - NEFISOFT Admin</title>
+  <!-- Teklifbul Rule v1.0 - Tema standardı: tb_theme key, FOUC önleme -->
+  <script src="/assets/js/theme-init.js"></script>
+  <link rel="stylesheet" href="/utils.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <style>
+    body { margin: 0; font-family: system-ui, Arial; background: #f5f5f5; }
+    html[data-theme="dark"] body { background: #111827; color: #ffffff; }
+    
+    /* Teklifbul Rule v1.0 - Admin sayfası başlangıçta gizli, admin kontrolü sonrası gösterilecek */
+    body:not(.admin-verified) {
+      display: none !important;
+    }
+    
+    .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+    
+    .page-header { margin-bottom: 24px; }
+    .page-header h1 { margin: 0 0 8px 0; font-size: 28px; font-weight: 600; color: #1f2937; }
+    html[data-theme="dark"] .page-header h1 { color: #ffffff; }
+    .page-header p { margin: 0; color: #6b7280; font-size: 14px; }
+    html[data-theme="dark"] .page-header p { color: rgba(255,255,255,0.7); }
+    
+    .card { background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+    html[data-theme="dark"] .card { background: #111827; border: 1px solid rgba(255,255,255,0.25); color: #ffffff; }
+    
+    .search-section { margin-bottom: 24px; }
+    .search-form { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+    .form-group { flex: 1; min-width: 200px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #374151; }
+    html[data-theme="dark"] .form-group label { color: #ffffff; }
+    .form-group input,
+    .form-group select { width: 100%; padding: 10px; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 14px; background: white; color: #1f2937; }
+    html[data-theme="dark"] .form-group input,
+    html[data-theme="dark"] .form-group select { background: #1f2937; border: 1px solid rgba(255,255,255,0.25); color: #ffffff; }
+    
+    .btn { padding: 10px 20px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .btn-primary { background: #3b82f6; color: white; }
+    .btn-primary:hover { background: #2563eb; }
+    .btn-success { background: #10b981; color: white; }
+    .btn-success:hover { background: #059669; }
+    .btn-danger { background: #ef4444; color: white; }
+    .btn-danger:hover { background: #dc2626; }
+    
+    .user-info { background: #eff6ff; border-left: 4px solid #3b82f6; padding: 16px; border-radius: 6px; margin-bottom: 20px; }
+    html[data-theme="dark"] .user-info { background: #1e3a8a; border-left-color: #60a5fa; }
+    .user-info h3 { margin: 0 0 12px 0; font-size: 18px; color: #1e40af; }
+    html[data-theme="dark"] .user-info h3 { color: #93c5fd; }
+    .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+    .info-item { }
+    .info-label { font-size: 12px; color: #6b7280; font-weight: 600; margin-bottom: 4px; }
+    html[data-theme="dark"] .info-label { color: rgba(255,255,255,0.7); }
+    .info-value { font-size: 16px; font-weight: 600; color: #1f2937; }
+    html[data-theme="dark"] .info-value { color: #ffffff; }
+    
+    .plan-update-section { margin-top: 24px; }
+    .plan-update-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
+    
+    .table-container { overflow-x: auto; margin-top: 20px; }
+    .table { width: 100%; border-collapse: collapse; }
+    .table th, .table td { border-bottom: 1px solid #e5e7eb; padding: 12px; text-align: left; font-size: 14px; }
+    html[data-theme="dark"] .table th, html[data-theme="dark"] .table td { border-bottom: 1px solid rgba(255,255,255,0.25); color: #ffffff; }
+    .table th { background: #f9fafb; font-weight: 600; color: #374151; }
+    html[data-theme="dark"] .table th { background: #111827; color: #ffffff; }
+    
+    .badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+    .badge.free { background: #f3f4f6; color: #374151; }
+    .badge.premium { background: #dbeafe; color: #1e40af; }
+    .badge.premium-plus { background: #fef3c7; color: #92400e; }
+    html[data-theme="dark"] .badge.free { background: #374151; color: #ffffff; }
+    html[data-theme="dark"] .badge.premium { background: #1e3a8a; color: #93c5fd; }
+    html[data-theme="dark"] .badge.premium-plus { background: #78350f; color: #fbbf24; }
+    
+    .alert { padding: 12px 16px; border-radius: 6px; margin-bottom: 16px; }
+    .alert.success { background: #d1fae5; color: #065f46; border-left: 4px solid #10b981; }
+    .alert.error { background: #fee2e2; color: #991b1b; border-left: 4px solid #ef4444; }
+    html[data-theme="dark"] .alert.success { background: #064e3b; color: #34d399; }
+    html[data-theme="dark"] .alert.error { background: #7f1d1d; color: #fca5a5; }
+    
+    .loading { text-align: center; padding: 40px; color: #6b7280; }
+    html[data-theme="dark"] .loading { color: rgba(255,255,255,0.7); }
+  </style>
+</head>
+<body>
+  <!-- Common Header -->
+  <header id="app-header"></header>
+
+  <main class="container">
+    <div class="page-header">
+      <h1>🔧 Premium Kontrol Paneli</h1>
+      <p>Kullanıcı planlarını yönetin ve premium hesapları kontrol edin</p>
+    </div>
+    
+    <!-- Admin Kontrolü -->
+    <div id="admin-check" class="loading">Yükleniyor...</div>
+    
+    <!-- Ana İçerik -->
+    <div id="main-content" style="display:none;">
+      <!-- Kullanıcı Arama -->
+      <div class="card search-section">
+        <h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 600;">Kullanıcı Arama</h2>
+        <div class="search-form">
+          <div class="form-group">
+            <label>Email ile Ara</label>
+            <input type="email" id="search-email" placeholder="ornek@email.com" />
+          </div>
+          <div class="form-group">
+            <label>veya UID ile Ara</label>
+            <input type="text" id="search-uid" placeholder="Kullanıcı UID" />
+          </div>
+          <button class="btn btn-primary" id="btn-search">🔍 Ara</button>
+        </div>
+      </div>
+      
+      <!-- Kullanıcı Bilgileri -->
+      <div id="user-info-section" style="display:none;">
+        <div class="card user-info">
+          <h3>Kullanıcı Bilgileri</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="info-label">Email</div>
+              <div class="info-value" id="user-email">-</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">UID</div>
+              <div class="info-value" id="user-uid">-</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Mevcut Plan</div>
+              <div class="info-value" id="user-plan">-</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Premium Durumu</div>
+              <div class="info-value" id="user-premium">-</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Bitiş Tarihi</div>
+              <div class="info-value" id="user-expires">-</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Şirket ID</div>
+              <div class="info-value" id="user-company">-</div>
+            </div>
+          </div>
+          
+          <div class="plan-update-section">
+            <h3 style="margin: 0 0 16px 0; font-size: 18px;">Plan Güncelle</h3>
+            <div class="plan-update-form">
+              <div class="form-group">
+                <label>Yeni Plan *</label>
+                <select id="new-plan">
+                  <option value="free">Ücretsiz</option>
+                  <option value="premium_monthly">Premium (Aylık)</option>
+                  <option value="premium_yearly">Premium (Yıllık)</option>
+                  <option value="premium_plus">Premium Plus</option>
+                  <option value="premium_plus_monthly">Premium Plus (Aylık)</option>
+                  <option value="premium_plus_yearly">Premium Plus (Yıllık)</option>
+                </select>
+              </div>
+              <div class="form-group" id="ai-provider-group" style="display: none;">
+                <label>AI Provider (Premium Plus için)</label>
+                <select id="ai-provider">
+                  <option value="gemini">Google Gemini 3.0</option>
+                  <option value="openai">OpenAI GPT-4o-mini</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Başlangıç Tarihi</label>
+                <input type="datetime-local" id="start-date" />
+                <small style="display: block; margin-top: 4px; color: #6b7280; font-size: 12px;">Boş bırakılırsa bugünün tarihi kullanılır</small>
+              </div>
+              <div class="form-group">
+                <label>Bitiş Tarihi</label>
+                <input type="datetime-local" id="expires-date" />
+                <small style="display: block; margin-top: 4px; color: #6b7280; font-size: 12px;">Boş bırakılırsa plan tipine göre otomatik hesaplanır</small>
+              </div>
+              <div class="form-group" style="display: flex; align-items: flex-end; gap: 8px;">
+                <button class="btn btn-success" id="btn-update-plan" style="flex: 1;">✅ Planı Güncelle</button>
+                <button class="btn btn-danger" id="btn-downgrade-free" style="flex: 1;">⬇️ Ücretsiz Yap</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Filtreler -->
+      <div class="card">
+        <h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 600;">Filtreler</h2>
+        <div class="plan-update-form">
+          <div class="form-group">
+            <label>Plan Tipi</label>
+            <select id="filter-plan">
+              <option value="">Tümü</option>
+              <option value="free">Ücretsiz</option>
+              <option value="premium">Premium</option>
+              <option value="premium_plus">Premium Plus</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Durum</label>
+            <select id="filter-status">
+              <option value="">Tümü</option>
+              <option value="active">Aktif</option>
+              <option value="expired">Süresi Dolmuş</option>
+              <option value="expiring_soon">Yakında Dolacak (7 gün)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Email ile Ara</label>
+            <input type="text" id="filter-email" placeholder="Email ile filtrele..." />
+          </div>
+          <div class="form-group">
+            <label>Sayfa Başına Kayıt</label>
+            <select id="filter-limit">
+              <option value="50">50</option>
+              <option value="100" selected>100</option>
+              <option value="200">200</option>
+              <option value="500">500</option>
+            </select>
+          </div>
+          <div class="form-group" style="display: flex; align-items: flex-end;">
+            <button class="btn btn-primary" id="btn-apply-filters" style="width: 100%;">🔍 Filtrele</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Kullanıcı Listesi -->
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h2 style="margin: 0; font-size: 20px; font-weight: 600;">Tüm Kullanıcılar</h2>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-outline" id="btn-refresh">🔄 Yenile</button>
+            <button class="btn btn-outline" id="btn-export-excel">📊 Excel İndir</button>
+          </div>
+        </div>
+        <div class="table-container">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Email</th>
+                <th>UID</th>
+                <th>Plan</th>
+                <th>AI Provider</th>
+                <th>Başlangıç</th>
+                <th>Bitiş</th>
+                <th>Kalan Süre</th>
+                <th>Şirket ID</th>
+                <th>İşlemler</th>
+              </tr>
+            </thead>
+            <tbody id="users-table-body">
+              <tr>
+                <td colspan="9" class="loading">Yükleniyor...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="margin-top: 16px; display: flex; justify-content: space-between; align-items: center;">
+          <div id="pagination-info" style="color: #6b7280; font-size: 14px;"></div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-outline" id="btn-prev" disabled>← Önceki</button>
+            <button class="btn btn-outline" id="btn-next">Sonraki →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    // Teklifbul Rule v1.0 - XSS Protection
+    import DOMPurify from 'https://cdn.jsdelivr.net/npm/dompurify@3.2.2/+esm';
+    // Teklifbul Rule v1.0
+    import { initGlobalHeader } from '../../assets/js/ui/header.js';
+    import { requireAuth, db } from '../../firebase.js';
+    import { logger } from '../../src/shared/log/logger.js';
+    import { toast } from '../../src/shared/ui/toast.js';
+    import { MESSAGES } from '../../src/shared/constants/messages.js';
+    
+    let currentUserData = null;
+    let currentCompanyId = null;
+    
+    // Teklifbul Rule v1.0 - Admin kontrolü: Sayfa yüklenmeden önce yapılmalı
+    async function checkAdminAccess() {
+      try {
+        const user = await requireAuth();
+        if (!user) {
+          window.location.href = './login.html';
+          return false;
+        }
+        
+        const token = await user.getIdToken();
+        const response = await fetch('/api/admin/users/list?limit=1', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (!response.ok) {
+          if (response.status === 403) {
+            // Admin değilse sayfa hiç gösterilmeden yönlendir
+            window.location.href = '/index.html';
+            return false;
+          }
+          throw new Error('Admin kontrolü başarısız');
+        }
+        
+        // Admin kontrolü başarılı - sayfayı göster
+        document.body.classList.add('admin-verified');
+        document.getElementById('admin-check').style.display = 'none';
+        document.getElementById('main-content').style.display = 'block';
+        return true;
+      } catch (error) {
+        logger.error('Admin kontrolü hatası', error);
+        // Hata durumunda sayfa gösterilmeden yönlendir
+        window.location.href = '/index.html';
+        return false;
+      }
+    }
+    
+    // Kullanıcı ara
+    async function searchUser() {
+      const email = document.getElementById('search-email').value.trim();
+      const uid = document.getElementById('search-uid').value.trim();
+      
+      if (!email && !uid) {
+        toast.error(MESSAGES.ERROR_ADMIN_PREMIUM_EMAIL_UID_REQUIRED);
+        return;
+      }
+      
+      try {
+        const user = await requireAuth();
+        const token = await user.getIdToken();
+        
+        const params = new URLSearchParams();
+        if (email) params.append('email', email);
+        if (uid) params.append('uid', uid);
+        
+        const response = await fetch(`/api/admin/users/search?${params.toString()}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Kullanıcı bulunamadı');
+        }
+        
+        const data = await response.json();
+        currentUserData = data;
+        displayUserInfo(data);
+        toast.success(MESSAGES.SUCCESS_ADMIN_PREMIUM_USER_FOUND);
+      } catch (error) {
+        logger.error('Kullanıcı arama hatası', error);
+        toast.error(MESSAGES.ERROR_ADMIN_PREMIUM_USER_NOT_FOUND.replace('{message}', error.message));
+      }
+    }
+    
+    // Kullanıcı bilgilerini göster (ve şirket planını yükle)
+    async function displayUserInfo(user) {
+      document.getElementById('user-info-section').style.display = 'block';
+      document.getElementById('user-email').textContent = user.email || user.contactEmails?.[0] || '-';
+      document.getElementById('user-uid').textContent = user.uid || '-';
+      
+      currentCompanyId = user.companyId || user.activeCompanyId || null;
+      document.getElementById('user-company').textContent = currentCompanyId || '-';
+
+      // Legacy user-based plan alanlarını logla ve yok say
+      if (user.planId || typeof user.isPremium === 'boolean') {
+        logger.info('legacy user plan ignored', {
+          uid: user.uid,
+          planId: user.planId || null,
+          isPremium: user.isPremium
+        });
+      }
+
+      // Teklifbul Rule v1.0 - XSS Protection + Company-based plan badge
+      let planId = 'free';
+      let planBadge = getPlanBadge(planId);
+      let isPremiumFlag = false;
+
+      if (currentCompanyId) {
+        try {
+          const { getCompanyPlan, isPremium } = await import('../../assets/js/state/company-plan.js');
+          const plan = await getCompanyPlan(currentCompanyId);
+          planId = plan.planId || 'free';
+          planBadge = getPlanBadge(planId);
+          isPremiumFlag = isPremium(planId);
+        } catch (e) {
+          logger.warn('Şirket planı yüklenemedi (admin premium-control)', { companyId: currentCompanyId, error: e });
+        }
+      } else {
+        logger.warn('Admin Premium: Kullanıcının companyId/activeCompanyId alanı yok', { uid: user.uid });
+      }
+
+      document.getElementById('user-plan').innerHTML = DOMPurify.sanitize(planBadge, {
+        ALLOWED_TAGS: ['span'],
+        ALLOWED_ATTR: ['class', 'style']
+      });
+      document.getElementById('user-premium').textContent = isPremiumFlag ? '✅ Aktif' : '❌ Pasif';
+      
+      // Tarih alanları kullanıcı bazlı subscription için legacy - sadece gösterim için tutulabilir
+      if (user.expiresAt) {
+        const expiresDate = user.expiresAt instanceof Date ? user.expiresAt : new Date(user.expiresAt);
+        document.getElementById('user-expires').textContent = expiresDate.toLocaleDateString('tr-TR', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      } else {
+        document.getElementById('user-expires').textContent = '-';
+      }
+      
+      // Form değerlerini doldur (company-based plan için)
+      const planSelect = document.getElementById('new-plan');
+      const aiProviderGroup = document.getElementById('ai-provider-group');
+      const aiProviderSelect = document.getElementById('ai-provider');
+      
+      if (planSelect) {
+        planSelect.value = planId || 'free';
+        updateAiProviderVisibility();
+        planSelect.addEventListener('change', updateAiProviderVisibility);
+      }
+      
+      if (aiProviderSelect) {
+        aiProviderSelect.value = user.ai_provider || 'gemini';
+      }
+      
+      // Başlangıç / bitiş tarihi alanlarını devre dışı bırak (company-based planda kullanılmıyor)
+      const startDateInput = document.getElementById('start-date');
+      const expiresDateInput = document.getElementById('expires-date');
+      if (startDateInput) {
+        startDateInput.value = '';
+        startDateInput.disabled = true;
+      }
+      if (expiresDateInput) {
+        expiresDateInput.value = '';
+        expiresDateInput.disabled = true;
+      }
+    }
+    
+    // AI Provider görünürlüğünü güncelle
+    function updateAiProviderVisibility() {
+      const planSelect = document.getElementById('new-plan');
+      const aiProviderGroup = document.getElementById('ai-provider-group');
+      
+      if (planSelect && aiProviderGroup) {
+        const selectedPlan = planSelect.value;
+        const isPremiumPlus = selectedPlan.includes('premium_plus');
+        aiProviderGroup.style.display = isPremiumPlus ? 'block' : 'none';
+      }
+    }
+    
+    // Plan badge oluştur
+    function getPlanBadge(planId) {
+      const badges = {
+        free: '<span class="badge free">Ücretsiz</span>',
+        premium: '<span class="badge premium">Premium</span>',
+        premium_monthly: '<span class="badge premium">Premium (Aylık)</span>',
+        premium_yearly: '<span class="badge premium">Premium (Yıllık)</span>',
+        premium_plus: '<span class="badge premium-plus">Premium Plus</span>',
+        premium_plus_monthly: '<span class="badge premium-plus">Premium Plus (Aylık)</span>',
+        premium_plus_yearly: '<span class="badge premium-plus">Premium Plus (Yıllık)</span>',
+      };
+      return badges[planId] || badges.free;
+    }
+    
+    // Plan güncelle (company-based: companies/{companyId}.planId)
+    async function updatePlan() {
+      if (!currentUserData || !currentCompanyId) {
+        toast.error(MESSAGES.ERROR_ADMIN_PREMIUM_USER_SEARCH_REQUIRED || 'Önce bir kullanıcı ve şirket seçin');
+        return;
+      }
+      
+      const planSelect = document.getElementById('new-plan');
+      if (!planSelect) {
+        toast.error('Plan seçimi bulunamadı');
+        return;
+      }
+      
+      const planId = planSelect.value;
+      const aiProvider = document.getElementById('ai-provider')?.value || null;
+      
+      if (!planId) {
+        toast.error('Lütfen bir plan seçin');
+        return;
+      }
+      
+      const identifier = currentUserData.email || currentUserData.contactEmails?.[0] || currentUserData.uid || currentCompanyId;
+      if (!confirm(`Şirket planını \"${planId}\" olarak güncellemek istediğinize emin misiniz?\n\nHedef: ${identifier}\nCompanyId: ${currentCompanyId}`)) {
+        return;
+      }
+      
+      try {
+        const adminUser = await requireAuth();
+        const { doc, updateDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js');
+        
+        logger.group('Company Plan Güncelleme');
+        logger.info('Company plan güncelleme isteği', {
+          companyId: currentCompanyId,
+          planId,
+          aiProvider
+        });
+        
+        const updatePayload = {
+          planId,
+          planSource: 'admin_override',
+          planUpdatedBy: adminUser.uid,
+          planUpdatedAt: serverTimestamp()
+        };
+        
+        await updateDoc(doc(db, 'companies', currentCompanyId), updatePayload);
+        
+        logger.info('Company plan güncelleme başarılı', {
+          companyId: currentCompanyId,
+          planId
+        });
+        logger.end();
+        
+        toast.success(MESSAGES.SUCCESS_ADMIN_PREMIUM_PLAN_UPDATED || 'Şirket planı güncellendi');
+        
+        // Kullanıcı bilgilerini yenile
+        await displayUserInfo(currentUserData);
+        await loadUsersList();
+      } catch (error) {
+        logger.error('Company plan güncelleme hatası', error);
+        const errorMessage = error instanceof Error ? error.message : 'Bilinmeyen hata';
+        toast.error(
+          (MESSAGES.ERROR_ADMIN_PREMIUM_PLAN_UPDATE || 'Plan güncellenemedi: {message}')
+            .replace('{message}', errorMessage)
+        );
+      }
+    }
+    
+    // Ücretsiz plana düşür (company-based)
+    async function downgradeToFree() {
+      if (!currentUserData || !currentCompanyId) {
+        toast.error(MESSAGES.ERROR_ADMIN_PREMIUM_USER_SEARCH_REQUIRED || 'Önce bir kullanıcı ve şirket seçin');
+        return;
+      }
+      
+      if (!confirm(`${currentUserData.email || currentUserData.uid || currentCompanyId} için planı ÜCRETSİZ yapmak istediğinize emin misiniz?`)) {
+        return;
+      }
+      
+      const planSelect = document.getElementById('new-plan');
+      if (planSelect) {
+        planSelect.value = 'free';
+      }
+      await updatePlan();
+    }
+    
+    let currentPage = 0;
+    let currentFilters = {};
+    
+    // Kullanıcı listesi yükle
+    async function loadUsersList() {
+      try {
+        const user = await requireAuth();
+        const token = await user.getIdToken();
+        
+        const limit = parseInt(document.getElementById('filter-limit')?.value || '100');
+        const planFilter = document.getElementById('filter-plan')?.value || '';
+        const statusFilter = document.getElementById('filter-status')?.value || '';
+        const emailFilter = document.getElementById('filter-email')?.value.trim() || '';
+        
+        let url = `/api/admin/users/list?limit=${limit}`;
+        
+        // Plan filtresi
+        if (planFilter === 'premium') {
+          url += '&isPremium=true';
+        } else if (planFilter === 'premium_plus') {
+          url += `&planId=premium_plus&planId=premium_plus_monthly&planId=premium_plus_yearly`;
+        } else if (planFilter === 'free') {
+          url += '&planId=free';
+        }
+        
+        const response = await fetch(url, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Kullanıcı listesi yüklenemedi');
+        }
+        
+        const data = await response.json();
+        const tbody = document.getElementById('users-table-body');
+        
+        if (!data.users || data.users.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px;">Kullanıcı bulunamadı</td></tr>';
+          document.getElementById('pagination-info').textContent = '0 kullanıcı';
+          return;
+        }
+        
+        // Client-side filtreleme (email ve durum)
+        let filteredUsers = data.users;
+        
+        // Email filtresi
+        if (emailFilter) {
+          filteredUsers = filteredUsers.filter(u => {
+            const email = u.email || u.contactEmails?.[0] || '';
+            return email.toLowerCase().includes(emailFilter.toLowerCase());
+          });
+        }
+        
+        // Durum filtresi
+        if (statusFilter) {
+          const now = new Date();
+          filteredUsers = filteredUsers.filter(u => {
+            if (!u.expiresAt) return statusFilter === 'expired';
+            
+            const expiresDate = u.expiresAt instanceof Date ? u.expiresAt : new Date(u.expiresAt);
+            const daysUntilExpiry = Math.ceil((expiresDate - now) / (1000 * 60 * 60 * 24));
+            
+            if (statusFilter === 'active') {
+              return expiresDate > now && daysUntilExpiry > 7;
+            } else if (statusFilter === 'expired') {
+              return expiresDate <= now;
+            } else if (statusFilter === 'expiring_soon') {
+              return expiresDate > now && daysUntilExpiry <= 7 && daysUntilExpiry >= 0;
+            }
+            return true;
+          });
+        }
+        
+        // Pagination
+        const pageSize = limit;
+        const totalPages = Math.ceil(filteredUsers.length / pageSize);
+        const startIdx = currentPage * pageSize;
+        const endIdx = startIdx + pageSize;
+        const paginatedUsers = filteredUsers.slice(startIdx, endIdx);
+        
+        // Pagination kontrolleri
+        document.getElementById('btn-prev').disabled = currentPage === 0;
+        document.getElementById('btn-next').disabled = currentPage >= totalPages - 1;
+        document.getElementById('pagination-info').textContent = 
+          `${startIdx + 1}-${Math.min(endIdx, filteredUsers.length)} / ${filteredUsers.length} kullanıcı`;
+        
+        if (paginatedUsers.length === 0) {
+          // Teklifbul Rule v1.0 - XSS Protection
+          tbody.innerHTML = DOMPurify.sanitize('<tr><td colspan="9" style="text-align: center; padding: 40px;">Filtre kriterlerine uygun kullanıcı bulunamadı</td></tr>');
+          return;
+        }
+        
+        // Teklifbul Rule v1.0 - XSS Protection: Sanitize helper
+        const sanitize = (str) => DOMPurify.sanitize(String(str || ''), { ALLOWED_TAGS: [] });
+        const sanitizeAttr = (str) => DOMPurify.sanitize(String(str || ''), { ALLOWED_TAGS: [] });
+        
+        const html = paginatedUsers.map(u => {
+          const email = u.email || u.contactEmails?.[0] || '-';
+          const expiresDate = u.expiresAt ? (u.expiresAt instanceof Date ? u.expiresAt : new Date(u.expiresAt)) : null;
+          const startDate = u.subscriptionStartedAt ? (u.subscriptionStartedAt instanceof Date ? u.subscriptionStartedAt : new Date(u.subscriptionStartedAt)) : null;
+          
+          // Kalan süre hesapla
+          let remainingDays = '-';
+          if (expiresDate) {
+            const now = new Date();
+            const diffTime = expiresDate - now;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays < 0) {
+              remainingDays = `<span style="color: #ef4444;">Süresi dolmuş (${Math.abs(diffDays)} gün önce)</span>`;
+            } else if (diffDays <= 7) {
+              remainingDays = `<span style="color: #f59e0b;">${diffDays} gün kaldı</span>`;
+            } else {
+              remainingDays = `${diffDays} gün`;
+            }
+          }
+          
+          // Sanitize user input - Teklifbul Rule v1.0 - XSS Protection
+          const safeEmail = sanitize(email);
+          const safeUid = sanitize(u.uid || '');
+          const safeCompanyId = sanitize(u.companyId || u.activeCompanyId || '-');
+          const safePlanBadge = getPlanBadge(u.planId || 'free'); // getPlanBadge zaten güvenli HTML döndürüyor
+          const aiProvider = u.ai_provider ? (u.ai_provider === 'gemini' ? '🤖 Gemini' : '🤖 OpenAI') : '-';
+          const safeStartDate = startDate ? sanitize(startDate.toLocaleDateString('tr-TR', { year: 'numeric', month: 'short', day: 'numeric' })) : '-';
+          const safeExpiresDate = expiresDate ? sanitize(expiresDate.toLocaleDateString('tr-TR', { year: 'numeric', month: 'short', day: 'numeric' })) : '-';
+          const safeRemainingDays = DOMPurify.sanitize(remainingDays, { ALLOWED_TAGS: ['span'], ALLOWED_ATTR: ['style'] });
+          
+          return `
+            <tr>
+              <td><strong>${safeEmail}</strong></td>
+              <td style="font-size: 11px; font-family: monospace; max-width: 150px; overflow: hidden; text-overflow: ellipsis;">${safeUid}</td>
+              <td>${safePlanBadge}</td>
+              <td>${sanitize(aiProvider)}</td>
+              <td>${safeStartDate}</td>
+              <td>${safeExpiresDate}</td>
+              <td>${safeRemainingDays}</td>
+              <td style="font-size: 11px; font-family: monospace; max-width: 150px; overflow: hidden; text-overflow: ellipsis;">${safeCompanyId}</td>
+              <td>
+                <button class="btn btn-primary" style="padding: 6px 12px; font-size: 12px;" 
+                        onclick="editUser('${sanitizeAttr(u.uid)}', '${sanitizeAttr(email)}')">Düzenle</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+        
+        // Sanitize final HTML - Teklifbul Rule v1.0 - XSS Protection
+        tbody.innerHTML = DOMPurify.sanitize(html, {
+          ALLOWED_TAGS: ['tr', 'td', 'strong', 'button', 'span'],
+          ALLOWED_ATTR: ['class', 'style', 'onclick', 'colspan']
+        });
+      } catch (error) {
+        logger.error('Kullanıcı listesi yükleme hatası', error);
+        // Teklifbul Rule v1.0 - XSS Protection: Sanitize error message
+        const errorMsg = DOMPurify.sanitize(error.message || 'Bilinmeyen hata', { ALLOWED_TAGS: [] });
+        document.getElementById('users-table-body').innerHTML = DOMPurify.sanitize(
+          '<tr><td colspan="9" style="text-align: center; padding: 40px; color: #ef4444;">Hata: ' + errorMsg + '</td></tr>'
+        );
+      }
+    }
+    
+    // Kullanıcı düzenle
+    window.editUser = function(uid, email) {
+      // Email varsa email ile ara (daha okunabilir)
+      if (email) {
+        document.getElementById('search-email').value = email;
+        document.getElementById('search-uid').value = '';
+      } else {
+        document.getElementById('search-uid').value = uid;
+        document.getElementById('search-email').value = '';
+      }
+      searchUser();
+      document.getElementById('user-info-section').scrollIntoView({ behavior: 'smooth' });
+    };
+    
+    // Sayfa yükleme
+    async function init() {
+      // Header'ı başlat
+      await initGlobalHeader({ mount: '#app-header', activeRoute: 'admin-premium-control' });
+      
+      // Admin kontrolü
+      const hasAccess = await checkAdminAccess();
+      if (!hasAccess) {
+        return;
+      }
+      
+      // Event listener'ları ekle
+      document.getElementById('btn-search').addEventListener('click', searchUser);
+      document.getElementById('btn-update-plan').addEventListener('click', updatePlan);
+      document.getElementById('btn-downgrade-free').addEventListener('click', downgradeToFree);
+      document.getElementById('btn-apply-filters').addEventListener('click', () => {
+        currentPage = 0;
+        loadUsersList();
+      });
+      document.getElementById('btn-refresh').addEventListener('click', () => {
+        currentPage = 0;
+        loadUsersList();
+      });
+      document.getElementById('btn-export-excel').addEventListener('click', () => {
+        toast.info(MESSAGES.INFO_ADMIN_PREMIUM_EXCEL_EXPORT_SOON);
+      });
+      document.getElementById('btn-prev').addEventListener('click', () => {
+        if (currentPage > 0) {
+          currentPage--;
+          loadUsersList();
+        }
+      });
+      document.getElementById('btn-next').addEventListener('click', () => {
+        currentPage++;
+        loadUsersList();
+      });
+      
+      // Enter tuşu ile arama
+      document.getElementById('search-email').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') searchUser();
+      });
+      document.getElementById('search-uid').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') searchUser();
+      });
+      document.getElementById('filter-email').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          currentPage = 0;
+          loadUsersList();
+        }
+      });
+      
+      // Kullanıcı listesini yükle
+      await loadUsersList();
+      
+      logger.info('Premium kontrol paneli yüklendi');
+    }
+    
+    init().catch(error => {
+      logger.error('Sayfa yükleme hatası', error);
+      toast.error(MESSAGES.ERROR_ADMIN_PREMIUM_PAGE_LOAD);
+    });
+  </script>
+</body>
+</html>
+

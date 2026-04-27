@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Rol ve Yetki Yönetimi - Teklifbul</title>
+  <title>Rol ve Yetki Yönetimi - NEFISOFT</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%233b82f6' rx='6'/%3E%3Ctext x='16' y='22' font-family='Arial' font-size='18' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E" />
   <link rel="stylesheet" href="/css/ui-standard.css" />
   <style>
@@ -629,6 +629,23 @@
         }
       }
     };
+    
+    const cloneRolePermissions = (sourcePrefix, targetPrefix) => {
+      Object.entries(rolePermissions).forEach(([roleKey, roleData]) => {
+        if (!roleKey.startsWith(`${sourcePrefix}:`)) return;
+        const suffix = roleKey.split(':')[1];
+        const targetKey = `${targetPrefix}:${suffix}`;
+        if (!rolePermissions[targetKey]) {
+          rolePermissions[targetKey] = {
+            label: roleData.label,
+            permissions: { ...roleData.permissions }
+          };
+        }
+      });
+    };
+    
+    cloneRolePermissions('buyer', 'supplier');
+    cloneRolePermissions('supplier', 'buyer');
 
     // Tüm izin tipleri (buyer ve supplier için birleşik liste) - Teklifbul Rule v1.0
     const allPermissionTypes = [
@@ -841,4 +858,5 @@
   </script>
 </body>
 </html>
+
 

@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>Müşteriler</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Teklifbul Rule v1.0 - FOUC önleme: Tema hemen uygulanmalı -->
+  <script src="/assets/js/theme-init.js"></script>
+  <link rel="stylesheet" href="/utils.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <link rel="stylesheet" href="/css/ui-standard.css" />
+  <style>
+    body{font-family:system-ui, Arial; background:#f8fafc; color:#111827; margin:0}
+    .container{max-width:1400px;margin:0 auto;padding:20px}
+    h1{margin:0 0 8px 0}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:20px;margin:16px 0}
+    .search-box{position:relative;margin-bottom:16px}
+    .search-box input{width:100%;border:1px solid #d1d5db;border-radius:6px;box-sizing:border-box}
+    .search-box input:focus{outline:none;border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,0.1)}
+    table{width:100%;border-collapse:collapse;margin-top:16px;background:#fff}
+    th,td{border-bottom:1px solid #e5e7eb;padding:12px;text-align:left;font-size:13px}
+    th{background:#f9fafb;font-weight:600;color:#374151;position:sticky;top:0;z-index:10}
+    tr:hover{background:#f9fafb}
+    .badge{display:inline-block;padding:4px 8px;border-radius:4px;font-size:11px;font-weight:600}
+    .badge-archived{background:#fee2e2;color:#991b1b}
+    .badge-active{background:#dcfce7;color:#065f46}
+    .muted{color:#6b7280;font-size:12px}
+    .btn{padding:10px 20px;border:0;border-radius:6px;cursor:pointer;font-weight:600;font-size:14px;margin-right:8px}
+    .btn-primary{background:#2563eb;color:#fff}
+    .btn-primary:hover{background:#1d4ed8}
+    .btn-secondary{background:#6b7280;color:#fff}
+    .btn-secondary:hover{background:#4b5563}
+    .btn-danger{background:#dc2626;color:#fff}
+    .btn-danger:hover{background:#b91c1c}
+    .modal{display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.5)}
+    .modal-content{background:#fff;margin:5% auto;padding:20px;border-radius:8px;max-width:600px;max-height:80vh;overflow-y:auto}
+    .form-group{margin-bottom:16px}
+    .form-group label{display:block;margin-bottom:4px;font-size:12px;font-weight:600;color:#374151}
+    .form-group input,.form-group select,.form-group textarea{width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;box-sizing:border-box}
+    .form-group textarea{min-height:80px;resize:vertical}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .required::after{content:" *";color:#dc2626}
+    .close{color:#aaa;float:right;font-size:28px;font-weight:bold;cursor:pointer}
+    .close:hover{color:#000}
+    .tab-btn {
+      padding: 10px 20px;
+      border: 1px solid #e5e7eb;
+      background: #fff;
+      cursor: pointer;
+      font-weight: 600;
+      color: #6b7280;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      background: #f9fafb;
+      border-color: #d1d5db;
+    }
+    .tab-btn.active {
+      background: #2563eb;
+      color: #fff;
+      border-color: #2563eb;
+      box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+    }
+    
+    /* Koyu Mod */
+    html[data-theme="dark"] body,
+    html.force-dark body {
+      background:#111827;
+      color:#ffffff;
+    }
+    html[data-theme="dark"] .card,
+    html.force-dark .card {
+      background:#1f2937;
+      border:1px solid rgba(255,255,255,0.1);
+    }
+    html[data-theme="dark"] .search-box input,
+    html.force-dark .search-box input {
+      background:#1f2937;
+      border:1px solid rgba(255,255,255,0.1);
+      color:#ffffff;
+    }
+    html[data-theme="dark"] table,
+    html.force-dark table {
+      background:#1f2937;
+    }
+    html[data-theme="dark"] th,
+    html.force-dark th {
+      background:#1f2937;
+      border-bottom:1px solid rgba(255,255,255,0.1);
+    }
+    html[data-theme="dark"] td,
+    html.force-dark td {
+      border-bottom:1px solid rgba(255,255,255,0.1);
+    }
+    html[data-theme="dark"] .modal-content,
+    html.force-dark .modal-content {
+      background:#1f2937;
+      color:#ffffff;
+    }
+    html[data-theme="dark"] .form-group input,
+    html[data-theme="dark"] .form-group select,
+    html[data-theme="dark"] .form-group textarea,
+    html.force-dark .form-group input,
+    html.force-dark .form-group select,
+    html.force-dark .form-group textarea {
+      background:#111827;
+      border:1px solid rgba(255,255,255,0.1);
+      color:#ffffff;
+    }
+  </style>
+</head>
+<body>
+  <!-- Common Header -->
+  <header id="app-header"></header>
+
+  <div class="container">
+    <!-- Breadcrumb Navigation -->
+    <div class="tb-breadcrumb" id="breadcrumb">
+      <span class="tb-crumb">
+        <span class="ico">🏠</span>
+        <a href="/dashboard.html">Ana Sayfa</a>
+      </span>
+      <span class="tb-sep">›</span>
+      <span class="tb-crumb">
+        <span class="ico">👥</span>
+        <span>Müşteriler</span>
+      </span>
+    </div>
+    
+    <h1>👥 Müşteriler</h1>
+    <p class="muted">Müşteri bilgilerini yönetin, arayın ve filtreleyin.</p>
+
+    <!-- Tab Navigation -->
+    <div style="display:flex;gap:12px;margin-bottom:24px;">
+      <button class="tab-btn active" id="tabAll" data-tab="all">
+        Tüm Müşteriler
+      </button>
+      <button class="tab-btn" id="tabCari" data-tab="cari">
+        Cari Müşteriler
+      </button>
+      <button class="tab-btn" id="tabPending" data-tab="pending">
+        Onay Bekleyen Müşteriler
+      </button>
+    </div>
+
+    <div class="card" id="customersCard">
+        <div class="search-box" style="flex:1;margin-bottom:0">
+          <input type="text" id="searchInput" placeholder="Müşteri adı, kod veya VKN ile ara..." style="height:48px;padding:12px 20px;font-size:15px;width:100%;box-sizing:border-box" />
+        </div>
+        
+        <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+          <label for="f-pageSize" style="font-size:13px; font-weight:600; color:var(--text); white-space:nowrap;">Görünüm:</label>
+          <select id="f-pageSize" style="height:48px; padding:0 12px; border-radius:6px; border:1px solid #d1d5db; background:#ffffff; font-size:14px; min-width:80px;">
+            <option value="15" selected>15</option>
+            <option value="30">30</option>
+            <option value="45">45</option>
+          </select>
+        </div>
+
+        <button class="btn btn-primary" id="btnNewCustomer" style="padding:12px 10px;font-size:13px;white-space:nowrap;flex-shrink:0;height:48px;display:flex;align-items:center;justify-content:center;width:auto;min-width:fit-content;margin:0">+ Yeni Müşteri</button>
+      </div>
+
+      <div style="margin-bottom:16px;margin-top:4px;padding-left:4px">
+        <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap;vertical-align:middle">
+          <input type="checkbox" id="showArchived" style="margin:0;width:16px;height:16px;cursor:pointer;flex-shrink:0" />
+          <span style="white-space:nowrap;font-size:13px;line-height:1.5">Arşivlenmiş müşterileri göster</span>
+        </label>
+      </div>
+
+      <table id="customersTable">
+        <thead>
+          <tr>
+            <th>Kod</th>
+            <th>Müşteri Adı</th>
+            <th>VKN/TCKN</th>
+            <th>Vergi Dairesi</th>
+            <th>İletişim</th>
+            <th>Vade (Gün)</th>
+            <th>Durum</th>
+            <th>İşlemler</th>
+          </tr>
+        </thead>
+        <tbody id="customersTableBody">
+          <tr>
+            <td colspan="8" style="text-align:center;padding:40px;color:#6b7280">Yükleniyor...</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Pagination Controls (Shared) -->
+      <div id="pagination-controls" style="display:none; justify-content:center; align-items:center; gap:16px; margin:20px auto; max-width:600px;">
+        <button id="btnPrev" class="btn btn-outline" style="padding:8px 16px; font-size:13px; font-weight:600; flex:0 0 auto; height:40px;">← Geri</button>
+        <div style="display:flex; align-items:center; gap:12px; color:#0f172a; white-space:nowrap; background:white; padding:8px 20px; border-radius:12px; border:1px solid #e5e7eb; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); height:40px;">
+          <span id="pageInfo" style="font-size:13px; font-weight:700;">Sayfa 1</span>
+          <span style="color:#cbd5e1;">|</span>
+          <span id="totalItemsInfo" style="font-size:12px; color:#64748b;">Toplam: 0</span>
+        </div>
+        <button id="btnNext" class="btn btn-outline" style="padding:8px 16px; font-size:13px; font-weight:600; flex:0 0 auto; height:40px;">İleri →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Müşteri Form Modal -->
+  <div id="customerModal" class="modal">
+    <div class="modal-content">
+      <span class="close" id="closeModal">&times;</span>
+      <h2 id="modalTitle">Yeni Müşteri</h2>
+      <form id="customerForm">
+        <input type="hidden" id="customerId" />
+        
+        <div class="form-group">
+          <label for="customerCode">Müşteri Kodu</label>
+          <input type="text" id="customerCode" readonly style="background:#f3f4f6" />
+          <small class="muted">Otomatik oluşturulur</small>
+        </div>
+
+        <div class="form-group">
+          <label for="customerName" class="required">Müşteri Adı</label>
+          <input type="text" id="customerName" required />
+        </div>
+
+        <div class="form-group">
+          <label for="customerType">Müşteri Tipi</label>
+          <select id="customerType">
+            <option value="cari" selected>Cari (Sürekli)</option>
+            <option value="one-time">Tek Seferlik (Nakit/Perakende)</option>
+          </select>
+          <small class="muted">Cari müşteriler özel sekmede listelenir.</small>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="taxNumber">VKN/TCKN</label>
+            <input type="text" id="taxNumber" maxlength="11" pattern="[0-9]{10,11}" />
+          </div>
+          <div class="form-group">
+            <label for="taxOffice">Vergi Dairesi</label>
+            <input type="text" id="taxOffice" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Adres</label>
+          <!-- Teklifbul Rule v1.0 - Adres giriş sıralaması: İl → İlçe → Mahalle → Cadde → Sokak -->
+          <div class="form-row">
+            <div class="form-group">
+              <label for="addressCity" class="required">İl</label>
+              <select id="addressCity" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;box-sizing:border-box">
+                <option value="">İl seçiniz</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="addressDistrict" class="required">İlçe</label>
+              <select id="addressDistrict" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;box-sizing:border-box" disabled>
+                <option value="">İlçe seçiniz</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="addressNeighborhood">Mahalle</label>
+              <input type="text" id="addressNeighborhood" placeholder="Mahalle" />
+            </div>
+            <div class="form-group">
+              <label for="addressAvenue">Cadde</label>
+              <input type="text" id="addressAvenue" placeholder="Cadde" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="addressStreet">Sokak</label>
+              <input type="text" id="addressStreet" placeholder="Sokak" />
+            </div>
+            <div class="form-group">
+              <label for="addressPostalCode">Posta Kodu</label>
+              <input type="text" id="addressPostalCode" placeholder="Posta Kodu" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="addressDoorNumber">Kapı Numarası</label>
+              <input type="text" id="addressDoorNumber" placeholder="Kapı Numarası" />
+            </div>
+            <div class="form-group">
+              <label for="addressApartment">Daire</label>
+              <input type="text" id="addressApartment" placeholder="Daire" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="addressCountry">Ülke</label>
+              <input type="text" id="addressCountry" placeholder="Ülke" value="TR" readonly style="background:#f3f4f6" />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>İletişim</label>
+          <div id="contactPersonsContainer"></div>
+          <button type="button" id="btnAddContact" class="btn btn-secondary" style="padding:6px 12px;font-size:12px;margin-top:8px">+ İletişim Kişisi Ekle</button>
+          <div class="form-row" style="margin-top:12px">
+            <div class="form-group">
+              <input type="email" id="contactEmail" placeholder="E-posta" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;box-sizing:border-box" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Teklifbul Rule v1.0 - E-Belge: Fatura Bilgileri Kartı -->
+        <div class="form-group" style="margin-top:24px;padding:16px;background:#f9fafb;border-radius:8px;border:1px solid #e5e7eb">
+          <h3 style="margin:0 0 16px 0;font-size:16px;font-weight:600;color:#1f2937">📄 Fatura Bilgileri</h3>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="invoiceEmail" class="required">Fatura E-posta</label>
+              <input type="email" id="invoiceEmail" placeholder="fatura@musteri.com" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;box-sizing:border-box" />
+              <small class="muted">E-fatura gönderimi için gerekli</small>
+            </div>
+            <div class="form-group">
+              <label for="defaultScenario">Varsayılan Senaryo</label>
+              <select id="defaultScenario" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;box-sizing:border-box">
+                <option value="">Seçiniz</option>
+                <option value="TEMEL">TEMEL</option>
+                <option value="TICARI" selected>TİCARİ</option>
+              </select>
+              <small class="muted" style="display:block;margin-top:4px;font-size:11px;line-height:1.4;color:#6b7280">
+                <strong>TİCARİ:</strong> Alıcı e-Fatura kullanıcısı ve faturayı sistemden reddedebilme/yanıtlayabilme süreci olsun (B2B ticaret, kurumsal alımlar).<br>
+                <strong>TEMEL:</strong> Fatura otomatik kabul sayılsın, red/yanıt süreci olmasın (çoğu hizmet/abonelik tarzı).
+              </small>
+            </div>
+          </div>
+
+
+          <div style="margin-top:12px;padding:12px;background:#fef3c7;border-radius:6px;border:1px solid #fbbf24">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+              <span style="font-weight:600;color:#92400e">e-Fatura Mükellefi Durumu</span>
+              <span id="efaturaStatusBadge" style="padding:4px 8px;background:#fef3c7;border:1px solid #fbbf24;border-radius:4px;font-size:12px;color:#92400e">Sorgulanmadı</span>
+            </div>
+            <button type="button" id="btnQueryEFatura" class="btn btn-secondary" style="padding:6px 12px;font-size:12px">🔍 Mükellef Sorgula</button>
+            <small class="muted" style="display:block;margin-top:4px;font-size:12px">Mükellef sorgusu e-belge entegratörü üzerinden yapılacaktır</small>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="paymentTerms">Vade (Gün)</label>
+            <input type="number" id="paymentTerms" min="0" value="30" />
+          </div>
+          <div class="form-group">
+            <label for="creditLimit">Kredi Limiti</label>
+            <input type="number" id="creditLimit" min="0" step="0.01" readonly style="background:#f3f4f6" />
+            <small class="muted" id="creditLimitNote">Sadece yönetici kadrosu ayarlayabilir</small>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="currency">Para Birimi</label>
+          <select id="currency">
+            <option value="TRY" selected>TRY - Türk Lirası</option>
+            <option value="USD">USD - Amerikan Doları</option>
+            <option value="EUR">EUR - Euro</option>
+            <option value="GBP">GBP - İngiliz Sterlini</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+            <input type="checkbox" id="isActive" checked style="margin:0;width:18px;height:18px;cursor:pointer" />
+            <span>Aktif</span>
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label for="notes">Notlar</label>
+          <textarea id="notes" rows="3"></textarea>
+        </div>
+
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px">
+          <button type="button" class="btn btn-secondary" id="btnCancel">İptal</button>
+          <button type="submit" class="btn btn-primary" id="btnSave">Kaydet</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <script type="module">
+    import { initGlobalHeader } from '../assets/js/ui/header.js';
+    initGlobalHeader({ mount: '#app-header', activeRoute: 'sales' });
+  </script>
+  
+  <script type="module" src="/scripts/customers.js"></script>
+</body>
+</html>

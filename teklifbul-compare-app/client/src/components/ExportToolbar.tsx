@@ -2,6 +2,8 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Download, FileSpreadsheet } from "lucide-react";
 import { apiService, downloadFile } from '../lib/api';
+// Teklifbul Rule v1.0 - Structured Logging
+import { logger } from '../../../src/shared/log/logger.js';
 
 interface ExportToolbarProps {
   requestId?: string;
@@ -39,7 +41,7 @@ export function ExportToolbar({
     } catch (error: any) {
       const errorMessage = error.response?.data?.error || error.message || "Excel üretilemedi";
       onExportError?.(errorMessage);
-      console.error('Export error:', error);
+      logger.error('Export error', error);
     }
   };
 
@@ -63,7 +65,7 @@ export function ExportToolbar({
     } catch (error: any) {
       const errorMessage = error.response?.data?.error || error.message || "CSV üretilemedi";
       onExportError?.(errorMessage);
-      console.error('Export error:', error);
+      logger.error('Export error', error);
     }
   };
 

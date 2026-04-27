@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>Yeni Fatura</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Teklifbul Rule v1.0 - FOUC önleme: Tema hemen uygulanmalı -->
+  <script src="/assets/js/theme-init.js"></script>
+  <link rel="stylesheet" href="/utils.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <style>
+    body{font-family:system-ui, Arial; background:#f8fafc; color:#111827; margin:0}
+    .container{max-width:1400px;margin:0 auto;padding:20px}
+    h1{margin:0 0 8px 0}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:20px;margin:16px 0}
+    .form-group{margin-bottom:16px}
+    .form-group label{display:block;margin-bottom:4px;font-size:12px;font-weight:600;color:#374151}
+    .form-group input,.form-group select,.form-group textarea{width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;box-sizing:border-box}
+    .btn{padding:10px 20px;border:0;border-radius:6px;cursor:pointer;font-weight:600;font-size:14px;margin-right:8px}
+    .btn-primary{background:#2563eb;color:#fff}
+    .btn-primary:hover{background:#1d4ed8}
+    .btn-secondary{background:#6b7280;color:#fff}
+    .btn-secondary:hover{background:#4b5563}
+    .btn-warning{background:#f59e0b;color:#fff}
+    .btn-warning:hover{background:#d97706}
+    table{width:100%;border-collapse:collapse;margin-top:16px;background:#fff}
+    th,td{border-bottom:1px solid #e5e7eb;padding:12px;text-align:left;font-size:13px}
+    th{background:#f9fafb;font-weight:600;color:#374151}
+    tr:hover{background:#f9fafb}
+    .muted{color:#6b7280;font-size:12px}
+    .info-row{display:grid;grid-template-columns:200px 1fr;gap:12px;padding:8px 0;border-bottom:1px solid #e5e7eb}
+    .info-row:last-child{border-bottom:none}
+    .info-label{font-weight:600;color:#374151}
+    .warning-box{background:#fef3c7;border:1px solid #fbbf24;border-radius:6px;padding:12px;margin:16px 0;color:#92400e}
+    .checkbox-group{display:flex;align-items:center;gap:8px;margin:16px 0}
+    .checkbox-group input[type="checkbox"]{width:auto}
+    
+    /* Koyu Mod */
+    html[data-theme="dark"] body,
+    html.force-dark body {
+      background:#111827;
+      color:#ffffff;
+    }
+    html[data-theme="dark"] .card,
+    html.force-dark .card {
+      background:#1f2937;
+      border:1px solid rgba(255,255,255,0.1);
+    }
+    html[data-theme="dark"] .warning-box,
+    html.force-dark .warning-box {
+      background:#78350f;
+      border:1px solid rgba(255,255,255,0.1);
+      color:#fef3c7;
+    }
+  </style>
+</head>
+<body>
+  <!-- Common Header -->
+  <header id="app-header"></header>
+
+  <div class="container">
+    <!-- Breadcrumb Navigation -->
+    <div class="tb-breadcrumb" id="breadcrumb">
+      <span class="tb-crumb">
+        <span class="ico">🏠</span>
+        <a href="/dashboard.html">Ana Sayfa</a>
+      </span>
+      <span class="tb-sep">›</span>
+      <span class="tb-crumb">
+        <span class="ico">💰</span>
+        <a href="/pages/sales.html">Satışlar</a>
+      </span>
+      <span class="tb-sep">›</span>
+      <span class="tb-crumb">
+        <span class="ico">🧾</span>
+        <span>Yeni Fatura</span>
+      </span>
+    </div>
+    
+    <h1>🧾 Yeni Fatura</h1>
+    <p class="muted">Satış için fatura oluşturun (irsaliyesiz fatura uyarısı, kısmi fatura desteği).</p>
+
+    <form id="invoiceForm">
+      <input type="hidden" id="saleId" />
+      
+      <div class="card">
+        <h2 style="margin-top:0">Satış Bilgileri</h2>
+        
+        <div class="info-row">
+          <div class="info-label">Satış Numarası:</div>
+          <div id="saleNumber">-</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">Müşteri:</div>
+          <div id="customerName">-</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">Satış Durumu:</div>
+          <div id="saleStatus">-</div>
+        </div>
+        <div class="info-row" id="deliveryNotesRow" style="display:none">
+          <div class="info-label">İrsaliyeler:</div>
+          <div id="deliveryNotes">-</div>
+        </div>
+      </div>
+
+      <div class="card" id="noDeliveryNoteWarning" style="display:none">
+        <div class="warning-box">
+          <strong>⚠️ Uyarı:</strong> Bu satış için henüz irsaliye oluşturulmamış. İrsaliyesiz fatura oluşturmak istiyor musunuz?
+        </div>
+        <div class="checkbox-group">
+          <input type="checkbox" id="allowWithoutDeliveryNote" />
+          <label for="allowWithoutDeliveryNote">İrsaliyesiz fatura oluşturmayı onaylıyorum</label>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 style="margin-top:0">Fatura Kalemleri</h2>
+        <p class="muted">Tüm kalemler faturaya dahil edilecek (kısmi fatura gelecekte eklenecek).</p>
+        
+        <table id="invoiceItemsTable">
+          <thead>
+            <tr>
+              <th>SKU</th>
+              <th>Ürün Adı</th>
+              <th>Miktar</th>
+              <th>Birim</th>
+              <th>Birim Fiyat</th>
+              <th>KDV %</th>
+              <th>Tutar</th>
+            </tr>
+          </thead>
+          <tbody id="invoiceItemsTableBody">
+            <tr>
+              <td colspan="7" style="text-align:center;padding:40px;color:#6b7280">Yükleniyor...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px">
+        <a href="/pages/sales.html" class="btn btn-secondary">İptal</a>
+        <button type="button" class="btn btn-primary" id="btnCreateInvoice">Fatura Oluştur</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Header -->
+  <script type="module">
+    import { initGlobalHeader } from '../assets/js/ui/header.js';
+    initGlobalHeader({ mount: '#app-header', activeRoute: 'invoicing' });
+  </script>
+  
+  <script type="module" src="/scripts/invoices.js"></script>
+</body>
+</html>

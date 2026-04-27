@@ -4,6 +4,8 @@
   <meta charset="utf-8" />
   <title>Stok Listesi</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Teklifbul Rule v1.0 - FOUC önleme: Tema hemen uygulanmalı -->
+  <script src="/assets/js/theme-init.js"></script>
   <link rel="stylesheet" href="/utils.css" />
   <link rel="stylesheet" href="/assets/css/layout.css" />
   <style>
@@ -37,11 +39,139 @@
     .stat-card{background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:12px;min-width:150px}
     .stat-label{font-size:12px;color:#0369a1;font-weight:600}
     .stat-value{font-size:24px;color:#0284c7;font-weight:700;margin-top:4px}
-    .pagination{display:flex;gap:8px;justify-content:center;margin-top:16px;align-items:center}
-    .pagination button{padding:8px 12px;border:1px solid #d1d5db;background:#fff;border-radius:4px;cursor:pointer}
+    .pagination{display:flex;gap:16px;justify-content:center;margin:20px auto;align-items:center;max-width:600px}
+    .pagination button{padding:8px 16px;border:1px solid #d1d5db;background:#fff;border-radius:4px;cursor:pointer;font-size:13px;font-weight:600;flex:0 0 auto;height:40px}
     .pagination button:hover{background:#f3f4f6}
     .pagination button:disabled{opacity:.5;cursor:not-allowed}
-    .pagination-info{color:#6b7280;font-size:14px;margin:0 16px}
+    .pagination-info{color:#0f172a;font-size:13px;font-weight:700;white-space:nowrap;display:flex;align-items:center;gap:12px;background:#fff;padding:8px 20px;border-radius:12px;border:1px solid #e5e7eb;box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);height:40px}
+    
+    /* Koyu Mod Düzenlemeleri */
+    html[data-theme="dark"] body,
+    html.force-dark body {
+      background:#111827;
+      color:#ffffff;
+    }
+    html[data-theme="dark"] .card,
+    html.force-dark .card {
+      background:#111827;
+      border:1px solid rgba(255,255,255,0.1);
+      color:#ffffff;
+    }
+    html[data-theme="dark"] .search-box input,
+    html.force-dark .search-box input {
+      background:#111827;
+      border:1px solid rgba(255,255,255,0.1);
+      color:#ffffff;
+    }
+    html[data-theme="dark"] .search-box input:focus,
+    html.force-dark .search-box input:focus {
+      border-color:rgba(255,255,255,0.3);
+    }
+    html[data-theme="dark"] .search-hint,
+    html.force-dark .search-hint {
+      color:#9ca3af;
+    }
+    html[data-theme="dark"] .filter-group label,
+    html.force-dark .filter-group label {
+      color:#d1d5db;
+    }
+    html[data-theme="dark"] .filter-group input,
+    html[data-theme="dark"] .filter-group select,
+    html.force-dark .filter-group input,
+    html.force-dark .filter-group select {
+      background:#111827;
+      border:1px solid rgba(255,255,255,0.1);
+      color:#ffffff;
+    }
+    html[data-theme="dark"] table,
+    html.force-dark table {
+      background:#111827;
+    }
+    html[data-theme="dark"] th,
+    html.force-dark th {
+      background:#111827;
+      color:#ffffff;
+      border-bottom:1px solid rgba(255,255,255,0.1);
+    }
+    html[data-theme="dark"] td,
+    html.force-dark td {
+      color:#ffffff;
+      border-bottom:1px solid rgba(255,255,255,0.1);
+    }
+    html[data-theme="dark"] tr:hover,
+    html.force-dark tr:hover {
+      background:#1f2937;
+    }
+    html[data-theme="dark"] .stock-sku,
+    html.force-dark .stock-sku {
+      color:#ffffff;
+    }
+    html[data-theme="dark"] .stock-name,
+    html.force-dark .stock-name {
+      color:#d1d5db;
+    }
+    html[data-theme="dark"] .muted,
+    html.force-dark .muted {
+      color:#9ca3af;
+    }
+    html[data-theme="dark"] .stat-card,
+    html.force-dark .stat-card {
+      background:#111827;
+      border:1px solid rgba(255,255,255,0.1);
+    }
+    html[data-theme="dark"] .stat-label,
+    html.force-dark .stat-label {
+      color:#9ca3af;
+    }
+    html[data-theme="dark"] .stat-value,
+    html.force-dark .stat-value {
+      color:#60a5fa;
+    }
+    html[data-theme="dark"] .pagination button,
+    html.force-dark .pagination button {
+      background:#111827;
+      border:1px solid rgba(255,255,255,0.1);
+      color:#ffffff;
+    }
+    html[data-theme="dark"] .pagination button:hover,
+    html.force-dark .pagination button:hover {
+      background:#1f2937;
+    }
+    html[data-theme="dark"] .pagination-info,
+    html.force-dark .pagination-info {
+      color:#9ca3af;
+    }
+    
+    /* Teklifbul Rule v1.0 - Min/Max stok düzenlenebilir alan stilleri */
+    .editable-min-stock:hover,
+    .editable-max-stock:hover {
+      background:#f0f9ff !important;
+      border-color:#3b82f6 !important;
+    }
+    .editable-min-stock:focus,
+    .editable-max-stock:focus {
+      outline:none;
+      border:1px solid #3b82f6 !important;
+      background:#f0f9ff !important;
+    }
+    html[data-theme="dark"] .editable-min-stock:hover,
+    html[data-theme="dark"] .editable-max-stock:hover,
+    html[data-theme="dark"] .editable-vat-rate:hover,
+    html.force-dark .editable-min-stock:hover,
+    html.force-dark .editable-max-stock:hover,
+    html.force-dark .editable-vat-rate:hover {
+      background:#1e3a5f !important;
+      border-color:#60a5fa !important;
+    }
+    html[data-theme="dark"] .editable-min-stock:focus,
+    html[data-theme="dark"] .editable-max-stock:focus,
+    html[data-theme="dark"] .editable-vat-rate:focus,
+    html.force-dark .editable-min-stock:focus,
+    html.force-dark .editable-max-stock:focus,
+    html.force-dark .editable-vat-rate:focus {
+      border-color:#60a5fa !important;
+      background:#1e3a5f !important;
+    }
   </style>
 </head>
 <body>
@@ -68,7 +198,7 @@
     </div>
     
     <h1>📋 Stok Listesi</h1>
-    <p class="muted">Tüm stokları görüntüleyin, arayın ve filtreleyin. F6 ile tüm listeyi açabilirsiniz.</p>
+    <p class="muted">Tüm stokları görüntüleyin, arayın ve filtreleyin.</p>
 
     <div class="card">
       <div class="search-box">
@@ -77,6 +207,12 @@
       </div>
 
       <div class="filters">
+        <div class="filter-group">
+          <label for="filterLocation">Lokasyon</label>
+          <select id="filterLocation">
+            <option value="">Tümü (Tüm Lokasyonlar)</option>
+          </select>
+        </div>
         <div class="filter-group">
           <label for="filterBrand">Marka</label>
           <input id="filterBrand" type="text" placeholder="Marka ara..." />
@@ -131,9 +267,14 @@
             <tr>
               <th>SKU</th>
               <th>Ürün Adı</th>
+              <th>Barkod</th>
               <th>Marka</th>
               <th>Model</th>
               <th>Birim</th>
+              <th>KDV %</th>
+              <th>Miktar</th>
+              <th>Min Stok</th>
+              <th>Max Stok</th>
               <th>Ort. Maliyet</th>
               <th>Satış Fiyatı</th>
               <th>Durum</th>
@@ -141,7 +282,7 @@
           </thead>
           <tbody id="stocksTableBody">
             <tr>
-              <td colspan="8" style="text-align:center;padding:40px;color:#6b7280">Yükleniyor...</td>
+              <td colspan="13" style="text-align:center;padding:40px;color:#6b7280">Yükleniyor...</td>
             </tr>
           </tbody>
         </table>

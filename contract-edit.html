@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>NEFISOFT — Sözleşme Düzenle</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  
+  <!-- Teklifbul Rule v1.0 - Tema standardı -->
+  <script src="/assets/js/theme-init.js"></script>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%233b82f6' rx='6'/%3E%3Ctext x='16' y='22' font-family='Arial' font-size='18' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/utils.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <style>
+    body { margin: 0; font-family: system-ui, Arial; }
+    .page-heading { margin: 20px 0; }
+    .page-title-chip { display: flex; align-items: center; gap: 12px; }
+    .page-title-icon { font-size: 32px; }
+    .page-title-text h1 { margin: 0; font-size: 24px; font-weight: 600; color: var(--text, #1f2937); }
+    html[data-theme="dark"] .page-title-text h1 { color: #ffffff; }
+    
+    .card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; background: white; margin-bottom: 20px; }
+    html[data-theme="dark"] .card { background: #111827; border: 1px solid rgba(255,255,255,0.25); color: #ffffff; }
+    
+    .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 16px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group label { font-size: 13px; font-weight: 600; color: var(--text, #1f2937); }
+    html[data-theme="dark"] .form-group label { color: #ffffff; }
+    .form-group input,
+    .form-group select { padding: 10px; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 14px; background: white; color: #1f2937; }
+    html[data-theme="dark"] .form-group input,
+    html[data-theme="dark"] .form-group select { background: #1f2937; border: 1px solid rgba(255,255,255,0.25); color: #ffffff; }
+    
+    .action-buttons { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+    .btn { padding: 10px 20px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .btn-primary { background: #3b82f6; color: white; }
+    .btn-primary:hover { background: #2563eb; }
+    .btn-outline { background: transparent; border: 1px solid #e5e7eb; color: var(--text, #1f2937); }
+    html[data-theme="dark"] .btn-outline { border-color: rgba(255,255,255,0.25); color: #ffffff; }
+  </style>
+</head>
+<body>
+  <!-- Common Header -->
+  <header id="app-header"></header>
+
+  <main class="container--wide" style="padding:20px 0">
+    <div class="page-heading">
+      <div class="page-title-chip" role="presentation">
+        <span class="page-title-icon" aria-hidden="true">📄</span>
+        <div class="page-title-text">
+          <h1 id="page-title">Yeni Sözleşme Oluştur</h1>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Ana İçerik -->
+    <div id="main-content">
+      <div class="card">
+        <h2 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 600;">Sözleşme Bilgileri</h2>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label>Sözleşme No</label>
+            <input type="text" id="contract-no" placeholder="Otomatik oluşturulacak" />
+          </div>
+          <div class="form-group">
+            <label>Sözleşme Adı <span style="color: #ef4444;">*</span></label>
+            <input type="text" id="contract-name" required />
+          </div>
+          <div class="form-group">
+            <label>Proje / Şantiye</label>
+            <select id="site-select">
+              <option value="">Seçiniz...</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label>Başlangıç Tarihi</label>
+            <input type="date" id="start-date" />
+          </div>
+          <div class="form-group">
+            <label>Bitiş Tarihi</label>
+            <input type="date" id="end-date" />
+          </div>
+          <div class="form-group">
+            <label>Sözleşme Tutarı (₺)</label>
+            <input type="number" id="contract-value" min="0" step="0.01" placeholder="0.00" />
+          </div>
+        </div>
+        
+        <h3 style="margin: 24px 0 16px 0; font-size: 16px; font-weight: 600;">Varsayılan Oranlar</h3>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label>KDV Oranı (%)</label>
+            <input type="number" id="kdv-rate" min="0" max="100" step="0.01" value="20" />
+          </div>
+          <div class="form-group">
+            <label>Stopaj Oranı (%)</label>
+            <input type="number" id="stopaj-rate" min="0" max="100" step="0.01" value="5" />
+          </div>
+          <div class="form-group">
+            <label>Teminat Oranı (%)</label>
+            <input type="number" id="guarantee-rate" min="0" max="100" step="0.01" value="6" />
+          </div>
+          <div class="form-group">
+            <label>Avans Oranı (%)</label>
+            <input type="number" id="advance-rate" min="0" max="100" step="0.01" value="10" />
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label>Durum</label>
+            <select id="status-select">
+              <option value="active">Aktif</option>
+              <option value="passive">Pasif</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Butonlar -->
+      <div class="action-buttons">
+        <button class="btn btn-primary" id="btn-save">Kaydet</button>
+        <a href="./contracts.html" class="btn btn-outline">← Listeye Dön</a>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    // Teklifbul Rule v1.0 - Auth Guard
+    import { initAuthGuard } from './assets/js/auth-guard.js';
+    import { initGlobalHeader } from './assets/js/ui/header.js';
+    import { auth, waitAuthReady, db } from './firebase.js';
+    import { logger } from './src/shared/log/logger.js';
+    import { toast } from './src/shared/ui/toast.js';
+    import DOMPurify from 'https://cdn.jsdelivr.net/npm/dompurify@3.2.2/+esm';
+    
+    initAuthGuard().catch(err => {
+      console.error('Auth guard init failed', err);
+    });
+    
+    async function authFetch(url, options = {}) {
+      const { authFetch: commonAuthFetch } = await import('/assets/js/utils/api-helpers.js');
+      return await commonAuthFetch(url, options);
+    }
+    
+    async function getCurrentUser() {
+      if (auth.currentUser) return auth.currentUser;
+      const user = await waitAuthReady();
+      if (!user) throw new Error('not signed in');
+      return user;
+    }
+    
+    // Sayfa yükleme
+    async function init() {
+      try {
+        logger.group('Sözleşme Düzenleme Sayfası Yükleme');
+        await initGlobalHeader({ mount: '#app-header', activeRoute: 'contracts' });
+        
+        // Event listener'ları ekle
+        document.getElementById('btn-save')?.addEventListener('click', saveContract);
+        
+        // URL parametrelerini kontrol et
+        const params = new URLSearchParams(window.location.search);
+        const contractId = params.get('id');
+        
+        // Şantiyeleri yükle
+        await loadSites();
+        
+        if (contractId) {
+          // Düzenleme modu
+          document.getElementById('page-title').textContent = 'Sözleşme Düzenle';
+          await loadContract(contractId);
+        } else {
+          // Yeni sözleşme modu
+          document.getElementById('page-title').textContent = 'Yeni Sözleşme Oluştur';
+        }
+        
+        logger.info('Sözleşme düzenleme sayfası yüklendi');
+        logger.end();
+      } catch (error) {
+        logger.error('Sayfa yükleme hatası', error);
+        logger.end();
+        toast.error('Sayfa yüklenirken hata oluştu: ' + (error.message || 'Bilinmeyen hata'));
+      }
+    }
+    
+    // Şantiyeleri yükle
+    async function loadSites() {
+      try {
+        logger.group('Şantiyeler Yükleniyor');
+        const user = await getCurrentUser();
+        if (!user) return;
+        
+        const { collection, query, where, getDocs } = await import('https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js');
+        
+        if (!db) {
+          logger.warn('Firestore DB bulunamadı');
+          logger.end();
+          return;
+        }
+        
+        const userResponse = await authFetch('/api/user');
+        if (!userResponse.ok) return;
+        
+        const userData = await userResponse.json();
+        const companyId = userData?.companyId || userData?.activeCompanyId;
+        if (!companyId) return;
+        
+        const sitesMap = new Map();
+        try {
+          const stockLocationsQuery = query(
+            collection(db, 'stock_locations'),
+            where('companyId', '==', companyId)
+          );
+          
+          const stockLocationsSnapshot = await getDocs(stockLocationsQuery);
+          stockLocationsSnapshot.forEach(doc => {
+            const data = doc.data();
+            if ((data.type === 'warehouse' || data.type === 'site') && data.isActive !== false) {
+              const siteName = data.title || data.siteName || data.name || doc.id;
+              sitesMap.set(doc.id, { id: doc.id, name: siteName });
+            }
+          });
+        } catch (error) {
+          logger.warn('stock_locations yüklenirken hata', error);
+        }
+        
+        const siteSelect = document.getElementById('site-select');
+        if (siteSelect) {
+          siteSelect.innerHTML = '<option value="">Seçiniz...</option>';
+          const sitesArray = Array.from(sitesMap.values()).sort((a, b) => 
+            (a.name || '').localeCompare(b.name || '', 'tr')
+          );
+          sitesArray.forEach(site => {
+            const option = document.createElement('option');
+            option.value = site.id;
+            option.textContent = site.name;
+            siteSelect.appendChild(option);
+          });
+        }
+        
+        logger.end();
+      } catch (error) {
+        logger.error('Şantiyeler yüklenirken hata', error);
+        logger.end();
+        toast.error('Şantiyeler yüklenemedi');
+      }
+    }
+    
+    // Sözleşmeyi yükle
+    async function loadContract(contractId) {
+      try {
+        logger.group('Sözleşme Yükleniyor');
+        const user = await getCurrentUser();
+        if (!user) return;
+        
+        const response = await authFetch(`/api/contracts/${contractId}`);
+        if (!response.ok) {
+          throw new Error('Sözleşme yüklenemedi');
+        }
+        
+        const contract = await response.json();
+        
+        // Form alanlarını doldur
+        if (contract.contractNo) document.getElementById('contract-no').value = contract.contractNo;
+        if (contract.contractName) document.getElementById('contract-name').value = contract.contractName;
+        if (contract.siteId) document.getElementById('site-select').value = contract.siteId;
+        if (contract.startDate) document.getElementById('start-date').value = contract.startDate.split('T')[0];
+        if (contract.endDate) document.getElementById('end-date').value = contract.endDate.split('T')[0];
+        if (contract.contractValue !== undefined) document.getElementById('contract-value').value = contract.contractValue;
+        if (contract.kdvRate !== undefined) document.getElementById('kdv-rate').value = contract.kdvRate;
+        if (contract.stopajRate !== undefined) document.getElementById('stopaj-rate').value = contract.stopajRate;
+        if (contract.guaranteeRate !== undefined) document.getElementById('guarantee-rate').value = contract.guaranteeRate;
+        if (contract.advanceRate !== undefined) document.getElementById('advance-rate').value = contract.advanceRate;
+        if (contract.status) document.getElementById('status-select').value = contract.status;
+        
+        logger.info('Sözleşme yüklendi', { contractId });
+        logger.end();
+      } catch (error) {
+        logger.error('Sözleşme yükleme hatası', error);
+        logger.end();
+        toast.error('Sözleşme yüklenemedi: ' + (error.message || 'Bilinmeyen hata'));
+      }
+    }
+    
+    // Sözleşmeyi kaydet
+    async function saveContract() {
+      try {
+        logger.group('Sözleşme Kaydediliyor');
+        const user = await getCurrentUser();
+        if (!user) {
+          toast.error('Giriş yapmanız gerekiyor');
+          return;
+        }
+        
+        const contractName = document.getElementById('contract-name').value.trim();
+        if (!contractName) {
+          toast.error('Sözleşme adı zorunludur');
+          return;
+        }
+        
+        const contractData = {
+          contractNo: document.getElementById('contract-no').value.trim() || undefined,
+          contractName: contractName,
+          siteId: document.getElementById('site-select').value || null,
+          startDate: document.getElementById('start-date').value || null,
+          endDate: document.getElementById('end-date').value || null,
+          contractValue: parseFloat(document.getElementById('contract-value').value) || 0,
+          kdvRate: parseFloat(document.getElementById('kdv-rate').value) || 20,
+          stopajRate: parseFloat(document.getElementById('stopaj-rate').value) || 5,
+          guaranteeRate: parseFloat(document.getElementById('guarantee-rate').value) || 6,
+          advanceRate: parseFloat(document.getElementById('advance-rate').value) || 10,
+          status: document.getElementById('status-select').value || 'active',
+        };
+        
+        const params = new URLSearchParams(window.location.search);
+        const contractId = params.get('id');
+        
+        let response;
+        if (contractId) {
+          // Güncelleme
+          response = await authFetch(`/api/contracts/${contractId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(contractData)
+          });
+        } else {
+          // Yeni oluşturma
+          response = await authFetch('/api/contracts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(contractData)
+          });
+        }
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Sözleşme kaydedilemedi');
+        }
+        
+        const result = await response.json();
+        toast.success(contractId ? 'Sözleşme güncellendi' : 'Sözleşme oluşturuldu');
+        logger.info('Sözleşme kaydedildi', { contractId: result.id || contractId });
+        logger.end();
+        
+        // Detay sayfasına yönlendir
+        setTimeout(() => {
+          window.location.href = `./contract-detail.html?id=${result.id || contractId}`;
+        }, 1000);
+      } catch (error) {
+        logger.error('Sözleşme kaydetme hatası', error);
+        logger.end();
+        toast.error('Sözleşme kaydedilemedi: ' + (error.message || 'Bilinmeyen hata'));
+      }
+    }
+    
+    init().catch(error => {
+      logger.error('Sayfa yükleme hatası', error);
+      toast.error('Sayfa yüklenirken hata oluştu');
+    });
+  </script>
+</body>
+</html>

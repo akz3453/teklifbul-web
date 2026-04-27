@@ -1,5 +1,7 @@
+<!-- eslint-disable -->
 <!DOCTYPE html>
 <html lang="tr">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,35 +12,35 @@
       padding: 0;
       box-sizing: border-box;
     }
-    
+
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: #f5f5f5;
       padding: 20px;
       line-height: 1.6;
     }
-    
+
     .container {
       max-width: 1400px;
       margin: 0 auto;
       background: white;
       border-radius: 12px;
       padding: 30px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
-    
+
     h1 {
       color: #1f2937;
       margin-bottom: 10px;
       font-size: 28px;
     }
-    
+
     .subtitle {
       color: #6b7280;
       margin-bottom: 30px;
       font-size: 14px;
     }
-    
+
     .controls {
       display: flex;
       gap: 16px;
@@ -46,33 +48,36 @@
       flex-wrap: wrap;
       align-items: center;
     }
-    
+
     .control-group {
       display: flex;
       flex-direction: column;
       gap: 8px;
     }
-    
+
     label {
       font-size: 13px;
       font-weight: 600;
       color: #374151;
     }
-    
-    select, input, button {
+
+    select,
+    input,
+    button {
       padding: 10px 14px;
       border: 1px solid #d1d5db;
       border-radius: 8px;
       font-size: 14px;
       background: white;
     }
-    
-    select:focus, input:focus {
+
+    select:focus,
+    input:focus {
       outline: none;
       border-color: #3b82f6;
       box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
     }
-    
+
     button {
       background: #3b82f6;
       color: white;
@@ -81,25 +86,25 @@
       font-weight: 500;
       transition: all 0.2s;
     }
-    
+
     button:hover {
       background: #2563eb;
       transform: translateY(-1px);
     }
-    
+
     button:disabled {
       background: #9ca3af;
       cursor: not-allowed;
       transform: none;
     }
-    
+
     .stats {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 16px;
       margin-bottom: 30px;
     }
-    
+
     .stat-card {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
@@ -107,34 +112,34 @@
       border-radius: 10px;
       text-align: center;
     }
-    
+
     .stat-card.success {
       background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     }
-    
+
     .stat-card.warning {
       background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
     }
-    
+
     .stat-card.info {
       background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
     }
-    
+
     .stat-value {
       font-size: 32px;
       font-weight: 700;
       margin-bottom: 5px;
     }
-    
+
     .stat-label {
       font-size: 13px;
       opacity: 0.9;
     }
-    
+
     .category-section {
       margin-bottom: 40px;
     }
-    
+
     .category-header {
       display: flex;
       align-items: center;
@@ -147,23 +152,23 @@
       cursor: pointer;
       transition: all 0.2s;
     }
-    
+
     .category-header:hover {
       background: #f3f4f6;
     }
-    
+
     .category-header.expanded {
       background: #eff6ff;
       border-left-color: #2563eb;
     }
-    
+
     .category-title {
       flex: 1;
       font-size: 18px;
       font-weight: 600;
       color: #1f2937;
     }
-    
+
     .category-count {
       background: #3b82f6;
       color: white;
@@ -172,24 +177,24 @@
       font-size: 13px;
       font-weight: 600;
     }
-    
+
     .category-toggle {
       font-size: 20px;
       color: #6b7280;
       transition: transform 0.2s;
     }
-    
+
     .category-header.expanded .category-toggle {
       transform: rotate(90deg);
     }
-    
+
     .suppliers-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
       gap: 16px;
       margin-top: 16px;
     }
-    
+
     .supplier-card {
       background: white;
       border: 1px solid #e5e7eb;
@@ -197,54 +202,54 @@
       padding: 20px;
       transition: all 0.2s;
     }
-    
+
     .supplier-card:hover {
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
       transform: translateY(-2px);
     }
-    
+
     .supplier-name {
       font-size: 16px;
       font-weight: 600;
       color: #1f2937;
       margin-bottom: 8px;
     }
-    
+
     .supplier-email {
       font-size: 13px;
       color: #6b7280;
       margin-bottom: 12px;
     }
-    
+
     .supplier-categories {
       display: flex;
       flex-wrap: wrap;
       gap: 6px;
       margin-bottom: 12px;
     }
-    
+
     .category-badge {
       padding: 4px 10px;
       border-radius: 12px;
       font-size: 12px;
       font-weight: 500;
     }
-    
+
     .badge-id {
       background: #dbeafe;
       color: #1e40af;
     }
-    
+
     .badge-slug {
       background: #fef3c7;
       color: #92400e;
     }
-    
+
     .badge-name {
       background: #d1fae5;
       color: #065f46;
     }
-    
+
     .supplier-format {
       display: flex;
       flex-direction: column;
@@ -253,37 +258,37 @@
       padding-top: 12px;
       border-top: 1px solid #e5e7eb;
     }
-    
+
     .format-item {
       display: flex;
       align-items: center;
       gap: 8px;
       font-size: 12px;
     }
-    
+
     .format-label {
       font-weight: 600;
       color: #6b7280;
       min-width: 140px;
     }
-    
+
     .format-value {
       color: #1f2937;
       font-family: 'Courier New', monospace;
       font-size: 11px;
     }
-    
+
     .format-empty {
       color: #9ca3af;
       font-style: italic;
     }
-    
+
     .loading {
       text-align: center;
       padding: 40px;
       color: #6b7280;
     }
-    
+
     .spinner {
       border: 3px solid #f3f4f6;
       border-top: 3px solid #3b82f6;
@@ -293,12 +298,17 @@
       animation: spin 1s linear infinite;
       margin: 0 auto 20px;
     }
-    
+
     @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
     }
-    
+
     .error {
       background: #fee2e2;
       color: #991b1b;
@@ -306,19 +316,19 @@
       border-radius: 8px;
       margin-bottom: 20px;
     }
-    
+
     .search-box {
       flex: 1;
       min-width: 200px;
     }
-    
+
     .filter-tags {
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
       margin-top: 12px;
     }
-    
+
     .filter-tag {
       background: #eff6ff;
       color: #1e40af;
@@ -330,23 +340,24 @@
       align-items: center;
       gap: 6px;
     }
-    
+
     .filter-tag .remove {
       cursor: pointer;
       font-weight: bold;
       opacity: 0.7;
     }
-    
+
     .filter-tag .remove:hover {
       opacity: 1;
     }
   </style>
 </head>
+
 <body>
   <div class="container">
     <h1>🔍 Kategori-Tedarikçi Test Sayfası</h1>
     <p class="subtitle">Tedarikçi ve alıcı firmaların kategorilerini görüntüleyin ve eşleştirmeyi test edin</p>
-    
+
     <div class="controls">
       <div class="control-group search-box">
         <label>Firma Ara (İsim, Email)</label>
@@ -376,30 +387,31 @@
         <button id="refreshBtn">🔄 Yenile</button>
       </div>
     </div>
-    
+
     <div id="statsContainer" class="stats"></div>
-    
+
     <div id="loadingIndicator" class="loading">
       <div class="spinner"></div>
       <p>Firmalar yükleniyor...</p>
     </div>
-    
+
     <div id="errorContainer"></div>
-    
+
     <div id="categoriesContainer"></div>
   </div>
 
   <script type="module">
+    /* eslint-disable */
     import { db } from "./firebase.js";
     import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
     import { getAllCategories, getNameById, getIdByName, normalizeToIds } from "./src/categories/category-service.js";
     import { matchSuppliers } from "./src/matching/match-service.js";
     import { slugifyTr } from "./utils/slugify-tr.js";
-    
+
     let allUsers = [];
     let filteredUsers = [];
     let expandedCategories = new Set();
-    
+
     // UI Elements
     const searchInput = document.getElementById('searchInput');
     const roleFilter = document.getElementById('roleFilter');
@@ -409,7 +421,7 @@
     const errorContainer = document.getElementById('errorContainer');
     const statsContainer = document.getElementById('statsContainer');
     const categoriesContainer = document.getElementById('categoriesContainer');
-    
+
     // Load users from Firestore
     async function loadUsers() {
       try {
@@ -417,11 +429,11 @@
         errorContainer.innerHTML = '';
         categoriesContainer.innerHTML = '';
         statsContainer.innerHTML = '';
-        
+
         // Fetch all users
         const usersRef = collection(db, 'users');
         const snapshot = await getDocs(usersRef);
-        
+
         allUsers = [];
         snapshot.forEach(doc => {
           const userData = doc.data();
@@ -432,11 +444,11 @@
             });
           }
         });
-        
+
         console.log(`✅ Loaded ${allUsers.length} users`);
         renderStats();
         applyFilters();
-        
+
       } catch (error) {
         console.error('❌ Error loading users:', error);
         errorContainer.innerHTML = `<div class="error">Hata: ${error.message}</div>`;
@@ -444,13 +456,13 @@
         loadingIndicator.style.display = 'none';
       }
     }
-    
+
     // Render statistics
     function renderStats() {
       const suppliers = allUsers.filter(u => u.roles?.includes('supplier'));
       const buyers = allUsers.filter(u => u.roles?.includes('buyer'));
       const both = allUsers.filter(u => u.roles?.includes('supplier') && u.roles?.includes('buyer'));
-      
+
       const withIds = allUsers.filter(u => Array.isArray(u.supplierCategoryIds) && u.supplierCategoryIds.length > 0);
       const withSlugs = allUsers.filter(u => Array.isArray(u.supplierCategoryKeys) && u.supplierCategoryKeys.length > 0);
       const withNames = allUsers.filter(u => Array.isArray(u.supplierCategories) && u.supplierCategories.length > 0);
@@ -460,7 +472,7 @@
         const hasNames = Array.isArray(u.supplierCategories) && u.supplierCategories.length > 0;
         return !hasIds && !hasSlugs && !hasNames;
       });
-      
+
       statsContainer.innerHTML = `
         <div class="stat-card info">
           <div class="stat-value">${allUsers.length}</div>
@@ -496,11 +508,11 @@
         </div>
       `;
     }
-    
+
     // Apply filters
     function applyFilters() {
       let filtered = [...allUsers];
-      
+
       // Role filter
       const role = roleFilter.value;
       if (role === 'supplier') {
@@ -510,7 +522,7 @@
       } else if (role === 'both') {
         filtered = filtered.filter(u => u.roles?.includes('supplier') && u.roles?.includes('buyer'));
       }
-      
+
       // Format filter
       const format = formatFilter.value;
       if (format === 'ids') {
@@ -527,7 +539,7 @@
           return !hasIds && !hasSlugs && !hasNames;
         });
       }
-      
+
       // Search filter
       const searchTerm = searchInput.value.toLowerCase().trim();
       if (searchTerm) {
@@ -537,44 +549,44 @@
           return name.includes(searchTerm) || email.includes(searchTerm);
         });
       }
-      
+
       filteredUsers = filtered;
       renderCategories();
     }
-    
-      // Render categories with suppliers
+
+    // Render categories with suppliers
     async function renderCategories() {
       // Load all categories from new system
       const allCategories = await getAllCategories();
-      
+
       // Group users by categories
       const categoryMap = new Map();
-      
+
       allCategories.forEach(cat => {
         categoryMap.set(cat.id, {
           category: cat,
           users: []
         });
       });
-      
+
       filteredUsers.forEach(user => {
         const userCategories = new Set();
-        
+
         // Normalize all category formats to IDs
         const categoryTokens = [];
         if (Array.isArray(user.supplierCategoryIds)) categoryTokens.push(...user.supplierCategoryIds);
         if (Array.isArray(user.supplierCategoryKeys)) categoryTokens.push(...user.supplierCategoryKeys);
         if (Array.isArray(user.supplierCategories)) categoryTokens.push(...user.supplierCategories);
-        
+
         // Use normalizeToIds to convert all formats to IDs
         const normalizedIds = normalizeToIds(categoryTokens);
-        
+
         normalizedIds.forEach(id => {
           if (categoryMap.has(id)) {
             userCategories.add(id);
           }
         });
-        
+
         // Add user to categories
         userCategories.forEach(catId => {
           if (!categoryMap.get(catId).users.find(u => u.id === user.id)) {
@@ -582,14 +594,14 @@
           }
         });
       });
-      
+
       // Render categories
       categoriesContainer.innerHTML = '';
       allCategories.forEach(cat => {
         const data = categoryMap.get(cat.id);
         const users = data.users;
         const isExpanded = expandedCategories.has(cat.id);
-        
+
         const categoryEl = document.createElement('div');
         categoryEl.className = 'category-section';
         categoryEl.innerHTML = `
@@ -599,15 +611,15 @@
             <span class="category-count">${users.length} firma</span>
           </div>
           <div class="suppliers-grid" style="display: ${isExpanded ? 'grid' : 'none'}">
-            ${users.length === 0 
-              ? '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #9ca3af;">Bu kategoride firma bulunmamaktadır.</div>'
-              : users.map(user => renderUserCard(user)).join('')
-            }
+            ${users.length === 0
+            ? '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #9ca3af;">Bu kategoride firma bulunmamaktadır.</div>'
+            : users.map(user => renderUserCard(user)).join('')
+          }
           </div>
         `;
-        
+
         categoriesContainer.appendChild(categoryEl);
-        
+
         // Add click handler
         const header = categoryEl.querySelector('.category-header');
         header.addEventListener('click', () => {
@@ -621,7 +633,7 @@
         });
       });
     }
-    
+
     // Render user card
     function renderUserCard(user) {
       const companyName = user.companyName || user.displayName || 'İsimsiz Firma';
@@ -629,23 +641,23 @@
       const roles = [];
       if (user.roles?.includes('supplier')) roles.push('Tedarikçi');
       if (user.roles?.includes('buyer')) roles.push('Alıcı');
-      
+
       const ids = Array.isArray(user.supplierCategoryIds) ? user.supplierCategoryIds : [];
       const slugs = Array.isArray(user.supplierCategoryKeys) ? user.supplierCategoryKeys : [];
       const names = Array.isArray(user.supplierCategories) ? user.supplierCategories : [];
-      
+
       // Convert to display names using new system
       const categoryBadges = [];
       const allCategoryIds = new Set();
-      
+
       // Normalize all formats to IDs
       const categoryTokens = [...ids, ...slugs, ...names];
       const normalizedIds = normalizeToIds(categoryTokens);
-      
+
       normalizedIds.forEach(id => {
         allCategoryIds.add(id);
       });
-      
+
       // Get display names for all IDs
       allCategoryIds.forEach(id => {
         const name = getNameById(id);
@@ -653,7 +665,7 @@
           categoryBadges.push({ text: name, type: 'id' });
         }
       });
-      
+
       return `
         <div class="supplier-card">
           <div class="supplier-name">${companyName}</div>
@@ -662,9 +674,9 @@
             <strong>Roller:</strong> ${roles.join(', ') || 'Yok'}
           </div>
           <div class="supplier-categories">
-            ${categoryBadges.map(badge => 
-              `<span class="category-badge badge-${badge.type}">${badge.text}</span>`
-            ).join('')}
+            ${categoryBadges.map(badge =>
+        `<span class="category-badge badge-${badge.type}">${badge.text}</span>`
+      ).join('')}
           </div>
           <div class="supplier-format">
             <div class="format-item">
@@ -689,25 +701,25 @@
         </div>
       `;
     }
-    
+
     // Helper: Convert slug to category ID (using new system)
     async function slugToCategoryId(slug) {
       if (!slug) return null;
-      
+
       const allCategories = await getAllCategories();
       const id = getIdByName(slug) || (allCategories.find(c => c.slug === slug)?.id);
       return id || null;
     }
-    
+
     // Event listeners
     searchInput.addEventListener('input', applyFilters);
     roleFilter.addEventListener('change', applyFilters);
     formatFilter.addEventListener('change', applyFilters);
     refreshBtn.addEventListener('click', loadUsers);
-    
+
     // Initial load
     loadUsers();
   </script>
 </body>
-</html>
 
+</html>

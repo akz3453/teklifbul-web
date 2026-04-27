@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
   <meta charset="utf-8" />
-  <title>Şirket Profili — Teklifbul</title>
+  <title>Şirket Profili — NEFISOFT</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%233b82f6' rx='6'/%3E%3Ctext x='16' y='22' font-family='Arial' font-size='18' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E" />
   <link rel="stylesheet" href="/utils.css" />
@@ -282,6 +282,15 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.15);
       z-index: 1000;
     }
+
+    /* Teklifbul Rule v1.0 - CSP Fix: Reusable hover classes */
+    .cp-hover-underline:hover {
+      text-decoration: underline !important;
+    }
+    .cp-row-hover:hover {
+      background: #f3f4f6 !important;
+      border-color: #3b82f6 !important;
+    }
   </style>
 </head>
 <body>
@@ -309,7 +318,8 @@
         </div>
         <div class="company-info">
           <h1 class="company-name" id="companyName">Şirket Adı</h1>
-          <span class="company-code" id="companyCode">KOD</span>
+          <!-- Teklifbul Rule v1.0 - Şirket kodu gizlendi (güvenlik) -->
+          <span class="company-code" id="companyCode" style="display: none;">KOD</span>
           <div class="rating-section">
             <div class="stars" id="ratingStars">
               ⭐⭐⭐⭐⭐
@@ -366,16 +376,7 @@
         </div>
       </div>
       
-      <!-- Company Team -->
-      <div class="section">
-        <div class="section-header">
-          <h3>Ekip Üyeleri</h3>
-          <div id="teamVisibilityToggle" class="toggle-group hidden"></div>
-        </div>
-        <div id="companyTeam" class="info-grid">
-          <!-- Team members will be added dynamically -->
-        </div>
-      </div>
+      <!-- Teklifbul Rule v1.0 - Ekip Üyeleri bölümü KVKK uyumluluğu için kaldırıldı -->
       
       <!-- Gallery -->
       <div class="section">
@@ -437,7 +438,7 @@
             <p style="margin:0 0 12px 0; font-size:14px; color:#6b7280;">
               Bu şirketin Google Business profilini görüntüleyebilir ve yorum yapabilirsiniz.
             </p>
-            <a id="googleBusinessLink" href="#" target="_blank" 
+            <a id="googleBusinessLink" href="#" target="_blank" rel="noopener noreferrer"
                style="display:inline-flex; align-items:center; gap:8px; padding:10px 16px; background:#3b82f6; color:white; text-decoration:none; border-radius:6px; font-weight:600; font-size:14px;">
               📍 Google Maps'te Görüntüle
             </a>
@@ -498,6 +499,8 @@
   </div>
   
   <script type="module">
+    // Teklifbul Rule v1.0 - XSS Protection
+    import DOMPurify from 'https://cdn.jsdelivr.net/npm/dompurify@3.2.2/+esm';
     // Import statements will be added
     import { auth, db, app } from "./firebase.js";
     // Teklifbul Rule v1.0 - Structured Logging
@@ -558,7 +561,7 @@
       return null;
     }
     
-    // Check if user is authorized (owner or privileged)
+    // Teklifbul Rule v1.0 - Check if user is authorized (must be member of this company)
     async function checkAuthorization(companyId) {
       const user = auth.currentUser;
       if (!user) return false;
@@ -572,11 +575,38 @@
         if (!userDoc.exists()) return false;
         
         const userData = userDoc.data();
-        const privilegedRoles = new Set(['isveren','genel_mudur','yonetim_kurulu_baskani','sirket_sahibi']);
         
-        return (companyData.ownerId === user.uid) || 
-               (companyData.ownerUid === user.uid) ||
-               privilegedRoles.has(userData.companyRole || '');
+        // Teklifbul Rule v1.0 - Kullanıcı bu şirketin üyesi olmalı
+        const userCompanyId = userData.companyId || (userData.companies && userData.companies[0]);
+        if (userCompanyId !== companyId) {
+          // Bu normal bir durum (farklı şirket profil sayfasına bakıyor), sadece debug modunda logla
+          logger.group("Authorization check");
+          logger.info("User viewing different company profile (normal)", {
+            userCompanyId,
+            requestedCompanyId: companyId,
+            userId: user.uid
+          });
+          logger.end();
+          return false;
+        }
+        
+        // Şirket sahibi kontrolü
+        if (companyData.ownerId === user.uid || companyData.ownerUid === user.uid) {
+          return true;
+        }
+        
+        // Belirli rollerde olan kullanıcılar düzenleyebilir
+        const privilegedRoles = new Set([
+          'buyer:isveren', 'buyer:yonetim_kurulu_baskani', 'buyer:yonetim_kurulu_uyesi',
+          'buyer:ceo', 'buyer:genel_mudur', 'buyer:genel_mudur_yardimcisi',
+          'supplier:isveren', 'supplier:yonetim_kurulu_baskani', 'supplier:yonetim_kurulu_uyesi',
+          'supplier:ceo', 'supplier:genel_mudur', 'supplier:genel_mudur_yardimcisi',
+          // Geriye dönük uyumluluk için prefix'siz roller
+          'isveren', 'genel_mudur', 'yonetim_kurulu_baskani', 'sirket_sahibi'
+        ]);
+        
+        const userRole = userData.companyRole || '';
+        return privilegedRoles.has(userRole);
       } catch (e) {
         logger.error("Authorization check failed", e);
         return false;
@@ -604,17 +634,17 @@
           setupEditMode(companyId);
         }
         
-        // Load profile data
+        // Görünürlük ayarlarını yükle (içerik gösteriminden ÖNCE)
+        await loadVisibilitySettings(companyId);
+        
+        // Load profile data (görünürlük ayarlarından sonra)
         await displayCompanyProfile(companyData);
         await loadReviews(companyId);
         await loadGoogleBusinessLink(companyId); // Teklifbul Rule v1.0 - Ücretsiz: Google Business linki göster
-        
+
         // Teklifbul Rol & Onay Sistemi - Onay mekanizması ve ticaret geçmişi
         await loadApprovalMechanism(companyId);
         await loadSuccessfulTradeHistory(companyId);
-        
-        // Görünürlük ayarlarını yükle (içerik gösteriminden ÖNCE)
-        await loadVisibilitySettings(companyId);
         
         // Referans şirket butonunu aktifleştir (yetkili kullanıcılar için)
         if (isAuthorized) {
@@ -635,11 +665,23 @@
     async function displayCompanyProfile(companyData) {
       // Company name and code
       document.getElementById('companyName').textContent = companyData.name || 'Şirket Adı';
-      document.getElementById('companyCode').textContent = companyData.code || 'KOD';
+      // Teklifbul Rule v1.0 - Şirket kodu gizlendi (güvenlik)
+      const companyCodeEl = document.getElementById('companyCode');
+      if (companyCodeEl) {
+        companyCodeEl.textContent = companyData.code || 'KOD';
+        companyCodeEl.style.display = 'none'; // Her zaman gizli
+      }
       
-      // Company logo
+      // Company logo - Teklifbul Rule v1.0 - XSS Protection
       if (companyData.logoUrl) {
-        document.getElementById('companyLogo').innerHTML = `<img src="${companyData.logoUrl}" alt="${companyData.name}" style="width:100%; height:100%; object-fit:cover;">`;
+        const safeLogoUrl = DOMPurify.sanitize(companyData.logoUrl || '', { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
+        const safeCompanyName = DOMPurify.sanitize(companyData.name || '', { ALLOWED_TAGS: [] });
+        // Teklifbul Rule v1.0 - Image Optimization: Lazy loading
+        const logoHTML = DOMPurify.sanitize(`<img src="${safeLogoUrl}" alt="${safeCompanyName}" loading="lazy" style="width:100%; height:100%; object-fit:cover;">`, {
+          ALLOWED_TAGS: ['img'],
+          ALLOWED_ATTR: ['src', 'alt', 'style', 'loading']
+        });
+        document.getElementById('companyLogo').innerHTML = logoHTML;
       }
       
       // Company info grid
@@ -649,7 +691,7 @@
       const infoItems = [
         { label: 'Vergi No', value: companyData.taxNumber, key: 'taxNumber' },
         { label: 'MERSİS No', value: companyData.mersisNo, key: 'mersisNo' },
-        { label: 'Web Sitesi', value: companyData.website ? `<a href="${companyData.website}" target="_blank">${companyData.website}</a>` : '-', key: 'website' },
+        { label: 'Web Sitesi', value: companyData.website ? `<a href="${companyData.website}" target="_blank" rel="noopener noreferrer">${companyData.website}</a>` : '-', key: 'website' },
         { label: 'Adres', value: companyData.address || companyData.invoiceAddress, key: 'address' },
         { label: 'Vergi Dairesi', value: companyData.taxOffice, key: 'taxOffice' },
       ];
@@ -702,18 +744,18 @@
       // Categories
       await loadCategories(companyData);
       
-      // Team members
-      await loadTeamMembers(currentCompanyId);
+      // Team members - Görünürlük ayarlarına göre yüklenecek (loadVisibilitySettings içinde)
+      // await loadTeamMembers(currentCompanyId); // loadVisibilitySettings içinde çağrılıyor
       
       // Gallery
       await loadGallery(currentCompanyId);
       
       // Referral companies
       await loadReferralCompanies(currentCompanyId);
-      
-      // Contact info and bank accounts
+
+      // Contact info
       await loadContactInfo(companyData);
-      await loadBankAccounts(companyData);
+      // Teklifbul Rule v1.0 - Banka Hesapları bölümü KVKK uyumluluğu için kaldırıldı
     }
     
     // Load contact info
@@ -722,56 +764,8 @@
       // Şimdilik company info grid içinde gösterilebilir veya ayrı bir section oluşturulabilir
       // Mevcut sistemde company info grid içinde gösteriliyor, bu yeterli
     }
-    
-    // Load bank accounts
-    async function loadBankAccounts(companyData) {
-      const bankAccountsSection = document.getElementById('bankAccountsSection');
-      if (!bankAccountsSection) {
-        // Bölümü oluştur
-        const referralSection = document.querySelector('.section:has(#referralCompanies)');
-        if (referralSection && referralSection.nextElementSibling) {
-          const newSection = document.createElement('div');
-          newSection.className = 'section';
-          newSection.id = 'bankAccountsSection';
-          newSection.innerHTML = `
-            <div class="section-header">
-              <h3>Banka Hesapları</h3>
-              <div id="bankAccountsVisibilityToggle" class="toggle-group hidden"></div>
-            </div>
-            <div id="bankAccountsList" class="info-grid">
-              <!-- Bank accounts will be added dynamically -->
-            </div>
-          `;
-          referralSection.parentElement.insertBefore(newSection, referralSection.nextElementSibling);
-        }
-      }
-      
-      const bankAccountsList = document.getElementById('bankAccountsList');
-      if (!bankAccountsList) return;
-      
-      bankAccountsList.innerHTML = '';
-      
-      if (companyData.bankAccounts && Array.isArray(companyData.bankAccounts) && companyData.bankAccounts.length > 0) {
-        companyData.bankAccounts.forEach((account, index) => {
-          const accountItem = document.createElement('div');
-          accountItem.className = 'info-item';
-          accountItem.dataset.index = index;
-          accountItem.innerHTML = `
-            <div class="info-label">Banka ${index + 1}</div>
-            <div class="info-value">
-              <div><strong>${account.bankName || 'Banka'}</strong></div>
-              <div style="font-size:12px; color:#6b7280; margin-top:4px;">
-                IBAN: ${account.iban || '-'}<br>
-                Hesap Adı: ${account.accountName || '-'}
-              </div>
-            </div>
-          `;
-          bankAccountsList.appendChild(accountItem);
-        });
-      } else {
-        bankAccountsList.innerHTML = '<div style="color:#6b7280; grid-column:1/-1;">Banka hesabı bilgisi yok.</div>';
-      }
-    }
+
+    // Teklifbul Rule v1.0 - Banka Hesapları bölümü KVKK uyumluluğu için kaldırıldı
     
     // Load categories
     async function loadCategories(companyData) {
@@ -791,38 +785,7 @@
       }
     }
     
-    // Load team members
-    async function loadTeamMembers(companyId) {
-      const teamContainer = document.getElementById('companyTeam');
-      teamContainer.innerHTML = '';
-      
-      try {
-        const usersQuery = query(
-          collection(db, "users"),
-          where("companyId", "==", companyId),
-          where("companyJoinStatus", "==", "approved")
-        );
-        const usersSnapshot = await getDocs(usersQuery);
-        
-        if (usersSnapshot.empty) {
-          teamContainer.innerHTML = '<div style="color:#6b7280;">Ekip üyesi bilgisi yok.</div>';
-          return;
-        }
-        
-        usersSnapshot.forEach(docSnap => {
-          const userData = docSnap.data();
-          const teamItem = document.createElement('div');
-          teamItem.className = 'info-item';
-          teamItem.innerHTML = `
-            <div class="info-label">${userData.companyRole || 'Üye'}</div>
-            <div class="info-value">${userData.displayName || userData.email || 'Kullanıcı'}</div>
-          `;
-          teamContainer.appendChild(teamItem);
-        });
-      } catch (e) {
-        logger.error("Team load failed", e);
-      }
-    }
+    // Teklifbul Rule v1.0 - Ekip Üyeleri bölümü KVKK uyumluluğu için kaldırıldı
     
     // Load gallery
     async function loadGallery(companyId) {
@@ -846,15 +809,23 @@
           
           // Yetkili kullanıcılar için silme butonu
           if (isAuthorized) {
+            // Teklifbul Rule v1.0 - Image Optimization: Lazy loading
             galleryItem.innerHTML = `
-              <img src="${imageData.url}" alt="${imageData.caption || 'Fotoğraf'}" style="width:100%; height:100%; object-fit:cover;">
+              <img src="${imageData.url}" alt="${imageData.caption || 'Fotoğraf'}" loading="lazy" style="width:100%; height:100%; object-fit:cover;">
               <button class="delete-image-btn" data-image-id="${docSnap.id}" data-storage-path="${imageData.storagePath || ''}" 
                       style="position:absolute; top:4px; right:4px; padding:4px 8px; background:rgba(239,68,68,0.9); color:white; border:none; border-radius:4px; cursor:pointer; font-size:11px; font-weight:600;">
                 ✕
               </button>
             `;
           } else {
-            galleryItem.innerHTML = `<img src="${imageData.url}" alt="${imageData.caption || 'Fotoğraf'}" style="width:100%; height:100%; object-fit:cover;">`;
+            // Teklifbul Rule v1.0 - XSS Protection: Sanitize image URL and caption
+            const safeImageUrl = DOMPurify.sanitize(imageData.url || '', { ALLOWED_TAGS: [] });
+            const safeCaption = DOMPurify.sanitize(imageData.caption || 'Fotoğraf', { ALLOWED_TAGS: [] });
+            // Teklifbul Rule v1.0 - Image Optimization: Lazy loading
+            galleryItem.innerHTML = DOMPurify.sanitize(`<img src="${safeImageUrl}" alt="${safeCaption}" loading="lazy" style="width:100%; height:100%; object-fit:cover;">`, {
+              ALLOWED_TAGS: ['img'],
+              ALLOWED_ATTR: ['src', 'alt', 'style', 'loading']
+            });
           }
           
           galleryContainer.appendChild(galleryItem);
@@ -923,6 +894,21 @@
       if (uploadBtn) {
         uploadBtn.disabled = true;
         uploadBtn.textContent = `⏳ ${files.length} fotoğraf yükleniyor...`;
+      }
+      
+      // Teklifbul Rule v1.0 - Yetkilendirme kontrolü (güvenlik)
+      const isAuthorized = await checkAuthorization(companyId);
+      if (!isAuthorized) {
+        logger.warn("Unauthorized attempt to upload gallery images", {
+          companyId,
+          userId: auth.currentUser?.uid
+        });
+        toast.error("Bu şirketin galerisine fotoğraf yükleme yetkiniz yok.");
+        if (uploadBtn) {
+          uploadBtn.disabled = false;
+          uploadBtn.textContent = originalText;
+        }
+        return;
       }
       
       let successCount = 0;
@@ -1078,6 +1064,17 @@
     
     // Referans isteği gönder
     async function submitReferralRequest(companyId, modal) {
+      // Teklifbul Rule v1.0 - Yetkilendirme kontrolü (güvenlik)
+      const isAuthorized = await checkAuthorization(companyId);
+      if (!isAuthorized) {
+        logger.warn("Unauthorized attempt to submit referral request", {
+          companyId,
+          userId: auth.currentUser?.uid
+        });
+        toast.error("Bu şirket için referans ekleme yetkiniz yok.");
+        return;
+      }
+      
       const codeInput = document.getElementById('referralCompanyCode');
       const companyCode = codeInput.value.trim().toUpperCase();
       
@@ -1406,15 +1403,17 @@
         const settingsRef = doc(db, 'companies', companyId, 'profileSettings', 'visibility');
         const settingsDoc = await getDoc(settingsRef);
         const settings = settingsDoc.exists() ? settingsDoc.data() : {
-          // Varsayılan değerler: Her şey görünür (banka hesapları gizli)
+          // Teklifbul Rule v1.0 - Varsayılan görünürlük ayarları (KVKK uyumlu)
           companyInfo: true,
           about: true,
           categories: true,
-          team: true,
+          // team: false, // KVKK uyumluluğu için kaldırıldı
           gallery: true,
-          bankAccounts: false, // Varsayılan olarak gizli
+          companyCode: false, // Şirket kodu her zaman gizli (güvenlik)
           contactInfo: true,
-          googleBusiness: true
+          googleBusiness: true,
+          // Özelleştirilebilir alanlar için varsayılan değerler
+          customFields: {}
         };
         
         // Varsayılan değerler yoksa ve yetkili kullanıcı ise kaydet
@@ -1428,32 +1427,36 @@
         }
         
         // Görünürlük ayarlarına göre içerikleri güncelle (tüm kullanıcılar için)
+        // Teklifbul Rule v1.0 - Özel metinler de dahil ediliyor
         applyVisibilitySettings(settings);
+        
+        // Teklifbul Rule v1.0 - Ekip Üyeleri bölümü KVKK uyumluluğu için kaldırıldı
         
       } catch (e) {
         logger.error("Visibility settings load failed", e);
-        // Hata durumunda her şeyi göster (varsayılan)
-        applyVisibilitySettings({
+        // Hata durumunda KVKK uyumlu varsayılan ayarlar (ekip üyeleri gizli)
+        const defaultSettings = {
           companyInfo: true,
           about: true,
           categories: true,
-          team: true,
+          // team: false, // KVKK uyumluluğu için kaldırıldı
           gallery: true,
-          contactInfo: true
-        });
+          contactInfo: true,
+          customFields: {}
+        };
+        applyVisibilitySettings(defaultSettings);
       }
     }
     
     // Toggle switch'leri oluştur
     function createVisibilityToggles(companyId, settings) {
+      // Teklifbul Rule v1.0 - Banka Hesapları ve Ekip Üyeleri KVKK uyumluluğu için kaldırıldı
       const visibilityConfig = [
         { key: 'companyInfo', label: 'Şirket Bilgileri', containerId: 'visibilityToggles', sectionId: 'companyInfoGrid' },
         { key: 'about', label: 'Hakkında', containerId: 'aboutVisibilityToggle', sectionId: 'companyAbout' },
         { key: 'categories', label: 'Kategoriler', containerId: 'categoriesVisibilityToggle', sectionId: 'companyCategories' },
-        { key: 'team', label: 'Ekip Üyeleri', containerId: 'teamVisibilityToggle', sectionId: 'companyTeam' },
         { key: 'gallery', label: 'Galeri', containerId: null, sectionId: 'imageGallery' },
-        { key: 'contactInfo', label: 'İletişim Bilgileri', containerId: 'visibilityToggles', sectionId: 'companyInfoGrid' },
-        { key: 'bankAccounts', label: 'Banka Hesapları', containerId: 'bankAccountsVisibilityToggle', sectionId: 'bankAccountsList' }
+        { key: 'contactInfo', label: 'İletişim Bilgileri', containerId: 'visibilityToggles', sectionId: 'companyInfoGrid' }
       ];
       
       // Her bölüm için toggle oluştur
@@ -1520,6 +1523,8 @@
     
     // Görünürlük ayarlarını uygula (tüm kullanıcılar için)
     function applyVisibilitySettings(settings) {
+      const customFields = settings.customFields || {};
+      
       // Şirket Bilgileri
       const companyInfoGrid = document.getElementById('companyInfoGrid');
       if (companyInfoGrid) {
@@ -1533,8 +1538,14 @@
             const placeholder = document.createElement('div');
             placeholder.className = 'visibility-placeholder';
             placeholder.style.cssText = 'grid-column:1/-1; padding:20px; text-align:center; color:#6b7280; font-style:italic; background:#f9fafb; border-radius:8px;';
-            placeholder.textContent = 'Bu bilgiler gizlenmiştir.';
+            placeholder.textContent = customFields.companyInfo || 'Bu bilgiler gizlenmiştir.';
             companyInfoGrid.appendChild(placeholder);
+          } else {
+            // Mevcut placeholder'ı güncelle
+            const placeholder = companyInfoGrid.querySelector('.visibility-placeholder');
+            if (placeholder && customFields.companyInfo) {
+              placeholder.textContent = customFields.companyInfo;
+            }
           }
         } else {
           // Placeholder'ı kaldır ve içeriği göster
@@ -1542,6 +1553,15 @@
           if (placeholder) placeholder.remove();
           const existingItems = companyInfoGrid.querySelectorAll('.info-item');
           existingItems.forEach(item => item.style.display = '');
+          
+          // Özel metin varsa göster
+          if (customFields.companyInfo) {
+            const customTextDiv = document.createElement('div');
+            customTextDiv.className = 'info-item custom-text';
+            customTextDiv.style.cssText = 'grid-column:1/-1; padding:16px; background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px; color:#1e293b; font-size:14px; line-height:1.6;';
+            customTextDiv.textContent = customFields.companyInfo;
+            companyInfoGrid.insertBefore(customTextDiv, companyInfoGrid.firstChild);
+          }
         }
       }
       
@@ -1558,12 +1578,22 @@
               placeholder = document.createElement('div');
               placeholder.className = 'visibility-placeholder';
               placeholder.style.cssText = 'padding:20px; text-align:center; color:#6b7280; font-style:italic; background:#f9fafb; border-radius:8px;';
-              placeholder.textContent = 'Bu bilgi gizlenmiştir.';
+              placeholder.textContent = customFields.about || 'Bu bilgi gizlenmiştir.';
               aboutSection.querySelector('.section-header')?.parentElement?.insertBefore(placeholder, companyAbout);
+            } else if (customFields.about) {
+              placeholder.textContent = customFields.about;
             }
           } else {
             companyAbout.style.display = 'block';
             if (placeholder) placeholder.remove();
+            
+            // Özel metin varsa göster
+            if (customFields.about) {
+              const customTextDiv = document.createElement('div');
+              customTextDiv.style.cssText = 'padding:16px; background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px; color:#1e293b; font-size:14px; line-height:1.6; margin-top:12px;';
+              customTextDiv.textContent = customFields.about;
+              companyAbout.appendChild(customTextDiv);
+            }
           }
         }
       }
@@ -1581,38 +1611,27 @@
               placeholder = document.createElement('div');
               placeholder.className = 'visibility-placeholder';
               placeholder.style.cssText = 'padding:20px; text-align:center; color:#6b7280; font-style:italic; background:#f9fafb; border-radius:8px;';
-              placeholder.textContent = 'Kategoriler gizlenmiştir.';
+              placeholder.textContent = customFields.categories || 'Kategoriler gizlenmiştir.';
               categoriesSection.querySelector('.section-header')?.parentElement?.insertBefore(placeholder, companyCategories);
+            } else if (customFields.categories) {
+              placeholder.textContent = customFields.categories;
             }
           } else {
             companyCategories.style.display = 'flex';
             if (placeholder) placeholder.remove();
+            
+            // Özel metin varsa göster
+            if (customFields.categories) {
+              const customTextDiv = document.createElement('div');
+              customTextDiv.style.cssText = 'width:100%; padding:16px; background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px; color:#1e293b; font-size:14px; line-height:1.6; margin-top:12px;';
+              customTextDiv.textContent = customFields.categories;
+              companyCategories.appendChild(customTextDiv);
+            }
           }
         }
       }
       
-      // Ekip Üyeleri
-      const companyTeam = document.getElementById('companyTeam');
-      if (companyTeam) {
-        const teamSection = companyTeam.closest('.section');
-        if (teamSection) {
-          let placeholder = teamSection.querySelector('.visibility-placeholder');
-          
-          if (settings.team === false) {
-            companyTeam.style.display = 'none';
-            if (!placeholder) {
-              placeholder = document.createElement('div');
-              placeholder.className = 'visibility-placeholder';
-              placeholder.style.cssText = 'padding:20px; text-align:center; color:#6b7280; font-style:italic; background:#f9fafb; border-radius:8px;';
-              placeholder.textContent = 'Ekip bilgileri gizlenmiştir.';
-              teamSection.querySelector('.section-header')?.parentElement?.insertBefore(placeholder, companyTeam);
-            }
-          } else {
-            companyTeam.style.display = 'grid';
-            if (placeholder) placeholder.remove();
-          }
-        }
-      }
+      // Teklifbul Rule v1.0 - Ekip Üyeleri bölümü KVKK uyumluluğu için kaldırıldı
       
       // Galeri
       const imageGallery = document.getElementById('imageGallery');
@@ -1627,12 +1646,22 @@
               placeholder = document.createElement('div');
               placeholder.className = 'visibility-placeholder';
               placeholder.style.cssText = 'padding:20px; text-align:center; color:#6b7280; font-style:italic; background:#f9fafb; border-radius:8px;';
-              placeholder.textContent = 'Galeri gizlenmiştir.';
+              placeholder.textContent = customFields.gallery || 'Galeri gizlenmiştir.';
               gallerySection.querySelector('.section-header')?.parentElement?.insertBefore(placeholder, imageGallery);
+            } else if (customFields.gallery) {
+              placeholder.textContent = customFields.gallery;
             }
           } else {
             imageGallery.style.display = 'grid';
             if (placeholder) placeholder.remove();
+            
+            // Özel metin varsa göster
+            if (customFields.gallery) {
+              const customTextDiv = document.createElement('div');
+              customTextDiv.style.cssText = 'grid-column:1/-1; padding:16px; background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px; color:#1e293b; font-size:14px; line-height:1.6;';
+              customTextDiv.textContent = customFields.gallery;
+              imageGallery.appendChild(customTextDiv);
+            }
           }
         }
       }
@@ -1643,35 +1672,48 @@
         if (contactInfoItem) {
           contactInfoItem.style.display = 'none';
         }
+        // Özel metin göster
+        if (customFields.contactInfo) {
+          let customTextDiv = companyInfoGrid.querySelector('.custom-text-contact');
+          if (!customTextDiv) {
+            customTextDiv = document.createElement('div');
+            customTextDiv.className = 'info-item custom-text-contact';
+            customTextDiv.style.cssText = 'grid-column:1/-1; padding:16px; background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px; color:#1e293b; font-size:14px; line-height:1.6;';
+            companyInfoGrid.appendChild(customTextDiv);
+          }
+          customTextDiv.textContent = customFields.contactInfo;
+        }
       } else {
         const contactInfoItem = document.querySelector('#companyInfoGrid .info-item[data-key="contactInfo"]');
         if (contactInfoItem) {
           contactInfoItem.style.display = '';
         }
-      }
-      
-      // Banka Hesapları
-      const bankAccountsList = document.getElementById('bankAccountsList');
-      if (bankAccountsList) {
-        const bankSection = bankAccountsList.closest('.section');
-        if (bankSection) {
-          let placeholder = bankSection.querySelector('.visibility-placeholder');
-          
-          if (settings.bankAccounts === false) {
-            bankAccountsList.style.display = 'none';
-            if (!placeholder) {
-              placeholder = document.createElement('div');
-              placeholder.className = 'visibility-placeholder';
-              placeholder.style.cssText = 'padding:20px; text-align:center; color:#6b7280; font-style:italic; background:#f9fafb; border-radius:8px;';
-              placeholder.textContent = 'Banka hesabı bilgileri gizlenmiştir.';
-              bankSection.querySelector('.section-header')?.parentElement?.insertBefore(placeholder, bankAccountsList);
-            }
-          } else {
-            bankAccountsList.style.display = 'grid';
-            if (placeholder) placeholder.remove();
+        // Özel metin varsa göster
+        if (customFields.contactInfo) {
+          let customTextDiv = companyInfoGrid.querySelector('.custom-text-contact');
+          if (!customTextDiv) {
+            customTextDiv = document.createElement('div');
+            customTextDiv.className = 'info-item custom-text-contact';
+            customTextDiv.style.cssText = 'grid-column:1/-1; padding:16px; background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px; color:#1e293b; font-size:14px; line-height:1.6; margin-top:12px;';
+            companyInfoGrid.appendChild(customTextDiv);
           }
+          customTextDiv.textContent = customFields.contactInfo;
+        } else {
+          // Özel metin yoksa kaldır
+          const customTextDiv = companyInfoGrid.querySelector('.custom-text-contact');
+          if (customTextDiv) customTextDiv.remove();
         }
       }
+      
+      // Google Business görünürlüğü
+      if (settings.googleBusiness === false) {
+        const googleBusinessItem = document.querySelector('#companyInfoGrid .info-item[data-key="website"]');
+        if (googleBusinessItem && googleBusinessItem.textContent.includes('google.com')) {
+          googleBusinessItem.style.display = 'none';
+        }
+      }
+      
+      // Teklifbul Rule v1.0 - Banka Hesapları bölümü KVKK uyumluluğu için kaldırıldı
     }
     
     // Teklifbul Rule v1.0 - Logo yükleme sistemi kurulumu
@@ -1716,6 +1758,17 @@
       }
       
       try {
+        // Teklifbul Rule v1.0 - Yetkilendirme kontrolü (güvenlik)
+        const isAuthorized = await checkAuthorization(companyId);
+        if (!isAuthorized) {
+          logger.warn("Unauthorized attempt to upload logo", {
+            companyId,
+            userId: auth.currentUser?.uid
+          });
+          toast.error("Bu şirketin logosunu yükleme yetkiniz yok.");
+          return;
+        }
+        
         // Firebase Storage'a yükle
         const user = auth.currentUser;
         if (!user) {
@@ -1743,7 +1796,13 @@
         // UI'ı güncelle
         const logoElement = document.getElementById('companyLogo');
         if (logoElement) {
-          logoElement.innerHTML = `<img src="${downloadURL}" alt="Şirket Logosu" style="width:100%; height:100%; object-fit:cover; border-radius:12px;">`;
+          // Teklifbul Rule v1.0 - XSS Protection: Sanitize logo URL
+          const safeLogoUrl = DOMPurify.sanitize(downloadURL || '', { ALLOWED_TAGS: [] });
+          // Teklifbul Rule v1.0 - Image Optimization: Lazy loading
+          logoElement.innerHTML = DOMPurify.sanitize(`<img src="${safeLogoUrl}" alt="Şirket Logosu" loading="lazy" style="width:100%; height:100%; object-fit:cover; border-radius:12px;">`, {
+            ALLOWED_TAGS: ['img'],
+            ALLOWED_ATTR: ['src', 'alt', 'style', 'loading']
+          });
         }
         
         toast.success(MESSAGES.SUCCESS_LOGO_UPLOADED);
@@ -1767,27 +1826,44 @@
     function setupEditMode(companyId) {
       const editBtn = document.getElementById('editModeBtn');
       if (!editBtn) return;
-      
-      editBtn.addEventListener('click', () => {
+
+      editBtn.addEventListener('click', async () => {
         isEditMode = !isEditMode;
-        toggleEditMode(isEditMode, companyId);
+        await toggleEditMode(isEditMode, companyId);
       });
     }
     
     // Edit Mode'u aç/kapat
-    function toggleEditMode(active, companyId) {
-      const editBtn = document.getElementById('editModeBtn');
+    async function toggleEditMode(active, companyId) {
+      // Teklifbul Rule v1.0 - Yetkilendirme kontrolü (güvenlik)
+      const isAuthorized = await checkAuthorization(companyId);
+      if (!isAuthorized) {
+        logger.warn("Unauthorized attempt to toggle edit mode", {
+          companyId,
+          userId: auth.currentUser?.uid
+        });
+        toast.error("Bu şirketin profilini düzenleme yetkiniz yok.");
+        isEditMode = false;
+        const editBtn = document.getElementById('editModeBtn');
+        if (editBtn) {
+          editBtn.textContent = '⚙️ Düzenleme Modu';
+          editBtn.style.background = '';
+        }
+        return;
+      }
       
+      const editBtn = document.getElementById('editModeBtn');
+
       if (active) {
         editBtn.textContent = '💾 Kaydet';
         editBtn.style.background = '#10b981';
-        
+
         // Düzenlenebilir alanları etkinleştir
         enableEditMode(companyId);
       } else {
         editBtn.textContent = '⚙️ Düzenleme Modu';
         editBtn.style.background = '';
-        
+
         // Değişiklikleri kaydet
         saveCompanyProfile(companyId).then(() => {
           disableEditMode();
@@ -1803,17 +1879,28 @@
       const companyNameEl = document.getElementById('companyName');
       if (companyNameEl && !companyNameEl.querySelector('input')) {
         const originalText = companyNameEl.textContent;
-        companyNameEl.innerHTML = `<input type="text" id="editCompanyName" value="${originalText}" 
-          style="width:100%; padding:8px; border:1px solid #3b82f6; border-radius:6px; font-size:18px; font-weight:700;">`;
+        // Teklifbul Rule v1.0 - XSS Protection
+        const safeOriginalText = DOMPurify.sanitize(originalText || '', { ALLOWED_TAGS: [] });
+        const inputHTML = DOMPurify.sanitize(`<input type="text" id="editCompanyName" value="${safeOriginalText}" 
+          style="width:100%; padding:8px; border:1px solid #3b82f6; border-radius:6px; font-size:18px; font-weight:700;">`, {
+          ALLOWED_TAGS: ['input'],
+          ALLOWED_ATTR: ['type', 'id', 'value', 'style']
+        });
+        companyNameEl.innerHTML = inputHTML;
       }
       
       // Hakkında
       const aboutEl = document.getElementById('companyAbout');
       if (aboutEl && !aboutEl.querySelector('textarea')) {
         const originalText = aboutEl.textContent;
-        aboutEl.innerHTML = `<textarea id="editAbout" 
+        // Teklifbul Rule v1.0 - XSS Protection: Sanitize original text
+        const safeOriginalText = DOMPurify.sanitize(originalText || '', { ALLOWED_TAGS: [] });
+        aboutEl.innerHTML = DOMPurify.sanitize(`<textarea id="editAbout" 
           style="width:100%; padding:12px; border:1px solid #3b82f6; border-radius:6px; font-size:14px; line-height:1.6; min-height:120px; resize:vertical;"
-          placeholder="Şirketiniz hakkında bilgi girin...">${originalText}</textarea>`;
+          placeholder="Şirketiniz hakkında bilgi girin...">${safeOriginalText}</textarea>`, {
+          ALLOWED_TAGS: ['textarea'],
+          ALLOWED_ATTR: ['id', 'style', 'placeholder']
+        });
       }
       
       // Şirket Bilgileri grid - her bir item'ı düzenlenebilir yap
@@ -1830,16 +1917,28 @@
             currentValue = linkEl.href;
           }
           
+          // Teklifbul Rule v1.0 - XSS Protection: Sanitize current value
+          const safeCurrentValue = DOMPurify.sanitize(currentValue || '', { ALLOWED_TAGS: [] });
+          const safeKey = DOMPurify.sanitize(key || '', { ALLOWED_TAGS: [] });
           if (key === 'website') {
-            valueEl.innerHTML = `<input type="url" id="edit_${key}" value="${currentValue}" 
-              style="width:100%; padding:6px; border:1px solid #3b82f6; border-radius:4px;">`;
+            valueEl.innerHTML = DOMPurify.sanitize(`<input type="url" id="edit_${safeKey}" value="${safeCurrentValue}" 
+              style="width:100%; padding:6px; border:1px solid #3b82f6; border-radius:4px;">`, {
+              ALLOWED_TAGS: ['input'],
+              ALLOWED_ATTR: ['type', 'id', 'value', 'style']
+            });
           } else if (key === 'address') {
-            valueEl.innerHTML = `<textarea id="edit_${key}" 
+            valueEl.innerHTML = DOMPurify.sanitize(`<textarea id="edit_${safeKey}" 
               style="width:100%; padding:6px; border:1px solid #3b82f6; border-radius:4px; min-height:60px; resize:vertical;"
-              >${currentValue}</textarea>`;
+              >${safeCurrentValue}</textarea>`, {
+              ALLOWED_TAGS: ['textarea'],
+              ALLOWED_ATTR: ['id', 'style']
+            });
           } else {
-            valueEl.innerHTML = `<input type="text" id="edit_${key}" value="${currentValue}" 
-              style="width:100%; padding:6px; border:1px solid #3b82f6; border-radius:4px;">`;
+            valueEl.innerHTML = DOMPurify.sanitize(`<input type="text" id="edit_${safeKey}" value="${safeCurrentValue}" 
+              style="width:100%; padding:6px; border:1px solid #3b82f6; border-radius:4px;">`, {
+              ALLOWED_TAGS: ['input'],
+              ALLOWED_ATTR: ['type', 'id', 'value', 'style']
+            });
           }
         }
       });
@@ -1881,6 +1980,17 @@
             }
           }
         });
+        
+        // Teklifbul Rule v1.0 - Yetkilendirme kontrolü (güvenlik)
+        const isAuthorized = await checkAuthorization(companyId);
+        if (!isAuthorized) {
+          logger.warn("Unauthorized attempt to save company profile", {
+            companyId,
+            userId: auth.currentUser?.uid
+          });
+          toast.error("Bu şirketin profilini düzenleme yetkiniz yok.");
+          throw new Error("Unauthorized");
+        }
         
         // Firestore'a kaydet
         if (Object.keys(updateData).length > 0) {
@@ -2536,10 +2646,9 @@
         historyContent.innerHTML = `
           <div style="display:grid; gap:12px;">
             ${tradesArray.map(trade => `
-              <div style="padding:16px; background:#f9fafb; border-radius:8px; border:1px solid #e5e7eb; cursor:pointer; transition:all 0.2s;" 
-                   onmouseover="this.style.background='#f3f4f6'; this.style.borderColor='#3b82f6';"
-                   onmouseout="this.style.background='#f9fafb'; this.style.borderColor='#e5e7eb';"
-                   onclick="window.location.href='company-profile.html?id=${trade.companyId}'">
+              <div class="cp-row-hover" style="padding:16px; background:#f9fafb; border-radius:8px; border:1px solid #e5e7eb; cursor:pointer; transition:all 0.2s;" 
+                   data-company-id="${trade.companyId}"
+                   data-action="view-profile">
                 <div style="display:flex; justify-content:space-between; align-items:start; gap:16px;">
                   <div style="flex:1;">
                     <div style="font-weight:600; font-size:16px; color:#1f2937; margin-bottom:4px;">
@@ -2570,10 +2679,24 @@
             '<div style="text-align:center; padding:20px; color:#ef4444;">Ticaret geçmişi yüklenirken hata oluştu.</div>';
         }
       }
+
+      // Teklifbul Rule v1.0 - Delegated listener for trade history click (CSP Fix)
+      const historyContent = document.getElementById('successfulTradeHistoryContent');
+      if (historyContent) {
+        historyContent.addEventListener('click', (e) => {
+          const card = e.target.closest('div[data-action="view-profile"]');
+          if (card) {
+            const companyId = card.getAttribute('data-company-id');
+            if (companyId) {
+              window.location.href = `company-profile.html?id=${companyId}`;
+            }
+          }
+        });
+      }
     }
     
-    // Initialize
-    auth.onAuthStateChanged(async (user) => {
+    // Initialize - Teklifbul Rule v1.0 - Memory Leak Prevention
+    const authUnsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
         currentUserId = user.uid;
         const companyId = await getCompanyIdFromURL();
@@ -2584,6 +2707,13 @@
         }
       } else {
         window.location.href = './index.html';
+      }
+    });
+    
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+      if (authUnsubscribe) {
+        authUnsubscribe();
       }
     });
   </script>

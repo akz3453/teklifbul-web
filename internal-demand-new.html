@@ -1,0 +1,1705 @@
+<!doctype html>
+<html lang="tr">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Şirket İçi Satın Alma Talebi Oluştur</title>
+  <!-- Teklifbul Rule v1.0 - Tema standardı: tb_theme key, FOUC önleme -->
+  <script src="/assets/js/theme-init.js"></script>
+  <link rel="icon" type="image/svg+xml"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%233b82f6' rx='6'/%3E%3Ctext x='16' y='22' font-family='Arial' font-size='18' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/utils.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <link rel="stylesheet" href="/css/ui-standard.css" />
+  <style>
+    body {
+      background: #fff;
+      color: #111827;
+    }
+
+    html[data-theme="dark"] body {
+      background: #111827;
+      color: #ffffff;
+    }
+
+    .items-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 13px;
+      table-layout: fixed;
+    }
+
+    .items-table th,
+    .items-table td {
+      border: 1px solid #ddd;
+      padding: 6px;
+      vertical-align: middle;
+    }
+
+    html[data-theme="dark"] .items-table th,
+    html[data-theme="dark"] .items-table td {
+      border-color: rgba(255, 255, 255, 0.25);
+      color: #ffffff;
+    }
+
+    .items-table th {
+      background: #f3f4f6;
+      font-weight: 600;
+    }
+
+    html[data-theme="dark"] .items-table th {
+      background: #111827;
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+
+    .items-table input,
+    .items-table select,
+    .items-table textarea {
+      width: 100%;
+      padding: 6px 8px;
+      box-sizing: border-box;
+      margin: 0;
+      height: 32px !important;
+      line-height: 20px;
+      font-size: 13px;
+    }
+
+    .items-table input[type="text"],
+    .items-table input[type="number"],
+    .items-table input[type="date"],
+    .items-table select {
+      height: 32px !important;
+    }
+
+    .items-table .qty {
+      height: 32px !important;
+    }
+
+    .items-table .sku {
+      height: 32px !important;
+    }
+
+    .items-table .itemName {
+      height: 32px !important;
+    }
+
+    .items-table .unit {
+      height: 32px !important;
+    }
+
+    .items-table .itemDueDate {
+      height: 32px !important;
+    }
+
+    .items-table .stockQty {
+      height: 32px !important;
+    }
+
+    .items-table .image-upload {
+      width: 100%;
+      height: 32px !important;
+      border: 2px dashed #d1d5db;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      background: #f9fafb;
+    }
+
+    .items-table .image-upload:hover {
+      background: #f3f4f6;
+      border-color: #2563eb;
+    }
+
+    .items-table .image-preview {
+      max-width: 28px;
+      max-height: 28px;
+      border-radius: 4px;
+      object-fit: cover;
+    }
+
+    .items-table button {
+      height: 32px !important;
+      padding: 4px 8px;
+      font-size: 12px;
+    }
+
+    .btn-sm {
+      padding: 6px 10px;
+      margin: 4px 0;
+    }
+
+    label {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .permission-warning {
+      background: #fef3c7;
+      border: 1px solid #fbbf24;
+      border-radius: 8px;
+      padding: 16px;
+      margin: 16px 0;
+      color: #92400e;
+    }
+
+    .permission-warning h3 {
+      margin: 0 0 8px 0;
+      color: #78350f;
+    }
+
+    .row {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .row>div {
+      flex: 1;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    input[type="text"],
+    input[type="date"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px;
+      box-sizing: border-box;
+      background: #fff;
+      color: #111827;
+    }
+
+    html[data-theme="dark"] input[type="text"],
+    html[data-theme="dark"] input[type="date"],
+    html[data-theme="dark"] select,
+    html[data-theme="dark"] textarea {
+      background: #111827;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: #ffffff;
+    }
+
+    html[data-theme="dark"] input::placeholder,
+    html[data-theme="dark"] select::placeholder,
+    html[data-theme="dark"] textarea::placeholder {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    html[data-theme="dark"] h1,
+    html[data-theme="dark"] h2,
+    html[data-theme="dark"] h3 {
+      color: #ffffff;
+    }
+
+    html[data-theme="dark"] label {
+      color: #ffffff;
+    }
+
+    label:has(input[type="radio"]:checked) {
+      background: #e0edff !important;
+      border-color: #2563eb !important;
+    }
+
+    /* Teklifbul Rule v1.0 - Dark mode form overrides */
+    html[data-theme="dark"] #satfk,
+    html[data-theme="dark"] #demandTitle,
+    html[data-theme="dark"] #requestedBy {
+      background: #111827 !important;
+      color: #ffffff !important;
+      border: 1px solid rgba(255, 255, 255, 0.25) !important;
+    }
+
+    html[data-theme="dark"] #siteAddress {
+      background: #111827 !important;
+      border: 1px solid rgba(255, 255, 255, 0.25) !important;
+      color: #ffffff !important;
+    }
+
+    html[data-theme="dark"] #siteAddress strong,
+    html[data-theme="dark"] #siteAddressText {
+      color: #ffffff !important;
+    }
+
+    html[data-theme="dark"] .stockQty {
+      background: #111827 !important;
+      color: #ffffff !important;
+      border: 1px solid rgba(255, 255, 255, 0.25) !important;
+    }
+
+    html[data-theme="dark"] label:has(input[name="deliveryMethod"]),
+    html[data-theme="dark"] label:has(input[name="unloadingMethod"]) {
+      background: #111827 !important;
+      border: 2px solid rgba(255, 255, 255, 0.25) !important;
+      color: #ffffff !important;
+    }
+
+    html[data-theme="dark"] label:has(input[name="deliveryMethod"]:checked),
+    html[data-theme="dark"] label:has(input[name="unloadingMethod"]:checked) {
+      background: #1d4ed8 !important;
+      border-color: #93c5fd !important;
+      color: #ffffff !important;
+    }
+
+    html[data-theme="dark"] #addLineBtn {
+      background: #3b82f6 !important;
+      color: #ffffff !important;
+      border: none !important;
+    }
+
+    html[data-theme="dark"] #addLineBtn:hover {
+      background: #2563eb !important;
+    }
+
+    html[data-theme="dark"] input:-webkit-autofill,
+    html[data-theme="dark"] input:-webkit-autofill:hover,
+    html[data-theme="dark"] input:-webkit-autofill:focus,
+    html[data-theme="dark"] textarea:-webkit-autofill,
+    html[data-theme="dark"] textarea:-webkit-autofill:hover,
+    html[data-theme="dark"] textarea:-webkit-autofill:focus,
+    html[data-theme="dark"] select:-webkit-autofill,
+    html[data-theme="dark"] select:-webkit-autofill:hover,
+    html[data-theme="dark"] select:-webkit-autofill:focus {
+      -webkit-box-shadow: 0 0 0px 1000px #111827 inset !important;
+      box-shadow: 0 0 0px 1000px #111827 inset !important;
+      -webkit-text-fill-color: #ffffff !important;
+      color: #ffffff !important;
+      transition: background-color 9999s ease-in-out 0s !important;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Common Header -->
+  <header id="app-header"></header>
+
+  <div class="container--wide" style="padding:20px 0">
+    <div class="page-heading">
+      <div class="page-title-chip" role="presentation">
+        <span class="page-title-icon" aria-hidden="true">🏢</span>
+        <div class="page-title-text">
+          <h1 id="pageTitle">Şirket İçi Satın Alma Talebi Oluştur</h1>
+          <p class="page-title-caption">Satın alma ekibine iletilecek şirket içi talepler</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="permissionWarning" class="permission-warning" style="display:none;">
+      <h3>⚠️ Yetki Gerekli</h3>
+      <p>Bu sayfayı kullanmak için aşağıdaki rollerden birine sahip olmanız gerekmektedir:</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;margin-top:12px">
+        <div>
+          <strong>Operasyonel Roller:</strong>
+          <ul style="margin:8px 0;padding-left:20px">
+            <li>Proje Yöneticisi</li>
+            <li>Stok/Depo Yetkilisi</li>
+            <li>Şantiye Yetkilisi</li>
+            <li>İdari İşler</li>
+            <li>Sekreter</li>
+          </ul>
+        </div>
+        <div>
+          <strong>Yönetim Rolleri:</strong>
+          <ul style="margin:8px 0;padding-left:20px">
+            <li>İşveren (Şirket Sahibi)</li>
+            <li>Yönetim Kurulu Başkanı</li>
+            <li>Yönetim Kurulu Üyesi</li>
+            <li>CEO</li>
+            <li>Genel Müdür</li>
+            <li>Genel Müdür Yardımcısı</li>
+          </ul>
+        </div>
+        <div>
+          <strong>Satın Alma Rolleri:</strong>
+          <ul style="margin:8px 0;padding-left:20px">
+            <li>Satın Alma Müdürü</li>
+            <li>Satın Alma Yetkilisi</li>
+            <li>Satın Alma Uzmanı</li>
+            <li>Satın Alma Uzman Yardımcısı</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <form id="internalDemandForm" style="display:none;">
+      <h3>Talep Bilgileri</h3>
+
+      <div class="row">
+        <div style="flex:1;">
+          <label for="satfk">Satın Alma Talep Formu Kodu (SATFK)</label>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <input id="satfk" type="text" readonly
+              style="background:#f9fafb; color:#6b7280; flex: 1; min-width: 300px; padding: 10px 12px; font-size: 14px;"
+              placeholder="Kod oluşturuluyor..." />
+            <button type="button" id="copySatfkBtn" class="btn-sm"
+              style="padding: 6px 10px; font-size: 12px; display: none; white-space: nowrap;">📋 Kopyala</button>
+            <button type="button" id="refreshSatfkBtn" class="btn-sm"
+              style="padding: 6px 10px; font-size: 12px; background: #10b981; color: white; white-space: nowrap;">🔄
+              Yenile</button>
+          </div>
+          <div id="satfkPreview" style="font-size: 12px; color: #6b7280; margin-top: 4px;">
+            <span id="satfkStatus">Kod oluşturuluyor...</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div style="flex:1;">
+          <label for="demandTitle">Talep Başlığı *</label>
+          <input type="text" id="demandTitle" required placeholder="Örn: Şantiye için malzeme talebi" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div style="flex:1;">
+          <label for="siteSelect">Şantiye *</label>
+          <input type="text" id="siteSelect" list="siteNameList" required
+            placeholder="Şantiye başlığı yazın veya seçin..." autocomplete="off"
+            style="width:100%; padding:8px; border:1px solid #d1d5db; border-radius:6px;" />
+          <datalist id="siteNameList"></datalist>
+          <div id="siteAddress"
+            style="margin-top:8px; padding:12px; background:#f0f9ff; border:1px solid #3b82f6; border-radius:6px; font-size:13px; color:#1e40af; display:none;">
+            <strong>📍 Teslimat Adresi:</strong>
+            <div id="siteAddressText" style="margin-top:4px; white-space:pre-wrap;">-</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div style="flex:1;">
+          <label for="terminDate">Termin Tarihi *</label>
+          <input type="date" id="terminDate" required
+            style="width:100%; padding:8px; border:1px solid #d1d5db; border-radius:6px; cursor:pointer;" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div style="flex:1;">
+          <label for="requestedBy">Talep Eden *</label>
+          <input type="text" id="requestedBy" readonly
+            style="background:#f9fafb; color:#6b7280; width:100%; padding:8px; border:1px solid #d1d5db; border-radius:6px;" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div style="flex:1;">
+          <label>Teslim Şekli *</label>
+          <div style="display:flex; gap:12px; margin-top:8px; flex-wrap:wrap;">
+            <label
+              style="display:flex; align-items:center; gap:8px; padding:10px; border:2px solid #e5e7eb; border-radius:8px; cursor:pointer; background:#fff; transition:all 0.2s;"
+              class="radio-label">
+              <input type="radio" name="deliveryMethod" value="nakliye_dahil" required
+                style="width:18px; height:18px; accent-color:#2563eb;" />
+              <span style="font-size:18px;">🚚</span>
+              <span>Nakliye Dahil</span>
+            </label>
+            <label
+              style="display:flex; align-items:center; gap:8px; padding:10px; border:2px solid #e5e7eb; border-radius:8px; cursor:pointer; background:#fff; transition:all 0.2s;"
+              class="radio-label">
+              <input type="radio" name="deliveryMethod" value="nakliye_haric" required
+                style="width:18px; height:18px; accent-color:#2563eb;" />
+              <span style="font-size:18px;">📦</span>
+              <span>Nakliye Hariç</span>
+            </label>
+            <label
+              style="display:flex; align-items:center; gap:8px; padding:10px; border:2px solid #e5e7eb; border-radius:8px; cursor:pointer; background:#fff; transition:all 0.2s;"
+              class="radio-label">
+              <input type="radio" name="deliveryMethod" value="ozel_teslimat" required
+                style="width:18px; height:18px; accent-color:#2563eb;" />
+              <span style="font-size:18px;">✏️</span>
+              <span>Özel Teslimat</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div style="flex:1;">
+          <label for="unloadingMethod">İndirme Şekli</label>
+          <div style="display:flex; gap:12px; margin-top:8px; flex-wrap:wrap;">
+            <label
+              style="display:flex; align-items:center; gap:8px; padding:10px; border:2px solid #e5e7eb; border-radius:8px; cursor:pointer; background:#fff; transition:all 0.2s;"
+              class="radio-label">
+              <input type="radio" name="unloadingMethod" value="personel_var"
+                style="width:18px; height:18px; accent-color:#2563eb;" />
+              <span>Şantiyede İndirme Personeli Var</span>
+            </label>
+            <label
+              style="display:flex; align-items:center; gap:8px; padding:10px; border:2px solid #e5e7eb; border-radius:8px; cursor:pointer; background:#fff; transition:all 0.2s;"
+              class="radio-label">
+              <input type="radio" name="unloadingMethod" value="personel_isteniyor"
+                style="width:18px; height:18px; accent-color:#2563eb;" />
+              <span>İndirme Personeli İsteniyor</span>
+            </label>
+            <label
+              style="display:flex; align-items:center; gap:8px; padding:10px; border:2px solid #e5e7eb; border-radius:8px; cursor:pointer; background:#fff; transition:all 0.2s;"
+              class="radio-label">
+              <input type="radio" name="unloadingMethod" value="arac_talebi"
+                style="width:18px; height:18px; accent-color:#2563eb;" />
+              <span>Malzeme İndirmek İçin Araç Talebi</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div style="flex:1;">
+          <label for="demandDescription">Açıklama</label>
+          <textarea id="demandDescription" rows="4" placeholder="Talep hakkında detaylı açıklama..."></textarea>
+        </div>
+      </div>
+
+      <h3>Talep Kalemleri</h3>
+      <table class="items-table">
+        <thead>
+          <tr>
+            <th style="width: 4%;">Sıra</th>
+            <th style="width: 12%;">Stok Kodu</th>
+            <th style="width: 28%;">Malzeme Tanımı *</th>
+            <th style="width: 12%;">Marka/Model</th>
+            <th style="width: 8%;">Miktar *</th>
+            <th style="width: 10%;">Birim *</th>
+            <th style="width: 10%;">
+              Depo Miktarı
+              <button type="button" class="info-toggle-btn"
+                style="margin-left:4px; background:none; border:none; cursor:pointer; font-size:12px; color:#6b7280;"
+                title="Depo miktarı bilgisi ekle/düzenle">ℹ️</button>
+            </th>
+            <th style="width: 10%;">Teslim Tarihi</th>
+            <th style="width: 4%;">Görsel</th>
+            <th style="width: 2%;">Sil</th>
+          </tr>
+        </thead>
+        <tbody id="itemsBody">
+          <!-- Items will be added here -->
+        </tbody>
+      </table>
+      <button type="button" id="addLineBtn" class="btn btn-secondary">+ Satır Ekle</button>
+
+      <div style="margin-top: 24px;">
+        <button type="submit" id="createBtn" class="btn btn-primary">Talep Oluştur</button>
+        <button type="button" id="cancelBtn" class="btn btn-secondary" onclick="window.history.back()">İptal</button>
+      </div>
+    </form>
+  </div>
+
+  <script type="module">
+    // Teklifbul Rule v1.0 - İç Satın Alma Talebi Sistemi
+    import { initAuthGuard } from './assets/js/auth-guard.js';
+    import { logger } from './src/shared/log/logger.js';
+    
+    // Yönlendirme boş sayfa görünmeden yapılsın
+    initAuthGuard().catch(err => {
+      logger.error('Auth guard init failed', err);
+    });
+
+    import { initGlobalHeader } from './assets/js/ui/header.js';
+    import { db, auth, requireAuth } from './firebase.js';
+    import { collection, addDoc, query, where, getDocs, orderBy, serverTimestamp, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+    import { toast } from './src/shared/ui/toast.js';
+    import { MESSAGES } from './src/shared/constants/messages.js';
+    import { createNotification } from './scripts/inventory-notifications.js';
+    import { normalizeTRLower } from './scripts/lib/tr-utils.js';
+    import { requireCompanyContext } from './assets/js/state/company-context.js';
+    // Teklifbul Rule v1.0 - Ortak permission helper (companies/{companyId}/rolePermissions)
+    import { initPermissions, can, requirePerm, getDemandPerms } from './assets/js/state/permissions.js';
+
+    // Initialize global header
+    initGlobalHeader({ mount: '#app-header', activeRoute: 'internal-demand-new' });
+
+    // Satın alma rolleri hiyerarşisi (en alt → en üst)
+    const PURCHASING_ROLE_HIERARCHY = [
+      'buyer:satinalma_uzman_yardimcisi',
+      'buyer:satinalma_uzmani',
+      'buyer:satinalma_yetkilisi',
+      'buyer:satinalma_muduru',
+      'buyer:genel_mudur_yardimcisi',
+      'buyer:genel_mudur',
+      'buyer:ceo',
+      'buyer:yonetim_kurulu_uyesi',
+      'buyer:yonetim_kurulu_baskani',
+      'buyer:isveren'
+    ];
+
+    // İç talep açma yetkisi olan roller
+    // Teklifbul Rule v1.0 - Yönetim ekibi ve satın alma ekibi de talep oluşturabilir
+    const ALLOWED_CREATE_ROLES = [
+      // Operasyonel Roller
+      'buyer:proje_yoneticisi',
+      'buyer:stok_depo',
+      'buyer:santiye_yetkilisi',
+      'buyer:idari_isler',
+      'buyer:sekreter',
+      // Yönetim Rolleri
+      'buyer:isveren',                    // İşveren (Şirket Sahibi)
+      'buyer:yonetim_kurulu_baskani',     // Yönetim Kurulu Başkanı
+      'buyer:yonetim_kurulu_uyesi',       // Yönetim Kurulu Üyesi
+      'buyer:ceo',                        // CEO
+      'buyer:genel_mudur',                // Genel Müdür
+      'buyer:genel_mudur_yardimcisi',     // Genel Müdür Yardımcısı
+      // Satın Alma Rolleri
+      'buyer:satinalma_muduru',           // Satın Alma Müdürü
+      'buyer:satinalma_yetkilisi',        // Satın Alma Yetkilisi
+      'buyer:satinalma_uzmani',           // Satın Alma Uzmanı
+      'buyer:satinalma_uzman_yardimcisi'  // Satın Alma Uzman Yardımcısı
+    ];
+
+    // Setup common header functionality
+    let user;
+    try {
+      user = await requireAuth();
+    } catch (error) {
+      if (error.message === "AUTH_REQUIRED") {
+        // Auth guard yönlendirmeyi yapacak, burada sadece çıkış
+        logger.info("Auth required, redirecting to login...");
+        location.href = "./index.html";
+        throw error;
+      } else {
+        logger.error('Auth error', error);
+        throw error;
+      }
+    }
+    let userProfile = null;
+    let companyId = null;
+    let itemCounter = 0;
+    let previewSatfk = null;
+    let sites = []; // Şantiyeler listesi
+
+    // Yetki kontrolü - Teklifbul Rule v1.0
+    // Company Context Resolver + Role & Yetki Matrisi kullanarak companyId/joinStatus/yetki tutarlılığını garanti eder
+    async function checkPermissions() {
+      try {
+        logger.group('İç talep yetki kontrolü');
+
+        // Ortak company context çözümleyici (auth + company)
+        const context = await requireCompanyContext({
+          allowPending: false,
+          redirectOnPending: true
+        });
+
+        if (!context) {
+          logger.warn('İç talep yetki kontrolü: company context alınamadı');
+          logger.end();
+          return false;
+        }
+
+        userProfile = context.userDocData;
+        companyId = context.companyId;
+
+        if (!companyId) {
+          logger.warn('İç talep yetki kontrolü: companyId çözülemedi', {
+            joinStatus: context.joinStatus
+          });
+          toast.error('Şirket bilgisi bulunamadı');
+          logger.end();
+          return false;
+        }
+
+        // Şirket onay durumu kontrolü (geriye dönük uyum için accepted/approved)
+        const joinStatus = context.joinStatus || userProfile.companyJoinStatus;
+        if (joinStatus && joinStatus !== 'accepted' && joinStatus !== 'approved') {
+          logger.warn('Kullanıcı şirkete onaylanmamış', { joinStatus });
+          toast.error('Şirket üyeliğiniz henüz onaylanmamış');
+          logger.end();
+          return false;
+        }
+
+        // Role & Yetki Matrisi - Permission kontrolü
+        // Test checklist (Pilot):
+        // 1) Rol & Yetki Yönetimi ekranında ilgili permKey'i false yap
+        //    - URL ile sayfaya gir: internal-demand-new.html → yetki uyarısı + internal-demands.html'e yönlenir
+        //    - Oluştur butonu / form submit → toast + Firestore write gerçekleşmez
+        // 2) Yetki true yap → sayfa normal çalışır.
+        const demandPerms = getDemandPerms();
+        // initPermissions zaten cache'li; burada TTL içinde tekrar Firestore'a gitmez
+        const permState = await initPermissions({ redirectOnPending: true });
+        if (!permState) {
+          logger.warn('İç talep yetki kontrolü: initPermissions sonuç vermedi');
+          toast.error(MESSAGES.ERROR_PERMISSION || 'Yetki bilgileri yüklenemedi');
+          logger.end();
+          return false;
+        }
+
+        const userRoleKey = userProfile.companyRoleKey || userProfile.companyRole || '';
+        const viewKey = demandPerms.internal.view;
+        const createKey = demandPerms.internal.create;
+
+        const canView = !viewKey || can(viewKey);
+        const canCreate = !createKey || can(createKey);
+
+        if (!canView) {
+          document.getElementById('permissionWarning').style.display = 'block';
+          document.getElementById('internalDemandForm').style.display = 'none';
+          const msg =
+            MESSAGES.ERROR_PERMISSION_DEMAND_VIEW ||
+            MESSAGES.ERROR_PERMISSION_DENIED ||
+            'Bu sayfayı görüntüleme yetkiniz yok.';
+          toast.error(msg);
+          logger.warn('İç talep: view yetkisi yok, URL guard tetiklendi', {
+            userRoleKey,
+            permKey: viewKey,
+            companyId
+          });
+          logger.end();
+          setTimeout(() => {
+            window.location.href = './internal-demands.html';
+          }, 100);
+          return false;
+        }
+
+        if (!canCreate) {
+          document.getElementById('permissionWarning').style.display = 'block';
+          document.getElementById('internalDemandForm').style.display = 'none';
+          const msg =
+            MESSAGES.ERROR_PERMISSION_INTERNAL_CREATE ||
+            MESSAGES.ERROR_PERMISSION_DEMAND_CREATE ||
+            'Şirket içi talep oluşturma yetkiniz yok.';
+          toast.error(msg);
+          logger.warn('İç talep: create yetkisi yok (matrix)', {
+            userRoleKey,
+            permKey: createKey,
+            companyId
+          });
+          logger.end();
+          setTimeout(() => {
+            window.location.href = './internal-demands.html';
+          }, 100);
+          return false;
+        }
+
+        document.getElementById('permissionWarning').style.display = 'none';
+        document.getElementById('internalDemandForm').style.display = 'block';
+        logger.info('Yetki kontrolü başarılı (Role & Yetki Matrisi + company context)');
+        logger.end();
+
+        // Form alanlarını başlat
+        await initializeForm();
+
+        return true;
+      } catch (error) {
+        logger.error('Yetki kontrolü hatası', error);
+        toast.error('Yetki kontrolü sırasında hata oluştu');
+        logger.end();
+        return false;
+      }
+    }
+
+    // Satın alma rolleri için bildirim gönderme
+    async function notifyPurchasingRoles(internalDemandId, demandTitle) {
+      try {
+        logger.group('Satın alma rolleri bildirimi');
+
+        // Şirket kullanıcılarını getir
+        const usersQuery = query(
+          collection(db, 'users'),
+          where('companyId', '==', companyId),
+          where('companyJoinStatus', 'in', ['accepted', 'approved'])
+        );
+        const usersSnapshot = await getDocs(usersQuery);
+
+        const notifiedUsers = [];
+        const userRoleMap = new Map();
+
+        // Kullanıcıları rollerine göre grupla
+        for (const userDoc of usersSnapshot.docs) {
+          const userData = userDoc.data();
+          const roleKey = userData.companyRoleKey || userData.companyRole || '';
+
+          if (PURCHASING_ROLE_HIERARCHY.includes(roleKey)) {
+            if (!userRoleMap.has(roleKey)) {
+              userRoleMap.set(roleKey, []);
+            }
+            userRoleMap.get(roleKey).push({
+              userId: userDoc.id,
+              displayName: userData.displayName || userData.email || 'Kullanıcı',
+              roleKey
+            });
+          }
+        }
+
+        // Hiyerarşi sırasına göre bildirim gönder
+        for (const roleKey of PURCHASING_ROLE_HIERARCHY) {
+          const users = userRoleMap.get(roleKey) || [];
+          for (const userInfo of users) {
+            try {
+              await createNotification({
+                userId: userInfo.userId,
+                type: 'internal_demand_created',
+                title: 'Şirket İçi Satın Alma Talebi Oluşturuldu',
+                message: `${demandTitle} başlıklı yeni bir şirket içi satın alma talebi oluşturuldu.`,
+                data: {
+                  internalDemandId,
+                  demandTitle,
+                  createdBy: user.uid,
+                  createdByName: userProfile.displayName || userProfile.email || 'Kullanıcı',
+                  actionUrl: `/internal-demand-detail.html?id=${internalDemandId}`
+                },
+                actionUrl: `/internal-demand-detail.html?id=${internalDemandId}`
+              });
+              notifiedUsers.push(userInfo);
+              logger.info('Bildirim gönderildi', {
+                userId: userInfo.userId,
+                roleKey: userInfo.roleKey,
+                displayName: userInfo.displayName
+              });
+            } catch (notifError) {
+              logger.error('Bildirim gönderme hatası', {
+                userId: userInfo.userId,
+                error: notifError
+              });
+            }
+          }
+        }
+
+        logger.info('Bildirim gönderme tamamlandı', {
+          totalNotified: notifiedUsers.length,
+          roles: Array.from(userRoleMap.keys())
+        });
+        logger.end();
+
+        if (notifiedUsers.length > 0) {
+          toast.success(`${notifiedUsers.length} yetkiliye bildirim gönderildi`);
+        } else {
+          toast.warn('Bildirim gönderilecek yetkili bulunamadı');
+        }
+      } catch (error) {
+        logger.error('Bildirim gönderme hatası', error);
+        toast.error('Bildirimler gönderilirken hata oluştu');
+        logger.end();
+      }
+    }
+
+    // Teklifbul Rule v1.0 - Stok kodu için stok kontrolü
+    async function setupStockSearchForSku(skuInput, tr) {
+      if (!skuInput) return;
+
+      let debounceTimeout = null;
+      let lastQuery = '';
+
+      skuInput.addEventListener('input', async (e) => {
+        const text = e.target.value.trim();
+
+        if (debounceTimeout) {
+          clearTimeout(debounceTimeout);
+          debounceTimeout = null;
+        }
+
+        // 3 harften az ise arama yapma
+        if (text.length < 3) {
+          lastQuery = '';
+          return;
+        }
+
+        // Aynı sorguyu tekrar etme
+        if (text === lastQuery) return;
+
+        debounceTimeout = setTimeout(async () => {
+          const currentText = skuInput.value.trim();
+          if (currentText.length >= 3 && currentText === text) {
+            lastQuery = currentText;
+            await searchStockBySku(currentText, tr);
+          }
+          debounceTimeout = null;
+        }, 500);
+      });
+    }
+
+    // Teklifbul Rule v1.0 - Malzeme tanımı için stok kontrolü
+    async function setupStockSearchForItemName(itemNameInput, tr) {
+      if (!itemNameInput) return;
+
+      let debounceTimeout = null;
+      let lastQuery = '';
+
+      itemNameInput.addEventListener('input', async (e) => {
+        const text = e.target.value.trim();
+
+        if (debounceTimeout) {
+          clearTimeout(debounceTimeout);
+          debounceTimeout = null;
+        }
+
+        // 3 harften az ise arama yapma
+        if (text.length < 3) {
+          lastQuery = '';
+          return;
+        }
+
+        // Aynı sorguyu tekrar etme
+        if (text === lastQuery) return;
+
+        debounceTimeout = setTimeout(async () => {
+          const currentText = itemNameInput.value.trim();
+          if (currentText.length >= 3 && currentText === text) {
+            lastQuery = currentText;
+            await searchStockByName(currentText, tr);
+          }
+          debounceTimeout = null;
+        }, 500);
+      });
+    }
+
+    // Teklifbul Rule v1.0 - Stok kodu ile stok arama
+    async function searchStockBySku(sku, tr) {
+      try {
+        logger.group('Stok kodu ile arama');
+        const user = await requireAuth();
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        const userData = userDoc.exists() ? userDoc.data() : {};
+        const companyId = userData.companyId;
+
+        if (!companyId) {
+          logger.warn('Company ID bulunamadı');
+          logger.end();
+          return;
+        }
+
+        // Firestore'da stok arama
+        const stocksQuery = query(
+          collection(db, 'stocks'),
+          where('sku', '==', sku),
+          where('companyId', '==', companyId)
+        );
+        const snap = await getDocs(stocksQuery);
+
+        if (snap.empty) {
+          logger.info('Stok bulunamadı', { sku });
+          logger.end();
+          return;
+        }
+
+        const stockDoc = snap.docs[0];
+        const stockData = stockDoc.data();
+
+        logger.info('Stok bulundu', { sku, name: stockData.name });
+
+        // Kullanıcıya seçenek sun
+        showStockSelectionCard(stockData, tr, 'sku');
+
+        logger.end();
+      } catch (error) {
+        logger.error('Stok arama hatası', error);
+        logger.end();
+      }
+    }
+
+    // Teklifbul Rule v1.0 - Malzeme tanımı ile stok arama
+    async function searchStockByName(name, tr) {
+      try {
+        logger.group('Malzeme tanımı ile arama');
+        const user = await requireAuth();
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        const userData = userDoc.exists() ? userDoc.data() : {};
+        const companyId = userData.companyId;
+
+        if (!companyId) {
+          logger.warn('Company ID bulunamadı');
+          logger.end();
+          return;
+        }
+
+        // Firestore'da tüm stokları yükle ve client-side filtrele
+        const stocksQuery = query(
+          collection(db, 'stocks'),
+          where('companyId', '==', companyId)
+        );
+        const snap = await getDocs(stocksQuery);
+
+        const matches = [];
+        // Teklifbul Rule v1.0 - Türkçe karakter normalizasyonu ile arama
+        const normalizedName = normalizeTRLower(name.trim());
+
+        snap.forEach(doc => {
+          const data = doc.data();
+          const stockName = normalizeTRLower(data.name || '');
+          // Normalize edilmiş string'lerde arama yap
+          if (stockName.includes(normalizedName) || stockName.startsWith(normalizedName)) {
+            matches.push({ id: doc.id, ...data });
+          }
+        });
+
+        if (matches.length === 0) {
+          logger.info('Stok bulunamadı', { name, normalized: normalizedName });
+          logger.end();
+          return;
+        }
+
+        // En iyi eşleşmeyi seç (tam eşleşme varsa onu, yoksa ilkini)
+        const exactMatch = matches.find(m => normalizeTRLower(m.name || '').trim() === normalizedName);
+        const selectedStock = exactMatch || matches[0];
+
+        logger.info('Stok bulundu', { name, matches: matches.length, selected: selectedStock.name });
+
+        // Kullanıcıya seçenek sun
+        showStockSelectionCard(selectedStock, tr, 'name');
+
+        logger.end();
+      } catch (error) {
+        logger.error('Stok arama hatası', error);
+        logger.end();
+      }
+    }
+
+    // Teklifbul Rule v1.0 - Stok seçim kartı göster
+    function showStockSelectionCard(stockData, tr, searchType) {
+      // Mevcut kartı kaldır
+      const existingCard = tr.querySelector('.stock-selection-card');
+      if (existingCard) {
+        existingCard.remove();
+      }
+
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      const bgColor = isDark ? '#111827' : '#ffffff';
+      const textColor = isDark ? '#ffffff' : '#1f2937';
+      const borderColor = isDark ? 'rgba(255,255,255,0.25)' : '#d1d5db';
+
+      // Yeni kart oluştur
+      const card = document.createElement('div');
+      card.className = 'stock-selection-card';
+      card.style.cssText = `
+        margin-top: 8px;
+        padding: 12px;
+        background: ${bgColor};
+        border: 1px solid ${borderColor};
+        border-radius: 8px;
+        font-size: 13px;
+        position: relative;
+        z-index: 10;
+      `;
+
+      card.innerHTML = `
+        <div style="font-weight: 600; margin-bottom: 8px; color: ${textColor};">
+          📦 Sistemde Stok Bulundu
+        </div>
+        <div style="margin-bottom: 8px; padding: 8px; background: ${isDark ? '#1f2937' : '#f3f4f6'}; border-radius: 6px;">
+          <div style="color: ${textColor}; margin-bottom: 4px;"><strong>Stok Kodu:</strong> ${stockData.sku || '-'}</div>
+          <div style="color: ${textColor}; margin-bottom: 4px;"><strong>Ürün Adı:</strong> ${stockData.name || '-'}</div>
+          ${stockData.brand ? `<div style="color: ${textColor}; margin-bottom: 4px;"><strong>Marka:</strong> ${stockData.brand}</div>` : ''}
+          ${stockData.unit ? `<div style="color: ${textColor};"><strong>Birim:</strong> ${stockData.unit}</div>` : ''}
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button class="apply-stock-btn" data-stock-id="${stockData.id || ''}" 
+                  style="flex: 1; padding: 8px 12px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+            ✓ Bu Stoku Kullan
+          </button>
+          <button class="dismiss-stock-btn" 
+                  style="padding: 8px 12px; background: ${isDark ? '#374151' : '#e5e7eb'}; color: ${textColor}; border: 1px solid ${borderColor}; border-radius: 6px; cursor: pointer;">
+            ✕ İptal
+          </button>
+        </div>
+      `;
+
+      // Kartı input'un altına ekle
+      const targetElement = searchType === 'sku' ? tr.querySelector('.sku') : tr.querySelector('.itemName');
+      if (targetElement) {
+        targetElement.parentElement.appendChild(card);
+      }
+
+      // Stok seçme butonu
+      card.querySelector('.apply-stock-btn').addEventListener('click', async () => {
+        await applyStockToRow(stockData, tr);
+        card.remove();
+      });
+
+      // İptal butonu
+      card.querySelector('.dismiss-stock-btn').addEventListener('click', () => {
+        card.remove();
+      });
+    }
+
+    // Teklifbul Rule v1.0 - Stok verilerini satıra uygula
+    async function applyStockToRow(stockData, tr) {
+      try {
+        logger.group('Stok verilerini satıra uygulama');
+
+        // Stok kodu
+        const skuInput = tr.querySelector('.sku');
+        if (skuInput && stockData.sku) {
+          skuInput.value = stockData.sku;
+        }
+
+        // Malzeme tanımı
+        const itemNameInput = tr.querySelector('.itemName');
+        if (itemNameInput && stockData.name) {
+          itemNameInput.value = stockData.name;
+        }
+
+        // Marka/Model
+        const brandModelInput = tr.querySelector('input[placeholder="Marka/Model"]');
+        if (brandModelInput && stockData.brand) {
+          brandModelInput.value = stockData.brand;
+        }
+
+        // Birim
+        const unitSelect = tr.querySelector('.unit');
+        if (unitSelect && stockData.unit) {
+          unitSelect.value = stockData.unit;
+        }
+
+        logger.info('Stok verileri satıra uygulandı', { sku: stockData.sku, name: stockData.name });
+        toast.success('Stok bilgileri otomatik olarak dolduruldu');
+
+        logger.end();
+      } catch (error) {
+        logger.error('Stok uygulama hatası', error);
+        toast.error('Stok bilgileri uygulanırken hata oluştu');
+      }
+    }
+
+    // Satır numaralarını güncelle
+    function updateRowNumbers() {
+      const rows = document.getElementById('itemsBody').querySelectorAll('tr');
+      rows.forEach((row, index) => {
+        row.querySelector('td:first-child').textContent = index + 1;
+      });
+    }
+
+    // Kalem ekleme
+    function addItemRow() {
+      itemCounter++;
+      const tbody = document.getElementById('itemsBody');
+      const row = document.createElement('tr');
+      const rowId = `item-row-${itemCounter}`;
+      row.id = rowId;
+      row.innerHTML = `
+        <td style="text-align:center; font-weight:600; font-size:12px;">${itemCounter}</td>
+        <td>
+          <input type="text" class="sku" placeholder="Stok Kodu" />
+        </td>
+        <td>
+          <input type="text" class="itemName" required placeholder="Malzeme tanımı *" />
+        </td>
+        <td><input type="text" placeholder="Marka/Model" /></td>
+        <td><input type="number" class="qty" required min="0.01" step="0.01" placeholder="0" /></td>
+        <td>
+          <select class="unit" required>
+            <option value="">Seçiniz</option>
+            <optgroup label="Standart Birimler">
+              <option value="adet">Adet</option>
+              <option value="paket">Paket</option>
+              <option value="kutu">Kutu</option>
+              <option value="koli">Koli</option>
+              <option value="set">Set</option>
+              <option value="çift">Çift</option>
+              <option value="parça">Parça</option>
+              <option value="takım">Takım</option>
+              <option value="çarşaf">Çarşaf</option>
+              <option value="düzine">Düzine</option>
+              <option value="gros">Gros</option>
+            </optgroup>
+            <optgroup label="Ağırlık Birimleri">
+              <option value="kg">Kilogram (kg)</option>
+              <option value="g">Gram (g)</option>
+              <option value="ton">Ton</option>
+            </optgroup>
+            <optgroup label="Uzunluk Birimleri">
+              <option value="metre">Metre (m)</option>
+              <option value="cm">Santimetre (cm)</option>
+              <option value="mm">Milimetre (mm)</option>
+            </optgroup>
+            <optgroup label="Alan/Hacim Birimleri">
+              <option value="metrekare">Metrekare (m²)</option>
+              <option value="m²">m²</option>
+              <option value="metrekup">Metreküp (m³)</option>
+              <option value="m³">m³</option>
+            </optgroup>
+            <optgroup label="Hacim Birimleri (Sıvı)">
+              <option value="litre">Litre (lt)</option>
+              <option value="lt">Litre (lt)</option>
+              <option value="ml">Mililitre (ml)</option>
+            </optgroup>
+            <optgroup label="Özel Birimler">
+              <option value="rulo">Rulo</option>
+              <option value="sac">Sac</option>
+              <option value="tabaka">Tabaka</option>
+              <option value="sheet">Sheet</option>
+              <option value="kangal">Kangal</option>
+              <option value="varil">Varil</option>
+              <option value="kova">Kova</option>
+              <option value="bidon">Bidon</option>
+              <option value="kase">Kase</option>
+              <option value="torba">Torba</option>
+              <option value="palet">Palet</option>
+              <option value="rol">Rol</option>
+              <option value="top">Top</option>
+              <option value="yumak">Yumak</option>
+              <option value="diğer">Diğer</option>
+            </optgroup>
+          </select>
+        </td>
+        <td>
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            <input type="number" class="stockQty" min="0" step="0.01" placeholder="Depo miktarı" style="background:#fff; color:#1f2937; width:100%;" />
+            <textarea class="stockQtyInfo" placeholder="Depo miktarı hakkında bilgi..." rows="2" style="width:100%; padding:4px; border:1px solid #d1d5db; border-radius:4px; font-size:11px; resize:vertical; min-height:40px; display:none;"></textarea>
+            <button type="button" class="toggle-info-btn" style="background:#f3f4f6; border:1px solid #d1d5db; border-radius:4px; padding:2px 6px; font-size:10px; cursor:pointer; color:#6b7280; align-self:flex-start;" onclick="toggleStockQtyInfo(this)">ℹ️ Bilgi Ekle</button>
+          </div>
+        </td>
+        <td><input type="date" class="itemDueDate" /></td>
+        <td>
+          <div class="image-upload" onclick="document.getElementById('imageInput_${itemCounter}').click();">
+            <input type="file" id="imageInput_${itemCounter}" accept="image/*" style="display:none;" onchange="handleImageUpload(${itemCounter}, this)" />
+            <span id="imagePreview_${itemCounter}" style="font-size:11px; color:#6b7280;">📷 Görsel</span>
+          </div>
+        </td>
+        <td style="text-align:center;">
+          <button type="button" class="btn btn-sm delete-btn" style="padding:4px 8px; font-size:11px;">🗑️</button>
+        </td>
+      `;
+      tbody.appendChild(row);
+
+      // Teklifbul Rule v1.0 - Delete butonuna event listener ekle
+      row.querySelector('.delete-btn').addEventListener('click', function () {
+        row.remove();
+        updateRowNumbers();
+      });
+
+      // Teklifbul Rule v1.0 - Stok kodu ve malzeme tanımı için stok kontrolü
+      const skuInput = row.querySelector('.sku');
+      const itemNameInput = row.querySelector('.itemName');
+      if (skuInput) {
+        setupStockSearchForSku(skuInput, row);
+      }
+      if (itemNameInput) {
+        setupStockSearchForItemName(itemNameInput, row);
+      }
+    }
+
+    // Teklifbul Rule v1.0 - Depo Miktarı info alanını göster/gizle
+    window.toggleStockQtyInfo = function (btn) {
+      const row = btn.closest('tr');
+      const textarea = row.querySelector('.stockQtyInfo');
+      if (textarea) {
+        if (textarea.style.display === 'none' || !textarea.style.display) {
+          textarea.style.display = 'block';
+          btn.textContent = '✖️ Bilgiyi Gizle';
+          btn.style.background = '#fee2e2';
+          btn.style.color = '#991b1b';
+        } else {
+          textarea.style.display = 'none';
+          btn.textContent = 'ℹ️ Bilgi Ekle';
+          btn.style.background = '#f3f4f6';
+          btn.style.color = '#6b7280';
+        }
+      }
+    };
+
+    // Görsel yükleme
+    window.handleImageUpload = function (rowIndex, input) {
+      const file = input.files[0];
+      if (!file) return;
+
+      if (!file.type.startsWith('image/')) {
+        toast.error('Lütfen bir resim dosyası seçin');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const previewEl = document.getElementById(`imagePreview_${rowIndex}`);
+        previewEl.innerHTML = `<img src="${e.target.result}" class="image-preview" alt="Preview" />`;
+        previewEl.closest('.image-upload').style.border = '2px solid #10b981';
+
+        // Görseli row'a data olarak kaydet
+        const row = document.getElementById(`item-row-${rowIndex}`);
+        if (row) {
+          row.dataset.imageData = e.target.result;
+        }
+      };
+      reader.readAsDataURL(file);
+    };
+
+    // Satır numaralarını güncelle
+    window.updateRowNumbers = function () {
+      const rows = document.getElementById('itemsBody').querySelectorAll('tr');
+      rows.forEach((row, index) => {
+        row.querySelector('td:first-child').textContent = index + 1;
+      });
+    };
+
+    // Form gönderimi
+    document.getElementById('internalDemandForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      try {
+        logger.group('İç talep oluşturma');
+
+        // Permission Write Guard - Teklifbul Rule v1.0
+        const demandPerms = getDemandPerms();
+        const createKey = demandPerms.internal && demandPerms.internal.create;
+        if (createKey) {
+          const ok = await requirePerm(createKey, {
+            toastMessage:
+              MESSAGES.ERROR_PERMISSION_INTERNAL_CREATE ||
+              MESSAGES.ERROR_PERMISSION_DEMAND_CREATE ||
+              'Şirket içi talep oluşturma yetkiniz yok.'
+          });
+          if (!ok) {
+            logger.warn('İç talep oluşturma requirePerm tarafından engellendi', {
+              permKey: createKey,
+              companyId,
+              uid: user?.uid || null
+            });
+            logger.end();
+            return;
+          }
+        }
+
+        const demandTitle = document.getElementById('demandTitle').value.trim();
+        const demandDescription = document.getElementById('demandDescription').value.trim();
+        const satfk = document.getElementById('satfk').value.trim();
+        // Teklifbul Rule v1.0 - Şantiye input'undan siteId'yi bul
+        const siteSelectInput = document.getElementById('siteSelect');
+        const siteNameValue = siteSelectInput?.value?.trim() || '';
+        let siteId = null;
+        let selectedSite = null;
+
+        if (siteNameValue) {
+          // Site name'e göre site bul
+          selectedSite = sites.find(s => {
+            const siteName = (s.siteName || s.title || '').trim();
+            return siteName === siteNameValue;
+          });
+
+          if (selectedSite) {
+            siteId = selectedSite.id;
+          } else {
+            // Datalist'ten siteId'yi bul
+            const siteNameList = document.getElementById('siteNameList');
+            if (siteNameList) {
+              const matchingOption = Array.from(siteNameList.options).find(opt => opt.value === siteNameValue);
+              if (matchingOption) {
+                siteId = matchingOption.getAttribute('data-site-id');
+                selectedSite = sites.find(s => s.id === siteId);
+              }
+            }
+          }
+        }
+        const terminDate = document.getElementById('terminDate').value;
+        const requestedBy = document.getElementById('requestedBy').value.trim();
+        const deliveryMethod = document.querySelector('input[name="deliveryMethod"]:checked')?.value;
+        const unloadingMethod = document.querySelector('input[name="unloadingMethod"]:checked')?.value;
+
+        if (!demandTitle) {
+          toast.error('Talep başlığı zorunludur');
+          return;
+        }
+
+        if (!siteId) {
+          toast.error('Şantiye seçimi zorunludur');
+          return;
+        }
+
+        if (!terminDate) {
+          toast.error('Termin tarihi zorunludur');
+          return;
+        }
+
+        if (!deliveryMethod) {
+          toast.error('Teslim şekli seçimi zorunludur');
+          return;
+        }
+
+        // Teklifbul Rule v1.0 - Seçili şantiye bilgilerini al (selectedSite zaten yukarıda bulundu)
+        if (!selectedSite) {
+          selectedSite = sites.find(s => s.id === siteId);
+        }
+
+        const siteName = selectedSite?.siteName || selectedSite?.title || 'Şantiye';
+
+        // Teklifbul Rule v1.0 - Adres formatla (ilave adreslerdeki structured data'yı kullan)
+        let siteAddress = '';
+
+        if (selectedSite) {
+          // Öncelik: content alanı (tam formatlanmış adres)
+          if (selectedSite.content && selectedSite.content.trim()) {
+            siteAddress = selectedSite.content.trim();
+          }
+          // İkinci öncelik: fullAddress
+          else if (selectedSite.fullAddress && selectedSite.fullAddress.trim()) {
+            siteAddress = selectedSite.fullAddress.trim();
+          }
+          // Üçüncü öncelik: structured data'dan oluştur
+          else {
+            const addressParts = [];
+            if (selectedSite.mahalle) addressParts.push(`${selectedSite.mahalle}${selectedSite.mahalle.includes('Mahalle') ? '' : ' Mahalle'}`);
+            if (selectedSite.cadde) addressParts.push(`${selectedSite.cadde}${selectedSite.cadde.includes('Cadde') ? '' : ' Cadde'}`);
+            if (selectedSite.street) addressParts.push(`${selectedSite.street}${selectedSite.street.includes('Sokak') || selectedSite.street.includes('Cadde') ? '' : ' Sokak'}`);
+            if (selectedSite.building || selectedSite.kapi) addressParts.push(`Kapı No: ${selectedSite.building || selectedSite.kapi}`);
+            if (selectedSite.daire) addressParts.push(`Daire: ${selectedSite.daire}`);
+            if (selectedSite.district || selectedSite.districtName || selectedSite.ilce) {
+              addressParts.push(`İlçe: ${selectedSite.district || selectedSite.districtName || selectedSite.ilce}`);
+            }
+            if (selectedSite.city || selectedSite.provinceName || selectedSite.il) {
+              addressParts.push(`İl: ${selectedSite.city || selectedSite.provinceName || selectedSite.il}`);
+            }
+            if (selectedSite.postakodu || selectedSite.postalCode) {
+              addressParts.push(`Posta Kodu: ${selectedSite.postakodu || selectedSite.postalCode}`);
+            }
+            if (addressParts.length > 0) {
+              addressParts.push('Türkiye');
+              siteAddress = addressParts.filter(Boolean).join(' - ');
+            }
+          }
+
+          // Fallback
+          if (!siteAddress || siteAddress.trim() === '') {
+            siteAddress = selectedSite.fullAddress ||
+              (selectedSite.street ? `${selectedSite.street} - ${selectedSite.districtName || ''} - ${selectedSite.provinceName || ''}`.replace(/^\s*-\s*|\s*-\s*$/g, '') : '');
+          }
+        }
+
+        // Kalemleri topla
+        const items = [];
+        const rows = document.getElementById('itemsBody').querySelectorAll('tr');
+
+        if (rows.length === 0) {
+          toast.error('En az bir kalem eklemelisiniz');
+          return;
+        }
+
+        for (const row of rows) {
+          const sku = row.querySelector('.sku')?.value.trim() || '';
+          const itemName = row.querySelector('.itemName')?.value.trim() || '';
+          const brandModel = row.querySelector('td:nth-child(4) input')?.value.trim() || '';
+          const quantity = parseFloat(row.querySelector('.qty')?.value || 0);
+          const unit = row.querySelector('.unit')?.value || '';
+          const stockQty = row.querySelector('.stockQty')?.value ? parseFloat(row.querySelector('.stockQty').value) : null;
+          const stockQtyInfo = row.querySelector('.stockQtyInfo')?.value.trim() || null;
+          const dueDate = row.querySelector('.itemDueDate')?.value || null;
+          const imageData = row.dataset.imageData || null;
+
+          if (!itemName || !quantity || !unit) {
+            toast.error('Tüm kalemlerde malzeme adı, miktar ve birim zorunludur');
+            return;
+          }
+
+          items.push({
+            sku: sku || null,
+            itemName,
+            brandModel: brandModel || null,
+            quantity,
+            unit,
+            stockQty: stockQty,
+            stockQtyInfo: stockQtyInfo,
+            dueDate: dueDate || null,
+            imageData: imageData || null
+          });
+        }
+
+        // İç talep oluştur
+        const internalDemandData = {
+          title: demandTitle,
+          description: demandDescription || null,
+          satfk: satfk || previewSatfk,
+          siteId: siteId,
+          siteName: siteName,
+          siteAddress: siteAddress,
+          terminDate: terminDate,
+          requestedBy: requestedBy,
+          requestedById: user.uid,
+          deliveryMethod: deliveryMethod,
+          unloadingMethod: unloadingMethod || null,
+          companyId,
+          createdBy: user.uid,
+          createdByName: userProfile.displayName || userProfile.email || 'Kullanıcı',
+          status: 'pending', // pending, in_progress, completed, cancelled
+          items,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        };
+
+        const docRef = await addDoc(collection(db, 'internalDemands'), internalDemandData);
+        logger.info('İç talep oluşturuldu', { internalDemandId: docRef.id });
+
+        // Bildirim gönder
+        await notifyPurchasingRoles(docRef.id, demandTitle);
+
+        toast.success('Şirket içi satın alma talebi oluşturuldu');
+        logger.end();
+
+        // Talep detay sayfasına yönlendir
+        setTimeout(() => {
+          window.location.href = `/internal-demand-detail.html?id=${docRef.id}`;
+        }, 1500);
+
+      } catch (error) {
+        logger.error('İç talep oluşturma hatası', error);
+        toast.error('Talep oluşturulurken hata oluştu: ' + (error.message || error));
+        logger.end();
+      }
+    });
+
+    // SATFK oluşturma fonksiyonu
+    function generatePreviewSATFK() {
+      const today = new Date();
+      const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '');
+      const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase().padStart(4, '0');
+      return `SATFK-${dateStr}-${randomSuffix}`;
+    }
+
+    function updateSATFKPreview() {
+      previewSatfk = generatePreviewSATFK();
+      document.getElementById('satfk').value = previewSatfk;
+      document.getElementById('satfkStatus').textContent = `Önizleme: ${previewSatfk} (Talep kaydedilene kadar değişebilir)`;
+      document.getElementById('copySatfkBtn').style.display = 'inline-block';
+    }
+
+    // SATFK kopyalama
+    document.getElementById('copySatfkBtn').addEventListener('click', async () => {
+      const satfkValue = document.getElementById('satfk').value;
+      if (satfkValue) {
+        try {
+          await navigator.clipboard.writeText(satfkValue);
+          document.getElementById('satfkStatus').textContent = '✅ Kod panoya kopyalandı!';
+          setTimeout(() => {
+            document.getElementById('satfkStatus').textContent = `Önizleme: ${satfkValue} (Talep kaydedilene kadar değişebilir)`;
+          }, 2000);
+        } catch (error) {
+          logger.error('Kopyalama hatası', error);
+          document.getElementById('satfkStatus').textContent = '❌ Kopyalama başarısız';
+        }
+      }
+    });
+
+    // SATFK yenileme
+    document.getElementById('refreshSatfkBtn').addEventListener('click', () => {
+      updateSATFKPreview();
+    });
+
+    // Şantiyeleri yükle
+    async function loadSites() {
+      try {
+        logger.group('Şantiyeler yükleniyor');
+        if (!companyId) {
+          logger.warn('CompanyId yok, şantiyeler yüklenemiyor');
+          logger.end();
+          return;
+        }
+
+        // Teklifbul Rule v1.0 - Index hatasını önlemek için orderBy kaldırıldı, client-side sıralama yapılacak
+        const sitesQuery = query(
+          collection(db, 'companies', companyId, 'sites'),
+          where('isActive', '==', true)
+        );
+        const sitesSnapshot = await getDocs(sitesQuery);
+        sites = sitesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        // Client-side sıralama
+        sites.sort((a, b) => {
+          const an = (a.siteName || a.title || '').toString().toLowerCase();
+          const bn = (b.siteName || b.title || '').toString().toLowerCase();
+          return an.localeCompare(bn, 'tr');
+        });
+
+        const siteSelect = document.getElementById('siteSelect');
+        const siteNameList = document.getElementById('siteNameList');
+
+        // Datalist'i temizle
+        if (siteNameList) {
+          siteNameList.innerHTML = '';
+        }
+
+        // Teklifbul Rule v1.0 - İlave adreslerdeki başlıkları datalist'e ekle
+        sites.forEach(site => {
+          const siteName = site.siteName || site.title || 'Şantiye';
+          const option = document.createElement('option');
+          option.value = siteName;
+          option.setAttribute('data-site-id', site.id);
+          if (siteNameList) {
+            siteNameList.appendChild(option);
+          }
+        });
+
+        logger.info('Şantiye başlıkları datalist\'e eklendi', { count: sites.length });
+
+        logger.info('Şantiyeler yüklendi', { count: sites.length });
+        logger.end();
+      } catch (error) {
+        logger.error('Şantiyeler yükleme hatası', error);
+        toast.error('Şantiyeler yüklenirken hata oluştu');
+        logger.end();
+      }
+    }
+
+    // Teklifbul Rule v1.0 - Şantiye başlığı yazıldığında/seçildiğinde adres göster
+    const siteSelectInput = document.getElementById('siteSelect');
+    if (siteSelectInput) {
+      // Input değiştiğinde (yazıldığında veya seçildiğinde)
+      siteSelectInput.addEventListener('input', (e) => {
+        const inputValue = e.target.value.trim();
+        const siteAddressDiv = document.getElementById('siteAddress');
+        const siteAddressText = document.getElementById('siteAddressText');
+
+        if (!inputValue) {
+          siteAddressDiv.style.display = 'none';
+          return;
+        }
+
+        // Datalist'ten seçilen başlığa göre site bul
+        const siteNameList = document.getElementById('siteNameList');
+        let selectedSite = null;
+
+        // Önce tam eşleşme ara
+        selectedSite = sites.find(s => {
+          const siteName = (s.siteName || s.title || '').trim();
+          return siteName === inputValue;
+        });
+
+        // Eğer bulunamazsa, datalist option'ından siteId'yi al
+        if (!selectedSite && siteNameList) {
+          const matchingOption = Array.from(siteNameList.options).find(opt => opt.value === inputValue);
+          if (matchingOption) {
+            const siteId = matchingOption.getAttribute('data-site-id');
+            selectedSite = sites.find(s => s.id === siteId);
+          }
+        }
+        if (selectedSite) {
+          // Teklifbul Rule v1.0 - Adres formatla (ilave adreslerdeki structured data'yı kullan)
+          let addressText = '';
+
+          // Öncelik: content alanı (tam formatlanmış adres)
+          if (selectedSite.content && selectedSite.content.trim()) {
+            addressText = selectedSite.content.trim();
+          }
+          // İkinci öncelik: fullAddress
+          else if (selectedSite.fullAddress && selectedSite.fullAddress.trim()) {
+            addressText = selectedSite.fullAddress.trim();
+          }
+          // Üçüncü öncelik: structured data'dan oluştur
+          else {
+            const addressParts = [];
+            if (selectedSite.mahalle) addressParts.push(`${selectedSite.mahalle}${selectedSite.mahalle.includes('Mahalle') ? '' : ' Mahalle'}`);
+            if (selectedSite.cadde) addressParts.push(`${selectedSite.cadde}${selectedSite.cadde.includes('Cadde') ? '' : ' Cadde'}`);
+            if (selectedSite.street) addressParts.push(`${selectedSite.street}${selectedSite.street.includes('Sokak') || selectedSite.street.includes('Cadde') ? '' : ' Sokak'}`);
+            if (selectedSite.building || selectedSite.kapi) addressParts.push(`Kapı No: ${selectedSite.building || selectedSite.kapi}`);
+            if (selectedSite.daire) addressParts.push(`Daire: ${selectedSite.daire}`);
+            if (selectedSite.district || selectedSite.districtName || selectedSite.ilce) {
+              addressParts.push(`İlçe: ${selectedSite.district || selectedSite.districtName || selectedSite.ilce}`);
+            }
+            if (selectedSite.city || selectedSite.provinceName || selectedSite.il) {
+              addressParts.push(`İl: ${selectedSite.city || selectedSite.provinceName || selectedSite.il}`);
+            }
+            if (selectedSite.postakodu || selectedSite.postalCode) {
+              addressParts.push(`Posta Kodu: ${selectedSite.postakodu || selectedSite.postalCode}`);
+            }
+            if (addressParts.length > 0) {
+              addressParts.push('Türkiye');
+              addressText = addressParts.filter(Boolean).join(' - ');
+            }
+          }
+
+          // Eğer hala adres yoksa, eski formatı dene
+          if (!addressText || addressText.trim() === '') {
+            const fallbackParts = [];
+            if (selectedSite.street) fallbackParts.push(selectedSite.street);
+            if (selectedSite.districtName) fallbackParts.push(selectedSite.districtName);
+            if (selectedSite.provinceName) fallbackParts.push(selectedSite.provinceName);
+            if (selectedSite.postalCode) fallbackParts.push(`Posta Kodu: ${selectedSite.postalCode}`);
+            addressText = fallbackParts.length > 0
+              ? fallbackParts.join(' - ')
+              : 'Adres bilgisi yok';
+          }
+
+          siteAddressText.textContent = addressText;
+          siteAddressDiv.style.display = 'block';
+
+          logger.info('Şantiye adresi gösterildi', {
+            siteId: selectedSite.id,
+            siteName: selectedSite.siteName || selectedSite.title,
+            addressLength: addressText.length
+          });
+        } else {
+          siteAddressDiv.style.display = 'none';
+        }
+      });
+    }
+
+    // Form başlatma
+    async function initializeForm() {
+      // SATFK oluştur
+      updateSATFKPreview();
+
+      // Talep Eden alanını doldur
+      document.getElementById('requestedBy').value = userProfile.displayName || userProfile.email || 'Kullanıcı';
+
+      // Şantiyeleri yükle
+      await loadSites();
+
+      // Teklifbul Rule v1.0 - Termin Tarihi alanına tıklanınca otomatik takvim aç
+      const terminDateInput = document.getElementById('terminDate');
+      if (terminDateInput) {
+        // Teklifbul Rule v1.0 - Input'un herhangi bir yerine tıklanınca takvimi aç
+        terminDateInput.addEventListener('click', function () {
+          try {
+            // Modern tarayıcılarda showPicker() metodu ile garantili açılış
+            if (typeof this.showPicker === 'function') {
+              this.showPicker();
+            }
+            // showPicker() yoksa native date picker zaten açılır
+          } catch (err) {
+            // Hata durumunda native davranışa güven
+            logger.warn('Date picker showPicker() hatası, native davranış kullanılıyor', err);
+          }
+        });
+
+        // Enter tuşuna basıldığında da aç (klavye kullanıcıları için)
+        terminDateInput.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter' || e.keyCode === 13) {
+            e.preventDefault();
+            try {
+              if (typeof this.showPicker === 'function') {
+                this.showPicker();
+              } else {
+                this.focus();
+                // Enter'a basıldığında da picker'ı açmayı dene
+                setTimeout(() => {
+                  if (document.activeElement === this) {
+                    this.click();
+                  }
+                }, 50);
+              }
+            } catch (err) {
+              this.focus();
+            }
+          }
+        });
+
+        // Teklifbul Rule v1.0 - Termin tarihi değiştiğinde tüm kalemlerdeki teslim tarihlerini otomatik doldur
+        terminDateInput.addEventListener('change', function () {
+          const selectedDate = this.value;
+          if (selectedDate) {
+            const allDueDateInputs = document.querySelectorAll('.itemDueDate');
+            allDueDateInputs.forEach(input => {
+              if (!input.value) { // Sadece boş olanları doldur, kullanıcı değiştirmişse dokunma
+                input.value = selectedDate;
+              }
+            });
+            logger.info('Termin tarihi tüm kalemlerdeki teslim tarihlerine uygulandı', { date: selectedDate, count: allDueDateInputs.length });
+            toast.info(`Termin tarihi (${selectedDate}) tüm kalemlerdeki teslim tarihlerine uygulandı`);
+          }
+        });
+
+        logger.info('Termin tarihi alanı iyileştirildi - tıklanınca otomatik açılıyor');
+      }
+    }
+
+    // İlk kalemi ekle
+    document.getElementById('addLineBtn').addEventListener('click', addItemRow);
+    addItemRow(); // Sayfa yüklendiğinde bir kalem ekle
+
+    // Yetki kontrolünü çalıştır
+    await checkPermissions();
+  </script>
+</body>
+
+</html>

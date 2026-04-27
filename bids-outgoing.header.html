@@ -6,45 +6,46 @@
   <title>Gönderdiğim Teklifler</title>
   <link rel="icon" href="favicon.ico" />
   
-  <!-- PDF & Excel Libraries (Local) -->
-  <script type="module">
-    import './assets/vendor/jspdf.umd.min.js';
-    import './assets/vendor/xlsx.full.min.js';
+  <!-- Teklifbul Rule v1.0 - Tema standardı: tb_theme key, FOUC önleme -->
+  <script>
+    (function() {
+      const STORAGE_KEY = 'tb_theme';
+      const root = document.documentElement;
+      const saved = localStorage.getItem(STORAGE_KEY);
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const shouldBeDark = saved === 'dark' || (!saved && prefersDark);
+      if (shouldBeDark) {
+        root.classList.add('force-dark');
+        root.setAttribute('data-theme', 'dark');
+      } else {
+        root.classList.remove('force-dark');
+        root.removeAttribute('data-theme');
+      }
+    })();
   </script>
   
+  <!-- PDF & Excel Libraries (Local) -->
+  <script src="/vendor/jspdf.umd.min.js"></script>
+  <script src="/vendor/xlsx.full.min.js"></script>
+  
+  <!-- Teklifbul Rule v1.0 - Ortak CSS dosyaları kullanılıyor, sayfa içi stil kaldırıldı -->
+  <link rel="stylesheet" href="/css/ui-standard.css" />
   <style>
-    :root { --border:#e5e7eb; --muted:#f8fafc; --c1:#2563eb; }
+    /* Sayfaya özel stiller (varsa) */
     body{font-family:system-ui,Arial;margin:0;color:#0f172a;background:#fff;}
-    .container{max-width:1200px;margin:0 auto;padding:20px}
-    .filters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:12px}
-    select,input{padding:10px;border:1px solid var(--border);border-radius:8px}
-    table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden}
-    th,td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:left}
-    th{background:#f9fafb}
-    .badge{padding:2px 8px;border-radius:999px;font-size:12px;font-weight:600}
-    .b-secret{background:#dbeafe;color:#1e40af}
-    .b-open{background:#dcfce7;color:#166534}
-    .b-hybrid{background:#f3e8ff;color:#6b21a8}
-    .muted{color:#64748b}
-    .btn-link{background:none;border:0;color:var(--c1);cursor:pointer;font-weight:600}
-    .empty{padding:24px;text-align:center;color:#64748b}
-    .toolbar{display:flex;justify-content:space-between;align-items:center;margin:0 20px}
+    html[data-theme="dark"] body{background:#111827;color:#ffffff;}
+    select,input{padding:10px;border:1px solid var(--border,#e5e7eb);border-radius:8px}
+    html[data-theme="dark"] select,
+    html[data-theme="dark"] input {
+      border-color: rgba(255,255,255,0.25);
+      background: #111827;
+      color: #ffffff;
+    }
   </style>
 </head>
 <body>
-  <!-- Common Header -->
-  <header style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #e5e7eb;background:white;margin-bottom:10px">
-    <div style="display:flex;gap:12px;align-items:center">
-      <strong style="font-size:18px;color:#1f2937">Teklifbul</strong>
-      <span style="font-size:13px;color:#6b7280">/ Gönderdiğim Teklifler</span>
-    </div>
-    <div style="display:flex;gap:12px;align-items:center">
-      <label style="font-size:12px;opacity:.8">Firma:</label>
-      <span id="firmName" style="font-size:13px;color:#6b7280">-</span>
-      <span id="userLabel" style="font-size:13px;color:#6b7280;opacity:.8">-</span>
-      <button id="logoutBtn" style="padding:8px 14px;background:#dc2626;color:white;border:none;border-radius:6px;cursor:pointer;font-weight:500">Çıkış</button>
-    </div>
-  </header>
+  <!-- Teklifbul Rule v1.0 - Header standardı: app-header + header.js -->
+  <header id="app-header"></header>
 
   <div class="toolbar">
     <a href="bids-incoming.header.html" class="btn-link">← Gelen Teklifler</a>
@@ -92,12 +93,17 @@
   </div>
 
   <script type="module">
-    import { auth, db } from './firebase.js';
+    // Teklifbul Rule v1.0 - Tek kaynaktan auth guard yönetimi
+    import { initAuthGuard } from './assets/js/auth-guard.js';
+    import { auth, db, waitAuthReady } from './firebase.js';
     import {
       collection, query, where, getDocs, getDoc, doc, orderBy, limit
     } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
     import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js';
     import { getStatusLabel, getPaymentMethodLabel } from './bid-management.js';
+    
+    // Guard'ı başlat - tüm yönlendirmeler guard üzerinden yapılacak
+    initAuthGuard().catch(err => console.error('Auth guard init failed', err));
 
     const $ = (s)=>document.querySelector(s);
     const fmt = (n)=> typeof n==='number' ? new Intl.NumberFormat('tr-TR').format(n) : '—';
@@ -186,16 +192,33 @@
 
     async function init(){
       const user=auth.currentUser;
+      if (!user) return; // Auth guard yönlendirecek
       await preloadDemandsForSupplier(user);
       const data=await loadOutgoing(user);
       render(data);
       ['#f-demand','#f-mode','#f-status','#f-buyer'].forEach(sel=> $(sel).addEventListener('input', ()=> render(data)));
     }
 
-    onAuthStateChanged(auth, (u)=>{ if(!u){ window.location.href='index.html'; } else { init(); } });
+    // Teklifbul Rule v1.0 - Auth guard yönlendirmeyi yapacak, sadece user geldiğinde init yap
+    onAuthStateChanged(auth, (u)=>{ 
+      if(u) { 
+        init(); 
+      }
+      // Kullanıcı yoksa auth guard yönlendirecek
+    });
+    
+    // İlk yükleme için auth ready bekle (middle-click senaryosu için)
+    (async () => {
+      const user = await waitAuthReady();
+      if (user) {
+        init();
+      }
+      // Kullanıcı yoksa auth guard yönlendirecek
+    })();
   </script>
 
   <!-- Shared Header Script -->
-  <script type="module" src="./header.js"></script>
+  <!-- Teklifbul Rule v1.0 - Header standardı: Modern header.js modülü -->
+  <script type="module" src="/assets/js/ui/header.js"></script>
 </body>
 </html>

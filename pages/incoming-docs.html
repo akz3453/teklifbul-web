@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>Gelen e-Belgeler | Teklifbul</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="/assets/js/theme-init.js"></script>
+  <link rel="stylesheet" href="/utils.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <style>
+    body { font-family: system-ui, Arial; background: #f8fafc; color: #111827; margin: 0; }
+    .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+    .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 16px 0; }
+    .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+    .status-pending { background: #fef3c7; color: #92400e; }
+    .status-ready { background: #dcfce7; color: #166534; }
+    .status-processed { background: #e0f2fe; color: #075985; }
+    
+    table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+    th, td { border-bottom: 1px solid #e5e7eb; padding: 12px; text-align: left; font-size: 13px; }
+    th { background: #f9fafb; font-weight: 600; color: #374151; }
+    tr:hover { background: #f9fafb; cursor: pointer; }
+
+    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 1000; }
+    .modal-content { background: #fff; border-radius: 12px; width: min(1000px, 95vw); max-height: 90vh; overflow-y: auto; padding: 24px; position: relative; }
+    
+    .mapping-row { display: grid; grid-template-columns: 2fr 1.5fr 1fr 1fr 1.5fr; gap: 12px; align-items: center; padding: 12px; border-bottom: 1px solid #f3f4f6; }
+    .mapping-header { font-weight: 600; font-size: 12px; color: #6b7280; background: #f9fafb; }
+    
+    .btn { padding: 8px 16px; border-radius: 6px; font-weight: 600; border: none; cursor: pointer; font-size: 13px; transition: 0.2s; }
+    .btn-primary { background: #2563eb; color: #fff; }
+    .btn-success { background: #10b981; color: #fff; }
+    .btn-secondary { background: #f3f4f6; color: #374151; }
+    
+    .item-mapped { border-left: 4px solid #10b981; }
+    .item-unmapped { border-left: 4px solid #ef4444; }
+
+    /* Dark Mode */
+    html[data-theme="dark"] body { background: #111827; color: #f9fafb; }
+    html[data-theme="dark"] .card, html[data-theme="dark"] .modal-content { background: #1f2937; border-color: #374151; }
+    html[data-theme="dark"] th { background: #374151; color: #f9fafb; }
+    html[data-theme="dark"] td { border-color: #374151; }
+    html[data-theme="dark"] .mapping-header { background: #374151; }
+  </style>
+</head>
+<body>
+  <header id="app-header"></header>
+
+  <div class="container">
+    <div class="tb-breadcrumb">
+      <span class="tb-crumb"><a href="/dashboard.html">🏠 Ana Sayfa</a></span>
+      <span class="tb-sep">›</span>
+      <span class="tb-crumb"><a href="/pages/invoice-new.html">🧾 Faturalama</a></span>
+      <span class="tb-sep">›</span>
+      <span class="tb-crumb">📩 Gelen e-Belgeler</span>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin: 20px 0;">
+      <div>
+        <h1>📩 Gelen e-Belgeler</h1>
+        <p style="color: #6b7280; margin: 4px 0 0 0;">Entegratörden düşen fatura ve irsaliyeleri stoklarla eşleştirin.</p>
+      </div>
+      <button class="btn btn-primary" id="btnSync">🔄 Yeni Belgeleri Çek</button>
+    </div>
+
+    <div class="card">
+      <div id="tableContainer">
+        <table>
+          <thead>
+            <tr>
+              <th>Tarih</th>
+              <th>Gönderici</th>
+              <th>Tür</th>
+              <th>Belge No / ETTN</th>
+              <th>Tutar</th>
+              <th>Durum</th>
+            </tr>
+          </thead>
+          <tbody id="docsTableBody">
+            <tr><td colspan="6" style="text-align:center; padding:40px;">Yükleniyor...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detail Modal -->
+  <div id="docModal" class="modal">
+    <div class="modal-content">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 20px; align-items: center;">
+        <h2 id="modalTitle">Belge Detayı</h2>
+        <button class="btn btn-secondary" onclick="closeModal()">✕ Kapat</button>
+      </div>
+      
+      <div id="docInfo" style="margin-bottom: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <!-- Filled by JS -->
+      </div>
+
+      <div class="mapping-header mapping-row">
+        <div>Gelen Ürün İsmi</div>
+        <div>Sistemimizdeki Stok</div>
+        <div>Miktar Çarpanı</div>
+        <div>Hesaplanan</div>
+        <div>İşlem</div>
+      </div>
+      <div id="mappingList">
+        <!-- Filled by JS -->
+      </div>
+
+      <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #e5e7eb; display: flex; gap: 16px; align-items: center;">
+        <label style="font-size: 12px; font-weight: 600; color: #374151;">Hedef Depo:</label>
+        <select id="defaultLocationSelect" style="flex: 1; max-width: 320px; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;">
+          <option value="">Lokasyon yükleniyor...</option>
+        </select>
+      </div>
+
+      <div style="margin-top: 16px; display: flex; justify-content: flex-end; gap: 12px;">
+        <div style="flex: 1; font-size: 13px; color: #6b7280;" id="mappingSummary">
+          Tüm kalemler eşleştiğinde stoğa işleme butonu aktifleşir.
+        </div>
+        <button class="btn btn-success" id="btnProcessToStock" disabled>📦 Stoğa Kaydet</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mapping Form Modal -->
+  <div id="itemMapModal" class="modal" style="z-index: 1100;">
+    <div class="modal-content" style="width: 540px;">
+      <h3>Ürün Eşleştirme</h3>
+      <p id="mapItemOriginalName" style="font-weight: 600; color: #2563eb; margin-bottom: 16px;"></p>
+
+      <div style="margin-bottom: 12px;">
+        <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Sistemden Stok Seç *</label>
+        <input type="text" id="stockSearch" placeholder="Ürün adı veya SKU..." style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;">
+        <select id="stockSelect" style="width: 100%; margin-top: 4px; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;"></select>
+      </div>
+
+      <div style="margin-bottom: 16px; padding: 10px 12px; border: 1px dashed #d1d5db; border-radius: 6px; background: #f9fafb;">
+        <div style="font-size: 12px; color: #6b7280; margin-bottom: 6px;">
+          Sistemde bu ürün yok mu? Hemen yeni stok kartı oluşturun.
+        </div>
+        <button type="button" class="btn btn-secondary" id="btnCreateStockHere">➕ Yeni Stok Kartı Oluştur</button>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+        <div>
+          <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Birim Çarpanı</label>
+          <input type="number" id="multiplier" value="1" step="0.01" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;">
+          <small style="color: #6b7280;">Örn: 1 koli = 20 adet için 20 girin.</small>
+        </div>
+        <div>
+          <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Hedef Birim</label>
+          <input type="text" id="targetUnit" readOnly style="width: 100%; padding: 8px; background: #f9fafb; border: 1px solid #d1d5db; border-radius: 4px;">
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 8px;">
+        <button type="button" class="btn btn-secondary" id="btnCancelMapping">İptal</button>
+        <button type="button" class="btn btn-primary" id="btnSaveMapping">Eşleştirmeyi Kaydet</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Create Stock Modal -->
+  <div id="quickStockModal" class="modal" style="z-index: 1200;">
+    <div class="modal-content" style="width: 540px;">
+      <h3>➕ Yeni Stok Kartı Oluştur</h3>
+      <p style="color: #6b7280; font-size: 13px; margin: 0 0 16px 0;">
+        Aşağıdaki bilgiler gelen belgeden ön doldurulmuştur. Sonradan stok detayında düzenleyebilirsiniz.
+      </p>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div style="grid-column: 1 / -1;">
+          <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Ürün Adı *</label>
+          <input type="text" id="qsName" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;">
+        </div>
+        <div>
+          <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">SKU</label>
+          <input type="text" id="qsSku" placeholder="Boş bırakılırsa otomatik üretilir" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;">
+        </div>
+        <div>
+          <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Birim *</label>
+          <input type="text" id="qsUnit" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;">
+        </div>
+        <div>
+          <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Son Alış Fiyatı</label>
+          <input type="number" id="qsPrice" step="0.01" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;">
+        </div>
+        <div>
+          <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">KDV %</label>
+          <input type="number" id="qsVat" step="0.01" value="20" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;">
+        </div>
+      </div>
+
+      <div style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 8px;">
+        <button type="button" class="btn btn-secondary" id="btnCancelQuickStock">İptal</button>
+        <button type="button" class="btn btn-primary" id="btnSaveQuickStock">Kaydet ve Eşleştir</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/firebase.js"></script>
+  <script type="module">
+    import { initGlobalHeader } from '/assets/js/ui/header.js';
+    initGlobalHeader({ mount: '#app-header', activeRoute: 'invoicing' });
+  </script>
+  <script type="module" src="/scripts/incoming-docs.js"></script>
+</body>
+</html>

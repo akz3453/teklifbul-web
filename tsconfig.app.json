@@ -6,7 +6,9 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "types": ["vite/client"],
+    "typeRoots": ["./node_modules/@types", "./node_modules"],
     "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
 
     /* Bundler mode */
     "moduleResolution": "Bundler",
@@ -24,5 +26,10 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": [
+    "**/AppData/Local/Microsoft/TypeScript/**",
+    "**/node_modules/@types/node/ts5.7/**",
+    "**/node_modules/@types/node/ts5.6/**"
+  ]
 }

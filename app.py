@@ -42,7 +42,7 @@ START_ROW_ITEMS = 6   # ✅ 1. ürün 6. satırda
 EASY_START_ROW  = 6
 
 # Ürün başlıkları 5. satırda; sütun eşleşmeleri
-# A5=Sıra No, B5=Malzeme Kodu, C5=Malzeme Tanımı, D5=Marka,
+# A5=Sıra No, B5=Stok Kodu, C5=Malzeme Tanımı, D5=Marka,
 # E5=Miktar, F5=Birim, G5=İstenen Teslim Tarihi, H5=Ambardaki Miktar,
 # I5=Sipariş Miktarı, J5=Hedef Fiyat, L5=Genel Toplam
 EASY_COLS_DEFAULT: Dict[str, str] = {
@@ -315,7 +315,7 @@ async def export_purchase_form(demand: Demand):
         for i, it in enumerate(demand.items, start=0):
             r = row + i
             ws[f"A{r}"].value = it.no if isinstance(it.no, int) else (i + 1)  # Sıra No
-            ws[f"B{r}"].value = it.sku or ""                                  # Malzeme Kodu
+            ws[f"B{r}"].value = it.sku or ""                                  # Stok Kodu
             ws[f"C{r}"].value = it.name                                       # Malzeme Tanımı
             ws[f"D{r}"].value = it.brand or ""                                # Marka
             ws[f"E{r}"].value = it.qty                                        # Miktar

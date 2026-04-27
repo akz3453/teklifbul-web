@@ -5,7 +5,10 @@
     "lib": ["ES2023"],
     "module": "ESNext",
     "types": ["node"],
+    "typeRoots": ["./node_modules/@types"],
     "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "noResolve": false,
 
     /* Bundler mode */
     "moduleResolution": "Bundler",
@@ -22,5 +25,10 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["vite.config.ts"]
+  "include": ["vite.config.ts", "types/**/*.d.ts"],
+  "exclude": [
+    "**/AppData/Local/Microsoft/TypeScript/**",
+    "**/node_modules/@types/node/ts5.7/**",
+    "**/node_modules/@types/node/ts5.6/**"
+  ]
 }

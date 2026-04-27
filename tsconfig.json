@@ -3,5 +3,15 @@
   "references": [
     { "path": "./tsconfig.app.json" },
     { "path": "./tsconfig.node.json" }
+  ],
+  "compilerOptions": {
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "typeRoots": ["./node_modules/@types"]
+  },
+  "exclude": [
+    "**/AppData/Local/Microsoft/TypeScript/**",
+    "**/node_modules/@types/node/ts5.7/**",
+    "**/node_modules/@types/node/ts5.6/**"
   ]
 }

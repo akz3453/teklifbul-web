@@ -25,6 +25,11 @@ Thumbs.db
 .cursor/
 .cursor/*.json
 
+# Firebase Service Account Keys (GÜVENLİK: ASLA commit edilmemeli!)
+serviceAccountKey.json
+*service-account*.json
+*firebase-adminsdk*.json
+
 # npm auth/config (keep private if it contains tokens)
 .npmrc
 
@@ -33,3 +38,34 @@ coverage/
 
 # TypeScript build cache
 *.tsbuildinfo
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Backup / temporary files (Teklifbul Rule v1.0)
+*.old
+*.backup
+*.before-restore
+*.temp
+*.tmp
+*.tmp.txt
+*.bak
+.local
+
+# Firestore emulator/test outputs
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+firestore-export/
+.firebase/
+
+# Lint / audit reports (rapor çıktısı, repoya commit etme)
+lint-report*.txt
+lint-output*.txt
+lint_final*.txt
+audit-report.txt
+
+# Geçici commit message dosyaları (Cursor agent kullanımı)
+.commit-msg-tmp.txt

@@ -27,11 +27,47 @@ if (!admin.apps.length) {
 }
 
 /**
- * Express Request'e user bilgilerini ekler
+ * Teklifbul Rule v1.0
+ * verifyToken middleware sonrasinda kullanilan request tipi.
+ * `user`'i optional birakiyoruz cunku Express'in RequestHandler imzasiyla
+ * uyumlu olmasi icin parametreler kontravariant olmali. Handler'larda
+ * `req.user`'a guvenli erismek icin {@link requireUser} helper'ini kullanin.
  */
 export interface AuthenticatedRequest extends Request {
   user?: AuthUser;
   subscription?: SubscriptionRecord | null;
+}
+
+/**
+ * optionalVerifyToken middleware sonrasinda kullanilan request tipi.
+ * `req.user` dolu olabilir veya olmayabilir.
+ */
+export interface OptionalAuthRequest extends Request {
+  user?: AuthUser;
+  subscription?: SubscriptionRecord | null;
+}
+
+/**
+ * Teklifbul Rule v1.0 - verifyToken sonrasi req.user her zaman doludur.
+ * Bu helper, TS18048 hatalarini onlemek icin guvenli erisim saglar.
+ *
+ * @throws AuthAssertionError - middleware bypass edilirse
+ */
+export function requireUser(req: AuthenticatedRequest): AuthUser {
+  if (!req.user) {
+    // verifyToken middleware'i her zaman calismis olmali; bu durum sadece
+    // misconfig (unutulmus middleware) durumunda olusur.
+    throw new AuthAssertionError('Authenticated user required but req.user is undefined');
+  }
+  return req.user;
+}
+
+/** Teklifbul Rule v1.0 - middleware misconfig'i tespit etmek icin tipli hata */
+export class AuthAssertionError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'AuthAssertionError';
+  }
 }
 
 /**
@@ -174,7 +210,7 @@ export async function isAdmin(user: AuthUser | undefined | null): Promise<boolea
  * Public endpoint'lerde kullanıcı bilgisi varsa kullan, yoksa devam et
  */
 export async function optionalVerifyToken(
-  req: AuthenticatedRequest,
+  req: OptionalAuthRequest,
   _res: Response,
   next: NextFunction
 ): Promise<void> {

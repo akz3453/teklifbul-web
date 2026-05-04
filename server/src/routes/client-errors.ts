@@ -130,7 +130,7 @@ router.post(
         logger.error('Client error report validation failed', validationResult.error);
         return respondError(
           res,
-          Errors.validationError(validationResult.error.errors.map(e => e.message).join(', '))
+          Errors.validation(validationResult.error.errors.map(e => e.message).join(', '))
         );
       }
 
@@ -246,7 +246,7 @@ router.get(
         logger.error('Client error list validation failed', validationResult.error);
         return respondError(
           res,
-          Errors.validationError(validationResult.error.errors.map(e => e.message).join(', '))
+          Errors.validation(validationResult.error.errors.map(e => e.message).join(', '))
         );
       }
 

@@ -90,10 +90,11 @@ async function getPlanId(req: AuthenticatedRequest): Promise<string | null> {
     }
     
     // Fallback to user plan
+    // Teklifbul Rule v1.0 - getUserPlan zaten AiPlan ('free'|'premium'|'premium_plus') string'i donduruyor
     if (req.user?.uid) {
       const { getUserPlan } = await import('../services/userService.js');
       const plan = await getUserPlan(req.user.uid);
-      return plan?.planId || null;
+      return plan || null;
     }
   } catch (e) {
     logger.warn('rateLimitAi: plan resolution failed', e);

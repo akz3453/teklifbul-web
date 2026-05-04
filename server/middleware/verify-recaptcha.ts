@@ -41,7 +41,6 @@ export function requireRecaptcha(expectedAction: RecaptchaAction) {
         (resolve) => {
           setTimeout(() => {
             resolve({
-              // @ts-expect-error narrow type at runtime
               success: false,
               errorCodes: ["timeout"],
             } as any);
@@ -50,7 +49,6 @@ export function requireRecaptcha(expectedAction: RecaptchaAction) {
       );
 
       const result = await Promise.race([
-        // @ts-expect-error runtime race
         verifyRecaptchaToken(rawToken, req.ip),
         timeoutPromise,
       ]);

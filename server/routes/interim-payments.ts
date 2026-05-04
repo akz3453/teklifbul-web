@@ -144,7 +144,7 @@ router.get('/',
     }
 
     const snapshot = await query.get();
-    const payments = snapshot.docs.map(doc => ({
+    const payments: any[] = snapshot.docs.map((doc: any) => ({
       id: doc.id,
       ...doc.data(),
       createdAt: doc.data().createdAt?.toDate?.()?.toISOString(),
@@ -186,7 +186,7 @@ router.get('/',
     
     // Client-side tarih filtresi (Firestore index gerektirmemek için)
     if (periodStart || periodEnd) {
-      filteredPayments = payments.filter(p => {
+      filteredPayments = payments.filter((p: any) => {
         if (periodStart && p.periodStart < periodStart) return false;
         if (periodEnd && p.periodEnd > periodEnd) return false;
         return true;
@@ -312,7 +312,7 @@ router.get('/suggestions',
       .where('companyId', '==', companyId)
       .where('type', 'in', ['warehouse', 'site'])
       .get();
-    const sites = sitesSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    const sites: any[] = sitesSnapshot.docs.map((d: any) => ({ id: d.id, ...d.data() }));
 
     const suggestions: any[] = [];
 
@@ -372,7 +372,7 @@ router.get('/suggestions',
           .get();
 
         const contractDoc = contractsSnapshot.empty ? null : contractsSnapshot.docs[0];
-        const contract = contractDoc ? { id: contractDoc.id, ...contractDoc.data() } : null;
+        const contract: any = contractDoc ? { id: contractDoc.id, ...contractDoc.data() } : null;
 
         // Sözleşme pozlarını al ve tahmini tutarı hesapla
         let estimatedAmount = 0;
@@ -813,7 +813,7 @@ router.post('/:id/send-approval',
       return res.status(404).json({ error: 'NOT_FOUND', message: 'Hakediş bulunamadı' });
     }
 
-    const paymentData = paymentDoc.data();
+    const paymentData: any = paymentDoc.data();
     
     // Şirket kontrolü
     const userDoc = await db.collection('users').doc(userId).get();
@@ -833,7 +833,7 @@ router.post('/:id/send-approval',
     }
 
     // Kullanıcı bilgilerini al
-    const userEmail = req.user.email || userData?.email || '';
+    const userEmail = req.user?.email || userData?.email || '';
 
     // Approval policy'den onaylayıcıları belirle
     const companyDoc = await db.collection('companies').doc(companyId).get();
@@ -855,8 +855,8 @@ router.post('/:id/send-approval',
     ];
 
     // Onaylayıcıları bul
-    const approvers = [];
-    activeUsersSnapshot.docs.forEach(doc => {
+    const approvers: Array<{ userId: string; email: string; role: string }> = [];
+    activeUsersSnapshot.docs.forEach((doc: any) => {
       const user = doc.data();
       const userRole = user.companyRoleKey || user.companyRole || '';
       if (topApproverRoles.includes(userRole) && user.isActive !== false) {
@@ -966,7 +966,7 @@ router.post('/:id/approve',
       return res.status(404).json({ error: 'NOT_FOUND', message: 'Hakediş bulunamadı' });
     }
 
-    const paymentData = paymentDoc.data();
+    const paymentData: any = paymentDoc.data();
     
     // Şirket kontrolü
     const userDoc = await db.collection('users').doc(userId).get();
@@ -995,7 +995,7 @@ router.post('/:id/approve',
     }
 
     // Kullanıcı bilgilerini al
-    const userEmail = req.user.email || userData?.email || '';
+    const userEmail = req.user?.email || userData?.email || '';
     const userRole = userData?.companyRoleKey || userData?.companyRole || '';
 
     // Approval history'ye ekle
@@ -1073,7 +1073,7 @@ router.post('/:id/reject',
       return res.status(404).json({ error: 'NOT_FOUND', message: 'Hakediş bulunamadı' });
     }
 
-    const paymentData = paymentDoc.data();
+    const paymentData: any = paymentDoc.data();
     
     // Şirket kontrolü
     const userDoc = await db.collection('users').doc(userId).get();
@@ -1102,7 +1102,7 @@ router.post('/:id/reject',
     }
 
     // Kullanıcı bilgilerini al
-    const userEmail = req.user.email || userData?.email || '';
+    const userEmail = req.user?.email || userData?.email || '';
     const userRole = userData?.companyRoleKey || userData?.companyRole || '';
 
     // Approval history'ye ekle
@@ -1201,7 +1201,7 @@ router.post('/:id/send-to-accountant',
       return res.status(404).json({ error: 'NOT_FOUND', message: 'Hakediş bulunamadı' });
     }
 
-    const paymentData = paymentDoc.data();
+    const paymentData: any = paymentDoc.data();
     
     // Şirket kontrolü
     const userDoc = await db.collection('users').doc(userId).get();
@@ -1221,7 +1221,7 @@ router.post('/:id/send-to-accountant',
     }
 
     // Kullanıcı bilgilerini al
-    const userEmail = req.user.email || userData?.email || '';
+    const userEmail = req.user?.email || userData?.email || '';
 
     // Approval history'ye ekle
     const approvalHistory = paymentData?.approvalHistory || [];
@@ -1279,7 +1279,7 @@ router.get('/:id/approval-history', async (req: AuthenticatedRequest, res) => {
       return res.status(404).json({ error: 'NOT_FOUND', message: 'Hakediş bulunamadı' });
     }
 
-    const paymentData = paymentDoc.data();
+    const paymentData: any = paymentDoc.data();
     
     // Şirket kontrolü
     const userDoc = await db.collection('users').doc(userId).get();
@@ -1368,7 +1368,7 @@ router.get('/:id/export/pdf', async (req: AuthenticatedRequest, res) => {
       return res.status(404).json({ error: 'NOT_FOUND', message: 'Hakediş bulunamadı' });
     }
 
-    const paymentData = paymentDoc.data();
+    const paymentData: any = paymentDoc.data();
     
     // Şirket kontrolü
     const userDoc = await db.collection('users').doc(userId).get();
@@ -1938,7 +1938,7 @@ router.get('/:id/export/excel', async (req: AuthenticatedRequest, res) => {
       return res.status(404).json({ error: 'NOT_FOUND', message: 'Hakediş bulunamadı' });
     }
 
-    const paymentData = paymentDoc.data();
+    const paymentData: any = paymentDoc.data();
     
     // Şirket kontrolü
     const userDoc = await db.collection('users').doc(userId).get();
@@ -2180,7 +2180,7 @@ router.post('/:id/ai-draft', async (req: AuthenticatedRequest, res) => {
       return res.status(404).json({ error: 'NOT_FOUND', message: 'Hakediş bulunamadı' });
     }
 
-    const paymentData = paymentDoc.data();
+    const paymentData: any = paymentDoc.data();
     const companyId = paymentData.companyId;
     
     // Sözleşme bilgilerini al
@@ -2190,7 +2190,7 @@ router.post('/:id/ai-draft', async (req: AuthenticatedRequest, res) => {
     // Sözleşme pozlarını al
     // Teklifbul Rule v1.0 - Limit ekle (performans için)
     const itemsSnapshot = await db.collection('contracts').doc(paymentData.contractId).collection('items').limit(500).get();
-    const contractItems = itemsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const contractItems: any[] = itemsSnapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
 
     // Teklifbul Rule v1.0 - Stok hareketlerinden poz bazlı miktar hesaplama
     const periodStart = paymentData.periodStart?.toDate?.() || new Date(paymentData.periodStart);
@@ -2333,15 +2333,14 @@ Yanıtını JSON formatında ver:
     const estimatedTokens = Math.ceil(aiPrompt.length / 4) + aiResult.totalTokens;
     const tokenPack = await consumeTokensTransactional(userId, provider, estimatedTokens);
     
-    // AI usage logging
+    // AI usage logging - Teklifbul Rule v1.0 - aiUsageService AiUsageLogParams sozlesmesine uydur
     const plan = await getUserPlan(userId);
     await logAiUsage({
       userId,
       plan,
       provider,
-      feature: 'interim_payment_ai_draft',
-      tokensUsed: estimatedTokens,
-      success: true
+      promptTokens: Math.ceil(aiPrompt.length / 4),
+      completionTokens: aiResult.totalTokens,
     });
 
     // AI yanıtını parse et
@@ -2418,7 +2417,7 @@ router.get('/:id/versions', async (req: AuthenticatedRequest, res) => {
       return res.status(404).json({ error: 'NOT_FOUND', message: 'Hakediş bulunamadı' });
     }
 
-    const data = doc.data();
+    const data: any = doc.data();
     // Şirket kontrolü
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
@@ -2486,7 +2485,7 @@ router.post('/:id/rollback/:version', async (req: AuthenticatedRequest, res) => 
       return res.status(404).json({ error: 'NOT_FOUND', message: 'Hakediş bulunamadı' });
     }
 
-    const data = doc.data();
+    const data: any = doc.data();
     // Şirket kontrolü
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
@@ -2573,7 +2572,7 @@ router.post('/:id/attachments',
       return res.status(404).json({ error: 'NOT_FOUND', message: 'Hakediş bulunamadı' });
     }
 
-    const paymentData = paymentDoc.data();
+    const paymentData: any = paymentDoc.data();
     // Şirket kontrolü
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
@@ -2667,7 +2666,7 @@ router.get('/:id/attachments', async (req: AuthenticatedRequest, res) => {
       return res.status(404).json({ error: 'NOT_FOUND', message: 'Hakediş bulunamadı' });
     }
 
-    const data = doc.data();
+    const data: any = doc.data();
     // Şirket kontrolü
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
@@ -2721,7 +2720,7 @@ router.delete('/:id/attachments/:attachmentId',
       return res.status(404).json({ error: 'NOT_FOUND', message: 'Hakediş bulunamadı' });
     }
 
-    const data = doc.data();
+    const data: any = doc.data();
     // Şirket kontrolü
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
@@ -2801,7 +2800,7 @@ router.post('/:id/import-metraj',
       return res.status(404).json({ error: 'NOT_FOUND', message: 'Hakediş bulunamadı' });
     }
 
-    const paymentData = paymentDoc.data();
+    const paymentData: any = paymentDoc.data();
     
     // Şirket kontrolü - Teklifbul Rule v1.0 - Company izolasyonu
     const userDoc = await db.collection('users').doc(userId).get();
@@ -2847,7 +2846,10 @@ router.post('/:id/import-metraj',
 
     // Excel'i parse et
     const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.load(req.file.buffer);
+    // Teklifbul Rule v1.0 - Buffer<ArrayBufferLike> -> ArrayBuffer cast (Multer/ExcelJS tip uyusmazligi)
+    const fileBuf = req.file.buffer;
+    const arrayBuf = fileBuf.buffer.slice(fileBuf.byteOffset, fileBuf.byteOffset + fileBuf.byteLength);
+    await workbook.xlsx.load(arrayBuf as ArrayBuffer);
 
     const worksheet = workbook.worksheets[0];
     if (!worksheet) {

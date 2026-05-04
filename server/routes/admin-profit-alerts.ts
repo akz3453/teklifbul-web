@@ -52,7 +52,7 @@ async function calculateUsageSummary7(
       .where('type', '==', 'consume')
       .get();
 
-    ledgerSnap.docs.forEach(doc => {
+    ledgerSnap.docs.forEach((doc: any) => {
       const data = doc.data();
       const meta = data.meta || {};
       const isFreeEligible = meta.freeEligible === true;
@@ -165,7 +165,7 @@ router.get('/alerts/profit', async (req: AuthenticatedRequest, res) => {
 
     // Get all companies
     const companiesSnap = await db.collection('companies').get();
-    const companies = companiesSnap.docs.map(doc => ({
+    const companies: any[] = companiesSnap.docs.map((doc: any) => ({
       id: doc.id,
       ...doc.data(),
     }));

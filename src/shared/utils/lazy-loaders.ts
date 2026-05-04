@@ -1,71 +1,50 @@
 /**
  * Lazy Loading Utility
  * Teklifbul Rule v1.0 - Performance Optimization
- * 
- * Bu modül ağır kütüphaneleri (Excel, PDF, Charts) lazy loading ile yükler.
-    if (!pdfKitModule) {
-        pdfKitModule = await import('pdfkit');
-    }
-    return pdfKitModule;
-}
+ *
+ * Bu modul agir kutuphaneleri (Excel, PDF, Charts) lazy loading ile yukler.
+ * Boylece ilk paint daha hizli olur, kullanici sadece ihtiyac duyunca cdn/dep cekilir.
+ */
 
-// Chart.js lazy loader (frontend)
-let chartJSModule: any = null;
+import type ExcelJSType from 'exceljs';
 
-export async function loadChartJS() {
-    if (!chartJSModule) {
-        // @ts-ignore - Chart.js browser module
-        chartJSModule = await import('https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js');
-    }
-    return chartJSModule;
-}
-
-// Example usage:
-/*
-// ❌ Old way (synchronous import)
-import ExcelJS from 'exceljs';
-
-async function exportToExcel() {
-  const workbook = new ExcelJS.Workbook();
-  // ...
-}
-
-// ✅ New way (lazy loading)
-import { loadExcelJS } from './utils/lazy-loaders';
-
-async function exportToExcel() {
-  const ExcelJS = await loadExcelJS();
-  const workbook = new ExcelJS.default.Workbook();
-  // ...
-}
-*/
+let excelJSModule: typeof ExcelJSType | null = null;
 
 /**
- * Kullanım Örnekleri:
- * 
- * 1. Excel Export:
- * ```typescript
- * button.addEventListener('click', async () => {
- *   const ExcelJS = await loadExcelJS();
- *   const workbook = new ExcelJS.default.Workbook();
- *   // Excel işlemleri...
- * });
- * ```
- * 
- * 2. PDF Generation:
- * ```typescript
- * async function generatePDF() {
- *   const PDFDocument = await loadPDFKit();
- *   const doc = new PDFDocument.default();
- *   // PDF işlemleri...
- * }
- * ```
- * 
- * 3. Chart Rendering:
- * ```typescript
- * async function renderChart() {
- *   const Chart = await loadChartJS();
- *   new Chart.default(ctx, config);
- * }
- * ```
+ * ExcelJS lazy loader (hem tarayici hem Node.js icin uyumludur)
+ * @returns ExcelJS modul namespace'i (Workbook, Cell, Row vb.)
  */
+export async function loadExcelJS(): Promise<typeof ExcelJSType> {
+  if (!excelJSModule) {
+    const mod = await import('exceljs');
+    // ESM/CJS interop: bazi build target'larinda default uzerinden gelir
+    excelJSModule = ((mod as unknown as { default?: typeof ExcelJSType }).default ?? mod) as typeof ExcelJSType;
+  }
+  return excelJSModule;
+}
+
+let pdfKitModule: unknown = null;
+
+/**
+ * PDFKit lazy loader (Node.js / SSR icin)
+ */
+export async function loadPDFKit(): Promise<unknown> {
+  if (!pdfKitModule) {
+    pdfKitModule = await import('pdfkit');
+  }
+  return pdfKitModule;
+}
+
+let chartJSModule: unknown = null;
+
+/**
+ * Chart.js lazy loader (sadece tarayici)
+ * Not: Bu CDN kaynagi import.meta.url destekleyen modern tarayicilarda calisir.
+ */
+export async function loadChartJS(): Promise<unknown> {
+  if (!chartJSModule) {
+    // @ts-expect-error - Chart.js external CDN module (browser-only)
+    chartJSModule = await import('https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js');
+  }
+  return chartJSModule;
+}

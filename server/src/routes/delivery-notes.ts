@@ -46,7 +46,7 @@ router.post('/', requirePermission('edespatch.create'), async (req: any, res) =>
 
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    if (userData?.companyId !== body.companyId) {
+    if (!userData || userData.companyId !== body.companyId) {
       return res.status(403).json({ ok: false, error: 'Yetkisiz erişim' });
     }
 

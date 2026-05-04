@@ -76,7 +76,7 @@ router.get('/',
     }
 
     const snapshot = await query.get();
-    let contracts = snapshot.docs.map(doc => ({
+    let contracts: any[] = snapshot.docs.map((doc: any) => ({
       id: doc.id,
       ...doc.data(),
       createdAt: doc.data().createdAt?.toDate?.()?.toISOString(),
@@ -754,7 +754,8 @@ router.get('/:id/metraj-template',
     // Response headers
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
-    res.setHeader('Content-Length', buffer.length);
+    // Teklifbul Rule v1.0 - ExcelJS Buffer tipi 'length' yerine 'byteLength' kullaniyor
+    res.setHeader('Content-Length', (buffer as any).byteLength ?? (buffer as any).length ?? 0);
 
     logger.info('Metraj şablonu oluşturuldu', { contractId: id, itemCount: items.length, filename });
     logger.end();

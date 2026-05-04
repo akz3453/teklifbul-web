@@ -46,7 +46,7 @@ async function calculateUsageSummary7(
       .where('type', '==', 'consume')
       .get();
 
-    ledgerSnap.docs.forEach(doc => {
+    ledgerSnap.docs.forEach((doc: any) => {
       const data = doc.data();
       const meta = data.meta || {};
       const isFreeEligible = meta.freeEligible === true;
@@ -172,8 +172,9 @@ async function applyGuardrailsUpdate(
       return { success: false, error: 'Invalid action' };
     }
 
-    // Write audit log (only if not dry run)
-    if (params.dryRun !== true) {
+    // Write audit log (only if not dry run) - Teklifbul Rule v1.0
+    // dryRun=true durumu yukarida early-return ile zaten yakalandi (line 101)
+    {
       await writeAuditLog(db, companyId, {
         action,
         reason: params.reason || null,
@@ -328,7 +329,7 @@ export async function runAutoProtection(params: {
 
   // Get all companies
   const companiesSnap = await db.collection('companies').get();
-  const companies = companiesSnap.docs.map(doc => ({
+  const companies: any[] = companiesSnap.docs.map((doc: any) => ({
     id: doc.id,
     ...doc.data(),
   }));

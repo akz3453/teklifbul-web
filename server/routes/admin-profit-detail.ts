@@ -82,8 +82,8 @@ async function calculateUsageSummary(
     .orderBy('createdAt', 'asc')
     .get();
 
-  const ledgerEntries = ledgerSnap.docs.map(doc => {
-    const data = doc.data();
+  const ledgerEntries = ledgerSnap.docs.map((doc: any) => {
+    const data: any = doc.data();
     return {
       id: doc.id,
       type: data.type || 'unknown',

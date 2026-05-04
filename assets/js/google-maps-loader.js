@@ -29,7 +29,18 @@ export function loadGoogleMaps() {
     return mapsPromise;
   }
 
-  const key = 'AIzaSyDOWCLBcWz3Kim2PWpff_ij5ne2qJiSlM8'; // Teklifbul Rule: .env yerine doğrudan (test için)
+  // Teklifbul Rule v1.0 - Google Maps key, build-time inject veya window config'den okunur.
+  // Kaynaklar: window.__APP_CONFIG__.googleMapsApiKey (recommended) > import.meta.env.VITE_GOOGLE_MAPS_API_KEY > process env (yalnizca dev tarafinda).
+  // Anahtar Google Cloud Console'da HTTP referrer ile kisitlanmis olmalidir.
+  const key =
+    (typeof window !== 'undefined' && window.__APP_CONFIG__ && window.__APP_CONFIG__.googleMapsApiKey) ||
+    (typeof import.meta !== 'undefined' && import.meta?.env?.VITE_GOOGLE_MAPS_API_KEY) ||
+    '';
+
+  if (!key) {
+    logger.warn('Google Maps API key tanimli degil; harita ozellikleri devre disi');
+    return Promise.reject(new Error('Google Maps API key bulunamadi'));
+  }
 
   mapsPromise = new Promise((resolve, reject) => {
     // Unique callback fonksiyonu

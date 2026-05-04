@@ -47,7 +47,7 @@ router.get('/', verifyToken, async (req: AuthenticatedRequest, res) => {
 
 router.post('/cancel', verifyToken, async (req: AuthenticatedRequest, res) => {
   try {
-    await cancelSubscriptionAtPeriodEnd(req.user.uid);
+    await cancelSubscriptionAtPeriodEnd(req.user!.uid);
     res.json({ ok: true });
   } catch (error: any) {
     logger.error('Subscription cancel error', error);

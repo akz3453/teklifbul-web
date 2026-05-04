@@ -23,7 +23,8 @@ export type AuditEntityType =
   | 'demand'
   | 'offer'
   | 'stock'
-  | 'stock_movement';
+  | 'stock_movement'
+  | 'incoming_edoc';
 
 export interface AuditEventParams {
   companyId: string;

@@ -47,8 +47,8 @@ router.get('/companies/subscriptions',
       const companiesSnap = await query.get();
       
       // Her şirket için kullanıcı sayısını ve detayları al
-      const companies = await Promise.all(companiesSnap.docs.map(async (doc) => {
-        const companyData = doc.data();
+      const companies = await Promise.all(companiesSnap.docs.map(async (doc: any) => {
+        const companyData: any = doc.data();
         const companyId = doc.id;
         
         // Şirketteki kullanıcı sayısını al

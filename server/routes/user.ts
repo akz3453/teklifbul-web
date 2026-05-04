@@ -71,9 +71,9 @@ router.get('/', verifyToken, async (req: AuthenticatedRequest, res) => {
         
         if (!joinRequestsSnapshot.empty) {
           // En son isteği al (pending veya accepted)
-          const latestRequest = joinRequestsSnapshot.docs
+          const latestRequest: any = joinRequestsSnapshot.docs
             .map(d => ({ id: d.id, ...d.data() }))
-            .sort((a, b) => {
+            .sort((a: any, b: any) => {
               const aTime = a.createdAt?.toMillis?.() || 0;
               const bTime = b.createdAt?.toMillis?.() || 0;
               return bTime - aTime;
@@ -160,9 +160,9 @@ router.post('/sync-company-context', verifyToken, async (req: AuthenticatedReque
       const joinRequestsSnapshot = await joinRequestsQuery.get();
 
       if (!joinRequestsSnapshot.empty) {
-        const allRequests = joinRequestsSnapshot.docs
+        const allRequests: any[] = joinRequestsSnapshot.docs
           .map((d) => ({ id: d.id, ...d.data() }))
-          .sort((a, b) => {
+          .sort((a: any, b: any) => {
             const aTime = a.createdAt?.toMillis?.() || 0;
             const bTime = b.createdAt?.toMillis?.() || 0;
             return bTime - aTime;

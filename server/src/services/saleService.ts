@@ -292,7 +292,7 @@ export async function cancelSale(
     action: 'cancel',
     actorUserId: userId,
     result: 'success',
-    reason: reason || null,
+    reason: reason || undefined,
     metadata: {
       oldStatus: sale.status,
       hadStockMovements: sale.stockMovementCreated || false

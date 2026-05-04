@@ -11,7 +11,7 @@ import type { AIProvider } from './userService.js';
 
 export interface AiTokenPack {
   userId: string;
-  provider: 'openai' | 'gemini';
+  provider: AIProvider;
   totalTokens: number;      // Satın alınan toplam token
   usedTokens: number;       // Kullanılmış token
   remainingTokens: number;  // Kalan token

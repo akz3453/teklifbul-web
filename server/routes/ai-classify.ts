@@ -1,7 +1,7 @@
 import { Router, Response } from 'express';
 import { AuthenticatedRequest, verifyToken } from '../middleware/auth.js';
 import { logger } from '../../src/shared/log/logger.js';
-import { sendChat } from '../ai/index.js';
+import { sendChat, type ChatMessage } from '../ai/index.js';
 import { z } from 'zod';
 import { validateRequest } from '../utils/input-validation.js';
 
@@ -68,7 +68,7 @@ router.post('/classify-category', verifyToken, validateRequest({ body: classifyS
         logger.info('AI Category Classification Request', { itemCount: items.length });
 
         // Teklifbul Rule v3.0 - Use Groq for ultra fast classification
-        const messages = [
+        const messages: ChatMessage[] = [
             { role: 'user', content: `Aşağıdaki ürünleri sınıflandır:\n${items.join('\n')}` }
         ];
 

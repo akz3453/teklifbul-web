@@ -82,7 +82,7 @@ router.get('/profit-report', async (req: AuthenticatedRequest, res) => {
 
     // Get all companies
     const companiesSnap = await db.collection('companies').get();
-    const companies = companiesSnap.docs.map(doc => ({
+    const companies: any[] = companiesSnap.docs.map((doc: any) => ({
       id: doc.id,
       ...doc.data(),
     }));

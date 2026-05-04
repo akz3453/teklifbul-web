@@ -17,8 +17,8 @@ router.post('/', verifyToken, async (req: AuthenticatedRequest, res) => {
 
     const allowedStatus = new Set(['draft', 'pending', 'confirmed', 'canceled']);
     const preference = await createPaymentPreference({
-      userId: req.user.uid,
-      companyId: req.user.customClaims?.companyId,
+      userId: req.user!.uid,
+      companyId: (req.user!.customClaims as { companyId?: string } | undefined)?.companyId,
       paymentMethodType,
       payload: payload || {},
       amount: typeof amount === 'number' ? amount : undefined,
@@ -45,7 +45,7 @@ router.get('/', verifyToken, async (req: AuthenticatedRequest, res) => {
     const page = Number(req.query.page) || 1;
     const pageSize = Number(req.query.pageSize) || 20;
     const preferences = await listPaymentPreferences({
-      userId: req.user.uid,
+      userId: req.user!.uid,
       page,
       pageSize
     });

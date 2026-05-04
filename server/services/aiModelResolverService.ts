@@ -247,7 +247,7 @@ export async function resolveCompanyAiModelForRequest(args: {
       if (restorePaidStatus.suggestedPaid?.providerKey) {
         // Check if the reason for fallback is provider-specific
         const suggested = restorePaidStatus.suggestedPaid;
-        const suggestedProviderKey = suggested.providerKey;
+        const suggestedProviderKey = suggested.providerKey!;
         
         // Verify if this is a provider-specific issue
         const { getCompanyAiWallet } = await import('./companyAiWalletService.js');

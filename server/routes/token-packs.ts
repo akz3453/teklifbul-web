@@ -63,14 +63,20 @@ router.post('/initiate-payment',
       });
 
       // Payment intent'e token paketi bilgilerini metadata olarak ekle
-      await db.collection('payment_intents').doc(paymentIntent.id).update({
-        metadata: {
-          type: 'token_pack',
-          packId: pack.id,
-          provider: pack.provider,
-          tokenAmount: pack.tokenAmount
-        }
-      });
+      // Teklifbul Rule v1.0 - Firestore admin db'yi runtime'da resolve et
+      const db = await getAdminDb();
+      if (db) {
+        await db.collection('payment_intents').doc(paymentIntent.id).update({
+          metadata: {
+            type: 'token_pack',
+            packId: pack.id,
+            provider: pack.provider,
+            tokenAmount: pack.tokenAmount
+          }
+        });
+      } else {
+        logger.warn('Firestore unavailable, payment_intents metadata atlandi');
+      }
 
       const checkoutBase = process.env.PAYMENT_CHECKOUT_BASE_URL || 'https://pay.teklifbul-sandbox.local/checkout';
       const checkoutUrl = `${checkoutBase}?session=${providerSessionId}&intent=${paymentIntent.id}&type=token_pack`;
@@ -121,14 +127,14 @@ router.get('/', verifyToken, async (req: AuthenticatedRequest, res) => {
 
     // Kullanıcının mevcut token paketlerini al
     const userId = req.user?.uid;
-    let userPacks = [];
+    let userPacks: any[] = [];
     if (userId) {
       userPacks = await getUserAllTokenPacks(userId);
     }
 
     // Paketlere kullanıcının mevcut token bilgisini ekle
-    const packsWithUserInfo = packs.map(pack => {
-      const userPack = userPacks.find(up => up.provider === pack.provider);
+    const packsWithUserInfo = packs.map((pack: any) => {
+      const userPack = userPacks.find((up: any) => up.provider === pack.provider);
       return {
         ...pack,
         userHasPack: !!userPack,

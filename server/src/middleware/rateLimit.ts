@@ -28,7 +28,7 @@ function createKeyGenerator(keyPrefix: string, includeSessionId: boolean = false
       (req as any).user?.activeCompanyId || 
       'no_company';
     // Teklifbul Rule v1.0 - IPv6 desteği için ipKeyGenerator helper kullan
-    const ip = ipKeyGenerator(req);
+    const ip = ipKeyGenerator(req.ip || req.socket?.remoteAddress || '');
     const sessionId = includeSessionId 
       ? ((req as any).body?.sessionId || (req as any).query?.sessionId || 'no_session')
       : 'no_session';
@@ -66,9 +66,10 @@ function createRateLimitHandler(keyPrefix: string) {
     const resetHeader = res.getHeader('RateLimit-Reset');
     let retryAfterSec = 600; // Default 10 minutes
     if (resetHeader) {
-      const resetTime = typeof resetHeader === 'string' ? parseInt(resetHeader, 10) : resetHeader;
+      const resetRaw = Array.isArray(resetHeader) ? resetHeader[0] : resetHeader;
+      const resetTime = typeof resetRaw === 'string' ? parseInt(resetRaw, 10) : Number(resetRaw);
       const now = Math.floor(Date.now() / 1000);
-      retryAfterSec = Math.max(0, resetTime - now);
+      retryAfterSec = Math.max(0, (Number.isFinite(resetTime) ? resetTime : 0) - now);
     }
     
     respondError(

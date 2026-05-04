@@ -7,7 +7,7 @@
 
 import { Router } from 'express';
 import type { Request, Response } from 'express';
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { getCategories, getCategoryById, saveFeedback } from '../../../services/firestore-categories';
 import { logger } from '../../../shared/log/logger.js';
 // Teklifbul Rule v1.0 - Production Hardening
@@ -21,7 +21,9 @@ const aiSuggestLimiter = rateLimit({
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req: any) => req.user?.uid || req.ip,
+  // Teklifbul Rule v1.0 - IPv6 bypass'i engellemek icin ipKeyGenerator kullan
+  keyGenerator: (req: any) =>
+    req.user?.uid || ipKeyGenerator(req.ip || req.socket?.remoteAddress || ''),
   message: { error: 'rate_limited', message: 'Cok fazla istek. Lutfen biraz bekleyip tekrar deneyin.' }
 });
 

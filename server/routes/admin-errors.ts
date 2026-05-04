@@ -145,7 +145,7 @@ router.get('/', async (req: AuthenticatedRequest, res) => {
       }
     }
     
-    let errors = snapshot.docs.map(doc => ({
+    let errors: any[] = snapshot.docs.map((doc: any) => ({
       id: doc.id,
       ...doc.data(),
       timestamp: doc.data().timestamp?.toDate?.()?.toISOString(),

@@ -9,6 +9,8 @@ import { loadExcelJS } from '../../shared/utils/lazy-loaders';
 import type { Offer, OfferLine, OfferHeader } from '../../domain/offer/schema';
 import { mapCurrency, mapDate, mapPriority } from '../../domain/offer/mapping';
 import { checkAborted, calculateBatchProgress } from '../../shared/utils/async-utils.js';
+// Teklifbul Rule v1.0 - Sunucu/tarayici nötr ExcelJS tip importu (lazy yukleme runtime'da)
+import type ExcelJS from 'exceljs';
 
 const SHEET_NAME = 'SATIN ALMA VE TEKLIF FORMU';
 
@@ -25,6 +27,23 @@ export async function importSupplierOffer(
   signal?: AbortSignal,
   reportProgress?: (progress: number) => void
 ): Promise<Offer> {
+  // Teklifbul Rule v1.0 - Yerel rapor + iptal yardimcisi
+  const report = (p: number): void => {
+    if (reportProgress) reportProgress(p);
+    if (signal) checkAborted(signal);
+  };
+
+  report(5);
+
+  // ExcelJS lazy load + workbook olustur
+  const ExcelJSLib = await loadExcelJS();
+  const workbook = new ExcelJSLib.Workbook();
+
+  // ArrayBuffer ile Buffer arasinda farkli API'ler
+  const bufferAny = buffer as unknown as ArrayBuffer;
+  await workbook.xlsx.load(bufferAny);
+  report(15);
+
   let worksheet = workbook.getWorksheet(SHEET_NAME);
   if (!worksheet) {
     // İlk worksheet'i kullan

@@ -8,7 +8,7 @@
 import { Router } from 'express';
 import { fetchBidData, fetchStockData, aiPurchase } from '../services/aiPurchaseAssistant';
 import { validateCategorySelection } from '../services/aiCategoryGuard';
-import { optionalVerifyToken, AuthenticatedRequest, verifyToken } from '../middleware/auth.js';
+import { optionalVerifyToken, AuthenticatedRequest, OptionalAuthRequest, verifyToken } from '../middleware/auth.js';
 import { requirePremium } from '../middleware/requirePremium.js';
 // Teklifbul Rule v1.0 - Structured Logging
 import { logger } from '../../src/shared/log/logger.js';
@@ -96,7 +96,7 @@ router.post('/satin-alma', verifyToken, requirePremium, validateRequest({ body: 
  * POST /api/ai/category-guard
  * Talep başlığı/açıklaması/kalemleri ile seçilen kategorilerin uyumunu kontrol eder
  */
-router.post('/category-guard', optionalVerifyToken, validateRequest({ body: categoryGuardSchema }), async (req: AuthenticatedRequest, res) => {
+router.post('/category-guard', optionalVerifyToken, validateRequest({ body: categoryGuardSchema }), async (req: OptionalAuthRequest, res) => {
   try {
     logger.group('AI Category Guard Request');
     const { title, spec, categories, items } = req.body;

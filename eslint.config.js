@@ -32,17 +32,37 @@ export default [
     ],
   },
 
-  // HTML files configuration
+  // HTML files plugin (processor)
   {
     files: ['**/*.html'],
     plugins: {
       html: html,
     },
-    // HTML processor is handled by the plugin automatically
   },
 
   // TypeScript recommended configs
   ...tseslint.configs.recommended,
+
+  // Teklifbul Rule v1.0 - HTML icindeki <script> bloklari demo/test amacli olabilir.
+  // tseslint.configs.recommended SONRASINA yerlestirildi ki override edebilsin.
+  {
+    files: ['**/*.html'],
+    languageOptions: {
+      ecmaVersion: 2020,
+      globals: {
+        ...globals.browser,
+      },
+    },
+    rules: {
+      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-expressions': 'warn',
+      '@typescript-eslint/ban-ts-comment': 'warn',
+      '@typescript-eslint/no-explicit-any': 'off',
+      'no-undef': 'off',
+      'no-console': 'off',
+      'no-alert': 'warn',
+    },
+  },
   // TypeScript frontend dosyaları
   {
     files: ['src/**/*.{ts,tsx}'],
@@ -230,6 +250,13 @@ export default [
       globals: {
         ...globals.node,
         ...globals.browser,
+        // Teklifbul Rule v1.0 - HTML sayfalarinda CDN ile yuklenen global'ler
+        XLSX: 'readonly',
+        ExcelJS: 'readonly',
+        // Tarayici DOM tipleri (lib.dom.d.ts'den gelen interface'ler runtime'da yok ama TS bunlari tanir)
+        RequestInit: 'readonly',
+        // Eski Firebase Admin firestore type aliasi (legacy script'lerde)
+        FirebaseFirestore: 'readonly',
       },
       parser: tseslint.parser,
       parserOptions: {

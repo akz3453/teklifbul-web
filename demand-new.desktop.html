@@ -2732,9 +2732,6 @@
           const certsJson = row.querySelector('.certsJson')?.value || '[]';
           const altVal = row.querySelector('.altAcceptVal')?.value || '';
           const publishToMarket = row.querySelector('.publishToMarket')?.checked === true;
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/1468037e-4796-4d6f-90cf-8a8f25d219c5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'demand-new.html:2734',message:'collectItemsFromForm: publishToMarket checkbox okundu',data:{itemName,publishToMarket,checkboxElement:!!row.querySelector('.publishToMarket'),checked:row.querySelector('.publishToMarket')?.checked},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-          // #endregion
           let ozellikler = [];
           let kaliteSertifika = [];
           try { ozellikler = JSON.parse(featuresJson).filter(p => (p.key||'').trim() || (p.value||'').trim()); } catch {}
@@ -2757,9 +2754,6 @@
             kaliteSertifika: (kaliteSertifika && kaliteSertifika.length) ? kaliteSertifika : null,
             publishToMarket: publishToMarket
           };
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/1468037e-4796-4d6f-90cf-8a8f25d219c5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'demand-new.html:2755',message:'collectItemsFromForm: item eklendi',data:{lineNo:itemData.lineNo,name:itemData.name,publishToMarket:itemData.publishToMarket},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-          // #endregion
           items.push(itemData);
         }
       });
@@ -6127,13 +6121,7 @@
             }
 
             // Teklifbul Rule v1.0 - public_listings koleksiyonuna yazma
-            // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/1468037e-4796-4d6f-90cf-8a8f25d219c5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'demand-new.html:6123',message:'syncPublicListings çağrılmadan önce',data:{demandId,itemsPayloadCount:itemsPayload.length,itemsPayloadPublishToMarket:itemsPayload.map(i=>({lineNo:i.lineNo,name:i.name,publishToMarket:i.publishToMarket}))},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-            // #endregion
             await syncPublicListings(demandId, itemsPayload, headerData);
-            // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/1468037e-4796-4d6f-90cf-8a8f25d219c5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'demand-new.html:6124',message:'syncPublicListings çağrısı tamamlandı',data:{demandId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-            // #endregion
 
             localStorage.setItem("lastDemandId", demandId);
             
@@ -6240,9 +6228,6 @@
     async function syncPublicListings(demandId, itemsPayload, headerData) {
       try {
         logger.group('Sync Public Listings');
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/1468037e-4796-4d6f-90cf-8a8f25d219c5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'demand-new.html:6227',message:'syncPublicListings: fonksiyon başladı',data:{demandId,itemsPayloadCount:itemsPayload.length,itemsPayloadDetails:itemsPayload.map(i=>({lineNo:i.lineNo,name:i.name,publishToMarket:i.publishToMarket}))},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-        // #endregion
         
         // Mevcut import'ları kullan: query, collection, where, getDocs, setDoc, deleteDoc, doc zaten import edilmiş
         // Mevcut listing'leri bul ve sil (yeniden yazmak için)
@@ -6255,9 +6240,6 @@
         
         // publishToMarket=true olan kalemleri say
         const itemsToPublish = itemsPayload.filter(item => item.publishToMarket === true);
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/1468037e-4796-4d6f-90cf-8a8f25d219c5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'demand-new.html:6241',message:'syncPublicListings: itemsToPublish filtrelendi',data:{total:itemsPayload.length,toPublish:itemsToPublish.length,itemsToPublishDetails:itemsToPublish.map(i=>({lineNo:i.lineNo,name:i.name})),userPlanLimit},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-        // #endregion
         logger.info('Items to publish to public listings', { 
           total: itemsPayload.length, 
           toPublish: itemsToPublish.length,
@@ -6290,9 +6272,6 @@
         // Her publishToMarket=true olan kalem için listing oluştur
         const listingPromises = itemsToPublish.map(async (item, index) => {
           const listingId = `${demandId}_${item.lineNo || index}`;
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/1468037e-4796-4d6f-90cf-8a8f25d219c5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'demand-new.html:6272',message:'syncPublicListings: listing oluşturulmadan önce',data:{listingId,itemLineNo:item.lineNo,itemIndex:index,itemName:item.name},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-          // #endregion
           const listingData = {
             demandId: demandId,
             itemIndex: item.lineNo || index,
@@ -6310,18 +6289,9 @@
           };
           
           try {
-            // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/1468037e-4796-4d6f-90cf-8a8f25d219c5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'demand-new.html:6291',message:'syncPublicListings: setDoc çağrılmadan önce',data:{listingId,listingData},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-            // #endregion
             await setDoc(doc(db, 'public_listings', listingId), listingData, { merge: true });
-            // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/1468037e-4796-4d6f-90cf-8a8f25d219c5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'demand-new.html:6292',message:'syncPublicListings: setDoc başarılı',data:{listingId,itemIndex:item.lineNo||index},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-            // #endregion
             logger.info('Listing created/updated', { listingId, itemIndex: item.lineNo || index });
           } catch (error) {
-            // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/1468037e-4796-4d6f-90cf-8a8f25d219c5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'demand-new.html:6294',message:'syncPublicListings: setDoc hatası',data:{listingId,error:error?.message,errorName:error?.name,errorCode:error?.code},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-            // #endregion
             logger.error('Failed to create listing', { listingId, error: error.message });
             // Security rules hatası olabilir, kullanıcıya bilgi ver
             if (error.message && error.message.includes('permission')) {
@@ -6331,9 +6301,6 @@
         });
         
         await Promise.all(listingPromises);
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/1468037e-4796-4d6f-90cf-8a8f25d219c5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'demand-new.html:6302',message:'syncPublicListings: tüm listing promise\'leri tamamlandı',data:{demandId,listingCount:itemsToPublish.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-        // #endregion
         
         // publishToMarket=false olan kalemler için eski listing'leri sil
         // Yeni yazılan listing'lerin ID'lerini topla
@@ -6362,14 +6329,8 @@
           created: itemsToPublish.length,
           deleted: deletePromises.length
         });
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/1468037e-4796-4d6f-90cf-8a8f25d219c5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'demand-new.html:6365',message:'syncPublicListings: fonksiyon başarıyla tamamlandı',data:{demandId,created:itemsToPublish.length,deleted:deletePromises.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-        // #endregion
         logger.end();
       } catch (error) {
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/1468037e-4796-4d6f-90cf-8a8f25d219c5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'demand-new.html:6367',message:'syncPublicListings: catch bloğu - hata yakalandı',data:{demandId,error:error?.message,errorName:error?.name,errorCode:error?.code,errorStack:error?.stack?.substring(0,200)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-        // #endregion
         logger.error('Public listings sync error', error);
         // Hata olsa bile talep kaydı devam etsin
         toast.warn('İlan senkronizasyonu sırasında hata oluştu, ancak talep kaydedildi.');

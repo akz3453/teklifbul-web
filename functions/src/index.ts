@@ -522,11 +522,11 @@ export const sendDemandCreatedNotifications = (functions as any).firestore.docum
     return;
   }
 
-  // Use process.env or fallback to known dev key - THIS IS A TEMPORARY DEV FALLBACK
-  const RESEND_API_KEY = process.env.RESEND_API_KEY || "re_MuMqKNSB_33FhfTGtJMNMsM18cioJ5ay1";
+  // Teklifbul Rule v1.0 - Production'da env zorunlu, hardcoded fallback kaldirildi
+  const RESEND_API_KEY = process.env.RESEND_API_KEY;
 
   if (!RESEND_API_KEY) {
-    console.error("RESEND_API_KEY is missing");
+    console.error("RESEND_API_KEY env eksik - email gonderimi atlandi");
     return;
   }
 
@@ -758,10 +758,10 @@ export const shareDemandViaEmail = onRequest({ cors: true }, async (req, res) =>
       // Continue without attachment if Excel fails
     }
 
-    // 7. Send Emails with attachment and bid link
-    const RESEND_API_KEY = process.env.RESEND_API_KEY || "re_MuMqKNSB_33FhfTGtJMNMsM18cioJ5ay1";
+    // Teklifbul Rule v1.0 - Production'da env zorunlu, hardcoded fallback kaldirildi
+    const RESEND_API_KEY = process.env.RESEND_API_KEY;
     if (!RESEND_API_KEY) {
-      console.error("RESEND_API_KEY missing");
+      console.error("RESEND_API_KEY env eksik");
       res.status(500).json({ error: 'Internal', message: 'Email config missing' });
       return;
     }

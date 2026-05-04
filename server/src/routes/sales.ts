@@ -23,7 +23,7 @@ import { respondError } from '../errors/respondError.js';
 import { createDeliveryNoteDraftFromSale } from '../services/deliveryNoteService.js';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { createSaleRevision, hasCriticalFieldChanges, calculateDiff } from '../services/saleRevisionService.js';
-import { saleIdParamSchema, saleIdParamsSchema, createInvoiceFromSaleBodySchema, createDeliveryFromSaleBodySchema, updateSaleBodySchema } from '../schemas/salesSchemas.js';
+import { saleIdParamSchema, saleIdParamsSchema, createInvoiceFromSaleBodySchema, createDeliveryFromSaleBodySchema, updateSaleBodySchema, listSalesQuerySchema, createSaleBodySchema } from '../schemas/salesSchemas.js';
 
 const router = express.Router();
 
@@ -35,7 +35,10 @@ router.use(verifyToken);
  * Yeni satış oluştur
  * Permission: sales.create
  */
-router.post('/', requirePermission('sales.create'), async (req: any, res) => {
+router.post('/',
+  validate({ body: createSaleBodySchema }),
+  requirePermission('sales.create'),
+  async (req: any, res) => {
   try {
     const userId = req.user?.uid;
     if (!userId) {
@@ -43,9 +46,6 @@ router.post('/', requirePermission('sales.create'), async (req: any, res) => {
     }
 
     const body = req.body as any;
-    if (!body.companyId || !body.customerId || !body.items || body.items.length === 0) {
-      return res.status(400).json({ ok: false, error: 'companyId, customerId ve items zorunludur' });
-    }
 
     // CompanyId kontrolü
     const db = await getAdminDb();
@@ -860,7 +860,10 @@ function generateUUID(): string {
  * Teklifbul Rule v1.0 - Pagination, filtreler
  * Permission: sales.view
  */
-router.get('/', requirePermission('sales.view'), async (req: any, res) => {
+router.get('/',
+  validate({ query: listSalesQuerySchema }),
+  requirePermission('sales.view'),
+  async (req: any, res) => {
   try {
     const userId = req.user?.uid;
     if (!userId) {
@@ -885,6 +888,7 @@ router.get('/', requirePermission('sales.view'), async (req: any, res) => {
     const searchQuery = req.query.q as string | undefined; // Teklifbul Rule v1.0 - Search query
     const showArchived = req.query.showArchived === 'true';
     const includeDeleted = req.query.includeDeleted === 'true'; // Admin için opsiyonel
+    const shouldFilterByStatus = !!status && status !== 'all';
 
 
     // Query oluştur
@@ -900,21 +904,14 @@ router.get('/', requirePermission('sales.view'), async (req: any, res) => {
     //   salesQuery = salesQuery.where('isDeleted', '!=', true);
     // }
 
-    // Teklifbul Rule v1.0 - PERFORMANCE: Server-side filtering (client-side yerine)
-    // Arşiv filtresi (Firestore composite index gerekli: companyId + isArchived + createdAt)
-    // NOT: Composite index oluşturulana kadar client-side filtreleme kullanılıyor
-    // TODO: Firestore'da composite index oluştur: companyId (Ascending), isArchived (Ascending), createdAt (Descending)
-    // if (!showArchived) {
-    //   salesQuery = salesQuery.where('isArchived', '==', false);
-    // }
-
-    // Teklifbul Rule v1.0 - Status filtresi
-    // NOT: Firestore composite index gerektirdiği için (companyId + status + createdAt desc),
-    // status filtrelemesi client-side'da yapılıyor
-    // TODO: Firestore'da composite index oluştur: companyId (Ascending), status (Ascending), createdAt (Descending)
-    // if (status && status !== 'all') {
-    //   salesQuery = salesQuery.where('status', '==', status);
-    // }
+    // Teklifbul Rule v1.0 - PERFORMANCE: Önce server-side filtreleme denenir
+    // Gerekli index yoksa kontrollü biçimde client-side fallback'e dönülür.
+    if (!showArchived) {
+      salesQuery = salesQuery.where('isArchived', '==', false);
+    }
+    if (shouldFilterByStatus) {
+      salesQuery = salesQuery.where('status', '==', status);
+    }
 
     // Teklifbul Rule v1.0 - Sunucu tarafı arama (q parametresi)
     // NOT: Firestore composite index gerektirdiği için, arama client-side'da yapılıyor
@@ -937,8 +934,47 @@ router.get('/', requirePermission('sales.view'), async (req: any, res) => {
       }
     }
 
-    const snapshot = await salesQuery.get();
-    const docs = snapshot.docs;
+    let docs: FirebaseFirestore.QueryDocumentSnapshot<FirebaseFirestore.DocumentData>[] = [];
+    let usedClientSideFilteringFallback = false;
+    try {
+      const snapshot = await salesQuery.get();
+      docs = snapshot.docs;
+    } catch (queryError: any) {
+      const queryErrorMessage = String(queryError?.message || '');
+      const isMissingIndexError = queryError?.code === 9 || /index/i.test(queryErrorMessage);
+      if (!isMissingIndexError) {
+        throw queryError;
+      }
+
+      usedClientSideFilteringFallback = true;
+      logger.warn('Sales list query index eksik; client-side fallback kullaniliyor', {
+        companyId,
+        showArchived,
+        status: status || null
+      });
+
+      // Index eksikliğinde güvenli fallback: temel query ile devam et.
+      let fallbackQuery = db.collection('sales')
+        .where('companyId', '==', companyId)
+        .orderBy('createdAt', 'desc')
+        .limit(pageSize + 1);
+
+      if (cursor) {
+        try {
+          const cursorData = JSON.parse(Buffer.from(cursor, 'base64').toString('utf8'));
+          const cursorDoc = await db.collection('sales').doc(cursorData.docId).get();
+          if (cursorDoc.exists) {
+            fallbackQuery = fallbackQuery.startAfter(cursorDoc);
+          }
+        } catch (e) {
+          logger.warn('Invalid cursor in fallback query, ignoring', { cursor });
+        }
+      }
+
+      const fallbackSnapshot = await fallbackQuery.get();
+      docs = fallbackSnapshot.docs;
+    }
+
     const hasMore = docs.length > pageSize;
     const results = hasMore ? docs.slice(0, pageSize) : docs;
 
@@ -956,9 +992,12 @@ router.get('/', requirePermission('sales.view'), async (req: any, res) => {
       id: doc.id,
       ...doc.data()
     })).filter((sale: any) => {
-      // Teklifbul Rule v1.0 - Client-side filtering (composite index oluşturulana kadar)
-      // isArchived filtresi (composite index olmadığı için client-side'da yapılıyor)
-      if (!showArchived && (sale.isArchived === true || sale.status === 'archived')) {
+      // Teklifbul Rule v1.0 - Index yoksa client-side fallback filtreleri
+      if (usedClientSideFilteringFallback && !showArchived && (sale.isArchived === true || sale.status === 'archived')) {
+        return false;
+      }
+
+      if (usedClientSideFilteringFallback && shouldFilterByStatus && sale.status !== status) {
         return false;
       }
 
@@ -1611,81 +1650,6 @@ router.post('/:saleId/delivery-note',
       });
     }
   });
-
-/**
- * DELETE /api/sales/:id
- * Satış sil (soft delete)
- * Permission: sales.delete
- * Teklifbul Rule v1.0 - Basitleştirilmiş satış sistemi
- */
-router.delete('/:id', requirePermission('sales.edit'), async (req: any, res) => {
-  try {
-    const userId = req.user?.uid;
-    if (!userId) {
-      return res.status(401).json({ ok: false, error: 'Unauthorized' });
-    }
-
-    const saleId = req.params.id;
-    const companyId = req.headers['x-company-id'];
-
-    if (!saleId) {
-      return res.status(400).json({ ok: false, error: 'Satış ID gerekli' });
-    }
-
-    if (!companyId) {
-      return res.status(400).json({ ok: false, error: 'Company ID gerekli' });
-    }
-
-    // Satışı kontrol et
-    const db = await getAdminDb();
-    if (!db) {
-      return res.status(500).json({ ok: false, error: 'Database bağlantısı kurulamadı' });
-    }
-    const saleRef = db.collection('sales').doc(saleId);
-    const saleDoc = await saleRef.get();
-
-    if (!saleDoc.exists) {
-      return res.status(404).json({ ok: false, error: 'Satış bulunamadı' });
-    }
-
-    const sale = saleDoc.data();
-
-    // Company kontrolü
-    if (sale?.companyId !== companyId) {
-      return res.status(403).json({ ok: false, error: 'Bu satışa erişim yetkiniz yok' });
-    }
-
-    // Faturalanan satışlar silinemez
-    if (sale?.status === 'invoiced') {
-      return res.status(400).json({
-        ok: false,
-        error: 'Faturalanmış satışlar silinemez. Önce faturayı iptal edin.'
-      });
-    }
-
-    // Soft delete - isDeleted: true
-    await saleRef.update({
-      isDeleted: true,
-      deletedAt: FieldValue.serverTimestamp(),
-      deletedBy: userId,
-      updatedAt: FieldValue.serverTimestamp(),
-      updatedBy: userId
-    });
-
-    logger.info('Satış silindi (soft delete)', { saleId, companyId, deletedBy: userId });
-
-    return res.status(200).json({
-      ok: true,
-      message: 'Satış başarıyla silindi'
-    });
-  } catch (error: any) {
-    logger.error('Satış silme hatası', error);
-    return res.status(500).json({
-      ok: false,
-      error: error.message || 'Satış silinemedi'
-    });
-  }
-});
 
 export default router;
 

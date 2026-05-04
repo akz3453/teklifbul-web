@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import { validateEnv } from './env-validator.js';
 
 // ES modules için __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -38,3 +39,6 @@ export function ensureGoogleCredentials() {
 
 // Hemen çalıştır
 ensureGoogleCredentials();
+
+// Teklifbul Rule v1.0 - Production env validasyonu (kritik eksikse exit)
+validateEnv();

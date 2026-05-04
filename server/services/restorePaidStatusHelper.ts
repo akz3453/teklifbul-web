@@ -21,7 +21,7 @@ export type RestorePaidStatusResult = {
   forcedFreeMode: boolean;
   hasPaidCandidate: boolean;
   canRestore: boolean;
-  suggestedPaid: { provider: string; model: string } | null;
+  suggestedPaid: { provider: string; model: string; providerKey?: string } | null;
   reason: 'FORCED_FREE_MODE' | 'NO_PAID_MODEL' | 'ALREADY_PAID' | 'NOT_ENTITLED' | 'NO_FUNDS_FOR_PAID' | 'OK'; // Teklifbul Rule v3.13
 };
 

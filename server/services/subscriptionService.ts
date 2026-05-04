@@ -15,7 +15,7 @@ export type SubscriptionStatus = 'active' | 'canceled' | 'past_due' | 'trialing'
 export interface SubscriptionRecord {
   id: string;
   userId: string;
-  companyId?: string;
+  companyId?: string | null;
   planId: PlanId;
   planName: string;
   status: SubscriptionStatus;
@@ -23,7 +23,7 @@ export interface SubscriptionRecord {
   currentPeriodEnd: Date;
   billingInterval: 'monthly' | 'yearly';
   cancelAtPeriodEnd?: boolean;
-  paymentProviderSubscriptionId?: string;
+  paymentProviderSubscriptionId?: string | null;
   updatedAt: Date;
   createdAt: Date;
 }
@@ -38,7 +38,7 @@ export interface InvoiceRecord {
   currency: string;
   taxRate: number;
   status: 'paid' | 'unpaid' | 'refunded';
-  pdfUrl?: string;
+  pdfUrl?: string | null;
   createdAt: Date;
 }
 
@@ -153,8 +153,8 @@ export interface AccountSubscriptionSummary {
     planName: string;
     billingInterval: 'monthly' | 'yearly';
     isPremium: boolean;
-    startedAt?: string;
-    expiresAt?: string;
+    startedAt?: string | Date | null;
+    expiresAt?: string | Date | null;
     cancelAtPeriodEnd?: boolean;
     amount: number;
     currency: string;
@@ -563,8 +563,8 @@ export async function getAccountSubscriptionSummary(userId: string): Promise<Acc
       subscriptionCurrentPeriodEnd: subscription?.currentPeriodEnd
         ? (subscription.currentPeriodEnd instanceof Date
             ? subscription.currentPeriodEnd.toISOString()
-            : typeof subscription.currentPeriodEnd.toDate === 'function'
-              ? subscription.currentPeriodEnd.toDate().toISOString()
+            : typeof (subscription.currentPeriodEnd as any).toDate === 'function'
+              ? (subscription.currentPeriodEnd as any).toDate().toISOString()
               : String(subscription.currentPeriodEnd))
         : null,
       expiresFromSubscription: expiresFromSubscription ? expiresFromSubscription.toISOString() : null,
@@ -1165,7 +1165,8 @@ export interface AuditEvent {
     | 'subscription_canceled'
     | 'payment_succeeded'
     | 'payment_failed'
-    | 'plan_changed';
+    | 'plan_changed'
+    | 'token_pack_purchased';
   meta?: Record<string, any>;
 }
 

@@ -161,7 +161,8 @@ function assignColumns(doc: RawDocument, supplierAliases: string[], minConfidenc
   const usedColumns = new Set<number>();
 
   for (const field of ITEM_FIELDS) {
-    let best: ColumnAssignment | null = null;
+    // Teklifbul Rule v1.0 - TS narrowing'i bypass etmek icin explicit tip
+    let best: ColumnAssignment | null = null as ColumnAssignment | null;
     labels.forEach((label, idx) => {
       // Teklifbul Rule v1.0 - Zaten kullanılmış kolonları atla (çakışma önleme)
       if (usedColumns.has(idx)) return;
@@ -185,9 +186,10 @@ function assignColumns(doc: RawDocument, supplierAliases: string[], minConfidenc
     });
     
     // Teklifbul Rule v1.0 - En iyi eşleştirmeyi ekle (eğer yeterince iyi ise)
-    if (best && best.score >= 0.65) {
-      assignments.push(best);
-      usedColumns.add(best.column);
+    const finalBest: ColumnAssignment | null = best;
+    if (finalBest && finalBest.score >= 0.65) {
+      assignments.push(finalBest);
+      usedColumns.add(finalBest.column);
     }
   }
 
@@ -237,7 +239,9 @@ function mapDemandFields(doc: RawDocument, supplierAliases: string[], minConfide
   const aliasNormalized = supplierAliases.map((a) => normalizeKey(a));
 
   for (const target of DEMAND_FIELDS) {
-    let best: { score: number; candidate: { label: string; value: string } } | null = null;
+    // Teklifbul Rule v1.0 - TS narrowing'i bypass etmek icin explicit tip
+    let best: { score: number; candidate: { label: string; value: string } } | null =
+      null as { score: number; candidate: { label: string; value: string } } | null;
     candidates.forEach((cand) => {
       const enriched = enrichCandidate(cand.value);
       const score = scoreCandidate(target, cand.label, enriched).score;
@@ -252,8 +256,9 @@ function mapDemandFields(doc: RawDocument, supplierAliases: string[], minConfide
       if (!best || total > best.score) best = { score: total, candidate: cand };
     });
 
-    if (best) {
-      const { candidate, score } = best;
+    const finalBest = best;
+    if (finalBest) {
+      const { candidate, score } = finalBest;
       let value: any = candidate.value;
       if (target === "demandDate" || target === "dueDate") value = parseDateTR(value) || value;
       if (target === "currency") value = (candidate.value || doc.demand?.currency || "TRY").toString().toUpperCase();

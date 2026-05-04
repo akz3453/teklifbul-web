@@ -146,10 +146,17 @@ export async function createDeliveryNoteDraftFromSale(options: {
     const finalShipDate = shipDate ? Timestamp.fromDate(shipDate) : Timestamp.now();
     
     // Teklifbul Rule v1.0 - Nakliye bilgileri: Satışta nakliye bize aitse deliveryAddress kullan
-    let finalShipToAddress;
+    let finalShipToAddress: { line1: string; line2?: string; city: string; district?: string; postalCode?: string; country: string };
     if (shipToAddress) {
-      // API'den gelen shipToAddress öncelikli
-      finalShipToAddress = shipToAddress;
+      // API'den gelen shipToAddress öncelikli; eksik alanlari customer'dan tamamla
+      finalShipToAddress = {
+        line1: shipToAddress.line1 || (customer.invoiceAddress?.line1 || customer.address?.street || customer.address?.line1) || '',
+        line2: shipToAddress.line2 || undefined,
+        city: shipToAddress.city || (customer.invoiceAddress?.city || customer.address?.city) || '',
+        district: shipToAddress.district || undefined,
+        postalCode: shipToAddress.postalCode || undefined,
+        country: shipToAddress.country || (customer.invoiceAddress?.country || customer.address?.country) || 'TR'
+      };
     } else if (sale.delivery?.isOwnDelivery && sale.delivery?.deliveryAddress) {
       // Satışta nakliye bilgileri varsa kullan
       const deliveryAddr = sale.delivery.deliveryAddress;
@@ -166,20 +173,20 @@ export async function createDeliveryNoteDraftFromSale(options: {
       
       finalShipToAddress = {
         line1: line1Parts.join(' ') || '',
-        line2: line2Parts.join(' ') || null,
+        line2: line2Parts.join(' ') || undefined,
         city: deliveryAddr.city || '',
-        district: deliveryAddr.district || null,
-        postalCode: deliveryAddr.postalCode || null,
+        district: deliveryAddr.district || undefined,
+        postalCode: deliveryAddr.postalCode || undefined,
         country: deliveryAddr.country || 'TR'
       };
     } else {
       // Varsayılan: Müşteri adresi
       finalShipToAddress = {
         line1: (customer.invoiceAddress?.line1 || customer.address?.street || customer.address?.line1) || '',
-        line2: (customer.invoiceAddress?.line2 || customer.address?.line2) || null,
+        line2: (customer.invoiceAddress?.line2 || customer.address?.line2) || undefined,
         city: (customer.invoiceAddress?.city || customer.address?.city) || '',
-        district: (customer.invoiceAddress?.district || customer.address?.district) || null,
-        postalCode: (customer.invoiceAddress?.postalCode || customer.address?.postalCode) || null,
+        district: (customer.invoiceAddress?.district || customer.address?.district) || undefined,
+        postalCode: (customer.invoiceAddress?.postalCode || customer.address?.postalCode) || undefined,
         country: (customer.invoiceAddress?.country || customer.address?.country) || 'TR'
       };
     }
@@ -427,14 +434,23 @@ export async function createDirectDeliveryNoteDraft(options: {
     };
 
     const finalShipDate = shipDate ? Timestamp.fromDate(shipDate) : Timestamp.now();
-    const finalShipToAddress = shipToAddress || {
-      line1: (customer.invoiceAddress?.line1 || customer.address?.street || customer.address?.line1) || '',
-      line2: (customer.invoiceAddress?.line2 || customer.address?.line2) || null,
-      city: (customer.invoiceAddress?.city || customer.address?.city) || '',
-      district: (customer.invoiceAddress?.district || customer.address?.district) || null,
-      postalCode: (customer.invoiceAddress?.postalCode || customer.address?.postalCode) || null,
-      country: (customer.invoiceAddress?.country || customer.address?.country) || 'TR'
-    };
+    const finalShipToAddress: { line1: string; line2?: string; city: string; district?: string; postalCode?: string; country: string } = shipToAddress
+      ? {
+          line1: shipToAddress.line1 || (customer.invoiceAddress?.line1 || customer.address?.street || customer.address?.line1) || '',
+          line2: shipToAddress.line2 || undefined,
+          city: shipToAddress.city || (customer.invoiceAddress?.city || customer.address?.city) || '',
+          district: shipToAddress.district || undefined,
+          postalCode: shipToAddress.postalCode || undefined,
+          country: shipToAddress.country || (customer.invoiceAddress?.country || customer.address?.country) || 'TR'
+        }
+      : {
+          line1: (customer.invoiceAddress?.line1 || customer.address?.street || customer.address?.line1) || '',
+          line2: (customer.invoiceAddress?.line2 || customer.address?.line2) || undefined,
+          city: (customer.invoiceAddress?.city || customer.address?.city) || '',
+          district: (customer.invoiceAddress?.district || customer.address?.district) || undefined,
+          postalCode: (customer.invoiceAddress?.postalCode || customer.address?.postalCode) || undefined,
+          country: (customer.invoiceAddress?.country || customer.address?.country) || 'TR'
+        };
 
     const shipmentSnapshot = {
       shipDate: finalShipDate,

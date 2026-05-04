@@ -128,9 +128,12 @@ async function extractImageTextWithGemini(buffer: Buffer, mimeType: string): Pro
       }],
     });
 
-    const text = typeof response?.text === 'function'
-      ? response.text()
-      : (response as any)?.response?.candidates?.[0]?.content?.parts?.map((p: any) => p?.text || '').join('\n') || '';
+    // Teklifbul Rule v1.0 - response.text yeni SDK'de getter, eski SDK'de fonksiyon. Her iki durumu da destekle.
+    const respText = (response as any)?.text;
+    const text = typeof respText === 'function'
+      ? respText()
+      : (typeof respText === 'string' ? respText : '') ||
+        (response as any)?.response?.candidates?.[0]?.content?.parts?.map((p: any) => p?.text || '').join('\n') || '';
 
     return {
       text: text || '',

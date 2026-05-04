@@ -52,7 +52,7 @@ export async function createSaleFromBid(
 
   // 2. Bid items'ı yükle
   const itemsSnapshot = await db.collection('bids').doc(bidId).collection('items').get();
-  const bidItems = itemsSnapshot.docs.map((doc) => ({
+  const bidItems: any[] = itemsSnapshot.docs.map((doc) => ({
     id: doc.id,
     ...doc.data()
   }));

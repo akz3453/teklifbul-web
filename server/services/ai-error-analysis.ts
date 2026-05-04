@@ -7,8 +7,8 @@
  */
 
 import { logger } from '../../src/shared/log/logger.js';
-import type { FirebaseFirestore } from 'firebase-admin/firestore';
-import { sendChat, type ChatMessage } from '../ai/index.js';
+import type { Firestore } from 'firebase-admin/firestore';
+import { sendChat, type ChatMessage, type AIProvider } from '../ai/index.js';
 import { getUserAIProvider } from './userService.js';
 
 export interface ErrorAnalysis {
@@ -33,7 +33,7 @@ export async function analyzeError(errorData: any, userId?: string): Promise<Err
     const userAgent = errorData.userAgent || '';
     
     // AI provider seçimi
-    let provider: 'openai' | 'gemini' = 'gemini'; // Varsayılan: Gemini (daha ucuz)
+    let provider: AIProvider = 'gemini'; // Varsayılan: Gemini (daha ucuz)
     if (userId) {
       try {
         provider = await getUserAIProvider(userId);
@@ -132,7 +132,7 @@ Lütfen şu formatta JSON yanıt ver:
  */
 export async function analyzeErrorsBatch(
   errorIds: string[],
-  db: FirebaseFirestore.Firestore,
+  db: Firestore,
   userId?: string
 ): Promise<Array<{ errorId: string; analysis: ErrorAnalysis }>> {
   logger.group('ai-error-analysis:batch');

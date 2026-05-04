@@ -76,7 +76,7 @@ async function loadPackagesFromFirestore(db: any): Promise<AiTokenPackage[] | nu
         freeEligible: p.freeEligible === true,
         description: p.description ? String(p.description) : undefined,
       }))
-      .sort((a, b) => a.sort - b.sort);
+      .sort((a: any, b: any) => a.sort - b.sort);
   } catch (e) {
     logger.warn('ai_token_packages load failed (firestore)', { error: (e as any)?.message || e });
     return null;
@@ -228,6 +228,12 @@ router.post(
         const companyRef = db.collection('companies').doc(companyId);
         const ledgerRef = ledgerCol.doc(`purchase_${purchaseRef.id}`);
 
+        // Teklifbul Rule v1.0 - hasEntitlements transaction disinda da kullaniliyor, lift et
+        const hasEntitlements =
+          (Array.isArray(pkg.allowedModels) && pkg.allowedModels.length > 0) ||
+          (Array.isArray((pkg as any).allowedModelPrefixes) && (pkg as any).allowedModelPrefixes.length > 0) ||
+          (Array.isArray((pkg as any).allowedTiers) && (pkg as any).allowedTiers.length > 0);
+
         const result = await db.runTransaction(async (tx: any) => {
           const existingInTx = await tx.get(purchaseRef);
           if (existingInTx.exists) {
@@ -275,11 +281,7 @@ router.post(
           );
 
           // Teklifbul Rule v3.13 + v3.15 - Store entitlement snapshot with providerKey
-          const hasEntitlements = 
-            (Array.isArray(pkg.allowedModels) && pkg.allowedModels.length > 0) ||
-            (Array.isArray((pkg as any).allowedModelPrefixes) && (pkg as any).allowedModelPrefixes.length > 0) ||
-            (Array.isArray((pkg as any).allowedTiers) && (pkg as any).allowedTiers.length > 0);
-          
+          // Not: hasEntitlements transaction disinda lift edildi
           const entitlementSnapshot = hasEntitlements ? {
             providerKey, // Teklifbul Rule v3.15 - Include providerKey in entitlement snapshot
             allowedModels: Array.isArray(pkg.allowedModels) ? pkg.allowedModels : undefined,

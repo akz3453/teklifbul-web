@@ -453,7 +453,7 @@ export async function createDirectInvoiceDraft(options: {
       totalVat,
       totalAmount,
       currency: currency || 'TRY',
-      exchangeRate: exchangeRate ?? null
+      exchangeRate: exchangeRate ?? undefined
     };
 
     const now = Timestamp.now();

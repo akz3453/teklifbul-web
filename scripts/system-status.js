@@ -95,12 +95,24 @@ export async function loadSystemStatus() {
       logger.warn('Health endpoint hatası', healthResponse);
     }
 
-    // Metrics data
+    // Metrics: açıksa ok:true snapshot; kapalıysa 200 + ok:false veya eski kurulumda 404
     let metricsData = null;
-    if (metricsResponse.status === 'fulfilled' && metricsResponse.value.ok) {
-      metricsData = await metricsResponse.value.json();
+    if (metricsResponse.status === 'fulfilled') {
+      const res = metricsResponse.value;
+      if (res.ok) {
+        const raw = await res.json();
+        if (raw.ok === true) {
+          metricsData = raw;
+        } else if (raw.disabled) {
+          logger.info('Sistem durumu: trafik metrikleri kapalı (sunucu ENABLE_METRICS)');
+        }
+      } else if (res.status === 404) {
+        logger.info('Sistem durumu: trafik metrikleri kapalı veya yok (404)');
+      } else {
+        logger.warn('Metrics endpoint hatası', { status: res.status, statusText: res.statusText });
+      }
     } else {
-      logger.warn('Metrics endpoint hatası', metricsResponse);
+      logger.warn('Metrics isteği reddedildi', metricsResponse);
     }
 
     // Render health card

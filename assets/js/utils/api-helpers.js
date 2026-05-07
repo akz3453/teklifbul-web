@@ -9,6 +9,11 @@ import { auth, db, requireAuth } from '../../../firebase.js';
 import { logger } from '../../../src/shared/log/logger.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
 
+// MFA veya başka patch'lerden önce gerçek fetch'i sakla (tüm authFetch çağrıları)
+if (typeof window !== 'undefined' && !window.__TEKLIFBUL_NATIVE_FETCH__) {
+  window.__TEKLIFBUL_NATIVE_FETCH__ = window.fetch.bind(window);
+}
+
 /**
  * Şirket bazlı companyId çözümleme helper'ı
  * Teklifbul Rule v1.0 - Shared company ID resolution
@@ -126,20 +131,37 @@ export async function authFetch(url, options = {}) {
       }
     }
 
-    // Teklifbul Rule v1.0 - API URL normalization: /api istekleri dev ortamında backend portuna (5174) yönlendirilir
+    // Teklifbul Rule v1.0 - API URL normalization: /api ve observability kökleri dev'de backend portuna (5174) gider.
+    // Not: /health ve /metrics göreli bırakılırsa Vite (5173) SPA HTML döner; .json() "<!doctype" hatası verir.
     let finalUrl = url;
 
-    // Eğer URL absolute değilse ve /api/ ile başlıyorsa
-    if (!url.match(/^https?:\/\//) && url.startsWith('/api/')) {
-      const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-      const baseUrl = isDev ? 'http://localhost:5174' : window.location.origin;
+    if (!url.match(/^https?:\/\//)) {
+      const pathOnly = url.startsWith('/') ? url.split('?')[0] : '';
+      const isBackendPath =
+        pathOnly.startsWith('/api/') ||
+        pathOnly === '/health' ||
+        pathOnly === '/metrics';
 
-      // finalUrl = baseUrl + url (url zaten /api/... ile başlıyor)
-      finalUrl = baseUrl + url;
+      if (isBackendPath) {
+        const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        const baseUrl = isDev ? 'http://localhost:5174' : window.location.origin;
+        finalUrl = baseUrl + (url.startsWith('/') ? url : `/${url}`);
 
-      // Dev modda log
-      if (isDev) {
-        logger.info('authFetch', { url: finalUrl, method: rest.method || 'GET', originalUrl: url });
+        if (isDev) {
+          let pathForLog = pathOnly;
+          if (!pathForLog) {
+            try {
+              pathForLog = new URL(finalUrl).pathname;
+            } catch {
+              pathForLog = '';
+            }
+          }
+          const quietObservability =
+            pathForLog === '/health' || pathForLog === '/metrics';
+          if (!quietObservability) {
+            logger.info('authFetch', { url: finalUrl, method: rest.method || 'GET', originalUrl: url });
+          }
+        }
       }
     }
 
@@ -155,9 +177,14 @@ export async function authFetch(url, options = {}) {
       });
     }
 
+    const doFetch =
+      typeof window !== 'undefined' && window.__TEKLIFBUL_NATIVE_FETCH__
+        ? window.__TEKLIFBUL_NATIVE_FETCH__
+        : fetch.bind(window);
+
     let response;
     try {
-      response = await fetch(finalUrl, { ...rest, headers: finalHeaders });
+      response = await doFetch(finalUrl, { ...rest, headers: finalHeaders });
 
       // Teklifbul Rule v2.2 - 402 INSUFFICIENT_TOKENS handler
       // Teklifbul Rule v2.7.2 - 402 DAILY_CAP_REACHED handler
@@ -217,6 +244,32 @@ export async function authFetch(url, options = {}) {
           } else if (response.status === 402) {
             // Teklifbul Rule v1.0 - 402 hataları Premium kontrolü için normaldir, sadece info log bas
             logger.info('authFetch: Premium limit/özellik kısıtlaması (402)', { url: finalUrl });
+          } else if (response.status === 404) {
+            // Teklifbul Rule v1.0 - GET /metrics kapalıyken (ENABLE_METRICS≠true) 404 normaldir; konsolu kirletme
+            let path = '';
+            try {
+              path = new URL(finalUrl).pathname;
+            } catch {
+              path = '';
+            }
+            if (path !== '/metrics') {
+              const responseClone = response.clone();
+              try {
+                const errorData = await responseClone.json();
+                logger.warn('authFetch: İstek başarısız', {
+                  url: finalUrl,
+                  status: response.status,
+                  statusText: response.statusText,
+                  error: errorData
+                });
+              } catch (jsonError) {
+                logger.warn('authFetch: İstek başarısız (JSON parse hatası)', {
+                  url: finalUrl,
+                  status: response.status,
+                  statusText: response.statusText
+                });
+              }
+            }
           } else {
             const responseClone = response.clone();
             try {

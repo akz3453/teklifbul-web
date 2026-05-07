@@ -273,6 +273,20 @@
       opacity: 0.8;
     }
 
+    html[data-theme="dark"] .settings-sidebar-nav {
+      background: var(--surface, #111827) !important;
+      border: 1px solid var(--border, rgba(255, 255, 255, 0.12)) !important;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35) !important;
+    }
+
+    html[data-theme="dark"] .settings-sidebar-nav .settings-nav-btn:not(.active):not([disabled]) {
+      color: rgba(248, 250, 252, 0.82) !important;
+    }
+
+    html[data-theme="dark"] .settings-sidebar-nav .settings-nav-btn:hover:not([disabled]) {
+      background: rgba(255, 255, 255, 0.06) !important;
+    }
+
     @media (max-width: 768px) {
       .container--wide>div[style*="grid-template-columns"] {
         grid-template-columns: 1fr !important;
@@ -289,40 +303,11 @@
       }
     }
 
-    /* Teklifbul Rule v1.0 - Premium Plus Token Paketleri responsive düzenleme */
-    #tokenTablesContainer {
-      display: grid !important;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)) !important;
-      gap: 16px !important;
-      width: 100% !important;
-    }
-
     /* Teklifbul Rule v1.0 - Loading spinner animasyonu */
     @keyframes spin {
       to {
         transform: rotate(360deg);
       }
-    }
-
-    @media (max-width: 768px) {
-      #tokenTablesContainer {
-        grid-template-columns: 1fr !important;
-      }
-    }
-
-    #tokenTablesContainer>div {
-      min-width: 0 !important;
-      overflow: hidden !important;
-    }
-
-    #tokenTablesContainer table {
-      min-width: 280px !important;
-      table-layout: auto !important;
-    }
-
-    #tokenTablesContainer>div>div {
-      overflow-x: auto !important;
-      -webkit-overflow-scrolling: touch !important;
     }
 
     /* Teklifbul Rule v2.0 - Vergi dairesi buton hover efekti */
@@ -477,9 +462,9 @@
     <!-- Teklifbul Rule v1.0 - Alt Sayfa Yapısı -->
     <div style="display:grid; grid-template-columns: 240px 1fr; gap:24px; margin-top:24px;">
       <!-- Sol Sidebar - Alt Sayfa Menüsü -->
-      <div
+      <div class="settings-sidebar-nav"
         style="background:white; border-radius:8px; padding:16px; box-shadow:0 1px 3px rgba(0,0,0,0.1); height:fit-content; position:sticky; top:20px;">
-        <nav style="display:flex; flex-direction:column; gap:4px;">
+        <nav style="display:flex; flex-direction:column; gap:4px;" aria-label="Ayarlar bölümleri">
           <button class="settings-nav-btn active" data-page="general"
             style="width:100%; padding:12px 16px; text-align:left; background:none; border:none; border-radius:6px; cursor:pointer; font-size:14px; font-weight:600; color:#1f2937; transition:all 0.2s;">
             ⚙️ Genel Ayarlar
@@ -504,13 +489,10 @@
             style="width:100%; padding:12px 16px; text-align:left; background:none; border:none; border-radius:6px; cursor:pointer; font-size:14px; font-weight:600; color:#6b7280; transition:all 0.2s;">
             🤖 Nefisoft AI Asistanı Ayarları
           </button>
-          <button class="settings-nav-btn" data-page="ai-usage-report"
-            style="width:100%; padding:12px 16px; text-align:left; background:none; border:none; border-radius:6px; cursor:pointer; font-size:14px; font-weight:600; color:#6b7280; transition:all 0.2s;">
+          <button type="button" class="settings-nav-btn" id="nav-ai-usage-report" data-page="ai-usage-report"
+            style="display:none; width:100%; padding:12px 16px; text-align:left; background:none; border:none; border-radius:6px; cursor:pointer; font-size:14px; font-weight:600; color:#6b7280; transition:all 0.2s;"
+            aria-hidden="true">
             📊 AI Kullanım & Token Raporu
-          </button>
-          <button class="settings-nav-btn" data-page="billing-plan"
-            style="width:100%; padding:12px 16px; text-align:left; background:none; border:none; border-radius:6px; cursor:pointer; font-size:14px; font-weight:600; color:#6b7280; transition:all 0.2s;">
-            💳 Plan & Kullanım
           </button>
           <button class="settings-nav-btn" data-page="security"
             style="width:100%; padding:12px 16px; text-align:left; background:none; border:none; border-radius:6px; cursor:pointer; font-size:14px; font-weight:600; color:#6b7280; transition:all 0.2s;">
@@ -524,20 +506,23 @@
             style="width:100%; padding:12px 16px; text-align:left; background:none; border:none; border-radius:6px; cursor:pointer; font-size:14px; font-weight:600; color:#6b7280; transition:all 0.2s;">
             📄 E-Belge Ayarları
           </button>
+          <!-- Teklifbul Rule v1.0 - Sistem Durumu (metrics.view); JS ile görünür yapılır -->
+          <button type="button" class="settings-nav-btn" id="nav-system-status" data-page="system-status"
+            style="display:none; width:100%; padding:12px 16px; text-align:left; background:none; border:none; border-radius:6px; cursor:pointer; font-size:14px; font-weight:600; color:#6b7280; transition:all 0.2s;"
+            aria-hidden="true"
+            aria-label="Sistem durumu ve metrikler">
+            📊 Sistem Durumu
+          </button>
           <!-- Teklifbul Rule v1.0 - Client Error Reporting v1: Hata Kayıtları menü butonu -->
-          <button class="settings-nav-btn" id="nav-error-reports" data-page="error-reports"
-            style="width:100%; padding:12px 16px; text-align:left; background:none; border:none; border-radius:6px; cursor:pointer; font-size:14px; font-weight:600; color:#6b7280; transition:all 0.2s;"
-            disabled aria-disabled="true" data-loading="true" title="Yükleniyor...">
+          <button type="button" class="settings-nav-btn" id="nav-error-reports" data-page="error-reports"
+            style="display:none; width:100%; padding:12px 16px; text-align:left; background:none; border:none; border-radius:6px; cursor:pointer; font-size:14px; font-weight:600; color:#6b7280; transition:all 0.2s;"
+            aria-hidden="true">
             🐞 Hata Kayıtları
           </button>
-          <!-- Teklifbul Rule v1.4 - Admin AI Catalog Management -->
-          <button class="settings-nav-btn" id="nav-admin-ai-catalog" data-page="admin-ai-catalog"
-            style="width:100%; padding:12px 16px; text-align:left; background:none; border:none; border-radius:6px; cursor:pointer; font-size:14px; font-weight:600; color:#6b7280; transition:all 0.2s; display:none;">
-            🧠 AI Katalog Yönetimi
-          </button>
           <!-- Teklifbul Rule v2.0 - Admin Profit Report -->
-          <button class="settings-nav-btn" id="nav-admin-profit" data-page="admin-profit"
-            style="width:100%; padding:12px 16px; text-align:left; background:none; border:none; border-radius:6px; cursor:pointer; font-size:14px; font-weight:600; color:#6b7280; transition:all 0.2s; display:none;">
+          <button type="button" class="settings-nav-btn" id="nav-admin-profit" data-page="admin-profit"
+            style="width:100%; padding:12px 16px; text-align:left; background:none; border:none; border-radius:6px; cursor:pointer; font-size:14px; font-weight:600; color:#6b7280; transition:all 0.2s; display:none;"
+            aria-hidden="true">
             💰 Finans & Kârlılık
           </button>
         </nav>
@@ -1402,18 +1387,6 @@
           </div>
         </div>
 
-        <!-- Teklifbul Rule v1.6 - Billing Plan Page -->
-        <div id="page-billing-plan" class="settings-page">
-          <div class="section">
-            <h3>💳 Plan & Kullanım</h3>
-            <p class="muted" style="margin-bottom:16px; font-size:13px;">
-              Mevcut planınız, özellikler ve AI politikası.
-            </p>
-            <div id="billingPlanRoot">
-              <div style="padding:16px; color:#6b7280;">Yükleniyor...</div>
-            </div>
-          </div>
-        </div>
 
         <div id="page-security" class="settings-page">
           <div class="section">
@@ -1597,19 +1570,6 @@
           </div>
         </div>
 
-        <!-- Teklifbul Rule v1.4 - Admin AI Catalog Management -->
-        <div id="page-admin-ai-catalog" class="settings-page">
-          <div class="section">
-            <h3>🧠 AI Katalog Yönetimi</h3>
-            <p class="muted" style="margin-bottom:16px; font-size:13px;">
-              AI model kataloğu ve token paketlerini yönetin. Değişiklikler tüm şirketlerin erişilebilir modellerini
-              etkiler.
-            </p>
-            <div id="adminAiCatalogRoot">
-              <div style="padding:16px; color:#6b7280;">Yükleniyor...</div>
-            </div>
-          </div>
-        </div>
         <!-- Teklifbul Rule v2.0 - Admin Profit Report -->
         <div id="page-admin-profit" class="settings-page">
           <div id="adminProfitRoot"></div>
@@ -1626,6 +1586,7 @@
             <p class="muted" style="margin-bottom:16px; font-size:13px;">
               Premium plan ile tüm gelişmiş özelliklerin kilidini açın; Premium Plus ile AI motoru seçip ekstra token
               paketleri satın alabilirsiniz.
+              <strong>Premium’da</strong> üst menüde öğelerin sırasını ve görünürlüğünü kişiselleştirebilirsiniz (ücretsiz planda bu özellik kapalıdır).
             </p>
 
             <!-- Premium Durum -->
@@ -1827,19 +1788,6 @@
                     </tr>
                   </tbody>
                 </table>
-              </div>
-            </div>
-
-            <!-- Premium Plus Token Paketleri -->
-            <div id="premiumPlusTokenSection"
-              style="display:none; margin-bottom:24px; padding:20px; background:#ecfdf5; border-radius:8px; border:1px solid #bbf7d0;">
-              <h4 style="margin:0 0 12px 0; font-size:18px; color:#166534;">🤖 Premium Plus Token Paketleri</h4>
-              <p class="muted" style="margin:0 0 16px 0; font-size:13px; color:#166534;">
-                Premium Plus ile AI motoru seçip ek token paketleri satın alabilirsiniz. Mevcut planınız şirket bazında
-                geçerlidir; aynı şirketteki tüm kullanıcılar aynı AI haklarına sahiptir.
-              </p>
-              <div id="tokenTablesContainer"
-                style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:16px; width:100%;">
               </div>
             </div>
 
@@ -2095,9 +2043,8 @@
     import { toast } from './src/shared/ui/toast.js';
     // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
     import { MESSAGES } from './src/shared/constants/messages.js';
-    import { requireCompanyContext } from './assets/js/state/company-context.js';
-    import { getCompanyPlan, getPlanStars, isPremiumPlus } from './assets/js/state/company-plan.js';
-    import { AI_TOKEN_PACKS } from './src/shared/constants/aiTokenPacks.js';
+    import { requireCompanyContext, clearCompanyContextCache } from './assets/js/state/company-context.js';
+    import { getCompanyPlan, getPlanStars } from './assets/js/state/company-plan.js';
     import rolePermissionsTemplate from './src/shared/data/rolePermissionsTemplate.json';
     import {
       initPermissions,
@@ -2174,21 +2121,6 @@
       return securityMfaModule;
     }
 
-    // Teklifbul Rule v1.4 - Admin AI Catalog module loader
-    let adminAiCatalogModule = null;
-    async function loadAdminAiCatalogModule() {
-      if (!adminAiCatalogModule) {
-        adminAiCatalogModule = await import('./assets/js/pages/settings/admin-ai-catalog.js');
-      }
-      return adminAiCatalogModule;
-    }
-    window.loadAdminAiCatalogPage = async function () {
-      const mod = await loadAdminAiCatalogModule();
-      if (mod && mod.loadAdminAiCatalogPage) {
-        await mod.loadAdminAiCatalogPage();
-      }
-    };
-
     // Teklifbul Rule v2.0 - Admin Profit Report module loader
     let adminProfitModule = null;
     async function loadAdminProfitModule() {
@@ -2234,20 +2166,6 @@
       }
     };
 
-    // Teklifbul Rule v1.6 - Billing Plan module loader
-    let billingPlanModule = null;
-    async function loadBillingPlanModule() {
-      if (!billingPlanModule) {
-        billingPlanModule = await import('./assets/js/pages/settings/billing-plan.js');
-      }
-      return billingPlanModule;
-    }
-    window.loadBillingPlanPage = async function () {
-      const mod = await loadBillingPlanModule();
-      if (mod && mod.initBillingPlanPage) {
-        await mod.initBillingPlanPage();
-      }
-    };
     window.loadSecurityMfaSection = async function () {
       const mod = await loadSecurityMfaModule();
       if (mod && mod.loadSecurityMfaSection) {
@@ -2905,8 +2823,14 @@
                 await window.loadAiUsageReportPage();
               }
             } else if (targetPage === 'billing-plan') {
-              if (window.loadBillingPlanPage) {
-                await window.loadBillingPlanPage();
+              // Teklifbul Rule v1.0 - Legacy billing-plan route mapping
+              const hash = (window.location.hash || '').replace('#', '');
+              const [, hashQuery = ''] = hash.split('?');
+              const reason = new URLSearchParams(hashQuery).get('reason');
+              const mappedPage = reason === 'token_packages' ? 'purchase-assistant-settings' : 'premium';
+              const mappedBtn = document.querySelector(`.settings-nav-btn[data-page="${mappedPage}"]`);
+              if (mappedBtn) {
+                mappedBtn.click();
               }
             } else if (targetPage === 'security') {
               loadSecurityPage();
@@ -2921,10 +2845,8 @@
             } else if (targetPage === 'error-reports') {
               if (window.loadErrorReportsPage) {
                 await window.loadErrorReportsPage();
-              }
-            } else if (targetPage === 'admin-ai-catalog') {
-              if (window.loadAdminAiCatalogPage) {
-                await window.loadAdminAiCatalogPage();
+              } else {
+                logger.warn('loadErrorReportsPage fonksiyonu bulunamadı');
               }
             } else if (targetPage === 'admin-profit') {
               if (window.loadAdminProfitPage) {
@@ -2933,12 +2855,6 @@
             } else if (targetPage === 'admin-profit-detail') {
               if (window.loadAdminProfitDetailPage) {
                 await window.loadAdminProfitDetailPage();
-              }
-            } else if (targetPage === 'error-reports') {
-              if (window.loadErrorReportsPage) {
-                await window.loadErrorReportsPage();
-              } else {
-                logger.warn('loadErrorReportsPage fonksiyonu bulunamadı');
               }
             }
           }
@@ -3081,18 +2997,27 @@
         const companyDoc = await getDoc(companyRef);
         let allowNegativeStock = false;
         let allowPriceEditing = false;
+        /** @type {{ ownerUid?: string, ownerId?: string }} */
+        let companyDataFlat = {};
         if (companyDoc.exists()) {
-          const companyData = companyDoc.data();
-          allowNegativeStock = companyData.allowNegativeStock === true;
-          allowPriceEditing = companyData.allowPriceEditing === true;
+          companyDataFlat = companyDoc.data() || {};
+          allowNegativeStock = companyDataFlat.allowNegativeStock === true;
+          allowPriceEditing = companyDataFlat.allowPriceEditing === true;
         }
 
         const checkbox = document.getElementById('security_allowNegativeStock');
         const priceCheckbox = document.getElementById('security_allowPriceEditing');
         const saveBtn = document.getElementById('btnSaveSecuritySettings');
 
-        // Teklifbul Rule v1.0 - Firma Sahibi Kontrolü (Sadece kuran kullanıcı değiştirebilir)
-        const isOwner = ctx.companyDocData && ctx.companyDocData.ownerUid === (auth.currentUser ? auth.currentUser.uid : null);
+        // Teklifbul Rule v1.0 — Sahiplik: canlı company dokümanı + ownerUid || ownerId (legacy)
+        const ownerUidResolved =
+          companyDataFlat.ownerUid || companyDataFlat.ownerId ||
+          (ctx.companyDocData && (ctx.companyDocData.ownerUid || ctx.companyDocData.ownerId)) ||
+          null;
+        const isOwner = !!(auth.currentUser && ownerUidResolved && ownerUidResolved === auth.currentUser.uid);
+
+        const canManageNegativeStock =
+          !allowNegativeKey || !permState || can(allowNegativeKey);
 
         if (checkbox) {
           checkbox.checked = allowNegativeStock;
@@ -3110,17 +3035,20 @@
               saveBtn.title = msg;
             }
           } else {
-            // UI guard - stokların eksiye düşmesi ayarı sadece yetkili roller tarafından değiştirilebilir
-            if (allowNegativeKey && permState && !can(allowNegativeKey)) {
+            if (!canManageNegativeStock) {
               const msg =
-                'Stokların eksiye düşmesi ayarını değiştirme yetkiniz yok.';
+                'Stokların eksiye düşmesi ayarını değiştirme yetkiniz yok; diğer güvenlik alanları kaydedilebilir.';
               checkbox.disabled = true;
               checkbox.title = msg;
-              if (saveBtn) {
-                saveBtn.disabled = true;
-                saveBtn.title = msg;
-              }
-            } else if (saveBtn) {
+            } else {
+              checkbox.disabled = false;
+              checkbox.title = '';
+            }
+            if (priceCheckbox) {
+              priceCheckbox.disabled = false;
+              priceCheckbox.title = '';
+            }
+            if (saveBtn) {
               saveBtn.disabled = false;
               saveBtn.title = '';
             }
@@ -3131,39 +3059,38 @@
           priceCheckbox.checked = allowPriceEditing;
         }
 
-        // Kaydet butonuna write guard + Firestore update ekle
-        if (saveBtn) {
+        // Kaydet — çift bağlama önlemi + stok izni yoksa önceki stok değeri korunur
+        if (saveBtn && saveBtn.dataset.securitySaveBound !== '1') {
+          saveBtn.dataset.securitySaveBound = '1';
           saveBtn.addEventListener('click', async () => {
             try {
-              if (!checkbox) return;
-
               if (!isOwner) {
                 toast.error('Bu ayarları sadece firmayı kuran kullanıcı değiştirebilir.');
                 return;
               }
 
-              if (!allowNegativeKey) {
-                logger.warn('stock.allowNegative.manage key bulunamadı, varsayılan olarak izin veriliyor');
-              } else {
-                const ok = await requirePerm(allowNegativeKey, {
-                  toastMessage:
-                    'Stokların eksiye düşmesi ayarını değiştirme yetkiniz yok.'
-                });
-                if (!ok) {
-                  logger.warn('Güvenlik ayarları: allowNegativeStock değişikliği yetkisiz kullanıcı tarafından engellendi', {
-                    permKey: allowNegativeKey,
-                    companyId,
-                    uid: ctx.userId || (ctx.userDocData && ctx.userDocData.id) || null
+              let newStockValue = allowNegativeStock;
+              if (checkbox && !checkbox.disabled) {
+                if (!allowNegativeKey) {
+                  logger.warn('stock.allowNegative.manage key bulunamadı, allowNegativeStock checkbox kullanılıyor');
+                  newStockValue = checkbox.checked === true;
+                } else {
+                  const ok = await requirePerm(allowNegativeKey, {
+                    toastMessage:
+                      'Stokların eksiye düşmesi ayarını değiştirme yetkiniz yok.'
                   });
-                  return;
+                  if (!ok) {
+                    newStockValue = allowNegativeStock;
+                  } else {
+                    newStockValue = checkbox.checked === true;
+                  }
                 }
               }
 
-              const newValue = checkbox.checked === true;
-              const newPriceValue = priceCheckbox ? priceCheckbox.checked === true : false;
+              const newPriceValue = priceCheckbox ? priceCheckbox.checked === true : allowPriceEditing;
 
               await updateDoc(companyRef, {
-                allowNegativeStock: newValue,
+                allowNegativeStock: newStockValue,
                 allowPriceEditing: newPriceValue,
                 updatedAt: serverTimestamp(),
                 updatedBy: (ctx.userDocData && ctx.userDocData.id) || (auth.currentUser && auth.currentUser.uid) || null
@@ -3172,7 +3099,7 @@
               toast.success(MESSAGES.SUCCESS_SETTINGS_SECURITY_UPDATED);
               logger.info('Güvenlik ayarları güncellendi', {
                 companyId,
-                allowNegativeStock: newValue,
+                allowNegativeStock: newStockValue,
                 allowPriceEditing: newPriceValue
               });
             } catch (e) {
@@ -6613,13 +6540,43 @@
           'supplier:ceo', 'supplier:genel_mudur', 'supplier:genel_mudur_yardimcisi'
         ]);
 
-        const userRole = userData.companyRole || '';
-        const canEdit = managementRoles.has(userRole);
-
         const settingsContainer = document.getElementById('profileVisibilitySettings');
         const saveBtn = document.getElementById('btnSaveProfileVisibility');
+        const db = window.__db;
 
         if (!settingsContainer) return;
+        if (!db) {
+          logger.error('DB bulunamadı');
+          return;
+        }
+
+        // Teklifbul Rule v1.0 - Yönetici tespiti: companyRoleKey/companyRole/requestedRole + admin + owner
+        const normalizeRole = (role) => String(role || '').trim().toLowerCase();
+        const roleCandidates = [
+          normalizeRole(userData.companyRoleKey),
+          normalizeRole(userData.companyRole),
+          normalizeRole(userData.requestedCompanyRole),
+        ].filter(Boolean);
+
+        const prefixedCandidates = roleCandidates.flatMap((r) => {
+          if (r.startsWith('buyer:') || r.startsWith('supplier:')) return [r];
+          return [`buyer:${r}`, `supplier:${r}`, r];
+        });
+
+        const hasManagementRole = prefixedCandidates.some((r) => managementRoles.has(r));
+        const isAdminLike = userData.isAdmin === true || Array.isArray(userData.roles) && userData.roles.includes('admin');
+
+        let isOwner = false;
+        try {
+          const { doc, getDoc } = await getFirestoreModules();
+          const companyDoc = await getDoc(doc(db, 'companies', companyId));
+          const companyData = companyDoc.exists() ? (companyDoc.data() || {}) : {};
+          isOwner = !!(companyData.ownerUid && auth.currentUser && companyData.ownerUid === auth.currentUser.uid);
+        } catch (ownerErr) {
+          logger.warn('Şirket sahibi kontrolü yapılamadı', ownerErr);
+        }
+
+        const canEdit = hasManagementRole || isAdminLike || isOwner;
 
         if (!canEdit) {
           settingsContainer.innerHTML = `
@@ -6633,11 +6590,6 @@
 
         // Firestore'dan görünürlük ayarlarını yükle
         const { doc, getDoc, setDoc, serverTimestamp } = await getFirestoreModules();
-        const db = window.__db;
-        if (!db) {
-          logger.error('DB bulunamadı');
-          return;
-        }
         const settingsRef = doc(db, 'companies', companyId, 'profileSettings', 'visibility');
         const settingsDoc = await getDoc(settingsRef);
 
@@ -6972,6 +6924,73 @@
       });
     }
 
+    /**
+     * Koşullu ayar sekmelerini tek seferde güncelle (paralel admin kontrolü, sıralı DOM yazımı).
+     * Teklifbul Rule v1.0
+     */
+    async function applyConditionalSettingsNav(ctx, adminPerms) {
+      const navSystemStatus = document.getElementById('nav-system-status');
+      const navErrorReports = document.getElementById('nav-error-reports');
+      const navAdminProfit = document.getElementById('nav-admin-profit');
+      const navAiUsageReport = document.getElementById('nav-ai-usage-report');
+
+      const { isAdmin: checkIsAdmin } = await import('/src/shared/utils/admin-helper.js');
+      const user = auth.currentUser;
+      const isAdminUser = user ? await checkIsAdmin(user) : false;
+
+      let isIsveren = false;
+      try {
+        const ud = ctx?.userDocData;
+        if (ud) {
+          const userRole = ud.role || ud.roleKey || ud.companyRole || '';
+          isIsveren =
+            userRole === 'isveren' ||
+            userRole === 'buyer:isveren' ||
+            userRole === 'supplier:isveren';
+        }
+      } catch {
+        /* ignore */
+      }
+
+      const hasReportPerm = adminPerms?.reports?.view === true;
+      const showAiUsage = !!(hasReportPerm || isIsveren || isAdminUser);
+
+      if (navSystemStatus) {
+        const show = !!adminPerms?.metrics?.view;
+        navSystemStatus.style.display = show ? 'block' : 'none';
+        navSystemStatus.setAttribute('aria-hidden', show ? 'false' : 'true');
+      }
+
+      if (navErrorReports) {
+        const show = !!adminPerms?.errors?.view;
+        navErrorReports.style.display = show ? 'block' : 'none';
+        navErrorReports.setAttribute('aria-hidden', show ? 'false' : 'true');
+        if (show) {
+          navErrorReports.disabled = false;
+          navErrorReports.removeAttribute('aria-disabled');
+          navErrorReports.removeAttribute('data-loading');
+          navErrorReports.title = '';
+        } else {
+          navErrorReports.disabled = true;
+          navErrorReports.setAttribute('aria-disabled', 'true');
+          navErrorReports.removeAttribute('data-loading');
+          navErrorReports.title = '';
+        }
+      }
+
+      if (navAdminProfit) {
+        const show = isAdminUser;
+        navAdminProfit.style.display = show ? 'block' : 'none';
+        navAdminProfit.setAttribute('aria-hidden', show ? 'false' : 'true');
+      }
+
+      if (navAiUsageReport) {
+        const show = showAiUsage;
+        navAiUsageReport.style.display = show ? 'block' : 'none';
+        navAiUsageReport.setAttribute('aria-hidden', show ? 'false' : 'true');
+      }
+    }
+
     async function initSettingsRoot() {
       try {
         logger.group('Settings Root Init');
@@ -6984,24 +7003,26 @@
           logger.warn('Settings navigation early init failed', e);
         }
 
-        // Hata kayıtları menüsü: başlangıçta görünür ama disabled + loading (layout shift önleme)
-        try {
-          const navErrorReports = document.getElementById('nav-error-reports');
-          if (navErrorReports) {
-            navErrorReports.style.display = '';
-            navErrorReports.disabled = true;
-            navErrorReports.setAttribute('aria-disabled', 'true');
-            navErrorReports.setAttribute('data-loading', 'true');
-          }
-        } catch (e) {
-          logger.warn('nav-error-reports initial state set failed', e);
-        }
+        // Koşullu sekmeler (Sistem / Hata / Finans / AI raporu) HTML'de display:none — tek batch'te açılır (layout shift azaltılır)
 
         // İlk paint'e izin ver (özellikle yavaş makinelerde sidebar "sonradan çıkıyor" hissini bitirir)
         await new Promise((r) => requestAnimationFrame(() => r(null)));
 
-        // Company context kontrolü - SİSTEM KURALI: Her kullanıcının bir şirketi olmalıdır
-        const ctx = await requireCompanyContext({ redirectOnPending: true });
+        // Company context — çıkış/giriş sonrası önbellek + istemci önbelleği tutarsızlığını önle
+        clearCompanyContextCache();
+        try {
+          const { authFetch } = await import('./assets/js/utils/api-helpers.js');
+          await authFetch('/api/user/sync-company-context', { method: 'POST' });
+        } catch (syncErr) {
+          logger.warn('sync-company-context atlanıldı veya başarısız', syncErr);
+        }
+
+        let ctx = await requireCompanyContext({ redirectOnPending: true });
+        if (!ctx?.companyId) {
+          await new Promise((r) => setTimeout(r, 450));
+          clearCompanyContextCache();
+          ctx = await requireCompanyContext({ redirectOnPending: true });
+        }
 
         if (!ctx || !ctx.companyId) {
           logger.error('Settings: Kritik Hata - Şirket bağlamı alınamadı veya geçersiz.', { ctx });
@@ -7049,6 +7070,7 @@
         window.__paymentsPerms = paymentsPerms;
         window.__einvoicePerms = einvoicePerms;
         window.__aiPerms = aiPerms;
+        window.__adminPerms = adminPerms;
 
         // Genel Ayarlar (firma bilgileri) view guard
         const generalPage = document.getElementById('page-general');
@@ -7103,8 +7125,6 @@
           const planLabelEl = document.getElementById('premiumPlanLabel');
           const planDescEl = document.getElementById('premiumPlanDescription');
           const actionBtn = document.getElementById('btnPremiumAction');
-          const tokenSection = document.getElementById('premiumPlusTokenSection');
-          const tokenTablesContainer = document.getElementById('tokenTablesContainer');
 
           if (badgeEl) badgeEl.textContent = stars || '⭐';
 
@@ -7172,115 +7192,6 @@
             }
           }
 
-          // Premium Plus için token paketleri
-          const isPlus = isPremiumPlus(planId);
-          if (tokenSection && tokenTablesContainer) {
-            if (isPlus) {
-              tokenSection.style.display = 'block';
-              tokenTablesContainer.innerHTML = '';
-
-              const formatPrice = (value) => {
-                try {
-                  return new Intl.NumberFormat('tr-TR', {
-                    style: 'currency',
-                    currency: 'TRY',
-                    maximumFractionDigits: 0
-                  }).format(value);
-                } catch {
-                  return `₺${value}`;
-                }
-              };
-
-              // OpenAI GPT-4o-mini
-              const openai = AI_TOKEN_PACKS?.openai_gpt4o_mini;
-              if (openai) {
-                const card = document.createElement('div');
-                card.style.padding = '16px';
-                card.style.background = '#ffffff';
-                card.style.borderRadius = '8px';
-                card.style.border = '1px solid #bbf7d0';
-                card.style.minWidth = '0'; // Grid item overflow önleme
-                card.style.overflow = 'hidden'; // İçerik taşmasını önleme
-
-                card.innerHTML = `
-                  <h5 style=\"margin:0 0 8px 0; font-size:15px; color:#166534;\">${openai.title}</h5>
-                  <p style=\"margin:0 0 8px 0; font-size:12px; color:#166534;\">${openai.note}</p>
-                  <div style=\"overflow-x:auto; -webkit-overflow-scrolling:touch;\">
-                  <table style=\"width:100%; border-collapse:collapse; font-size:12px; min-width:280px; table-layout:auto;\">
-                    <thead>
-                      <tr style=\"background:#ecfdf5;\">
-                        <th style=\"padding:8px; text-align:left; border-bottom:1px solid #bbf7d0;\">Kod</th>
-                        <th style=\"padding:8px; text-align:left; border-bottom:1px solid #bbf7d0;\">Token</th>
-                        <th style=\"padding:8px; text-align:left; border-bottom:1px solid #bbf7d0;\">Mesaj</th>
-                        <th style=\"padding:8px; text-align:right; border-bottom:1px solid #bbf7d0;\">Fiyat</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      ${openai.rows
-                    .map(
-                      (row) => `
-                          <tr>
-                            <td style=\"padding:6px; border-bottom:1px solid #f1f5f9; font-weight:600;\">${row.code}</td>
-                            <td style=\"padding:6px; border-bottom:1px solid #f1f5f9;\">${row.tokens}</td>
-                            <td style=\"padding:6px; border-bottom:1px solid #f1f5f9;\">${row.approxMessages}</td>
-                            <td style=\"padding:6px; border-bottom:1px solid #f1f5f9; text-align:right; font-weight:600; color:#166534;\">${formatPrice(row.priceTry)}</td>
-                          </tr>
-                        `
-                    )
-                    .join('')}
-                    </tbody>
-                  </table>
-                  </div>
-                `;
-
-                tokenTablesContainer.appendChild(card);
-              }
-
-              // Google Gemini 3.0
-              const gemini = AI_TOKEN_PACKS?.google_gemini_3;
-              if (gemini) {
-                const card = document.createElement('div');
-                card.style.padding = '16px';
-                card.style.background = '#ffffff';
-                card.style.borderRadius = '8px';
-                card.style.border = '1px solid #bbf7d0';
-                card.style.minWidth = '0'; // Grid item overflow önleme
-                card.style.overflow = 'hidden'; // İçerik taşmasını önleme
-
-                card.innerHTML = `
-                  <h5 style=\"margin:0 0 8px 0; font-size:15px; color:#166534;\">${gemini.title}</h5>
-                  <p style=\"margin:0 0 8px 0; font-size:12px; color:#166534;\">${gemini.note}</p>
-                  <div style=\"overflow-x:auto; -webkit-overflow-scrolling:touch;\">
-                  <table style=\"width:100%; border-collapse:collapse; font-size:12px; min-width:280px; table-layout:auto;\">
-                    <thead>
-                      <tr style=\"background:#ecfdf5;\">
-                        <th style=\"padding:8px; text-align:left; border-bottom:1px solid #bbf7d0;\">Paket</th>
-                        <th style=\"padding:8px; text-align:left; border-bottom:1px solid #bbf7d0;\">Mesaj</th>
-                        <th style=\"padding:8px; text-align:right; border-bottom:1px solid #bbf7d0;\">Fiyat</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      ${gemini.rows
-                    .map(
-                      (row) => `
-                          <tr>
-                            <td style=\"padding:6px; border-bottom:1px solid #f1f5f9; font-weight:600;\">${row.name}</td>
-                            <td style=\"padding:6px; border-bottom:1px solid #f1f5f9;\">${row.messages}</td>
-                            <td style=\"padding:6px; border-bottom:1px solid #f1f5f9; text-align:right; font-weight:600; color:#166534;\">${formatPrice(row.priceTry)}</td>
-                          </tr>
-                        `
-                    )
-                    .join('')}
-                    </tbody>
-                  </table>
-                `;
-
-                tokenTablesContainer.appendChild(card);
-              }
-            } else {
-              tokenSection.style.display = 'none';
-            }
-          }
         } catch (e) {
           logger.warn('Premium sekmesi plan bilgisi yüklenemedi', e);
         }
@@ -7292,105 +7203,11 @@
           logger.warn('Rol & Yetki Yönetimi sayfası başlatılamadı', e);
         }
 
-        // Teklifbul Rule v1.0 - Sistem Durumu menü butonu görünürlüğü
+        // Teklifbul Rule v1.0 — Koşullu sol menü (Sistem / Hata / Finans / AI): tek batch, tek admin kontrolü
         try {
-          const navSystemStatus = document.getElementById('nav-system-status');
-          if (navSystemStatus && adminPerms?.metrics?.view) {
-            navSystemStatus.style.display = '';
-          } else if (navSystemStatus) {
-            navSystemStatus.style.display = 'none';
-          }
+          await applyConditionalSettingsNav(ctx, adminPerms);
         } catch (e) {
-          logger.warn('Sistem durumu menü görünürlüğü ayarlanamadı', e);
-        }
-
-        // Teklifbul Rule v1.0 - Client Error Reporting v1: Hata Kayıtları menü butonu görünürlüğü
-        try {
-          const navErrorReports = document.getElementById('nav-error-reports');
-          if (navErrorReports && adminPerms?.errors?.view) {
-            navErrorReports.style.display = '';
-            navErrorReports.disabled = false;
-            navErrorReports.removeAttribute('aria-disabled');
-            navErrorReports.removeAttribute('data-loading');
-            navErrorReports.title = '';
-          } else if (navErrorReports) {
-            // Yetkisi yoksa gizle (önceki davranış). Yükleniyor state'i temizle.
-            navErrorReports.disabled = true;
-            navErrorReports.setAttribute('aria-disabled', 'true');
-            navErrorReports.removeAttribute('data-loading');
-            navErrorReports.title = '';
-            navErrorReports.style.display = 'none';
-          }
-        } catch (e) {
-          logger.warn('Hata kayıtları menü görünürlüğü ayarlanamadı', e);
-        }
-
-        // Teklifbul Rule v1.4 - Admin AI Catalog menu visibility
-        try {
-          const navAdminAiCatalog = document.getElementById('nav-admin-ai-catalog');
-          if (navAdminAiCatalog) {
-            // Check adminPerms.aiCatalog.manage or fallback to isAdmin
-            const hasAiCatalogPerm = adminPerms?.aiCatalog?.manage === true;
-            const { isAdmin: checkIsAdmin } = await import('/src/shared/utils/admin-helper.js');
-            const user = auth.currentUser;
-            const isAdminUser = user ? await checkIsAdmin(user) : false;
-
-            if (hasAiCatalogPerm || isAdminUser) {
-              navAdminAiCatalog.style.display = 'block';
-            } else {
-              navAdminAiCatalog.style.display = 'none';
-            }
-          }
-        } catch (e) {
-          logger.warn('Admin AI catalog menü görünürlüğü ayarlanamadı', e);
-        }
-
-        // Teklifbul Rule v2.0 - Admin Profit Report menu visibility
-        try {
-          const navAdminProfit = document.getElementById('nav-admin-profit');
-          if (navAdminProfit) {
-            const { isAdmin: checkIsAdmin } = await import('/src/shared/utils/admin-helper.js');
-            const user = auth.currentUser;
-            const isAdminUser = user ? await checkIsAdmin(user) : false;
-            navAdminProfit.style.display = isAdminUser ? 'block' : 'none';
-          }
-        } catch (e) {
-          logger.warn('Admin Profit menü görünürlüğü ayarlanamadı', e);
-        }
-
-        // Teklifbul Rule v1.5 - AI Usage Report menu visibility (reports.view permission)
-        try {
-          const navAiUsageReport = document.querySelector('.settings-nav-btn[data-page="ai-usage-report"]');
-          if (navAiUsageReport) {
-            const hasReportPerm = adminPerms?.reports?.view === true;
-            // Fallback: isveren role or admin - userData yoksa Firestore'dan çek
-            let userRole = '';
-            let isIsveren = false;
-
-            try {
-              // PERFORMANS: requireCompanyContext zaten çağrıldı, ctx'den al
-              const ctx = window.__settingsCompanyContext;
-              if (ctx?.userDocData) {
-                const userData = ctx.userDocData;
-                userRole = userData?.role || userData?.roleKey || userData?.companyRole || '';
-                isIsveren = userRole === 'isveren' || userRole === 'buyer:isveren' || userRole === 'supplier:isveren';
-              }
-            } catch (userDataError) {
-              // Sessizce devam et, admin kontrolü yeterli
-            }
-
-            const { isAdmin: checkIsAdmin } = await import('/src/shared/utils/admin-helper.js');
-            const user = auth.currentUser;
-            const isAdminUser = user ? await checkIsAdmin(user) : false;
-
-            if (hasReportPerm || isIsveren || isAdminUser) {
-              navAiUsageReport.style.display = 'block';
-            } else {
-              navAiUsageReport.style.display = 'none';
-            }
-          }
-        } catch (e) {
-          logger.warn('AI Usage Report menü görünürlüğü ayarlanamadı', e);
+          logger.warn('Ayarlar sol menü görünürlüğü ayarlanamadı', e);
         }
 
         // Navigation zaten early init ile bağlandı; tekrar bağlamaya gerek yok.
@@ -7403,7 +7220,13 @@
             if (hash) {
               // Teklifbul Rule v2.5 - Handle detail pages with query params
               const [page, queryString] = hash.split('?');
-              const targetBtn = document.querySelector(`.settings-nav-btn[data-page="${page}"]`);
+              const hashParams = new URLSearchParams(queryString || '');
+              let mappedPage = page;
+              if (page === 'billing-plan') {
+                const reason = hashParams.get('reason');
+                mappedPage = reason === 'token_packages' ? 'purchase-assistant-settings' : 'premium';
+              }
+              const targetBtn = document.querySelector(`.settings-nav-btn[data-page="${mappedPage}"]`);
               if (targetBtn) {
                 targetBtn.click();
               } else if (page === 'admin-profit-detail') {
@@ -7668,12 +7491,13 @@
         return;
       }
 
+      const stickyTop = 0;
       let thead = '<thead><tr style="background:#f9fafb;">';
-      thead += '<th style="position:sticky; left:0; z-index:2; background:#f9fafb; padding:8px; border-bottom:1px solid #e5e7eb; text-align:left; font-size:12px; min-width:150px;">Rol</th>';
+      thead += `<th style="position:sticky; top:${stickyTop}px; left:0; z-index:20; background:#f9fafb; padding:8px 10px; border-bottom:1px solid #e5e7eb; border-right:1px solid #e5e7eb; text-align:left; font-size:13px; min-width:180px; width:180px; max-width:220px; box-shadow:0 1px 0 #e5e7eb; vertical-align:middle;">Rol</th>`;
       groupPerms.forEach((perm) => {
-        thead += `<th title="${perm.label}" style="padding:8px 4px; border-bottom:1px solid #e5e7eb; text-align:center; font-size:11px; vertical-align:middle; min-width:70px; max-width:110px; white-space:normal; word-wrap:break-word; line-height:1.3;">${perm.label}</th>`;
+        thead += `<th title="${perm.label}" style="position:sticky; top:${stickyTop}px; z-index:19; background:#f9fafb; padding:7px 4px; border-bottom:1px solid #e5e7eb; border-right:1px solid #eef2f7; text-align:center; font-size:10.5px; vertical-align:middle; min-width:58px; max-width:92px; white-space:normal; word-wrap:break-word; line-height:1.2; box-shadow:0 1px 0 #e5e7eb;">${perm.label}</th>`;
       });
-      thead += '<th style="padding:8px; border-bottom:1px solid #e5e7eb; text-align:center; font-size:11px; white-space:nowrap;">Satır İşlemi</th>';
+      thead += `<th style="position:sticky; top:${stickyTop}px; z-index:19; background:#f9fafb; padding:8px 6px; border-bottom:1px solid #e5e7eb; text-align:center; font-size:11px; white-space:nowrap; box-shadow:0 1px 0 #e5e7eb;">Satır İşlemi</th>`;
       thead += '</tr></thead>';
 
       let tbody = '<tbody>';
@@ -7682,13 +7506,13 @@
         const roleLabel = role.label || roleKey;
         const rolePerms = rolePermState.values[roleKey] || {};
         tbody += '<tr>';
-        tbody += `<td style=\"position:sticky; left:0; z-index:1; background:white; padding:8px; border-bottom:1px solid #f3f4f6; font-size:12px; font-weight:600; white-space:nowrap;\">${roleLabel}<div style=\"font-size:10px; color:#6b7280;\">${roleKey}</div></td>`;
+        tbody += `<td style=\"position:sticky; left:0; z-index:1; background:white; padding:7px 10px; border-bottom:1px solid #f3f4f6; border-right:1px solid #e5e7eb; font-size:13px; font-weight:700; min-width:180px; width:180px; max-width:220px; white-space:normal; line-height:1.2;\">${roleLabel}<div style=\"font-size:10px; color:#6b7280; font-weight:500; margin-top:2px; word-break:break-word; overflow-wrap:anywhere;\">${roleKey}</div></td>`;
         groupPerms.forEach((perm) => {
           const value = !!rolePerms[perm.key];
           const disabledAttr = canEdit ? '' : 'disabled';
           const checkedAttr = value ? 'checked' : '';
           tbody += `
-            <td style=\"padding:6px 4px; border-bottom:1px solid #f3f4f6; text-align:center;\">
+            <td style=\"padding:5px 3px; border-bottom:1px solid #f3f4f6; border-right:1px solid #f1f5f9; text-align:center;\">
               <input type=\"checkbox\" class=\"role-perm-checkbox\" data-role-key=\"${roleKey}\" data-perm-key=\"${perm.key}\" ${checkedAttr} ${disabledAttr} style=\"width:16px; height:16px; cursor:${canEdit ? 'pointer' : 'not-allowed'};\">
             </td>
           `;
@@ -7928,14 +7752,21 @@
       const userData = userSnap.exists() ? (userSnap.data() || {}) : {};
       const roles = Array.isArray(userData.roles) ? userData.roles : [];
       const roleKey = String(userData.companyRoleKey || userData.companyRole || userData.requestedCompanyRole || '');
-      const isAdminLike =
+      const isRoleAdminLike =
         userData.isAdmin === true ||
         roles.includes('admin') ||
         roleKey.includes('buyer:isveren') ||
         roleKey.includes('buyer:genel_mudur') ||
         roleKey.includes('buyer:ceo');
+      let isAdminUser = false;
+      try {
+        const { isAdmin: checkIsAdmin } = await import('/src/shared/utils/admin-helper.js');
+        isAdminUser = await checkIsAdmin(user);
+      } catch (e) {
+        logger.warn('Category rules admin helper kontrolü başarısız', e);
+      }
 
-      if (!isAdminLike) {
+      if (!isRoleAdminLike && !isAdminUser) {
         sec.style.display = 'none';
         return;
       }
@@ -7947,6 +7778,11 @@
       const elPriority = document.getElementById('rulePriority');
       const btnAdd = document.getElementById('btnAddCategoryRule');
       const list = document.getElementById('categoryRulesList');
+      const hasCategoryRuleWritePerm = !!(window.__adminPerms?.categoryRules?.manage || isAdminUser);
+      if (btnAdd && !hasCategoryRuleWritePerm) {
+        btnAdd.disabled = true;
+        btnAdd.title = 'Kategori kuralı ekleme yetkiniz yok.';
+      }
 
       // Populate categories dropdown
       try {
@@ -8044,6 +7880,10 @@
       }
 
       btnAdd?.addEventListener('click', async () => {
+        if (!hasCategoryRuleWritePerm) {
+          toast.error('Kategori kuralı ekleme yetkiniz yok.');
+          return;
+        }
         const pattern = (elPattern?.value || '').trim();
         const matchType = (elType?.value || 'contains').trim();
         const categoryId = (elCat?.value || '').trim();
@@ -8065,7 +7905,12 @@
           elPattern.value = '';
           await loadRules();
         } catch (e) {
-          toast.error('Kural eklenemedi');
+          const message = String(e?.message || '');
+          if (message.toLowerCase().includes('insufficient permissions')) {
+            toast.error('Kategori kuralı ekleme yetkiniz yok.');
+          } else {
+            toast.error('Kural eklenemedi');
+          }
           logger.warn('Category rule add failed', e);
         }
       });
@@ -8477,8 +8322,12 @@
     // Teklifbul Rule v1.0 - 404 hatalarını sessizce handle et
     async function __fetchJSON(url) {
       try {
-        // Teklifbul Rule v2.0 - 404 hatalarını sessizce handle et (console'a yazma)
-        const r = await fetch(url, {
+        // MFA fetch patch dışında tut (sokak JSON 404 satırı security-mfa.js'e bağlanmasın)
+        const doFetch =
+          typeof window !== 'undefined' && window.__TEKLIFBUL_NATIVE_FETCH__
+            ? window.__TEKLIFBUL_NATIVE_FETCH__
+            : fetch.bind(window);
+        const r = await doFetch(url, {
           headers: { 'accept': 'application/json' }
         });
         if (!r.ok) {
@@ -12002,12 +11851,6 @@
     // === Category Management Initialization ===
     let supplierAPI, buyerAPI;
 
-
-    // Startup: Unified flow replaces legacy waitAndInitialize
-    initSettingsRoot().catch(err => {
-      logger.error("Settings root initialization failed", err);
-    });
-
     async function initializeCategoryManagement() {
       try {
         logger.info("Kategori yönetimi başlatılıyor");
@@ -12315,10 +12158,6 @@
       });
     }
 
-    // Startup: Unified flow replaces legacy waitAndInitialize
-    initSettingsRoot().catch(err => {
-      logger.error("Settings root initialization failed", err);
-    });
   </script>
 
   <script type="module">

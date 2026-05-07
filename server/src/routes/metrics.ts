@@ -23,16 +23,13 @@ const router = express.Router();
  */
 router.get('/', (_req, res) => {
   try {
-    // Teklifbul Rule v1.0 - Security: Metrics endpoint kapalı varsayılan
+    // Teklifbul Rule v1.0 - Metrics kapalıyken 200 + JSON (404 yerine; istemci ve konsol gürültüsü azalır)
     if (process.env.ENABLE_METRICS !== 'true') {
-      logger.warn('Metrics endpoint accessed but disabled', {
-        path: '/metrics',
-        enableMetrics: process.env.ENABLE_METRICS
+      return res.status(200).json({
+        ok: false,
+        disabled: true,
+        reason: 'ENABLE_METRICS'
       });
-      return respondError(
-        res,
-        Errors.notFound('Metrics endpoint is disabled')
-      );
     }
 
     // Get metrics snapshot

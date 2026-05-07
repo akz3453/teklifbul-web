@@ -102,6 +102,7 @@ export default defineConfig({
         'request-list': 'pages/request-list.html',
         // Admin pages
         'admin-dashboard': 'pages/admin/dashboard.html',
+        'admin-ai-catalog': 'pages/admin/ai-catalog.html',
         'admin-premium-control': 'pages/admin/premium-control.html',
         'admin-subscription-monitor': 'pages/admin/subscription-monitor.html',
         'admin-migration-dashboard': 'pages/admin/migration-dashboard.html'
@@ -119,13 +120,24 @@ export default defineConfig({
       // Teklifbul Rule v1.0 - CSP: Firebase Auth ve Google API'leri için gerekli domain'ler
       // script-src-elem: Dynamic script loading için (Google API'leri)
       // Not: Google login için auth domain (teklifbul.firebaseapp.com) iframe içinde açılabildiğinden frame-src listesine eklendi.
-      'Content-Security-Policy': "default-src 'self'; font-src 'self' https://fonts.gstatic.com data:; script-src 'self' 'unsafe-eval' https://www.gstatic.com https://apis.google.com https://www.google.com https://www.recaptcha.net https://cdn.jsdelivr.net https://unpkg.com; script-src-elem 'self' 'unsafe-inline' https://www.gstatic.com https://apis.google.com https://www.google.com https://www.recaptcha.net https://cdn.jsdelivr.net https://unpkg.com 'sha256-+3oPYgb41B6T9DDxTV5+BxwuBt0kH4MCB0ubkutEst8='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com https://cdn.jsdelivr.net; style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com https://cdn.jsdelivr.net; frame-src 'self' https://accounts.google.com https://www.google.com https://www.recaptcha.net https://teklifbul.firebaseapp.com https://*.firebaseapp.com; connect-src 'self' wss://localhost:5173 ws://localhost:5173 http://localhost:5174 https://apis.google.com https://www.googleapis.com https://*.googleapis.com https://*.google.com https://*.firebaseio.com https://*.firebaseapp.com https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com https://nominatim.openstreetmap.org https://us-central1-teklifbul.cloudfunctions.net https://*.cloudfunctions.net; img-src 'self' data: blob: https:; object-src 'none'; base-uri 'self'; form-action 'self';",
+      'Content-Security-Policy': "default-src 'self'; font-src 'self' https://fonts.gstatic.com data:; script-src 'self' 'unsafe-eval' https://www.gstatic.com https://apis.google.com https://www.google.com https://www.recaptcha.net https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com; script-src-elem 'self' 'unsafe-inline' https://www.gstatic.com https://apis.google.com https://www.google.com https://www.recaptcha.net https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com 'sha256-+3oPYgb41B6T9DDxTV5+BxwuBt0kH4MCB0ubkutEst8='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com https://cdn.jsdelivr.net; style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com https://cdn.jsdelivr.net; frame-src 'self' https://accounts.google.com https://www.google.com https://www.recaptcha.net https://teklifbul.firebaseapp.com https://*.firebaseapp.com; connect-src 'self' wss://localhost:5173 ws://localhost:5173 http://localhost:5174 https://apis.google.com https://www.googleapis.com https://*.googleapis.com https://*.google.com https://*.firebaseio.com https://*.firebaseapp.com https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://nominatim.openstreetmap.org https://us-central1-teklifbul.cloudfunctions.net https://*.cloudfunctions.net; img-src 'self' data: blob: https:; object-src 'none'; base-uri 'self'; form-action 'self';",
       // Teklifbul Rule v1.0 - COOP header kaldırıldı: Firebase popup'ı window.closed kontrolü yapamıyordu
       // COOP header'ı popup'ın çalışmasını engelliyor, bu yüzden kaldırıldı
       // 'Cross-Origin-Opener-Policy': 'same-origin-allow-popups'
     },
     proxy: {
       '/api': {
+        target: 'http://localhost:5174',
+        changeOrigin: true,
+        secure: false
+      },
+      // Teklifbul Rule v1.0 — Observability (authFetch dışındaki göreli istekler için)
+      '/health': {
+        target: 'http://localhost:5174',
+        changeOrigin: true,
+        secure: false
+      },
+      '/metrics': {
         target: 'http://localhost:5174',
         changeOrigin: true,
         secure: false

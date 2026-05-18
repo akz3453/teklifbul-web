@@ -364,7 +364,7 @@
     </section>
 
     <!-- Pagination Controls (Shared) -->
-    <div id="pagination-controls" style="display:none; justify-content:center; align-items:center; gap:16px; margin:20px auto; max-width:600px;">
+    <div id="pagination-controls" style="display:flex; justify-content:center; align-items:center; gap:16px; margin:20px auto; max-width:600px;">
       <button id="btnPrev" class="btn btn-outline" style="padding:8px 16px; font-size:13px; font-weight:600; flex:0 0 auto; height:40px;">← Geri</button>
       <div style="display:flex; align-items:center; gap:12px; color:#0f172a; white-space:nowrap; background:white; padding:8px 20px; border-radius:12px; border:1px solid #e5e7eb; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); height:40px;">
         <span id="pageInfo" style="font-size:13px; font-weight:700;">Sayfa 1</span>
@@ -465,11 +465,14 @@
     const BID_PERMS = getBidPerms();
 
     function updatePagerUI() {
+      const pager = document.getElementById('pagination-controls');
+      if (pager) pager.style.display = 'flex';
+
       const pageInfo = document.getElementById('pageInfo');
       if (pageInfo) pageInfo.textContent = `Sayfa ${BIDS_PAGING.currentPage}`;
       
       const totalInfo = document.getElementById('totalItemsInfo');
-      if (totalInfo) totalInfo.textContent = `Toplam: ${BIDS_PAGING.totalItems}`;
+      if (totalInfo) totalInfo.textContent = isLoading ? 'Yükleniyor...' : `Toplam: ${BIDS_PAGING.totalItems}`;
 
       const btnPrev = document.getElementById('btnPrev');
       if (btnPrev) btnPrev.disabled = BIDS_PAGING.currentPage === 1 || isLoading;
@@ -912,6 +915,7 @@
         }
       } finally {
         isLoading = false;
+        updatePagerUI();
       }
     }
 

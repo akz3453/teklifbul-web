@@ -318,6 +318,8 @@ export async function consumeCompanyTokensTransactional(params: {
             provider: resolvedProvider,
             model: actualModel,
             tokensPaid: usedTokens,
+            promptTokens: Number(meta?.promptTokens || 0),
+            completionTokens: Number(meta?.completionTokens || 0),
             db,
           });
           // Add cost metadata to enrichedMeta

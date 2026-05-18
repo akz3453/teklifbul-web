@@ -994,6 +994,7 @@
     // Teklifbul Rule v1.0 - XSS Protection
     import DOMPurify from 'https://cdn.jsdelivr.net/npm/dompurify@3.2.2/+esm';
     import { auth, db, app, logout, authStateReady } from "./firebase.js";
+    import { ensureDefaultCentralDepotLocation } from '/assets/js/services/ensure-default-central-depot.js';
     // Teklifbul Rule v1.0 - Structured Logging
     import { logger } from './src/shared/log/logger.js';
     // Teklifbul Rule v1.0 - Toast Notification System
@@ -3064,6 +3065,8 @@
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         }, { merge: true });
+
+        await ensureDefaultCentralDepotLocation(db, { companyId, createdByUid: user.uid });
         
         // Referans veren şirkete kaydet - Teklifbul Rule v1.0
         if (referralCompanyId) {

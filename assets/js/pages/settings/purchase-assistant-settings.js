@@ -36,16 +36,18 @@ function renderShell() {
         <p class="muted" style="margin:0 0 14px 0; font-size:12px;">Değişiklikler yeni mesajlardan itibaren geçerli olur.</p>
         <div class="row">
           <div>
-            <label for="pa_provider" class="required">Sağlayıcı</label>
+            <label for="pa_provider" class="required" title="Önce asistan ailesini seçin">1) Asistan Sağlayıcısı</label>
             <select id="pa_provider">
               <option value="">Seçiniz</option>
             </select>
+            <p id="pa_provider_helper" class="muted" style="margin:6px 0 0; font-size:11px;">Önce sağlayıcıyı seçin, sonra model listesi otomatik gelir.</p>
           </div>
           <div>
-            <label for="pa_model" class="required">Model</label>
+            <label for="pa_model" class="required" title="Seçilen sağlayıcıya ait model listesi">2) Model</label>
             <select id="pa_model">
               <option value="">Seçiniz</option>
             </select>
+            <p id="pa_model_helper" class="muted" style="margin:6px 0 0; font-size:11px;">Modeli seçip kaydettiğinizde yeni konuşmalarda aktif olur.</p>
           </div>
         </div>
 
@@ -136,6 +138,16 @@ function renderShell() {
         <div id="pa_model_source" style="margin-top:12px; padding:10px; background:#f0f9ff; border-radius:6px; border:1px solid #bae6fd; font-size:12px; color:#0c4a6e;">
           <span id="pa_model_source_text">—</span>
         </div>
+        <div id="pa_model_access_hints" style="display:none; margin-top:12px; padding:12px; background:#f8fafc; border-radius:6px; border:1px solid #e2e8f0; font-size:12px; color:#334155;">
+          <div id="pa_model_access_hints_summary" style="font-weight:700; color:#1e293b;">—</div>
+          <div id="pa_model_access_hints_text" style="margin-top:6px; color:#475569;">—</div>
+          <div id="pa_model_access_hints_list" style="margin-top:8px;"></div>
+          <div style="margin-top:10px;">
+            <button type="button" id="pa_btn_open_billing_for_models" class="btn btn-secondary" style="padding:6px 12px; font-size:12px;">
+              Paketleri Gör / Yükselt
+            </button>
+          </div>
+        </div>
       </div>
 
       <div id="pa_card_tokens" style="padding:20px; background:#f9fafb; border-radius:8px; border:1px solid #e5e7eb;">
@@ -187,7 +199,6 @@ function renderShell() {
         <!-- Teklifbul Rule v3.5.0 - Inline CTA (when stopped) -->
         <div id="pa_stopped_cta" style="margin-top:12px; display:none;">
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            <button type="button" id="pa_btn_token_packages" class="btn btn-primary" style="padding:8px 16px; font-size:13px;">Token Paketleri</button>
             <button type="button" id="pa_btn_switch_free" class="btn btn-secondary" style="padding:8px 16px; font-size:13px;">Ücretsiz Modele Geç</button>
           </div>
         </div>
@@ -200,8 +211,8 @@ function renderShell() {
         </p>
         <!-- Teklifbul Rule v1.3 - Low token banner -->
         <div id="pa_low_token_banner" style="display:none; margin-top:12px; padding:12px; background:#fff7ed; border-radius:8px; border:1px solid #f59e0b; color:#92400e;">
-          <div style="font-weight:700; margin-bottom:4px;">⚠️ Token bakiyeniz azalıyor</div>
-          <div style="font-size:12px;">Paket satın alarak devam edebilirsiniz.</div>
+          <div id="pa_low_token_banner_title" style="font-weight:700; margin-bottom:4px;">⚠️ Token bakiyeniz azalıyor</div>
+          <div id="pa_low_token_banner_text" style="font-size:12px;">Paket satın alarak devam edebilirsiniz.</div>
         </div>
       </div>
 
@@ -214,18 +225,16 @@ function renderShell() {
       </div>
 
       <div id="pa_card_packages" style="padding:20px; background:#f9fafb; border-radius:8px; border:1px solid #e5e7eb;">
-        <h4 style="margin:0 0 12px 0; font-size:16px; font-weight:700; color:#1f2937;">Premium Plus Token Paketleri</h4>
+        <div style="display:flex; flex-direction:column; align-items:center; margin:0 0 18px 0;">
+          <h3 id="pa_token_packages_heading" style="margin:0; font-size:30px; line-height:1.1; font-weight:900; color:#0f172a; text-align:center; letter-spacing:0.3px;">Token Paketleri</h3>
+          <div style="margin-top:8px; width:120px; height:4px; border-radius:999px; background:linear-gradient(90deg,#2563eb 0%, #10b981 100%);"></div>
+        </div>
         <div id="pa_packages_locked" style="display:none; padding:14px; background:#fff7ed; border-radius:8px; border:1px solid #f59e0b; color:#92400e;">
           <div style="font-weight:700; margin-bottom:6px;">Bu bölüm kilitli</div>
           <div style="font-size:13px;">Token paketleri için Premium Plus gerekir.</div>
           <div style="margin-top:12px;">
             <button type="button" id="pa_btn_upgrade" class="btn btn-primary" style="padding:8px 16px; font-size:13px;">⭐ Premium Sayfasına Git</button>
           </div>
-        </div>
-        <!-- Teklifbul Rule v1.0 - Token Paketleri Fiyatlandırma Tablosu -->
-        <div id="pa_token_pricing_tables" style="display:none; margin-bottom:16px; padding:20px; background:#ecfdf5; border-radius:8px; border:1px solid #bbf7d0;">
-          <h5 style="margin:0 0 12px 0; font-size:15px; color:#166534; font-weight:700;">Token Paketleri Fiyatlandırması</h5>
-          <div id="pa_token_tables_container" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:16px; width:100%;"></div>
         </div>
         <div id="pa_packages_list" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:12px;"></div>
       </div>
@@ -281,6 +290,8 @@ function groupModels(availableModels) {
 function renderModelOptions({ availableModels, currentProvider, currentModel, forcedFreeMode = false }) {
   const providerSelect = el('pa_provider');
   const modelSelect = el('pa_model');
+  const providerHelper = el('pa_provider_helper');
+  const modelHelper = el('pa_model_helper');
   const saveBtn = el('pa_btn_save');
   if (!providerSelect || !modelSelect) return;
 
@@ -298,19 +309,26 @@ function renderModelOptions({ availableModels, currentProvider, currentModel, fo
     'gemini': 'Gemini (Pro - Token Paketi gerekir)',
   };
 
-  // Teklifbul Rule v1.0 - Only update provider list if it's empty to avoid UI flickers/resets
-  if (providerSelect.options.length <= 1) {
-    providerSelect.innerHTML = `<option value="">Seçiniz</option>` + providers.map(p => {
-      const label = providerLabels[p] || p;
-      return `<option value="${p}">${label}</option>`;
-    }).join('');
+  // Teklifbul Rule v1.0 - Provider list always sync with current available models
+  // (özellikle paket/izin değiştiğinde yeni sağlayıcıların hemen görünmesi için)
+  const previousProvider = String(providerSelect.value || '').trim();
+  providerSelect.innerHTML = `<option value="">Seçiniz</option>` + providers.map(p => {
+    const label = providerLabels[p] || p;
+    const modelCount = (grouped.get(p) || []).length;
+    return `<option value="${p}">${label} (${modelCount} model)</option>`;
+  }).join('');
+  const providerToSelect = [currentProvider, previousProvider].find(p => p && providers.includes(p)) || '';
+  if (providerToSelect) providerSelect.value = providerToSelect;
+
+  // Tek sağlayıcı varsa kullanıcıyı yormamak için otomatik seç
+  if (!providerSelect.value && providers.length === 1) {
+    providerSelect.value = providers[0];
   }
-  if (currentProvider && providers.includes(currentProvider)) providerSelect.value = currentProvider;
 
   const effectiveProvider = providerSelect.value || currentProvider || '';
   const models = grouped.get(effectiveProvider) || [];
   modelSelect.innerHTML =
-    `<option value="">Seçiniz</option>` +
+    `<option value="">${effectiveProvider ? 'Seçiniz' : 'Önce sağlayıcı seçin'}</option>` +
     models
       .map(m => {
         const baseLabel = m.label || m.model;
@@ -319,6 +337,7 @@ function renderModelOptions({ availableModels, currentProvider, currentModel, fo
         return `<option value="${m.model}">${baseLabel}${suffix}</option>`;
       })
       .join('');
+  modelSelect.disabled = !effectiveProvider || forcedFreeMode;
 
   // Teklifbul Rule v3.13 - Add note about entitlements (only once)
   if (models.length > 0 && models.some(m => m.freeEligible === false)) {
@@ -342,6 +361,17 @@ function renderModelOptions({ availableModels, currentProvider, currentModel, fo
   }
   if (currentModel && models.some(m => m.model === currentModel)) {
     modelSelect.value = currentModel;
+  }
+
+  if (providerHelper) {
+    providerHelper.textContent = providers.length
+      ? `Toplam ${providers.length} sağlayıcı kullanılabilir.`
+      : 'Kullanılabilir sağlayıcı bulunamadı.';
+  }
+  if (modelHelper) {
+    modelHelper.textContent = effectiveProvider
+      ? `Bu sağlayıcı için ${models.length} model bulundu.`
+      : 'Model listesi için önce sağlayıcı seçin.';
   }
 
   // Teklifbul Rule v1.0 - Populate custom instructions
@@ -383,128 +413,6 @@ function renderModelOptions({ availableModels, currentProvider, currentModel, fo
   }
 }
 
-// Teklifbul Rule v1.0 - Render token pricing tables
-function renderTokenPricingTables(plan) {
-  const tablesContainer = el('pa_token_tables_container');
-  const tablesSection = el('pa_token_pricing_tables');
-  if (!tablesContainer || !tablesSection) return;
-
-  const isPlus = !!plan?.isPremiumPlus;
-  tablesSection.style.display = isPlus ? 'block' : 'none';
-
-  if (!isPlus) {
-    tablesContainer.innerHTML = '';
-    return;
-  }
-
-  // Import AI_TOKEN_PACKS
-  import('../../../../src/shared/constants/aiTokenPacks.js').then(({ AI_TOKEN_PACKS }) => {
-    tablesContainer.innerHTML = '';
-
-    const formatPrice = (value) => {
-      try {
-        return new Intl.NumberFormat('tr-TR', {
-          style: 'currency',
-          currency: 'TRY',
-          maximumFractionDigits: 0
-        }).format(value);
-      } catch {
-        return `₺${value}`;
-      }
-    };
-
-    // OpenAI GPT-4o-mini
-    const openai = AI_TOKEN_PACKS?.openai_gpt4o_mini;
-    if (openai) {
-      const card = document.createElement('div');
-      card.style.padding = '16px';
-      card.style.background = '#ffffff';
-      card.style.borderRadius = '8px';
-      card.style.border = '1px solid #bbf7d0';
-      card.style.minWidth = '0';
-      card.style.overflow = 'hidden';
-
-      card.innerHTML = `
-        <h5 style="margin:0 0 8px 0; font-size:15px; color:#166534;">${openai.title}</h5>
-        <p style="margin:0 0 8px 0; font-size:12px; color:#166534;">${openai.note}</p>
-        <div style="overflow-x:auto; -webkit-overflow-scrolling:touch;">
-        <table style="width:100%; border-collapse:collapse; font-size:12px; min-width:280px; table-layout:auto;">
-          <thead>
-            <tr style="background:#ecfdf5;">
-              <th style="padding:8px; text-align:left; border-bottom:1px solid #bbf7d0;">Kod</th>
-              <th style="padding:8px; text-align:left; border-bottom:1px solid #bbf7d0;">Token</th>
-              <th style="padding:8px; text-align:left; border-bottom:1px solid #bbf7d0;">Mesaj</th>
-              <th style="padding:8px; text-align:right; border-bottom:1px solid #bbf7d0;">Fiyat</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${openai.rows
-          .map(
-            (row) => `
-                <tr>
-                  <td style="padding:6px; border-bottom:1px solid #f1f5f9; font-weight:600;">${row.code}</td>
-                  <td style="padding:6px; border-bottom:1px solid #f1f5f9;">${row.tokens}</td>
-                  <td style="padding:6px; border-bottom:1px solid #f1f5f9;">${row.approxMessages}</td>
-                  <td style="padding:6px; border-bottom:1px solid #f1f5f9; text-align:right; font-weight:600; color:#166534;">${formatPrice(row.priceTry)}</td>
-                </tr>
-              `
-          )
-          .join('')}
-          </tbody>
-        </table>
-        </div>
-      `;
-
-      tablesContainer.appendChild(card);
-    }
-
-    // Google Gemini 3.0
-    const gemini = AI_TOKEN_PACKS?.google_gemini_3;
-    if (gemini) {
-      const card = document.createElement('div');
-      card.style.padding = '16px';
-      card.style.background = '#ffffff';
-      card.style.borderRadius = '8px';
-      card.style.border = '1px solid #bbf7d0';
-      card.style.minWidth = '0';
-      card.style.overflow = 'hidden';
-
-      card.innerHTML = `
-        <h5 style="margin:0 0 8px 0; font-size:15px; color:#166534;">${gemini.title}</h5>
-        <p style="margin:0 0 8px 0; font-size:12px; color:#166534;">${gemini.note}</p>
-        <div style="overflow-x:auto; -webkit-overflow-scrolling:touch;">
-        <table style="width:100%; border-collapse:collapse; font-size:12px; min-width:280px; table-layout:auto;">
-          <thead>
-            <tr style="background:#ecfdf5;">
-              <th style="padding:8px; text-align:left; border-bottom:1px solid #bbf7d0;">Paket</th>
-              <th style="padding:8px; text-align:left; border-bottom:1px solid #bbf7d0;">Mesaj</th>
-              <th style="padding:8px; text-align:right; border-bottom:1px solid #bbf7d0;">Fiyat</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${gemini.rows
-          .map(
-            (row) => `
-                <tr>
-                  <td style="padding:6px; border-bottom:1px solid #f1f5f9; font-weight:600;">${row.name}</td>
-                  <td style="padding:6px; border-bottom:1px solid #f1f5f9;">${row.messages}</td>
-                  <td style="padding:6px; border-bottom:1px solid #f1f5f9; text-align:right; font-weight:600; color:#166534;">${formatPrice(row.priceTry)}</td>
-                </tr>
-              `
-          )
-          .join('')}
-          </tbody>
-        </table>
-        </div>
-      `;
-
-      tablesContainer.appendChild(card);
-    }
-  }).catch(err => {
-    logger.warn('Token pricing tables render failed', err);
-  });
-}
-
 function renderPackages({ plan, packages }) {
   const lockedBox = el('pa_packages_locked');
   const listEl = el('pa_packages_list');
@@ -519,78 +427,105 @@ function renderPackages({ plan, packages }) {
     return;
   }
 
-  const byProvider = new Map();
-  for (const p of packages || []) {
-    const providers = Array.isArray(p.allowedProviders) && p.allowedProviders.length ? p.allowedProviders : ['diğer'];
-    for (const provider of providers) {
-      const key = String(provider || 'diğer').toLowerCase();
-      const arr = byProvider.get(key) || [];
-      arr.push({ ...p, _providerKey: key });
-      byProvider.set(key, arr);
-    }
-  }
-
-  const providerOrder = ['openai', 'gemini', 'diğer'];
-  const keys = Array.from(byProvider.keys()).sort((a, b) => {
-    const ia = providerOrder.indexOf(a);
-    const ib = providerOrder.indexOf(b);
-    return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
-  });
-
-  const providerLabel = (k) => {
-    if (k === 'openai') return 'OpenAI Paketleri';
-    if (k === 'gemini') return 'Gemini Paketleri';
-    return 'Diğer Paketler';
-  };
-
   const providerBadge = (k) => {
     if (k === 'openai') return 'OpenAI';
     if (k === 'gemini') return 'Gemini';
     return 'Diğer';
   };
+  const providerTheme = (k) => {
+    if (k === 'openai') {
+      return {
+        accent: '#10b981',
+        softBg: '#ecfdf5',
+        softText: '#065f46',
+      };
+    }
+    if (k === 'gemini') {
+      return {
+        accent: '#2563eb',
+        softBg: '#eff6ff',
+        softText: '#1e3a8a',
+      };
+    }
+    return {
+      accent: '#7c3aed',
+      softBg: '#f5f3ff',
+      softText: '#4c1d95',
+    };
+  };
 
-  const sections = keys.map((k) => {
-    const group = byProvider.get(k) || [];
-    group.sort((a, b) => Number(a.sort || 0) - Number(b.sort || 0));
+  const providerSortRank = (provider) => {
+    if (provider === 'openai') return 1;
+    if (provider === 'gemini') return 2;
+    return 99;
+  };
 
-    const cards = group.map((p) => {
-      const tokens = Number(p.tokens || 0);
-      const price = Number(p.priceTRY || 0);
-      const label = p.name || p.id;
-      const desc = p.description ? String(p.description) : '';
-      return `
-        <div style="background:white; border:1px solid #e5e7eb; border-radius:10px; padding:14px; display:flex; flex-direction:column; gap:10px;">
-          <div style="display:flex; justify-content:space-between; gap:10px; align-items:flex-start;">
-            <div>
-              <div style="font-weight:800; color:#111827;">${label}</div>
-              <div style="margin-top:6px; display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; background:#eef2ff; color:#3730a3; font-weight:700; font-size:11px;">
-                ${providerBadge(k)}
-              </div>
+  const estimateMessages = (tokens, provider) => {
+    const tokenCount = Number(tokens || 0);
+    if (tokenCount <= 0) return null;
+    const tokensPerMessage = provider === 'gemini' ? 300 : (provider === 'openai' ? 1000 : 700);
+    return Math.max(1, Math.round(tokenCount / tokensPerMessage));
+  };
+
+  const normalizedPackages = (packages || []).map((pkg) => {
+    const providers = Array.isArray(pkg.allowedProviders) && pkg.allowedProviders.length
+      ? pkg.allowedProviders.map((p) => String(p || '').toLowerCase())
+      : ['diğer'];
+    return {
+      ...pkg,
+      _primaryProvider: providers[0] || 'diğer',
+    };
+  });
+
+  normalizedPackages.sort((a, b) => {
+    const providerDiff = providerSortRank(a._primaryProvider) - providerSortRank(b._primaryProvider);
+    if (providerDiff !== 0) return providerDiff;
+    return Number(a.sort || 0) - Number(b.sort || 0);
+  });
+
+  const cards = normalizedPackages.map((p) => {
+    const tokens = Number(p.tokens || 0);
+    const price = Number(p.priceTRY || 0);
+    const label = p.name || p.id;
+    const desc = p.description ? String(p.description) : '';
+    const provider = p._primaryProvider || 'diğer';
+    const estimatedMessages = estimateMessages(tokens, provider);
+    const theme = providerTheme(provider);
+    return `
+      <div style="position:relative; background:linear-gradient(180deg,#ffffff 0%, #f8fafc 100%); border:1px solid #e2e8f0; border-radius:14px; padding:16px; display:flex; flex-direction:column; gap:12px; box-shadow:0 6px 18px rgba(15,23,42,0.08); overflow:hidden; height:100%;">
+        <div style="position:absolute; inset:0 auto auto 0; width:100%; height:4px; background:${theme.accent};"></div>
+        <div style="display:flex; justify-content:space-between; gap:10px; align-items:flex-start; margin-top:2px;">
+          <div>
+            <div style="font-weight:800; color:#0f172a; font-size:15px; line-height:1.2;">${label}</div>
+            <div style="margin-top:8px; display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; background:${theme.softBg}; color:${theme.softText}; font-weight:700; font-size:11px; border:1px solid rgba(15,23,42,0.08);">
+              ${providerBadge(provider)}
             </div>
-            <div style="font-weight:800; color:#1f2937;">${price.toLocaleString('tr-TR')} ₺</div>
           </div>
-          <div class="muted" style="font-size:12px;">${tokens.toLocaleString('tr-TR')} token</div>
-          ${desc ? `<div class="muted" style="font-size:12px; line-height:1.4;">${desc}</div>` : ''}
-          <div style="display:flex; justify-content:flex-end;">
-            <button type="button" class="btn btn-primary" data-action="pa-buy" data-package-id="${p.id}" style="padding:8px 14px; font-size:13px;">Satın Al</button>
+          <div style="text-align:right;">
+            <div style="font-size:11px; color:#64748b; font-weight:600;">Paket Fiyatı</div>
+            <div style="font-weight:900; color:#0f172a; font-size:20px; line-height:1.1;">${price.toLocaleString('tr-TR')} ₺</div>
           </div>
         </div>
-      `;
-    }).join('');
-
-    return `
-      <div style="grid-column: 1 / -1;" data-provider-key="${k}" data-provider="${k}">
-        <div style="font-weight:800; color:#111827; margin: 4px 0 10px 0;">${providerLabel(k)}</div>
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:12px;">
-          ${cards}
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+          <div style="padding:8px 10px; border-radius:8px; background:#ffffff; border:1px solid #e2e8f0;">
+            <div style="font-size:11px; color:#64748b; margin-bottom:2px;">Token</div>
+            <div style="font-size:13px; font-weight:700; color:#1e293b;">${tokens.toLocaleString('tr-TR')}</div>
+          </div>
+          <div style="padding:8px 10px; border-radius:8px; background:#ffffff; border:1px solid #e2e8f0;">
+            <div style="font-size:11px; color:#64748b; margin-bottom:2px;">Tahmini Mesaj</div>
+            <div style="font-size:13px; font-weight:700; color:#1e293b;">${estimatedMessages ? estimatedMessages.toLocaleString('tr-TR') : '-'}</div>
+          </div>
+        </div>
+        ${desc ? `<div class="muted" style="font-size:12px; line-height:1.45; color:#475569;">${desc}</div>` : ''}
+        <div style="display:flex; justify-content:flex-end; margin-top:auto; padding-top:6px;">
+          <button type="button" class="btn btn-primary" data-action="pa-buy" data-package-id="${p.id}" style="padding:9px 16px; font-size:13px; font-weight:700; border-radius:10px;">Satın Al</button>
         </div>
       </div>
     `;
-  });
+  }).join('');
 
-  // listEl itself is a grid; sections take full width and inside they have their own grid
-  listEl.style.gridTemplateColumns = '1fr';
-  listEl.innerHTML = sections.join('');
+  listEl.style.gridTemplateColumns = 'repeat(auto-fit, minmax(260px, 1fr))';
+  listEl.innerHTML = cards;
 }
 
 async function fetchData() {
@@ -635,6 +570,44 @@ async function fetchData() {
     packagesData: data2,
     usageData,
   };
+}
+
+async function submitUpgradeLead(params = {}) {
+  try {
+    const { authFetch } = await import('../../utils/api-helpers.js');
+    const { auth } = await import('../../../../firebase.js');
+    const user = auth?.currentUser;
+    const email = String(user?.email || '').trim();
+    if (!email) return;
+
+    const reason = String(params.reason || 'Token paketleri için yükseltme talebi').trim();
+    const source = String(params.source || 'purchase-assistant-settings').trim();
+    const note = String(params.note || '').trim();
+
+    // Aynı sebep için kısa sürede tekrar lead açmayı engelle
+    const dedupeKey = `upgradeLead:${source}:${reason}`;
+    const lastMs = Number(localStorage.getItem(dedupeKey) || 0);
+    const nowMs = Date.now();
+    if (lastMs > 0 && (nowMs - lastMs) < (12 * 60 * 60 * 1000)) {
+      return;
+    }
+
+    const resp = await authFetch('/api/leads/upgrade', {
+      method: 'POST',
+      body: JSON.stringify({
+        contactEmail: email,
+        contactName: user?.displayName || null,
+        reason,
+        source,
+        note: note || null,
+      }),
+    });
+    if (resp.ok) {
+      localStorage.setItem(dedupeKey, String(nowMs));
+    }
+  } catch (e) {
+    logger.warn('Upgrade lead gönderilemedi (non-critical)', e);
+  }
 }
 
 async function saveSettings() {
@@ -1040,7 +1013,12 @@ function renderRecommendedPackage({ recommendedPackage, plan }) {
 
   const upgradeBtn = el('pa_btn_recommended_upgrade');
   if (upgradeBtn) {
-    upgradeBtn.addEventListener('click', () => {
+    upgradeBtn.addEventListener('click', async () => {
+      await submitUpgradeLead({
+        reason: 'Token paketleri için Premium Plus talebi',
+        source: 'purchase-assistant-recommended-upgrade',
+        note: 'Önerilen paket kartından yükseltme akışı',
+      });
       window.location.href = '/settings.html#billing-plan?reason=token_packages';
     });
   }
@@ -1154,8 +1132,20 @@ async function reload() {
     const MIN_TOKENS = 200; // Default, should match backend
     const lowTokenThreshold = MIN_TOKENS * 5;
     const lowTokenBanner = el('pa_low_token_banner');
+    const lowTokenBannerTitle = el('pa_low_token_banner_title');
+    const lowTokenBannerText = el('pa_low_token_banner_text');
     if (lowTokenBanner) {
-      lowTokenBanner.style.display = balanceTokens < lowTokenThreshold ? 'block' : 'none';
+      if (balanceTokens <= 0) {
+        lowTokenBanner.style.display = 'block';
+        if (lowTokenBannerTitle) lowTokenBannerTitle.textContent = '⛔ Token bakiyeniz bitti';
+        if (lowTokenBannerText) lowTokenBannerText.textContent = 'Token yoksa AI ücretli modeller çalışmaz. Devam etmek için paket satın alın veya ücretsiz modele geçin.';
+      } else if (balanceTokens < lowTokenThreshold) {
+        lowTokenBanner.style.display = 'block';
+        if (lowTokenBannerTitle) lowTokenBannerTitle.textContent = '⚠️ Token bakiyeniz azalıyor';
+        if (lowTokenBannerText) lowTokenBannerText.textContent = 'Paket satın alarak kesintisiz devam edebilirsiniz.';
+      } else {
+        lowTokenBanner.style.display = 'none';
+      }
     }
 
     // Teklifbul Rule v2.8 - Disable dropdowns if forcedFreeMode
@@ -1173,6 +1163,10 @@ async function reload() {
       m => m.provider === settings.provider && m.model === settings.model
     ) : null;
     updateModelSourceDisplay(currentModelForSource);
+    renderModelAccessHints({
+      modelAccessHints: settingsData.modelAccessHints || null,
+      plan,
+    });
 
     // Teklifbul Rule v3.5.0 - Model Status Line
     const modelStatusEl = el('pa_model_status');
@@ -1342,9 +1336,6 @@ async function reload() {
     el('pa_dictionaryLearning').checked = !!settings.dictionaryLearning;
 
     renderPackages({ plan, packages });
-
-    // Teklifbul Rule v1.0 - Render token pricing tables
-    renderTokenPricingTables(plan);
 
     // Teklifbul Rule v3.19 - Render debug meta panel (admin only)
     if (typeof window !== 'undefined' && window.__TB_IS_ADMIN === true) {
@@ -1539,6 +1530,15 @@ function bindHandlersOnce() {
     btn?.click();
   });
 
+  el('pa_btn_open_billing_for_models')?.addEventListener('click', async () => {
+    await submitUpgradeLead({
+      reason: 'AI model erişimi için yükseltme talebi',
+      source: 'purchase-assistant-model-access-hint',
+      note: 'Model erişim bilgi kutusundan yönlendirildi',
+    });
+    window.location.href = '/settings.html#billing-plan?reason=token_packages';
+  });
+
   // Teklifbul Rule v3.5.2 - Restore Paid button
   const restorePaidBtn = el('pa_btn_restore_paid');
   if (restorePaidBtn) {
@@ -1587,23 +1587,6 @@ function bindHandlersOnce() {
       } finally {
         restorePaidBtn.disabled = false;
         restorePaidBtn.textContent = originalText;
-      }
-    });
-  }
-
-  // Teklifbul Rule v3.5.0 - Token Packages button (scroll to packages section)
-  const tokenPackagesBtn = el('pa_btn_token_packages');
-  if (tokenPackagesBtn) {
-    tokenPackagesBtn.addEventListener('click', () => {
-      const packagesSection = el('pa_card_packages');
-      if (packagesSection) {
-        packagesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        // Highlight briefly
-        const originalBg = packagesSection.style.background;
-        packagesSection.style.background = '#fef3c7';
-        setTimeout(() => {
-          packagesSection.style.background = originalBg;
-        }, 2000);
       }
     });
   }
@@ -1760,6 +1743,47 @@ function updateModelSourceDisplay(currentModel) {
   } else {
     modelSourceEl.style.display = 'none';
   }
+}
+
+function renderModelAccessHints({ modelAccessHints, plan }) {
+  const root = el('pa_model_access_hints');
+  const summaryEl = el('pa_model_access_hints_summary');
+  const textEl = el('pa_model_access_hints_text');
+  const listEl = el('pa_model_access_hints_list');
+  if (!root || !summaryEl || !textEl || !listEl) return;
+
+  const hints = modelAccessHints || {};
+  const totalActive = Number(hints.totalActiveModels || 0);
+  const availableCount = Number(hints.availableModelsCount || 0);
+  const lockedCount = Number(hints.lockedModelsCount || 0);
+  const lockedModels = Array.isArray(hints.lockedModels) ? hints.lockedModels : [];
+
+  if (!totalActive || lockedCount <= 0) {
+    root.style.display = 'none';
+    return;
+  }
+
+  summaryEl.textContent = `Model erişim özeti: ${availableCount}/${totalActive} model açık`;
+  textEl.textContent = lockedCount > 0
+    ? (plan?.isPremiumPlus
+      ? `${lockedCount} model paket/entitlement nedeniyle kapalı.`
+      : `${lockedCount} model plan/paket nedeniyle kapalı.`)
+    : 'Tüm aktif modeller erişilebilir.';
+
+  if (lockedModels.length > 0) {
+    listEl.innerHTML = `
+      <details>
+        <summary style="cursor:pointer; font-weight:600; color:#334155;">Hangi modeller kilitli?</summary>
+        <ul style="margin:8px 0 0 16px; padding:0; color:#475569;">
+          ${lockedModels.map(item => `<li style="margin:2px 0;">${item.label} — ${item.reason || 'Erişim kısıtı'}</li>`).join('')}
+        </ul>
+      </details>
+    `;
+  } else {
+    listEl.innerHTML = '';
+  }
+
+  root.style.display = 'block';
 }
 
 

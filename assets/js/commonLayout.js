@@ -5,6 +5,7 @@
 
 import { setLanguage, t } from './i18n.js';
 import { logger } from '../../src/shared/log/logger.js';
+import { openCookieSettings } from './cookieConsent.js';
 
 /**
  * Initialize header functionality
@@ -124,8 +125,23 @@ function initHeader() {
  * Initialize footer functionality
  */
 function initFooter() {
-  // Footer links are handled by regular anchor tags
-  // Add any footer-specific functionality here if needed
+  const footerBottom = document.querySelector('.footer-bottom') || document.querySelector('.site-footer');
+  if (!footerBottom) return;
+  if (document.getElementById('footer-cookie-settings-btn')) return;
+
+  const cookieBtn = document.createElement('button');
+  cookieBtn.id = 'footer-cookie-settings-btn';
+  cookieBtn.type = 'button';
+  cookieBtn.className = 'btn btn-outline btn-sm';
+  cookieBtn.textContent = 'Cerez Ayarlari';
+  cookieBtn.setAttribute('aria-label', 'Cerez ayarlarini ac');
+  cookieBtn.setAttribute('title', 'Cerez ayarlarini ac');
+
+  cookieBtn.addEventListener('click', () => {
+    openCookieSettings();
+  });
+
+  footerBottom.appendChild(cookieBtn);
 }
 
 /**

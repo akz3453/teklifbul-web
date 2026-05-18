@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin AI Katalog Yönetimi</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+      background: #f9fafb;
+      color: #111827;
+    }
+    body:not(.admin-verified) {
+      display: none !important;
+    }
+    .section {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 16px;
+    }
+    .muted {
+      color: #6b7280;
+      font-size: 13px;
+      margin: 0 0 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="section">
+    <h3 style="margin:0 0 6px;">🧠 AI Katalog Yönetimi</h3>
+    <p class="muted">AI model kataloğu ve token paketlerini yönetin.</p>
+    <div id="adminAiCatalogRoot">
+      <div style="padding:16px; color:#6b7280;">Yükleniyor...</div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { requireAuth } from '/firebase.js';
+    import { logger } from '/src/shared/log/logger.js';
+    import { toast } from '/src/shared/ui/toast.js';
+    import { isAdmin } from '/src/shared/utils/admin-helper.js';
+    import { loadAdminAiCatalogPage } from '/assets/js/pages/settings/admin-ai-catalog.js';
+
+    logger.group('Admin AI Catalog Page');
+    try {
+      const user = await requireAuth();
+      if (!user) {
+        window.location.href = '/login.html';
+        throw new Error('Auth required');
+      }
+      const isAdminUser = await isAdmin(user);
+      if (!isAdminUser) {
+        toast.error('Bu sayfa için admin yetkisi gerekiyor');
+        window.location.href = '/pages/admin/dashboard.html';
+        throw new Error('Admin required');
+      }
+      document.body.classList.add('admin-verified');
+      await loadAdminAiCatalogPage();
+    } catch (error) {
+      logger.error('Admin AI catalog sayfası açılamadı', error);
+    } finally {
+      logger.end();
+    }
+  </script>
+</body>
+</html>

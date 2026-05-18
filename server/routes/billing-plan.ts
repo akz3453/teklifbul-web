@@ -14,6 +14,8 @@ import { getCompanyIdFromRequest } from '../src/services/permissionService.js';
 import { getCompanyPlanFlags } from '../services/purchaseAssistantAvailabilityService.js';
 import { getAiMinTokens } from '../services/aiMinTokens.js';
 import { getCompanyAiWallet } from '../services/companyAiWalletService.js';
+import { getAccountSubscriptionSummary } from '../services/subscriptionService.js';
+import { isPremiumBypassUser } from '../utils/premiumBypass.js';
 
 const router = Router();
 
@@ -40,15 +42,38 @@ async function getCompanyContext(req: AuthenticatedRequest): Promise<{ companyId
   const db = await getAdminDb();
   if (!db) return null;
 
-  const userDoc = await db.collection('users').doc(userId).get();
-  if (!userDoc.exists) return null;
-
-  const userData = userDoc.data() || {};
-  const companyId = headerCompanyId || resolveSharedCompanyId(userData);
+  let companyId = await getCompanyIdFromRequest(req);
+  if (!companyId && headerCompanyId) {
+    companyId = headerCompanyId;
+  }
+  if (!companyId) {
+    const userDoc = await db.collection('users').doc(userId).get();
+    if (userDoc.exists) {
+      const userData = userDoc.data() || {};
+      companyId = resolveSharedCompanyId(userData);
+    }
+  }
   if (!companyId) return null;
 
-  const planFlags = await getCompanyPlanFlags(companyId);
-  return { companyId, planId: planFlags.planId };
+  // Teklifbul Rule v1.0 - Keep billing plan resolution aligned with purchase-assistant-settings
+  let planId: string | null = null;
+  try {
+    const cdoc = await db.collection('companies').doc(companyId).get();
+    const cdata = cdoc.exists ? (cdoc.data() || {}) : {};
+    planId = cdata.planId || cdata.plan || cdata.subscriptionPlanId || cdata.subscription?.planId || null;
+  } catch (e) {
+    logger.warn('Billing plan: company plan read failed, falling back to account summary', { error: (e as any)?.message || e });
+  }
+  if (!planId) {
+    try {
+      const summary = await getAccountSubscriptionSummary(userId);
+      planId = summary.plan.planId || null;
+    } catch (e) {
+      logger.warn('Billing plan: account summary fallback failed', { userId, error: (e as any)?.message || e });
+    }
+  }
+  const resolvedPlanId = isPremiumBypassUser(req.user) ? 'premium_plus_admin' : String(planId || 'free');
+  return { companyId, planId: resolvedPlanId };
 }
 
 function getPlanName(planId: string): string {

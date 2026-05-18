@@ -255,10 +255,9 @@ Sorun çıkarsa:
 git status   # temiz olmalı
 git pull origin main
 npm ci
-npm run build:api
-npm run build
 npm run lint
-npm run smoke   # lokal sağlık kontrolü
+npm run preflight   # build:api + build + smoke (tek komut)
+# Hızlı kontrol (smoke atlanır): npm run preflight:quick
 
 # 1. Firebase login
 firebase login
@@ -294,6 +293,7 @@ curl https://<your-domain>/health
 
 - Build / type / lint sağlığı
 - Smoke test scripti (`npm run smoke`)
+- Deploy öncesi tek komut (`npm run preflight` / `npm run preflight:quick`)
 - Env validator (`server/env-validator.ts`)
 - Firebase rules (firestore + storage) audit edildi
 - `firebase.json` storage rules eklendi

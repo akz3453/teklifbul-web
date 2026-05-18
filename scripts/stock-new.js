@@ -69,7 +69,7 @@ function collectFormData() {
       height: num('#fieldDimHeight'),
       length: num('#fieldDimLength'),
     },
-    // Fiyat
+    // Fiyat (KDV hariç net birim; satış formunda unitPrice olarak kullanılır — Teklifbul Rule v1.0)
     lastPurchasePrice: num('#fieldPurchasePrice') || 0,
     salePrice: num('#fieldSalePrice') || 0,
     currency: str('#fieldCurrency') || 'TRY',

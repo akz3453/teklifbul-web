@@ -14,6 +14,7 @@ import { validateRequest } from '../utils/input-validation.js';
 import { z } from 'zod';
 import { FieldValue } from 'firebase-admin/firestore';
 import { computeAvailableModels } from '../services/purchaseAssistantAvailabilityService.js';
+import { isPremiumBypassUser } from '../utils/premiumBypass.js';
 
 function resolveSharedCompanyId(userData: any): string | null {
   const cid = userData?.companyId;
@@ -44,6 +45,37 @@ function computePlanFlags(planId: string | null | undefined) {
   const isPremiumPlus = pid.includes('premium_plus');
   const isPremium = isPremiumPlus || pid.includes('premium');
   return { planId: pid, isPremium, isPremiumPlus };
+}
+
+function computeModelAccessHints(params: {
+  catalog: any[];
+  availableModels: any[];
+  isPremiumPlus: boolean;
+}) {
+  const { catalog, availableModels, isPremiumPlus } = params;
+  const activeCatalog = (catalog || [])
+    .filter((m: any) => m && m.isActive !== false && m.provider !== 'ollama');
+  const availableSet = new Set(
+    (availableModels || []).map((m: any) => `${String(m.provider || '')}::${String(m.model || '')}`)
+  );
+
+  const lockedModels = activeCatalog
+    .filter((m: any) => !availableSet.has(`${String(m.provider || '')}::${String(m.model || '')}`))
+    .map((m: any) => ({
+      provider: String(m.provider || ''),
+      model: String(m.model || ''),
+      label: String(m.label || `${m.provider}/${m.model}`),
+      reason: !isPremiumPlus
+        ? 'Premium Plus plan gerekli'
+        : (m.freeEligible === true ? 'Geçici erişim kısıtı' : 'Paket/entitlement gerekli'),
+    }));
+
+  return {
+    totalActiveModels: activeCatalog.length,
+    availableModelsCount: (availableModels || []).length,
+    lockedModelsCount: lockedModels.length,
+    lockedModels: lockedModels.slice(0, 20),
+  };
 }
 
 const router = Router();
@@ -89,7 +121,9 @@ router.get('/', verifyToken, async (req: AuthenticatedRequest, res) => {
       const summary = await getAccountSubscriptionSummary(userId);
       planId = summary.plan.planId;
     }
-    const plan = computePlanFlags(planId);
+    const plan = isPremiumBypassUser(req.user)
+      ? computePlanFlags('premium_plus_admin')
+      : computePlanFlags(planId);
 
     // Settings doc
     const settingsRef = db.collection('companies').doc(companyId).collection('settings').doc('purchaseAssistant');
@@ -120,6 +154,13 @@ router.get('/', verifyToken, async (req: AuthenticatedRequest, res) => {
     const availableModels = await computeAvailableModels({
       db,
       companyId,
+      isPremiumPlus: plan.isPremiumPlus,
+    });
+    const catalogSnap = await db.collection('ai_model_catalog').get();
+    const catalogModels = catalogSnap.docs.map((d: any) => ({ ...(d.data() || {}) }));
+    const modelAccessHints = computeModelAccessHints({
+      catalog: catalogModels,
+      availableModels,
       isPremiumPlus: plan.isPremiumPlus,
     });
 
@@ -155,6 +196,7 @@ router.get('/', verifyToken, async (req: AuthenticatedRequest, res) => {
       },
       packages: [],
       availableModels,
+      modelAccessHints,
       // Teklifbul Rule v3.1 - Today paid usage
       todayPaidUsage,
     });
@@ -195,7 +237,9 @@ router.post('/', verifyToken, validateRequest({ body: postSchema }), async (req:
       const summary = await getAccountSubscriptionSummary(userId);
       planId = summary.plan.planId;
     }
-    const plan = computePlanFlags(planId);
+    const plan = isPremiumBypassUser(req.user)
+      ? computePlanFlags('premium_plus_admin')
+      : computePlanFlags(planId);
 
     const body = req.body as any;
     const provider = String(body.provider || '').trim();

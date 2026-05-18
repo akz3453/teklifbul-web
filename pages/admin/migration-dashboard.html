@@ -234,8 +234,10 @@
       const tokenResult = await user.getIdTokenResult();
       const claims = tokenResult.claims || {};
       
-      // Admin veya ops kontrolü
-      const isAdmin = claims.admin === true || claims.role === 'admin';
+      // Admin veya ops kontrolü (claim + email allowlist fallback)
+      const adminEmailList = `${window.ADMIN_EMAILS || ''}`.split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
+      if (!adminEmailList.length) adminEmailList.push('akyildizfaruk@gmail.com');
+      const isAdmin = claims.admin === true || claims.role === 'admin' || (user.email && adminEmailList.includes(String(user.email).toLowerCase()));
       const isOps = claims.ops === true || claims.role === 'ops';
       
       logger.info('User claims check', {

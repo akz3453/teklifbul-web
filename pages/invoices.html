@@ -39,6 +39,26 @@
     .pager button { padding: 6px 12px; border: 1px solid #d1d5db; background: #fff; border-radius: 6px; cursor: pointer; }
     .pager button:disabled { opacity: 0.5; cursor: not-allowed; }
     .summary { color: #6b7280; font-size: 13px; }
+    .section { margin: 20px 0; }
+    .section h2 { margin: 0 0 12px 0; border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; }
+    .quick-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+    }
+    .quick-card {
+      display: block;
+      text-decoration: none;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 14px;
+      color: #111827;
+      transition: all 0.2s;
+    }
+    .quick-card:hover { border-color: #2563eb; box-shadow: 0 4px 10px rgba(37, 99, 235, 0.15); }
+    .quick-card-title { display: block; font-weight: 700; margin-bottom: 4px; }
+    .quick-card-desc { display: block; color: #6b7280; font-size: 12px; }
 
     /* Dark Mode */
     html[data-theme="dark"] body { background: #111827; color: #f9fafb; }
@@ -50,6 +70,13 @@
       background: #111827; border-color: #374151; color: #f9fafb;
     }
     html[data-theme="dark"] tr:hover { background: #374151; }
+    html[data-theme="dark"] .section h2 { border-bottom-color: #374151; }
+    html[data-theme="dark"] .quick-card {
+      background: #1f2937;
+      border-color: #374151;
+      color: #f9fafb;
+    }
+    html[data-theme="dark"] .quick-card-desc { color: #d1d5db; }
   </style>
 </head>
 <body>
@@ -59,19 +86,53 @@
     <div class="tb-breadcrumb">
       <span class="tb-crumb"><a href="/dashboard.html">🏠 Ana Sayfa</a></span>
       <span class="tb-sep">›</span>
-      <span class="tb-crumb"><a href="/pages/invoices.html">🧾 Faturalama</a></span>
+      <span class="tb-crumb"><a href="/pages/sales.html">💼 Satışlar</a></span>
       <span class="tb-sep">›</span>
-      <span class="tb-crumb">📋 Fatura Listesi</span>
+      <span class="tb-crumb">🧾 Faturalama</span>
     </div>
 
     <div style="display: flex; justify-content: space-between; align-items: flex-end; margin: 20px 0;">
       <div>
-        <h1>📋 Fatura Listesi</h1>
-        <p style="color: #6b7280; margin: 4px 0 0 0;">Oluşturulan ve gönderilen e-faturalarınızı yönetin.</p>
+        <h1>🧾 Faturalama</h1>
+        <p style="color: #6b7280; margin: 4px 0 0 0;">Fatura ve irsaliye işlemlerini tek yerden yönetin.</p>
       </div>
-      <div style="display:flex;gap:8px;">
-        <a href="/pages/invoice-import.html" class="btn btn-secondary">📥 İçe Aktar</a>
-        <a href="/pages/incoming-docs.html" class="btn btn-secondary">📩 Gelen e-Belgeler</a>
+    </div>
+
+    <div class="section">
+      <h2>🧾 Faturalama İşlemleri</h2>
+      <div class="quick-grid">
+        <a class="quick-card" href="/pages/invoices.html">
+          <span class="quick-card-title">📋 Fatura Listesi</span>
+          <span class="quick-card-desc">Oluşturulan faturaları görüntüleyin.</span>
+        </a>
+        <a class="quick-card" href="/pages/invoice-direct-new.html">
+          <span class="quick-card-title">➕ Sıfırdan Fatura</span>
+          <span class="quick-card-desc">Yeni faturayı manuel oluşturun.</span>
+        </a>
+        <a class="quick-card" href="/pages/invoice-new.html">
+          <span class="quick-card-title">🧾 Satıştan Fatura</span>
+          <span class="quick-card-desc">Satış kaydından otomatik fatura üretin.</span>
+        </a>
+        <a class="quick-card" href="/pages/invoice-import.html">
+          <span class="quick-card-title">📥 Fatura İçe Aktar</span>
+          <span class="quick-card-desc">Toplu fatura verisini içeri alın.</span>
+        </a>
+        <a class="quick-card" href="/pages/delivery-notes.html">
+          <span class="quick-card-title">🚚 İrsaliye Listesi</span>
+          <span class="quick-card-desc">Mevcut irsaliyeleri yönetin.</span>
+        </a>
+        <a class="quick-card" href="/pages/delivery-direct-new.html">
+          <span class="quick-card-title">➕ Sıfırdan İrsaliye</span>
+          <span class="quick-card-desc">Yeni irsaliyeyi manuel oluşturun.</span>
+        </a>
+        <a class="quick-card" href="/pages/delivery-note-new.html">
+          <span class="quick-card-title">🚚 Satıştan İrsaliye</span>
+          <span class="quick-card-desc">Satış kaydından irsaliye üretin.</span>
+        </a>
+        <a class="quick-card" href="/pages/incoming-docs.html">
+          <span class="quick-card-title">📩 Gelen e-Belgeler</span>
+          <span class="quick-card-desc">Sisteme gelen e-belgeleri inceleyin.</span>
+        </a>
       </div>
     </div>
 
@@ -137,7 +198,7 @@
   <script type="module" src="/firebase.js"></script>
   <script type="module">
     import { initGlobalHeader } from '/assets/js/ui/header.js';
-    initGlobalHeader({ mount: '#app-header', activeRoute: 'invoicing' });
+    initGlobalHeader({ mount: '#app-header', activeRoute: 'sales' });
   </script>
   <script type="module" src="/scripts/invoices-list.js"></script>
 </body>

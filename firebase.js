@@ -642,6 +642,9 @@ export async function loginWithGoogle() {
       }
     } else if (error.code === 'auth/cancelled-popup-request') {
       throw new Error('Giriş iptal edildi. Lütfen tekrar deneyin.');
+    } else if (error.code === 'auth/multi-factor-auth-required') {
+      // Teklifbul Rule v1.0 - Let caller resolve MFA with getMultiFactorResolver
+      throw error;
     } else if (error.code === 'auth/internal-error') {
       // Internal error usually means Firebase Console configuration issue
       // Try redirect as fallback

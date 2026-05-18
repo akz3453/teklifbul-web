@@ -31,19 +31,30 @@
     .filters select, .filters input { padding: 8px 10px; border-radius: 8px; border: 1px solid #d1d5db; font-size: 14px; min-width: 140px; }
     .filters button { padding: 10px 16px; border-radius: 8px; border: none; background: #2563eb; color: white; font-weight: 600; cursor: pointer; }
     .filters button.secondary { background: #e5e7eb; color: #1f2937; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 10px 8px; border-bottom: 1px solid #e5e7eb; text-align: left; font-size: 13px; }
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    th, td { padding: 10px 8px; border-bottom: 1px solid #e5e7eb; text-align: left; font-size: 13px; vertical-align: middle; }
     th { text-transform: uppercase; font-size: 12px; letter-spacing: 0.05em; color: #6b7280; }
     .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; }
     .badge.active { background: #dcfce7; color: #15803d; }
     .badge.trialing { background: #e0f2fe; color: #0369a1; }
     .badge.past_due { background: #fef3c7; color: #92400e; }
     .badge.canceled { background: #fee2e2; color: #b91c1c; }
-    .status-text { font-size: 12px; color: #6b7280; }
+    .status-text { font-size: 12px; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .table-wrapper { overflow-x: auto; }
     .empty { text-align: center; padding: 20px 10px; color: #6b7280; font-size: 14px; }
-    .btn-edit { padding: 6px 12px; border-radius: 6px; border: none; background: #2563eb; color: white; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .btn-edit { padding: 6px 12px; border-radius: 6px; border: none; background: #2563eb; color: white; font-size: 12px; font-weight: 600; cursor: pointer; display: inline-block; width: auto !important; min-width: 84px; }
     .btn-edit:hover { background: #1d4ed8; }
+    .table-wrapper table tbody tr td { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cell-user-email { font-weight: 600; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cell-user-id { color: #6b7280; font-size: 11px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .plan-pill { display: inline-block; padding: 3px 8px; border-radius: 999px; background: #eff6ff; color: #1d4ed8; font-size: 11px; font-weight: 700; }
+    .col-user { width: 24%; }
+    .col-plan { width: 16%; }
+    .col-status { width: 10%; }
+    .col-start { width: 12%; }
+    .col-renew { width: 12%; }
+    .col-note { width: 16%; }
+    .col-actions { width: 10%; }
     .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
     .modal.active { display: flex; }
     .modal-content { background: white; border-radius: 12px; padding: 24px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; }
@@ -103,13 +114,13 @@
         <table>
           <thead>
             <tr>
-              <th>Kullanıcı</th>
-              <th>Plan</th>
-              <th>Durum</th>
-              <th>Başlangıç</th>
-              <th>Yenileme</th>
-              <th>Not</th>
-              <th>İşlemler</th>
+              <th class="col-user">Kullanıcı</th>
+              <th class="col-plan">Plan</th>
+              <th class="col-status">Durum</th>
+              <th class="col-start">Başlangıç</th>
+              <th class="col-renew">Yenileme</th>
+              <th class="col-note">Not</th>
+              <th class="col-actions">İşlemler</th>
             </tr>
           </thead>
           <tbody id="subscriptionTableBody">
@@ -176,11 +187,12 @@
         <h3>Plan Güncelle</h3>
       </div>
       <div class="form-group">
-        <label>Kullanıcı</label>
+        <label>Kullanıcı ID</label>
         <input type="text" id="modalUserId" readonly style="background: #f3f4f6; cursor: not-allowed;" />
+        <small style="display: block; margin-top: 4px; color: #6b7280; font-size: 12px;">Sistem içi benzersiz kullanıcı kimliği (UID)</small>
       </div>
       <div class="form-group">
-        <label>Email</label>
+        <label>E-posta</label>
         <input type="email" id="modalUserEmail" readonly style="background: #f3f4f6; cursor: not-allowed;" />
       </div>
       <div class="form-group">
@@ -212,8 +224,8 @@
         <small style="display: block; margin-top: 4px; color: #6b7280; font-size: 12px;">Boş bırakılırsa plan tipine göre otomatik hesaplanır</small>
       </div>
       <div class="modal-actions">
-        <button class="btn-cancel" onclick="closePlanEditModal()">İptal</button>
-        <button class="btn-save" onclick="savePlanChange()">✅ Planı Güncelle</button>
+        <button type="button" id="btnModalCancel" class="btn-cancel">İptal</button>
+        <button type="button" id="btnModalSave" class="btn-save">✅ Planı Güncelle</button>
       </div>
     </div>
   </div>
@@ -274,41 +286,67 @@
         });
         return;
       }
-      // Teklifbul Rule v1.0 - XSS Protection
-      const subscriptionsHTML = items.map(item => {
-        const badgeClass = `badge ${item.status?.replace(':', '_') || 'active'}`;
+      subscriptionTableBody.innerHTML = '';
+
+      for (const item of items) {
+        const safeUserId = String(item.userId || item.id || '').trim();
+        const safePlanId = String(item.planId || '').trim();
+        const safeStatus = String(item.status || 'active').trim();
+        const safeEmail = String(item.email || item.userEmail || '').trim();
+        const planDisplayName = String(item.planName || item.planId || '-').trim();
         const cancelInfo = item.cancelAtPeriodEnd ? 'Dönem sonunda iptal' : '—';
-        const planDisplayName = item.planName || item.planId || '-';
-        // Teklifbul Rule v1.0 - XSS Protection
-        const safeEmail = DOMPurify.sanitize(item.email || '', { ALLOWED_TAGS: [] });
-        const safeUserId = DOMPurify.sanitize(item.userId || item.id || '', { ALLOWED_TAGS: [] });
-        const safePlanId = DOMPurify.sanitize(item.planId || '', { ALLOWED_TAGS: [] });
-        const safePlanDisplayName = DOMPurify.sanitize(planDisplayName, { ALLOWED_TAGS: [] });
-        const safeStatus = DOMPurify.sanitize(item.status || '', { ALLOWED_TAGS: [] });
-        const safeCancelInfo = DOMPurify.sanitize(cancelInfo, { ALLOWED_TAGS: [] });
-        const userDisplay = item.email 
-          ? `<strong>${safeEmail}</strong><br><small style="color: #6b7280; font-size: 11px;">${safeUserId}</small>`
-          : safeUserId || '-';
-        return `
-          <tr>
-            <td>${userDisplay}</td>
-            <td id="plan-${safeUserId}">${safePlanDisplayName}</td>
-            <td><span class="${badgeClass}">${safeStatus}</span></td>
-            <td>${formatDate(item.startedAt)}</td>
-            <td>${formatDate(item.currentPeriodEnd)}</td>
-            <td class="status-text">${safeCancelInfo}</td>
-            <td>
-              <button class="btn-edit" onclick="openPlanEditModal('${safeUserId}', '${safePlanId}', '${safeEmail}')">
-                ✏️ Düzenle
-              </button>
-            </td>
-          </tr>
-        `;
-      }).join('');
-      subscriptionTableBody.innerHTML = DOMPurify.sanitize(subscriptionsHTML, {
-        ALLOWED_TAGS: ['tr', 'td', 'span', 'strong', 'br', 'small', 'button'],
-        ALLOWED_ATTR: ['class', 'id', 'onclick', 'style']
-      });
+        const noteText = String(item.note || cancelInfo || '—').trim();
+
+        const tr = document.createElement('tr');
+
+        const tdUser = document.createElement('td');
+        const userDiv = document.createElement('div');
+        userDiv.className = safeEmail ? 'cell-user-email' : 'cell-user-id';
+        userDiv.textContent = safeEmail || 'E-posta yok';
+        tdUser.appendChild(userDiv);
+
+        const tdPlan = document.createElement('td');
+        tdPlan.id = `plan-${safeUserId}`;
+        const planPill = document.createElement('span');
+        planPill.className = 'plan-pill';
+        planPill.textContent = planDisplayName;
+        tdPlan.appendChild(planPill);
+
+        const tdStatus = document.createElement('td');
+        const statusBadge = document.createElement('span');
+        statusBadge.className = `badge ${safeStatus.replace(':', '_') || 'active'}`;
+        statusBadge.textContent = safeStatus;
+        tdStatus.appendChild(statusBadge);
+
+        const tdStart = document.createElement('td');
+        tdStart.textContent = formatDate(item.startedAt);
+
+        const tdRenew = document.createElement('td');
+        tdRenew.textContent = formatDate(item.currentPeriodEnd);
+
+        const tdNote = document.createElement('td');
+        tdNote.className = 'status-text';
+        tdNote.textContent = noteText;
+
+        const tdActions = document.createElement('td');
+        const editBtn = document.createElement('button');
+        editBtn.className = 'btn-edit js-edit-plan';
+        editBtn.setAttribute('data-user-id', safeUserId);
+        editBtn.setAttribute('data-plan-id', safePlanId);
+        editBtn.setAttribute('data-email', safeEmail);
+        editBtn.textContent = '✏️ Düzenle';
+        tdActions.appendChild(editBtn);
+
+        tr.appendChild(tdUser);
+        tr.appendChild(tdPlan);
+        tr.appendChild(tdStatus);
+        tr.appendChild(tdStart);
+        tr.appendChild(tdRenew);
+        tr.appendChild(tdNote);
+        tr.appendChild(tdActions);
+
+        subscriptionTableBody.appendChild(tr);
+      }
     }
 
     function renderUpcoming(items = []) {
@@ -381,7 +419,32 @@
         const planId = filterPlan.value;
         const limit = filterLimit.value || 50;
         const data = await fetchJSON(`/api/admin/subscriptions?status=${status}&planId=${planId}&limit=${limit}`);
-        renderSubscriptions(data.items || []);
+        let items = Array.isArray(data.items) ? data.items : (Array.isArray(data.subscriptions) ? data.subscriptions : []);
+
+        // Teklifbul Rule v1.0 - Company-based premium data fallback
+        if (!items.length) {
+          const companiesData = await fetchJSON(`/api/admin/companies/subscriptions?planId=${planId}&limit=${limit}`);
+          const companies = Array.isArray(companiesData.companies) ? companiesData.companies : [];
+          const mapped = companies.map((company) => {
+            const firstUser = Array.isArray(company.users) && company.users.length ? company.users[0] : null;
+            const effectiveStatus = status === 'all' ? (company.status || 'active') : status;
+            return {
+              id: company.companyId,
+              userId: firstUser?.uid || company.companyId,
+              email: firstUser?.email || company.companyName || company.companyId,
+              planId: company.planId || 'free',
+              planName: company.planId || 'free',
+              status: effectiveStatus,
+              startedAt: company.createdAt || null,
+              currentPeriodEnd: company.expiresAt || null,
+              cancelAtPeriodEnd: false,
+              note: `${company.companyName || '-'} • ${company.userCount || 0} kullanıcı`
+            };
+          });
+          items = mapped;
+        }
+
+        renderSubscriptions(items);
       } catch (error) {
         logger.error('Admin subscription fetch error', error);
         toast.error(MESSAGES.ERROR_ADMIN_SUBSCRIPTION_LIST_LOAD.replace('{message}', error.message));
@@ -443,7 +506,7 @@
       currentEditingEmail = email || '';
       
       document.getElementById('modalUserId').value = userId;
-      document.getElementById('modalUserEmail').value = email || '-';
+      document.getElementById('modalUserEmail').value = (email && String(email).trim()) ? email : 'E-posta bulunamadı';
       document.getElementById('modalNewPlan').value = currentPlanId || 'free';
       
       // AI Provider görünürlüğünü güncelle
@@ -598,11 +661,30 @@
       }
     };
 
+    // Teklifbul Rule v1.0 - Delegated edit button handler (DOMPurify onclick strip güvenli çözüm)
+    subscriptionTableBody?.addEventListener('click', (event) => {
+      const btn = event.target?.closest?.('.js-edit-plan');
+      if (!btn) return;
+      const userId = btn.getAttribute('data-user-id') || '';
+      const planId = btn.getAttribute('data-plan-id') || '';
+      const email = btn.getAttribute('data-email') || '';
+      if (!userId) return;
+      openPlanEditModal(userId, planId, email);
+    });
+
     // Modal dışına tıklanınca kapat
     document.getElementById('planEditModal').addEventListener('click', function(e) {
       if (e.target === this) {
         closePlanEditModal();
       }
+    });
+
+    // Teklifbul Rule v1.0 - Modal action buttons (CSP-safe, inline onclick yok)
+    document.getElementById('btnModalCancel')?.addEventListener('click', () => {
+      closePlanEditModal();
+    });
+    document.getElementById('btnModalSave')?.addEventListener('click', async () => {
+      await savePlanChange();
     });
 
     document.getElementById('btnRefreshSubscriptions').addEventListener('click', loadSubscriptions);

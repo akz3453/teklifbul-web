@@ -4,14 +4,74 @@
  *
  * User-based 2FA (SMS / Google Authenticator TOTP) management UI.
  * CSP-safe: no inline handlers, event delegation only.
+ *
+ * SMS MFA: firebase/auth (npm, projede firebase ^12.x) — CDN auth ile karıştırılmaz.
  */
 
-import { auth } from '../../../../firebase.js';
+import {
+  getAuth,
+  getIdTokenResult,
+  multiFactor,
+  PhoneAuthProvider,
+  PhoneMultiFactorGenerator,
+  RecaptchaVerifier,
+} from 'firebase/auth';
+import { app, auth } from '../../../../firebase.js';
 import { logger } from '../../../../src/shared/log/logger.js';
 import { toast } from '../../../../src/shared/ui/toast.js';
 
 let initialized = false;
 let busy = false;
+/** @type {import('firebase/auth').RecaptchaVerifier | null} */
+let recaptchaVerifier = null;
+/** @type {number | null} */
+let recaptchaWidgetId = null;
+
+const SMS_MFA_ENABLED = true;
+const RECENT_LOGIN_MAX_AGE_MS = 5 * 60 * 1000;
+
+/**
+ * Network'te mfaEnrollment:start gövdesini yakala (400 gövdesi için).
+ * Teklifbul Rule v1.0 — tek sefer patch
+ */
+function installMfaEnrollmentFetchLogger() {
+  if (typeof window === 'undefined' || window.__TB_MFA_ENROLLMENT_FETCH_LOGGER__) return;
+  window.__TB_MFA_ENROLLMENT_FETCH_LOGGER__ = true;
+  // Sokak/adres JSON vb. istekler doğrudan native fetch kullansın (404 konsolu MFA dosyasına yazılmasın)
+  if (!window.__TEKLIFBUL_NATIVE_FETCH__) {
+    window.__TEKLIFBUL_NATIVE_FETCH__ = window.fetch.bind(window);
+  }
+  const orig = window.__TEKLIFBUL_NATIVE_FETCH__;
+  window.fetch = async function patchedFetch(input, init) {
+    const response = await orig(input, init);
+    const url = typeof input === 'string' ? input : input?.url || '';
+    const u = String(url);
+    if (u.includes('identitytoolkit.googleapis.com') && u.includes('mfaEnrollment')) {
+      try {
+        const clone = response.clone();
+        const text = await clone.text();
+        let body = text;
+        try {
+          body = JSON.parse(text);
+        } catch {
+          /* ham metin */
+        }
+        if (!response.ok) {
+          logger.error('Identity Toolkit mfaEnrollment HTTP yanıtı', {
+            status: response.status,
+            statusText: response.statusText,
+            url: u.split('?')[0],
+            body,
+          });
+          console.error('mfaEnrollment:start response body', body);
+        }
+      } catch (logErr) {
+        logger.warn('mfaEnrollment fetch log hatası', logErr);
+      }
+    }
+    return response;
+  };
+}
 
 function root() {
   return document.getElementById('securityMfaRoot');
@@ -34,9 +94,42 @@ function safeHtml(s) {
     .replaceAll("'", '&#039;');
 }
 
+function getLastSignInAgeMs(user) {
+  try {
+    const lastSignInRaw = user?.metadata?.lastSignInTime;
+    const lastSignInAt = lastSignInRaw ? new Date(lastSignInRaw).getTime() : 0;
+    if (!Number.isFinite(lastSignInAt) || lastSignInAt <= 0) return Number.POSITIVE_INFINITY;
+    return Date.now() - lastSignInAt;
+  } catch {
+    return Number.POSITIVE_INFINITY;
+  }
+}
+
+function isRecentLogin(user) {
+  return getLastSignInAgeMs(user) <= RECENT_LOGIN_MAX_AGE_MS;
+}
+
+function extractAuthCode(error) {
+  const direct = error?.code || error?.errorInfo?.code;
+  if (direct) return String(direct);
+  const msg = String(error?.message || '').toLowerCase();
+  if (msg.includes('requires-recent-login')) return 'auth/requires-recent-login';
+  if (msg.includes('multi-factor-auth-required')) return 'auth/multi-factor-auth-required';
+  if (msg.includes('invalid-app-credential')) return 'auth/invalid-app-credential';
+  if (msg.includes('invalid-phone-number')) return 'auth/invalid-phone-number';
+  return '';
+}
+
+function throwRecentLoginRequired() {
+  const err = new Error('Bu işlem için yakın zamanda yeniden giriş doğrulaması gerekli.');
+  err.code = 'auth/requires-recent-login';
+  throw err;
+}
+
 async function loadAuthMfaApis() {
   const mod = await import('https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js');
   return {
+    getAuth: mod.getAuth,
     multiFactor: mod.multiFactor,
     PhoneAuthProvider: mod.PhoneAuthProvider,
     RecaptchaVerifier: mod.RecaptchaVerifier,
@@ -47,7 +140,45 @@ async function loadAuthMfaApis() {
     reauthenticateWithCredential: mod.reauthenticateWithCredential,
     EmailAuthProvider: mod.EmailAuthProvider,
     GoogleAuthProvider: mod.GoogleAuthProvider,
+    getIdTokenResult: mod.getIdTokenResult,
   };
+}
+
+async function refreshAuthCredential() {
+  const user = auth.currentUser;
+  if (!user) return;
+  try {
+    await user.reload();
+  } catch {
+    /* ignore */
+  }
+  try {
+    await user.getIdToken(true);
+  } catch {
+    /* ignore */
+  }
+}
+
+async function ensureRecentLoginOrThrow() {
+  const user = auth.currentUser;
+  if (!user) throw new Error('Kullanıcı yok');
+  try {
+    const tokenResult = await getIdTokenResult(user, false);
+    const authTimeSec = Number(tokenResult?.claims?.auth_time || 0);
+    const authTimeMs = authTimeSec * 1000;
+    if (Number.isFinite(authTimeMs) && authTimeMs > 0) {
+      const tokenAgeMs = Date.now() - authTimeMs;
+      if (tokenAgeMs > RECENT_LOGIN_MAX_AGE_MS) {
+        throwRecentLoginRequired();
+      }
+      return;
+    }
+  } catch (e) {
+    if (extractAuthCode(e) === 'auth/requires-recent-login') throw e;
+  }
+  if (!isRecentLogin(user)) {
+    throwRecentLoginRequired();
+  }
 }
 
 function renderShell() {
@@ -98,8 +229,8 @@ function renderShell() {
             QR kod ile uygulamanıza ekleyip 6 haneli kod üretirsiniz (TOTP).
           </div>
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            <button type="button" class="btn btn-primary" data-action="mfa-totp-start" style="padding:8px 12px; font-size:13px;">Kur</button>
-            <button type="button" class="btn btn-secondary" data-action="mfa-totp-remove" style="padding:8px 12px; font-size:13px;">Kaldır</button>
+            <button type="button" id="mfa_totp_start_btn" class="btn btn-primary" data-action="mfa-totp-start" style="padding:8px 12px; font-size:13px;">Kur</button>
+            <button type="button" id="mfa_totp_remove_btn" class="btn btn-secondary" data-action="mfa-totp-remove" style="padding:8px 12px; font-size:13px;">Kaldır</button>
           </div>
           <div id="mfa_totp_panel" style="display:none; margin-top:12px; padding:12px; background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px;">
             <div class="muted" style="font-size:12px; margin-bottom:8px;">1) QR’ı okutun 2) 6 haneli kodu girin</div>
@@ -119,10 +250,11 @@ function renderShell() {
           <div style="font-weight:800; color:#111827; margin-bottom:6px;">SMS ile Giriş Onayı</div>
           <div class="muted" style="font-size:12px; line-height:1.4; margin-bottom:10px;">
             Telefon numaranıza doğrulama kodu gönderilir.
+            ${SMS_MFA_ENABLED ? '' : '<br><strong>Geçici olarak devre dışı:</strong> Firebase SMS MFA için reCAPTCHA zorunlu.'}
           </div>
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            <button type="button" class="btn btn-primary" data-action="mfa-sms-start" style="padding:8px 12px; font-size:13px;">Kur</button>
-            <button type="button" class="btn btn-secondary" data-action="mfa-sms-remove" style="padding:8px 12px; font-size:13px;">Kaldır</button>
+            <button type="button" id="mfa_sms_start_btn" class="btn btn-primary" data-action="mfa-sms-start" style="padding:8px 12px; font-size:13px;" ${SMS_MFA_ENABLED ? '' : 'disabled title="SMS MFA geçici olarak kapalı"'}>Kur</button>
+            <button type="button" id="mfa_sms_remove_btn" class="btn btn-secondary" data-action="mfa-sms-remove" style="padding:8px 12px; font-size:13px;">Kaldır</button>
           </div>
           <div id="mfa_sms_panel" style="display:none; margin-top:12px; padding:12px; background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px;">
             <div style="margin-bottom:10px;">
@@ -130,7 +262,7 @@ function renderShell() {
               <input id="mfa_sms_phone" type="text" placeholder="+90xxxxxxxxxx" style="margin-top:6px;" />
               <div class="muted" style="font-size:11px; margin-top:6px;">Örn: +905xxxxxxxxx</div>
             </div>
-            <div id="mfa_recaptcha" style="min-height:48px;"></div>
+            <div id="recaptcha-container" style="min-height:78px;" title="Güvenlik doğrulaması"></div>
             <div style="display:flex; justify-content:flex-end; gap:8px;">
               <button type="button" class="btn btn-primary" data-action="mfa-sms-send" style="padding:8px 12px; font-size:13px;">Kod Gönder</button>
               <button type="button" class="btn btn-secondary" data-action="mfa-sms-cancel" style="padding:8px 12px; font-size:13px;">Vazgeç</button>
@@ -152,8 +284,6 @@ function renderShell() {
 async function getEnrolledFactors() {
   const user = auth.currentUser;
   if (!user) return [];
-  const { multiFactor } = await loadAuthMfaApis();
-  if (!multiFactor) return [];
   return multiFactor(user).enrolledFactors || [];
 }
 
@@ -171,6 +301,14 @@ function renderFactors(factors) {
   if (!factors || !factors.length) {
     statusEl.textContent = 'Pasif (2FA etkin değil)';
     listEl.innerHTML = '';
+    const totpStartBtn = document.getElementById('mfa_totp_start_btn');
+    const totpRemoveBtn = document.getElementById('mfa_totp_remove_btn');
+    const smsStartBtn = document.getElementById('mfa_sms_start_btn');
+    const smsRemoveBtn = document.getElementById('mfa_sms_remove_btn');
+    if (totpStartBtn) totpStartBtn.style.display = '';
+    if (totpRemoveBtn) totpRemoveBtn.style.display = 'none';
+    if (smsStartBtn) smsStartBtn.style.display = SMS_MFA_ENABLED ? '' : 'none';
+    if (smsRemoveBtn) smsRemoveBtn.style.display = 'none';
     return;
   }
 
@@ -181,6 +319,19 @@ function renderFactors(factors) {
     return `<span style="background:#e0e7ff;color:#3730a3;font-weight:700;padding:6px 12px;border-radius:999px;font-size:12px;">${safeHtml(label)}${safeHtml(name)}</span>`;
   });
   listEl.innerHTML = chips.join('');
+
+  const factorIds = new Set(factors.map((f) => String(f?.factorId || '').toLowerCase()));
+  const hasTotp = factorIds.has('totp');
+  const hasSms = factorIds.has('phone');
+  const totpStartBtn = document.getElementById('mfa_totp_start_btn');
+  const totpRemoveBtn = document.getElementById('mfa_totp_remove_btn');
+  const smsStartBtn = document.getElementById('mfa_sms_start_btn');
+  const smsRemoveBtn = document.getElementById('mfa_sms_remove_btn');
+
+  if (totpStartBtn) totpStartBtn.style.display = hasTotp ? 'none' : '';
+  if (totpRemoveBtn) totpRemoveBtn.style.display = hasTotp ? '' : 'none';
+  if (smsStartBtn) smsStartBtn.style.display = SMS_MFA_ENABLED && !hasSms ? '' : 'none';
+  if (smsRemoveBtn) smsRemoveBtn.style.display = hasSms ? '' : 'none';
 }
 
 async function refresh() {
@@ -235,9 +386,11 @@ function showReauthUI() {
   if (hasGoogle) {
     btns.push(`<button type="button" class="btn btn-primary" data-action="mfa-reauth-google" style="padding:8px 12px; font-size:13px;">Google ile Yeniden Giriş</button>`);
   }
-  if (hasPassword) {
+  // Teklifbul Rule v1.0 - Google provider varsa şifre seçeneğini gizle (kullanıcı kafa karışıklığı önleme)
+  if (hasPassword && !hasGoogle) {
     btns.push(`<button type="button" class="btn btn-primary" data-action="mfa-reauth-password" style="padding:8px 12px; font-size:13px;">Şifre ile Yeniden Doğrula</button>`);
   }
+  btns.push(`<button type="button" class="btn btn-secondary" data-action="mfa-reauth-signout" style="padding:8px 12px; font-size:13px;">Çıkış Yapıp Yeniden Giriş</button>`);
   btns.push(`<button type="button" class="btn btn-secondary" data-action="mfa-refresh" style="padding:8px 12px; font-size:13px;">Durumu Yenile</button>`);
 
   actions.innerHTML = btns.join('');
@@ -275,7 +428,6 @@ async function sendVerificationEmail() {
 async function unenrollFactor(factorId) {
   const user = auth.currentUser;
   if (!user) throw new Error('Kullanıcı yok');
-  const { multiFactor } = await loadAuthMfaApis();
   const factors = (multiFactor(user).enrolledFactors || []);
   const f = factors.find(x => x.factorId === factorId);
   if (!f) throw new Error('Bu yöntem aktif değil');
@@ -349,54 +501,249 @@ async function startSmsEnroll() {
   if (codeBlock) codeBlock.style.display = 'none';
 }
 
-async function sendSmsCode() {
-  const user = auth.currentUser;
-  if (!user) throw new Error('Kullanıcı yok');
-  await ensureEmailVerifiedOrThrow();
-  const phone = String(document.getElementById('mfa_sms_phone')?.value || '').trim();
-  if (!phone) throw new Error('Telefon gerekli');
+function normalizePhoneNumber(raw) {
+  const input = String(raw || '').trim();
+  if (!input) return '';
 
-  const { multiFactor, PhoneAuthProvider, RecaptchaVerifier } = await loadAuthMfaApis();
-  if (!multiFactor || !PhoneAuthProvider || !RecaptchaVerifier) throw new Error('SMS MFA bu ortamda desteklenmiyor');
+  // Keep only digits and optional leading plus
+  const hasPlus = input.startsWith('+');
+  const digits = input.replace(/\D/g, '');
+  if (!digits) return '';
 
-  const session = await multiFactor(user).getSession();
+  // TR-friendly normalization
+  if (hasPlus) return `+${digits}`;
+  if (digits.startsWith('90')) return `+${digits}`;
+  if (digits.startsWith('0')) return `+90${digits.slice(1)}`;
+  if (digits.length === 10) return `+90${digits}`;
+  return `+${digits}`;
+}
 
-  // Create recaptcha verifier (best effort across SDK signatures)
-  let verifier = null;
+/** @param {unknown} error */
+function serializeFirebaseError(error) {
+  if (!error || typeof error !== 'object') return { message: String(error) };
   try {
-    verifier = new RecaptchaVerifier(auth, 'mfa_recaptcha', { size: 'invisible' });
-  } catch (e1) {
-    try {
-      verifier = new RecaptchaVerifier('mfa_recaptcha', { size: 'invisible' }, auth);
-    } catch (e2) {
-      throw new Error('reCAPTCHA başlatılamadı');
+    const plain = {};
+    for (const k of Object.getOwnPropertyNames(error)) {
+      try {
+        plain[k] = /** @type {Record<string, unknown>} */ (error)[k];
+      } catch {
+        plain[k] = '[unreadable]';
+      }
     }
+    return plain;
+  } catch {
+    return { message: String(error) };
   }
+}
 
-  const provider = new PhoneAuthProvider(auth);
-  const verificationId = await provider.verifyPhoneNumber({ phoneNumber: phone, session }, verifier);
-  window.__TB_MFA_SMS_VERIFICATION_ID__ = verificationId;
+function getNormalizedPhoneNumberFromInput() {
+  const phoneInputEl = document.getElementById('mfa_sms_phone');
+  const phoneRaw = String(phoneInputEl?.value || '').trim();
+  if (!phoneRaw) return '';
+  const phone = normalizePhoneNumber(phoneRaw);
+  if (phoneInputEl) phoneInputEl.value = phone;
+  return phone;
+}
 
-  const codeBlock = document.getElementById('mfa_sms_code_block');
-  if (codeBlock) codeBlock.style.display = 'block';
-  toast.success('SMS kodu gönderildi.');
+async function initRecaptcha() {
+  try {
+    if (recaptchaVerifier) {
+      try {
+        recaptchaVerifier.clear();
+      } catch (clearErr) {
+        logger.warn('recaptchaVerifier.clear failed', clearErr);
+      }
+    }
+    recaptchaVerifier = null;
+    recaptchaWidgetId = null;
+
+    const authInstance = getAuth(app);
+    const host = document.getElementById('recaptcha-container');
+    if (!host) {
+      throw new Error('RECAPTCHA_CONTAINER_MISSING');
+    }
+
+    recaptchaVerifier = new RecaptchaVerifier(authInstance, 'recaptcha-container', {
+      size: 'normal',
+      callback: () => {
+        logger.info('reCAPTCHA solved');
+      },
+      'expired-callback': () => {
+        logger.warn('reCAPTCHA expired');
+      },
+    });
+
+    recaptchaWidgetId = await recaptchaVerifier.render();
+
+    logger.info('reCAPTCHA initialized', {
+      widgetId: recaptchaWidgetId,
+    });
+
+    return recaptchaVerifier;
+  } catch (error) {
+    logger.error('reCAPTCHA init failed', error);
+    throw error;
+  }
+}
+
+/**
+ * Production-debug: ham hata + Identity Toolkit gövdesi (fetch logger ile).
+ * Teklifbul Rule v1.0 — getAuth(app) ile firebase.js oturumu birebir
+ */
+async function sendSmsCode() {
+  const authInstance = getAuth(app);
+
+  try {
+    setBusy(true);
+
+    if (!authInstance.currentUser) {
+      const err = new Error('AUTH_USER_NOT_FOUND');
+      err.code = 'auth/no-current-user';
+      throw err;
+    }
+
+    logger.info('MFA enrollment öncesi kullanıcı metadata', {
+      lastSignInTime: authInstance.currentUser.metadata?.lastSignInTime,
+      creationTime: authInstance.currentUser.metadata?.creationTime,
+    });
+
+    await authInstance.currentUser.reload();
+    const user = authInstance.currentUser;
+
+    await ensureEmailVerifiedOrThrow();
+    await ensureRecentLoginOrThrow();
+    await refreshAuthCredential();
+
+    const phoneNumber = getNormalizedPhoneNumberFromInput();
+
+    logger.info('Starting MFA enrollment', {
+      uid: user.uid,
+      phoneNumber,
+    });
+
+    if (!phoneNumber) {
+      throw Object.assign(new Error('Telefon gerekli'), { code: 'auth/missing-phone-number' });
+    }
+
+    if (!phoneNumber.startsWith('+90')) {
+      throw Object.assign(new Error('INVALID_PHONE_FORMAT'), { code: 'auth/invalid-phone-number' });
+    }
+
+    const enrolledFactors = multiFactor(user).enrolledFactors || [];
+    const alreadyExists = enrolledFactors.some(
+      (f) => f.factorId === 'phone' && f.phoneNumber === phoneNumber
+    );
+
+    if (alreadyExists) {
+      throw Object.assign(new Error('SECOND_FACTOR_EXISTS'), {
+        code: 'auth/second-factor-already-exists',
+      });
+    }
+
+    const verifier = await initRecaptcha();
+
+    logger.info('Getting MFA session');
+
+    const session = await multiFactor(user).getSession();
+
+    logger.info('MFA session created');
+
+    const phoneInfoOptions = {
+      phoneNumber,
+      session,
+    };
+
+    console.log('MFA DEBUG session', session);
+    console.log('MFA DEBUG recaptchaVerifier', verifier);
+    console.log('MFA DEBUG phoneInfoOptions', phoneInfoOptions);
+
+    const provider = new PhoneAuthProvider(authInstance);
+
+    logger.info('Sending SMS verification');
+
+    const verificationId = await provider.verifyPhoneNumber(phoneInfoOptions, verifier);
+
+    window.__TB_MFA_SMS_VERIFICATION_ID__ = verificationId;
+    window.currentMfaVerificationId = verificationId;
+
+    logger.info('SMS sent successfully', {
+      verificationId,
+    });
+
+    toast.success('SMS doğrulama kodu gönderildi');
+
+    const codeBlock = document.getElementById('mfa_sms_code_block');
+    if (codeBlock) codeBlock.style.display = 'block';
+  } catch (error) {
+    const code = extractAuthCode(error) || error?.code || '';
+    logger.error('MFA SMS ERROR', {
+      code,
+      message: error?.message,
+      stack: error?.stack,
+      customData: error?.customData,
+      serverResponse: error?.customData?.serverResponse,
+      serialized: serializeFirebaseError(error),
+    });
+
+    console.error('FULL FIREBASE ERROR', JSON.stringify(serializeFirebaseError(error), null, 2));
+
+    if (typeof grecaptcha !== 'undefined' && recaptchaWidgetId != null) {
+      try {
+        grecaptcha.reset(recaptchaWidgetId);
+      } catch (resetErr) {
+        logger.warn('grecaptcha.reset failed', resetErr);
+      }
+    }
+
+    switch (code) {
+      case 'auth/requires-recent-login':
+        toast.error('Güvenlik nedeniyle tekrar giriş yapmalısınız');
+        showReauthUI();
+        break;
+      case 'auth/invalid-app-credential':
+        toast.error('reCAPTCHA / domain doğrulaması başarısız');
+        break;
+      case 'auth/captcha-check-failed':
+        toast.error('reCAPTCHA doğrulaması başarısız');
+        break;
+      case 'auth/invalid-phone-number':
+        toast.error('Telefon numarası geçersiz (+905551112233 formatında deneyin)');
+        break;
+      case 'auth/quota-exceeded':
+        toast.error('SMS kotası doldu');
+        break;
+      case 'auth/second-factor-already-exists':
+        toast.error('Bu telefon numarası için SMS doğrulaması zaten kayıtlı');
+        break;
+      default:
+        if (error?.message === 'SECOND_FACTOR_EXISTS') {
+          toast.error('Bu telefon numarası için SMS doğrulaması zaten kayıtlı');
+        } else if (error?.message === 'INVALID_PHONE_FORMAT') {
+          toast.error('Telefon numarası +90 ile başlamalı');
+        } else {
+          toast.error(error?.message || 'SMS gönderilemedi');
+        }
+    }
+  } finally {
+    setBusy(false);
+  }
 }
 
 async function confirmSmsEnroll() {
   const user = auth.currentUser;
   if (!user) throw new Error('Kullanıcı yok');
+  await ensureRecentLoginOrThrow();
   const code = String(document.getElementById('mfa_sms_code')?.value || '').trim();
   if (!code) throw new Error('Kod gerekli');
-  const verificationId = window.__TB_MFA_SMS_VERIFICATION_ID__;
+  const verificationId =
+    window.__TB_MFA_SMS_VERIFICATION_ID__ || window.currentMfaVerificationId;
   if (!verificationId) throw new Error('Önce kod gönderin');
-
-  const { multiFactor, PhoneAuthProvider, PhoneMultiFactorGenerator } = await loadAuthMfaApis();
-  if (!multiFactor || !PhoneAuthProvider || !PhoneMultiFactorGenerator) throw new Error('SMS MFA bu ortamda desteklenmiyor');
 
   const cred = PhoneAuthProvider.credential(verificationId, code);
   const assertion = PhoneMultiFactorGenerator.assertion(cred);
   await multiFactor(user).enroll(assertion, 'SMS');
   window.__TB_MFA_SMS_VERIFICATION_ID__ = null;
+  window.currentMfaVerificationId = null;
 }
 
 function bindOnce() {
@@ -427,6 +774,7 @@ function bindOnce() {
         toast.success('Google Authenticator kaldırıldı.');
         await refresh();
       } else if (action === 'mfa-sms-start') {
+        await ensureRecentLoginOrThrow();
         await startSmsEnroll();
       } else if (action === 'mfa-sms-send') {
         await sendSmsCode();
@@ -448,6 +796,7 @@ function bindOnce() {
         await refresh();
       } else if (action === 'mfa-reauth-google') {
         await reauthWithGooglePopup();
+        await refreshAuthCredential();
         toast.success('Yeniden giriş başarılı. Şimdi işlemi tekrar deneyin.');
         await refresh();
       } else if (action === 'mfa-reauth-password') {
@@ -457,23 +806,47 @@ function bindOnce() {
         const pass = String(document.getElementById('mfa_reauth_password_input')?.value || '').trim();
         if (!pass) throw new Error('Şifre gerekli');
         await reauthWithPassword(pass);
+        await refreshAuthCredential();
         toast.success('Yeniden doğrulama başarılı. Şimdi işlemi tekrar deneyin.');
         const pw = document.getElementById('mfa_reauth_password');
         if (pw) pw.style.display = 'none';
         await refresh();
+      } else if (action === 'mfa-reauth-signout') {
+        await auth.signOut();
+        toast.info('Güvenlik için çıkış yapıldı. Lütfen tekrar giriş yapıp SMS kurulumunu yeniden deneyin.');
+        window.location.reload();
       } else if (action === 'mfa-reauth-cancel') {
         const pw = document.getElementById('mfa_reauth_password');
         if (pw) pw.style.display = 'none';
       }
     } catch (e) {
-      const msg = e?.message || 'İşlem başarısız';
-      toast.error(msg);
-      logger.error('MFA action failed', { action, error: e });
-
-      // Teklifbul Rule v1.2 - Friendly handling for requires-recent-login
-      const code = e?.code || e?.errorInfo?.code || '';
+      // Teklifbul Rule v1.0 - requires-recent-login beklenen bir durum, hata gibi davranma
+      const code = extractAuthCode(e);
       if (code === 'auth/requires-recent-login') {
+        const ageMs = getLastSignInAgeMs(auth.currentUser);
+        logger.warn('MFA requires recent login', { action, code, lastSignInAgeMs: ageMs });
+        toast.info('Güvenlik için yeniden doğrulama gerekiyor. "Google ile Yeniden Giriş" butonuna basın.');
         showReauthUI();
+      } else if (code === 'auth/multi-factor-auth-required') {
+        toast.info('Google popup reauth bu hesapta tamamlanamadı. "Çıkış Yapıp Yeniden Giriş" ile oturumu yenileyin, sonra SMS kurulumunu tekrar deneyin.');
+        logger.warn('MFA reauth requires second factor', { action, code });
+      } else if (code === 'auth/invalid-phone-number') {
+        toast.error('Telefon numarası geçersiz. Lütfen +905551112233 formatında girin.');
+        logger.warn('MFA invalid phone number', { action, code });
+      } else if (code === 'auth/invalid-app-credential') {
+        toast.error('SMS doğrulama başlatılamadı. Sayfayı yenileyip tekrar deneyin; sorun sürerse tarayıcıda reklam engelleyici/anti-tracker eklentilerini kapatın.');
+        logger.warn('MFA invalid app credential', { action, code });
+        try {
+          if (recaptchaVerifier && typeof recaptchaVerifier.clear === 'function') {
+            recaptchaVerifier.clear();
+          }
+        } catch {}
+        recaptchaVerifier = null;
+        recaptchaWidgetId = null;
+      } else {
+        const msg = e?.message || 'İşlem başarısız';
+        toast.error(msg);
+        logger.error('MFA action failed', { action, error: e });
       }
     } finally {
       setBusy(false);
@@ -483,6 +856,11 @@ function bindOnce() {
 
 export async function loadSecurityMfaSection() {
   if (!initialized) {
+    installMfaEnrollmentFetchLogger();
+    logger.info('MFA SMS: firebase/auth (npm)', {
+      packageHint: 'dependencies.firebase >= 11 (package.json)',
+      sameAppAsFirebaseJs: true,
+    });
     renderShell();
     bindOnce();
     initialized = true;

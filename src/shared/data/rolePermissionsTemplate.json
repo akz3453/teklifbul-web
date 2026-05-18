@@ -518,6 +518,11 @@
       "group": "Admin / Sistem"
     },
     {
+      "key": "admin.categoryRules.manage",
+      "label": "Kategori Kuralları Yönet",
+      "group": "Admin / Sistem"
+    },
+    {
       "key": "cash.view",
       "label": "Kasa Gör",
       "group": "Kasa/Banka"
@@ -604,6 +609,7 @@
       "edoc.settings.manage": true,
       "admin.metrics.view": true,
       "admin.errors.view": true,
+      "admin.categoryRules.manage": true,
       "cash.view": true,
       "cash.create": true,
       "cash.edit": true,

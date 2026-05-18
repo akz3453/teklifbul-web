@@ -347,10 +347,41 @@ async function performImport() {
   qs('#btnImport').textContent = 'İçe aktarılıyor...';
   
   state.stats = { new: 0, updated: 0, error: 0 };
+
+  // Teklifbul Rule v1.0 - Şirket bağlamı (companyId her satırda gerekli)
+  let companyId = null;
+  try {
+    const ctx = await requireCompanyContext({ redirectOnPending: false });
+    companyId = ctx?.companyId || null;
+  } catch (ctxErr) {
+    logger.warn('Stock import: company context alınamadı', ctxErr);
+  }
+  if (!companyId) {
+    const userDoc = await getDoc(doc(db, 'users', user.uid));
+    const userData = userDoc.exists() ? userDoc.data() : {};
+    companyId =
+      userData.companyId ||
+      userData.activeCompanyId ||
+      (Array.isArray(userData.companies) && userData.companies[0]) ||
+      null;
+  }
+  if (!companyId) {
+    toast.error(
+      (MESSAGES.ERROR_COMPANY_ID_REQUIRED || 'Şirket bilgisi doğrulanamadı') +
+        '. İçe aktarma iptal edildi.'
+    );
+    qs('#btnImport').disabled = false;
+    qs('#btnImport').textContent = 'İçe Aktar';
+    return;
+  }
   
   for (const row of validRows) {
     try {
-      const existingQuery = query(collection(db, 'stocks'), where('sku', '==', row.sku));
+      const existingQuery = query(
+        collection(db, 'stocks'),
+        where('companyId', '==', companyId),
+        where('sku', '==', row.sku)
+      );
       const existingSnap = await getDocs(existingQuery);
       
       // Teklifbul Rule v1.0 - Depo kodunu kontrol et ve doğrula
@@ -359,11 +390,6 @@ async function performImport() {
       if (row.warehouseCode) {
         const warehouseCodeStr = String(row.warehouseCode).trim();
         if (warehouseCodeStr) {
-          // Şirketin depo kodlarını kontrol et
-          const userDoc = await getDoc(doc(db, 'users', user.uid));
-          const userData = userDoc.exists() ? userDoc.data() : {};
-          const companyId = userData.companyId;
-          
           if (companyId) {
             const warehouseQuery = query(
               collection(db, 'stock_locations'),
@@ -461,6 +487,7 @@ async function downloadTemplate() {
       'SIRA',
       'STOK KODU',
       'ÜRÜN ADI',
+      'BARKOD',
       'MARKA',
       'MODEL',
       'BİRİM',
@@ -486,6 +513,7 @@ async function downloadTemplate() {
       { width: 8 },   // Sıra
       { width: 15 },  // Stok Kodu
       { width: 30 },  // Ürün Adı
+      { width: 18 },  // Barkod
       { width: 15 },  // Marka
       { width: 15 },  // Model
       { width: 10 },  // Birim
@@ -555,6 +583,7 @@ async function downloadTemplate() {
       1,
       'STK-001',
       'ÖRNEK ÜRÜN',
+      '8690000000000',
       'ÖRNEK MARKA',
       'MODEL-001',
       'ADET',
@@ -584,7 +613,7 @@ async function downloadTemplate() {
     
     // Teklifbul Rule v1.0 - Depo Kodu sütununa data validation (dropdown) ekle
     if (warehouseCodes.length > 0) {
-      const depoKoduColumn = worksheet.getColumn(13); // M sütunu (Depo Kodu)
+      const depoKoduColumn = worksheet.getColumn(14); // N sütunu (Depo Kodu)
       depoKoduColumn.eachCell((cell, rowNumber) => {
         if (rowNumber > 1) { // Başlık satırı hariç
           cell.dataValidation = {
@@ -629,6 +658,7 @@ async function downloadTemplateXLSX() {
     'SIRA',
     'STOK KODU',
     'ÜRÜN ADI',
+    'BARKOD',
     'MARKA',
     'MODEL',
     'BİRİM',
@@ -649,7 +679,7 @@ async function downloadTemplateXLSX() {
   const ws = XLSX.utils.aoa_to_sheet([headers]);
   
   ws['!cols'] = [
-    { wch: 8 }, { wch: 15 }, { wch: 30 }, { wch: 15 }, { wch: 15 },
+    { wch: 8 }, { wch: 15 }, { wch: 30 }, { wch: 18 }, { wch: 15 }, { wch: 15 },
     { wch: 10 }, { wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 15 },
     { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 25 }, { wch: 22 }, { wch: 15 }, { wch: 20 }
   ];
@@ -682,7 +712,7 @@ async function downloadTemplateXLSX() {
     }
   }
 
-  const exampleRow = [1, 'STK-001', 'ÖRNEK ÜRÜN', 'ÖRNEK MARKA', 'MODEL-001', 'ADET', 20, 100.00, 120.00, 'KOD1', 'KOD2', 'KOD3', warehouseCodes.length > 0 ? warehouseCodes[0] : 'DEPO-001', 1000, 50, '', ''];
+  const exampleRow = [1, 'STK-001', 'ÖRNEK ÜRÜN', '8690000000000', 'ÖRNEK MARKA', 'MODEL-001', 'ADET', 20, 100.00, 120.00, 'KOD1', 'KOD2', 'KOD3', warehouseCodes.length > 0 ? warehouseCodes[0] : 'DEPO-001', 1000, 50, '', ''];
   XLSX.utils.sheet_add_aoa(ws, [exampleRow], { origin: 'A2' });
 
   XLSX.utils.book_append_sheet(wb, ws, 'Stok Kartları');

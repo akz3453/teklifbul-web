@@ -41,6 +41,8 @@ const PREMIUM_NAV_CACHE_TTL_MS = 12 * 60 * 60 * 1000; // 12 saat
 const HEADER_PREFS_STORAGE_PREFIX = 'tb_header_prefs_v1';
 const NON_HIDEABLE_NAV_KEYS = new Set(['dashboard', 'settings']);
 let hiddenNavKeysState = new Set();
+/** Orta menü anahtarları için kullanıcı sırası; null = varsayılan kod sırası */
+let navOrderKeysState = null;
 
 function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
@@ -88,6 +90,9 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
   // Mark as initialized
   headerInitialized = true;
 
+  // Teklifbul Rule v1.0 - Premium kilidi; hash/modal erken acilirsa TDZ olmamasi icin burada baslatilmali
+  let menuCustomizePremiumUnlocked = false;
+
   el.classList.add('global-header');
 
   // New top navbar with dropdowns
@@ -108,9 +113,17 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
       ]
     },
     {
+      key: 'new-requests', icon: '➕', label: 'Yeni Talep Oluştur', href: '/demand-new.html', dropdown: [
+        { icon: '🧾', label: 'Yeni Satın Alma Talebi Oluştur', href: '/demand-new.html' },
+        { icon: '🏢', label: 'Şirket İçi Satın Alma Talebi Oluştur', href: '/internal-demand-new.html' },
+        { icon: '🗂️', label: 'Şirket İçi Satın Alma Taleplerini Yönet', href: '/internal-demands.html' },
+      ]
+    },
+    {
       key: 'sales', icon: '💼', label: 'Satışlar', href: '/pages/sale-new.html', premiumOnly: true, dropdown: [
         { icon: '📋', label: 'Satış Listesi', href: '/pages/sales.html' },
         { icon: '➕', label: 'Yeni Satış', href: '/pages/sale-new.html' },
+        { icon: '🧾', label: 'Faturalama', href: '/pages/invoices.html' },
       ]
     },
     {
@@ -118,26 +131,7 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
         { icon: '📋', label: 'Müşteri Listesi', href: '/pages/customers.html' },
       ]
     },
-    {
-      key: 'invoicing', icon: '🧾', label: 'Faturalama', href: '/pages/invoices.html', premiumOnly: true, dropdown: [
-        { icon: '📋', label: 'Fatura Listesi', href: '/pages/invoices.html' },
-        { icon: '➕', label: 'Sıfırdan Fatura', href: '/pages/invoice-direct-new.html' },
-        { icon: '🧾', label: 'Satıştan Fatura', href: '/pages/invoice-new.html' },
-        { icon: '📥', label: 'Fatura İçe Aktar', href: '/pages/invoice-import.html' },
-        { icon: '🚚', label: 'İrsaliye Listesi', href: '/pages/delivery-notes.html' },
-        { icon: '➕', label: 'Sıfırdan İrsaliye', href: '/pages/delivery-direct-new.html' },
-        { icon: '🚚', label: 'Satıştan İrsaliye', href: '/pages/delivery-note-new.html' },
-        { icon: '📩', label: 'Gelen e-Belgeler', href: '/pages/incoming-docs.html' },
-      ]
-    },
     { key: 'main', icon: '🛍️', label: 'Ana Talep Ekranı', href: '/main-demands.html', dropdown: [] },
-    {
-      key: 'new-requests', icon: '➕', label: 'Yeni Talep Oluştur', href: '/demand-new.html', dropdown: [
-        { icon: '🧾', label: 'Yeni Satın Alma Talebi Oluştur', href: '/demand-new.html' },
-        { icon: '🏢', label: 'Şirket İçi Satın Alma Talebi Oluştur', href: '/internal-demand-new.html' },
-        { icon: '🗂️', label: 'Şirket İçi Satın Alma Taleplerini Yönet', href: '/internal-demands.html' },
-      ]
-    },
     // Stok Takip ayarların soluna
     {
       key: 'inventory', icon: '📦', label: 'Stok Takip', href: '/inventory-index.html', premiumOnly: true, dropdown: [
@@ -170,6 +164,7 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
       key: 'admin-dashboard', icon: '🔐', label: 'Admin Kontrol Paneli', href: '/pages/admin/dashboard.html', dropdown: [
         { icon: '⭐', label: 'Premium Kontrol', href: '/pages/admin/subscription-monitor.html' },
         { icon: '🛡️', label: 'Premium Yönetimi', href: '/pages/admin/premium-control.html' },
+        { icon: '🧠', label: 'AI Katalog Yönetimi', href: '/pages/admin/dashboard.html#ai-catalog' },
         { icon: '🚀', label: 'Veri Göçü Paneli', href: '/pages/admin/migration-dashboard.html' }
       ], restricted: 'admin-menu'
     },
@@ -178,37 +173,69 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
   const currentPath = window.location.pathname + window.location.search;
   const getHeaderPrefsStorageKey = () => `${HEADER_PREFS_STORAGE_PREFIX}:${auth?.currentUser?.uid || 'guest'}`;
 
-  const readHiddenNavKeysFromLocal = () => {
+  const readHeaderPrefsFromLocal = () => {
     try {
       const raw = localStorage.getItem(getHeaderPrefsStorageKey());
-      if (!raw) return new Set();
+      if (!raw) return { hidden: new Set(), navOrder: null };
       const parsed = JSON.parse(raw);
       const keys = Array.isArray(parsed?.hiddenNavKeys) ? parsed.hiddenNavKeys : [];
-      return new Set(keys.filter((k) => typeof k === 'string' && !NON_HIDEABLE_NAV_KEYS.has(k)));
+      const hidden = new Set(keys.filter((k) => typeof k === 'string' && !NON_HIDEABLE_NAV_KEYS.has(k)));
+      let navOrder = Array.isArray(parsed?.navOrderKeys)
+        ? parsed.navOrderKeys.filter((k) => typeof k === 'string')
+        : null;
+      if (!navOrder || navOrder.length === 0) navOrder = null;
+      return { hidden, navOrder };
     } catch (_e) {
-      return new Set();
+      return { hidden: new Set(), navOrder: null };
     }
   };
 
-  const writeHiddenNavKeys = (keys) => {
+  const persistHeaderPrefsToLocal = () => {
     try {
       localStorage.setItem(getHeaderPrefsStorageKey(), JSON.stringify({
-        hiddenNavKeys: Array.from(keys),
+        hiddenNavKeys: Array.from(hiddenNavKeysState),
+        navOrderKeys: navOrderKeysState,
         updatedAt: Date.now()
       }));
     } catch (_e) {
       // localStorage erişilemezse sessizce geç
     }
   };
-  hiddenNavKeysState = readHiddenNavKeysFromLocal();
+
+  const getMiddleKeysDefault = () =>
+    navItems.map((i) => i.key).filter((k) => k !== 'dashboard' && k !== 'settings' && k !== 'admin-dashboard');
+
+  const applyNavOrderKeys = (keys, { persistLocal = true } = {}) => {
+    const allowed = new Set(getMiddleKeysDefault());
+    if (!keys || !Array.isArray(keys) || keys.length === 0) {
+      navOrderKeysState = null;
+    } else {
+      const filtered = keys.filter((k) => allowed.has(k));
+      navOrderKeysState = filtered.length ? filtered : null;
+    }
+    if (persistLocal) persistHeaderPrefsToLocal();
+  };
+
+  const initialPrefs = readHeaderPrefsFromLocal();
+  hiddenNavKeysState = initialPrefs.hidden;
+  navOrderKeysState = initialPrefs.navOrder;
 
   const applyHiddenNavKeys = (keys, { persistLocal = true } = {}) => {
     hiddenNavKeysState = new Set(
       Array.from(keys || []).filter((k) => typeof k === 'string' && !NON_HIDEABLE_NAV_KEYS.has(k))
     );
-    if (persistLocal) {
-      writeHiddenNavKeys(hiddenNavKeysState);
+    if (persistLocal) persistHeaderPrefsToLocal();
+  };
+
+  const getNavItemsInUserOrder = () => {
+    const keyToItem = new Map(navItems.map((i) => [i.key, i]));
+    const middleDefault = getMiddleKeysDefault();
+    let middleOrdered = (navOrderKeysState || []).filter((k) => middleDefault.includes(k));
+    for (const k of middleDefault) {
+      if (!middleOrdered.includes(k)) middleOrdered.push(k);
     }
+    const orderedKeys = ['dashboard', ...middleOrdered, 'settings', 'admin-dashboard'];
+    return orderedKeys.map((k) => keyToItem.get(k)).filter(Boolean);
   };
 
   const hasCachedPremiumAccess = (() => {
@@ -234,7 +261,7 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
     }
   })();
 
-  const buildNav = () => navItems
+  const buildNav = () => getNavItemsInUserOrder()
     .filter((item) => {
       if (NON_HIDEABLE_NAV_KEYS.has(item.key)) return true;
       return !hiddenNavKeysState.has(item.key);
@@ -258,46 +285,16 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
       const icon = sub.icon ? `<span class="nav-dropdown-icon" aria-hidden="true">${sub.icon}</span>` : '';
       const label = sub.label || '';
       const customId = sub.id ? `id="${sub.id}"` : '';
-      return `<a class="nav-dropdown-link" ${customId} href="${sub.href}" aria-label="${label}">${icon}${label}</a>`;
+      const premiumCustomizeClass = sub.id === 'headerCustomizeLink'
+        ? `tb-premium-menu-customize ${hasCachedPremiumAccess ? 'show-premium' : ''}`
+        : '';
+      return `<a class="nav-dropdown-link ${premiumCustomizeClass}" ${customId} href="${sub.href}" aria-label="${label}">${icon}${label}</a>`;
     }).join('')}
           </div>
         ` : ''}
       </li>
     `;
   }).join('');
-
-  // Teklifbul Rule v1.0 - Dropdown link'lerine event listener ekle (event delegation)
-  // Bu sayede dropdown link'ine tıklandığında sadece o link çalışır, ana link çalışmaz
-  // Not: Bu listener aşağıdaki dropdown click handler'dan önce çalışmalı (capture phase)
-  // Middle click için auxclick event'ini de dinle
-  // CRITICAL: Bu handler SYNC olmalı - stopPropagation await öncesinde çalışmalı
-  const handleDropdownLink = (event) => {
-    const dropdownLink = event.target.closest('.nav-dropdown-link');
-    if (dropdownLink) {
-      // Teklifbul Rule v1.0 - Middle click / new tab intent kontrolü
-      // SYNC: Bu kontrol hemen yapılmalı, await olmadan
-      const isMiddleClickDirect = event.type === 'auxclick' ||
-        event.button === 1 ||
-        event.which === 2 ||
-        (event.buttons !== undefined && (event.buttons & 4) === 4);
-      const isNewTabIntent = isMiddleClickDirect || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey;
-
-      if (isNewTabIntent) {
-        // Yeni sekme niyeti var, tarayıcıya bırak - hiçbir şey yapma
-        return;
-      }
-
-      // SYNC: Dropdown'ı kapat ve stopPropagation - await'ten ÖNCE yapılmalı
-      const dropdownItems = document.querySelectorAll('.nav-item.has-dropdown');
-      dropdownItems.forEach(i => i.classList.remove('is-open'));
-      event.stopPropagation();
-      // Normal link davranışı çalışsın (href'e git) - preventDefault yapma
-    }
-  };
-
-  // Click ve auxclick (middle click) event'lerini dinle
-  document.addEventListener('click', handleDropdownLink, true); // Capture phase
-  document.addEventListener('auxclick', handleDropdownLink, true); // Middle click için
 
   el.innerHTML = `
     <div class="topbar">
@@ -333,7 +330,7 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
         <button id="closeNotifications" class="link-btn">Kapat</button>
       </div>
     </div>
-    <div id="headerCustomizationModal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,.55); z-index:2200; align-items:center; justify-content:center; padding:20px;">
+    <div id="headerCustomizationModal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,.55); z-index:12000; align-items:center; justify-content:center; padding:20px;">
       <div style="width:min(560px,96vw); max-height:85vh; overflow:auto; background:var(--card-bg); border:1px solid var(--border); border-radius:12px; box-shadow:0 20px 40px rgba(0,0,0,.25);">
         <div style="padding:14px 16px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
           <strong>Menü Özelleştirme</strong>
@@ -341,9 +338,9 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
         </div>
         <div style="padding:14px 16px;">
           <p style="margin:0 0 12px 0; color:var(--text-muted); font-size:13px;">
-            İstemediğiniz üst menü başlıklarını gizleyebilirsiniz. Varsayılan düzen korunur; istediğiniz zaman geri alabilirsiniz.
+            <strong>Kontrol Paneli</strong> ve <strong>Ayarlar</strong> sırası sabittir. Diğer başlıkları sürükleyip bırakın veya ↑ ↓ ile taşıyın. İşaretli başlıklar menüde görünür; işareti kaldırmak gizler. Üst menüyü güncellemek için <strong>Kaydet</strong> düğmesine basın.
           </p>
-          <div id="headerCustomizationList" style="display:grid; grid-template-columns:1fr 1fr; gap:8px;"></div>
+          <div id="headerCustomizationList" role="list" style="display:flex; flex-direction:column; gap:8px;"></div>
           <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:14px;">
             <button id="resetHeaderCustomization" class="btn btn-outline btn-sm" type="button">Varsayılana Dön</button>
             <button id="saveHeaderCustomization" class="btn btn-primary btn-sm" type="button">Kaydet</button>
@@ -366,6 +363,8 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
       }
       .premium-only-nav { display: none !important; }
       .premium-only-nav.show-premium { display: block !important; }
+      .nav-dropdown-link.tb-premium-menu-customize { display: none !important; }
+      .nav-dropdown-link.tb-premium-menu-customize.show-premium { display: flex !important; }
       [data-theme="dark"] {
         --background: #111827;
         --text: #ffffff;
@@ -471,6 +470,67 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
       }
       .nav-dropdown-icon { font-size: 14px; }
       .nav-dropdown-link:hover { background: var(--dropdown-hover); color: var(--primary); }
+      /* Teklifbul Rule v1.0 - Menü özelleştirme sıralama */
+      .header-custom-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--surface);
+      }
+      .header-custom-row[draggable="true"] { cursor: grab; }
+      .header-custom-row:active[draggable="true"] { cursor: grabbing; }
+      .header-custom-drag {
+        cursor: grab;
+        user-select: none;
+        color: var(--text-muted);
+        font-size: 12px;
+        flex-shrink: 0;
+      }
+      .header-custom-move-up,
+      .header-custom-move-down {
+        flex-shrink: 0;
+        min-width: 36px;
+        padding: 4px 8px;
+      }
+      /* Teklifbul Rule v1.0 - utils.css tum input/button'lara width:100%; checkbox ve modal tuslari bozuluyordu */
+      #headerCustomizationModal .btn {
+        width: auto !important;
+        max-width: none;
+        margin-top: 0 !important;
+        margin-bottom: 0 !important;
+      }
+      #headerCustomizationList input[type="checkbox"] {
+        width: 18px !important;
+        height: 18px !important;
+        min-width: 18px;
+        max-width: 22px;
+        flex: 0 0 auto;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-sizing: border-box;
+        accent-color: #2563eb;
+      }
+      #headerCustomizationList label.header-custom-item-label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex: 1 1 auto;
+        min-width: 0;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text);
+      }
+      #headerCustomizationList .header-custom-item-label-text {
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        line-height: 1.35;
+      }
       /* Teklifbul Rule v1.0 - Admin menüsü başlangıçta gizli, admin kontrolü sonrası gösterilecek */
       #admin-menu,
       [data-restricted="admin-menu"] {
@@ -680,16 +740,51 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
     const modalEl = el.querySelector('#headerCustomizationModal');
     const listEl = el.querySelector('#headerCustomizationList');
     if (!modalEl || !listEl) return;
-    const hiddenKeys = readHiddenNavKeys();
-    const customizableItems = navItems.filter((item) => !NON_HIDEABLE_NAV_KEYS.has(item.key) && item.key !== 'admin-dashboard');
+    if (!menuCustomizePremiumUnlocked) {
+      try {
+        const cleanUrl = new URL(window.location.href);
+        cleanUrl.hash = '';
+        window.history.replaceState(window.history.state, '', `${cleanUrl.pathname}${cleanUrl.search}`);
+      } catch (_hist) {
+        logger.warn('Hash temizlenemedi', _hist);
+      }
+      void (async () => {
+        try {
+          const { toast } = await import('../../../src/shared/ui/toast.js');
+          toast.info('Üst menü sıralama ve gizleme özelliği Premium pakete dahildir. Planları incelemek için yönlendiriliyorsunuz.');
+        } catch (_e) {
+          logger.warn('Menu customize toast yüklenemedi', _e);
+        }
+      })();
+      try {
+        window.location.assign(`${window.location.origin}/settings.html?reason=menu_customization#billing-plan`);
+      } catch (_nav) {
+        window.location.href = '/settings.html?reason=menu_customization#billing-plan';
+      }
+      return;
+    }
+    // Teklifbul Rule v1.0 - Modal acilisinda localStorage ile son ayarlari yakala (coklu sekme)
+    const prefs = readHeaderPrefsFromLocal();
+    applyHiddenNavKeys(prefs.hidden, { persistLocal: false });
+    applyNavOrderKeys(prefs.navOrder, { persistLocal: false });
+    renderNavList();
+    const hiddenKeys = hiddenNavKeysState;
+    const customizableItems = getNavItemsInUserOrder().filter(
+      (item) => !NON_HIDEABLE_NAV_KEYS.has(item.key) && item.key !== 'admin-dashboard'
+    );
 
     listEl.innerHTML = customizableItems.map((item) => {
       const checked = hiddenKeys.has(item.key) ? '' : 'checked';
       return `
-        <label style="display:flex; gap:8px; align-items:center; padding:8px; border:1px solid var(--border); border-radius:8px; cursor:pointer;">
-          <input type="checkbox" data-nav-key="${item.key}" ${checked} />
-          <span>${item.icon || ''} ${item.label}</span>
-        </label>
+        <div class="header-custom-row" draggable="true" data-nav-key="${item.key}" role="listitem">
+          <span class="header-custom-drag" aria-hidden="true" title="Surukleyerek sirala">⋮⋮</span>
+          <button type="button" class="btn btn-outline btn-sm header-custom-move-up" aria-label="Yukari tas" title="Yukari tas">↑</button>
+          <button type="button" class="btn btn-outline btn-sm header-custom-move-down" aria-label="Asagi tas" title="Asagi tas">↓</button>
+          <label class="header-custom-item-label">
+            <input type="checkbox" data-nav-key="${item.key}" ${checked} />
+            <span class="header-custom-item-label-text">${item.icon ? `${item.icon} ` : ''}${item.label}</span>
+          </label>
+        </div>
       `;
     }).join('');
 
@@ -701,10 +796,150 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
     if (modalEl) modalEl.style.display = 'none';
   };
 
+  const openHeaderCustomizationFromHashIfNeeded = () => {
+    const hash = (window.location.hash || '').replace('#', '');
+    if (hash === 'header-customization') {
+      openHeaderCustomizationModal();
+    }
+  };
+
+  // Teklifbul Rule v1.0 - Dropdown link capture: özel olarak Menüyü Özelleştir için tam tetikleme (hash + modal)
+  // Genel .nav-dropdown-link için dropdown kapat + stopPropagation; headerCustomizeLink için preventDefault + doğrudan modal
+  const handleDropdownLinkCapture = (event) => {
+    const dropdownLink = event.target.closest('.nav-dropdown-link');
+    if (!dropdownLink) return;
+
+    const isMiddleClickDirect = event.type === 'auxclick' ||
+      event.button === 1 ||
+      event.which === 2 ||
+      (event.buttons !== undefined && (event.buttons & 4) === 4);
+    const isNewTabIntent = isMiddleClickDirect || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey;
+
+    if (isNewTabIntent) {
+      return;
+    }
+
+    const dropdownItems = document.querySelectorAll('.nav-item.has-dropdown');
+
+    if (dropdownLink.id === 'headerCustomizeLink') {
+      event.preventDefault();
+      dropdownItems.forEach((i) => i.classList.remove('is-open'));
+      event.stopPropagation();
+      if (!menuCustomizePremiumUnlocked) {
+        void (async () => {
+          try {
+            const { toast } = await import('../../../src/shared/ui/toast.js');
+            toast.info('Üst menü özelleştirme Premium ile sunulur.');
+          } catch (_e) {
+            logger.warn('Menu customize toast yüklenemedi', _e);
+          }
+        })();
+        try {
+          window.location.assign(`${window.location.origin}/settings.html?reason=menu_customization#billing-plan`);
+        } catch (_nav) {
+          window.location.href = '/settings.html?reason=menu_customization#billing-plan';
+        }
+        return;
+      }
+      openHeaderCustomizationModal();
+      try {
+        const nextUrl = `${window.location.pathname}${window.location.search}#header-customization`;
+        history.replaceState(null, '', nextUrl);
+      } catch (_e) {
+        window.location.hash = 'header-customization';
+      }
+      return;
+    }
+
+    dropdownItems.forEach((i) => i.classList.remove('is-open'));
+    event.stopPropagation();
+  };
+
+  document.addEventListener('click', handleDropdownLinkCapture, true);
+  document.addEventListener('auxclick', handleDropdownLinkCapture, true);
+
+  let customizationDragKey = null;
+
+  el.addEventListener('dragstart', (event) => {
+    const row = event.target.closest('.header-custom-row');
+    if (!row || !row.closest('#headerCustomizationList')) return;
+    customizationDragKey = row.dataset.navKey;
+    event.dataTransfer.setData('text/plain', customizationDragKey);
+    event.dataTransfer.effectAllowed = 'move';
+  });
+
+  el.addEventListener('dragend', () => {
+    customizationDragKey = null;
+  });
+
+  el.addEventListener('dragover', (event) => {
+    const row = event.target.closest('.header-custom-row');
+    if (!row || !row.closest('#headerCustomizationList')) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+  });
+
+  el.addEventListener('drop', (event) => {
+    const row = event.target.closest('.header-custom-row');
+    const listCustomizationDrop = el.querySelector('#headerCustomizationList');
+    if (!row || !listCustomizationDrop?.contains(row)) return;
+    event.preventDefault();
+    const srcKey = event.dataTransfer.getData('text/plain') || customizationDragKey;
+    const tgtKey = row.dataset.navKey;
+    if (!srcKey || !tgtKey || srcKey === tgtKey) return;
+    const rows = [...listCustomizationDrop.querySelectorAll('.header-custom-row')];
+    const srcEl = rows.find((r) => r.dataset.navKey === srcKey);
+    const tgtEl = rows.find((r) => r.dataset.navKey === tgtKey);
+    if (!srcEl || !tgtEl) return;
+    const rect = tgtEl.getBoundingClientRect();
+    const before = event.clientY < rect.top + rect.height / 2;
+    if (before) listCustomizationDrop.insertBefore(srcEl, tgtEl);
+    else listCustomizationDrop.insertBefore(srcEl, tgtEl.nextElementSibling);
+    customizationDragKey = null;
+  });
+
   el.addEventListener('click', (event) => {
+    const moveUpBtn = event.target.closest('.header-custom-move-up');
+    if (moveUpBtn) {
+      event.preventDefault();
+      const row = moveUpBtn.closest('.header-custom-row');
+      const listCustomizationMove = el.querySelector('#headerCustomizationList');
+      if (row?.previousElementSibling && listCustomizationMove?.contains(row)) {
+        listCustomizationMove.insertBefore(row, row.previousElementSibling);
+      }
+      return;
+    }
+
+    const moveDownBtn = event.target.closest('.header-custom-move-down');
+    if (moveDownBtn) {
+      event.preventDefault();
+      const row = moveDownBtn.closest('.header-custom-row');
+      const listCustomizationMove = el.querySelector('#headerCustomizationList');
+      if (row?.nextElementSibling && listCustomizationMove?.contains(row)) {
+        listCustomizationMove.insertBefore(row.nextElementSibling, row);
+      }
+      return;
+    }
+
     const customizeLink = event.target.closest('#headerCustomizeLink');
     if (customizeLink) {
       event.preventDefault();
+      if (!menuCustomizePremiumUnlocked) {
+        void (async () => {
+          try {
+            const { toast } = await import('../../../src/shared/ui/toast.js');
+            toast.info('Üst menü özelleştirme Premium ile sunulur.');
+          } catch (_e) {
+            logger.warn('Menu customize toast yüklenemedi', _e);
+          }
+        })();
+        try {
+          window.location.assign(`${window.location.origin}/settings.html?reason=menu_customization#billing-plan`);
+        } catch (_nav) {
+          window.location.href = '/settings.html?reason=menu_customization#billing-plan';
+        }
+        return;
+      }
       openHeaderCustomizationModal();
       return;
     }
@@ -719,7 +954,8 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
     const resetBtn = event.target.closest('#resetHeaderCustomization');
     if (resetBtn) {
       event.preventDefault();
-      applyHiddenNavKeys(new Set());
+      applyHiddenNavKeys(new Set(), { persistLocal: false });
+      applyNavOrderKeys(null, { persistLocal: true });
       renderNavList();
       closeHeaderCustomizationModal();
       return;
@@ -728,20 +964,23 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
     const saveBtn = event.target.closest('#saveHeaderCustomization');
     if (saveBtn) {
       event.preventDefault();
+      const listCustomizationSave = el.querySelector('#headerCustomizationList');
+      const domOrder = listCustomizationSave
+        ? [...listCustomizationSave.querySelectorAll('.header-custom-row')].map((r) => r.dataset.navKey).filter(Boolean)
+        : [];
       const checkedInputs = Array.from(el.querySelectorAll('#headerCustomizationList input[type="checkbox"][data-nav-key]'));
-      const hiddenKeys = new Set();
+      const hiddenKeysNext = new Set();
       checkedInputs.forEach((input) => {
         const key = input.getAttribute('data-nav-key');
         if (!input.checked && key && !NON_HIDEABLE_NAV_KEYS.has(key)) {
-          hiddenKeys.add(key);
+          hiddenKeysNext.add(key);
         }
       });
-      applyHiddenNavKeys(hiddenKeys);
+      applyNavOrderKeys(domOrder, { persistLocal: false });
+      applyHiddenNavKeys(hiddenKeysNext, { persistLocal: true });
       renderNavList();
       closeHeaderCustomizationModal();
 
-      // Performans odaklı: sadece kullanıcı Kaydet'e bastığında tek write.
-      // Sayfa açılışında ekstra write/read yapılmaz; localStorage anında uygulanır.
       (async () => {
         try {
           const user = auth.currentUser;
@@ -750,6 +989,7 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
           await updateDoc(doc(db, 'users', user.uid), {
             uiPrefs: {
               hiddenHeaderKeys: Array.from(hiddenNavKeysState),
+              orderedNavKeys: navOrderKeysState,
               updatedAt: serverTimestamp()
             }
           });
@@ -757,8 +997,12 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
           logger.warn('Header tercihleri Firestore kaydedilemedi, local cache kullanılacak', saveErr);
         }
       })();
+      return;
     }
   });
+
+  window.addEventListener('hashchange', openHeaderCustomizationFromHashIfNeeded);
+  openHeaderCustomizationFromHashIfNeeded();
 
   el.addEventListener('click', (event) => {
     const modalEl = el.querySelector('#headerCustomizationModal');
@@ -1317,6 +1561,8 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
     try {
       const user = auth.currentUser;
       if (!user) {
+        menuCustomizePremiumUnlocked = false;
+        document.querySelectorAll('.tb-premium-menu-customize').forEach((elem) => elem.classList.remove('show-premium'));
         document.getElementById('interim-payments-menu')?.setAttribute('style', 'display:none;');
         // Teklifbul Rule v1.0 - Admin menüsü kullanıcı yoksa gizli kalmalı
         const adminMenuEl = document.getElementById('admin-menu');
@@ -1329,6 +1575,8 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
 
       const token = await user.getIdToken();
       if (!token) {
+        menuCustomizePremiumUnlocked = false;
+        document.querySelectorAll('.tb-premium-menu-customize').forEach((elem) => elem.classList.remove('show-premium'));
         document.getElementById('interim-payments-menu')?.setAttribute('style', 'display:none;');
         document.getElementById('admin-menu')?.setAttribute('style', 'display:none;');
         document.querySelectorAll('[data-restricted="admin-only"]').forEach(elm => elm.setAttribute('style', 'display:none;'));
@@ -1376,8 +1624,18 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
         const userDoc = await getDoc(doc(db, 'users', user.uid));
         const userData = userDoc.exists() ? userDoc.data() : {};
         const serverHiddenKeys = Array.isArray(userData?.uiPrefs?.hiddenHeaderKeys) ? userData.uiPrefs.hiddenHeaderKeys : null;
+        const serverOrderedNavKeys = Array.isArray(userData?.uiPrefs?.orderedNavKeys) ? userData.uiPrefs.orderedNavKeys : null;
+        let prefsTouched = false;
+        if (serverOrderedNavKeys && serverOrderedNavKeys.length) {
+          applyNavOrderKeys(serverOrderedNavKeys, { persistLocal: false });
+          prefsTouched = true;
+        }
         if (serverHiddenKeys) {
-          applyHiddenNavKeys(new Set(serverHiddenKeys), { persistLocal: true });
+          applyHiddenNavKeys(new Set(serverHiddenKeys), { persistLocal: false });
+          prefsTouched = true;
+        }
+        if (prefsTouched) {
+          persistHeaderPrefsToLocal();
           renderNavList();
         }
         const companyId = resolveSharedCompanyId(userData);
@@ -1456,6 +1714,10 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
       document.querySelectorAll('.premium-only-nav').forEach((elem) => {
         elem.classList.toggle('show-premium', !!premiumNavVisible);
       });
+      menuCustomizePremiumUnlocked = !!premiumNavVisible;
+      document.querySelectorAll('.tb-premium-menu-customize').forEach((elem) => {
+        elem.classList.toggle('show-premium', !!premiumNavVisible);
+      });
       try {
         localStorage.setItem(PREMIUM_NAV_CACHE_KEY, JSON.stringify({
           visible: !!premiumNavVisible,
@@ -1480,6 +1742,10 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
           elm.setAttribute('style', 'display:block;');
         });
       }
+      menuCustomizePremiumUnlocked = !!isAdmin;
+      document.querySelectorAll('.tb-premium-menu-customize').forEach((elem) => {
+        elem.classList.toggle('show-premium', !!isAdmin);
+      });
     }
   }
 

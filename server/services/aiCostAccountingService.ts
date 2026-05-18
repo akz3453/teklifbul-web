@@ -94,6 +94,30 @@ export function getModelCostPer1kUsd(
   return null;
 }
 
+export function estimateCostUsdFromInputOutputTokens(params: {
+  promptTokens: number;
+  completionTokens: number;
+  provider: string;
+  model: string;
+  catalog: CatalogModel[];
+}): number | null {
+  const found = params.catalog.find(
+    (m) => m.provider === params.provider && m.model === params.model
+  );
+  if (!found) return null;
+
+  const inputPer1M = Number((found as any).inputCostPer1MTokensUSD || 0);
+  const outputPer1M = Number((found as any).outputCostPer1MTokensUSD || 0);
+  if (inputPer1M > 0 || outputPer1M > 0) {
+    const inUsd = (Math.max(0, params.promptTokens) / 1_000_000) * inputPer1M;
+    const outUsd = (Math.max(0, params.completionTokens) / 1_000_000) * outputPer1M;
+    return inUsd + outUsd;
+  }
+
+  const per1k = getModelCostPer1kUsd(params.provider, params.model, params.catalog);
+  return estimateCostUsdFromTokens(params.promptTokens + params.completionTokens, per1k);
+}
+
 /**
  * Estimate cost in USD from token count
  * Teklifbul Rule v3.18 - Cost calculation
@@ -139,6 +163,8 @@ export async function computeLedgerCostMeta(params: {
   provider: string;
   model: string;
   tokensPaid: number;
+  promptTokens?: number;
+  completionTokens?: number;
   catalog?: CatalogModel[];
   usdTryRate?: number;
   db?: any;
@@ -189,8 +215,18 @@ export async function computeLedgerCostMeta(params: {
     ? getModelCostPer1kUsd(provider, model, catalog)
     : null;
   
-  // Compute cost in USD
-  const costUsd = estimateCostUsdFromTokens(tokensPaid, costPer1kUsd);
+  const promptTokens = Number(params.promptTokens || 0);
+  const completionTokens = Number(params.completionTokens || 0);
+  const hasSplitTokens = promptTokens > 0 || completionTokens > 0;
+  const costUsd = hasSplitTokens
+    ? estimateCostUsdFromInputOutputTokens({
+      promptTokens,
+      completionTokens,
+      provider,
+      model,
+      catalog: catalog || [],
+    })
+    : estimateCostUsdFromTokens(tokensPaid, costPer1kUsd);
   
   // Convert to TRY
   const costTry = toTry(costUsd, usdTryRate);
@@ -201,7 +237,7 @@ export async function computeLedgerCostMeta(params: {
     costTry,
     usdTryRateUsed: usdTryRate,
     costComputedAt: new Date().toISOString(),
-    costVersion: 'v3.18',
+    costVersion: 'v3.19',
   };
 }
 

@@ -8,6 +8,7 @@ import {
 } from '../services/subscriptionService.js';
 import { getAllTokenPacks, getTokenPacksByProvider } from '../services/aiTokenPackCatalog.js';
 import { logger } from '../../src/shared/log/logger.js';
+import { isPremiumBypassUser } from '../utils/premiumBypass.js';
 
 const router = Router();
 
@@ -29,6 +30,14 @@ router.get('/', verifyToken, async (req: AuthenticatedRequest, res) => {
     try {
       logger.info('account-subscription: fetching summary', { userId });
       const summary = (await getSummaryForUser(userId)) ?? createDefaultSubscriptionSummary();
+      if (isPremiumBypassUser(req.user)) {
+        summary.plan = {
+          ...summary.plan,
+          planId: 'premium_plus_admin' as any,
+          planName: 'Premium Plus (Admin)',
+          isPremium: true,
+        };
+      }
       logger.end();
       return res.json(summary);
     } catch (err: any) {

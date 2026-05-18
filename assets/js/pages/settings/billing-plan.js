@@ -182,6 +182,7 @@ function renderShell() {
             interim_payments: 'Hakediş modülü için Premium Plus istiyorum.',
             ai_paid_models: 'Ücretli AI modelleri için Premium Plus istiyorum.',
             token_packages: 'Token paketleri için Premium Plus istiyorum.',
+            menu_customization: 'Üst menü kişiselleştirmesi için Premium istiyorum.',
           };
           noteInput.value = reasonMessages[reason] || `Premium Plus'a geçiş istiyorum. (Sebep: ${reason})`;
         }
@@ -241,6 +242,7 @@ function renderPlan(data) {
         interim_payments: 'Hakediş / Sözleşme modülü Premium Plus ile açılır.',
         ai_paid_models: 'Ücretli AI modelleri Premium Plus + Paket ile açılır.',
         token_packages: 'Token paketleri Premium Plus ile açılır.',
+        menu_customization: 'Üst menüyü sıralayıp öğeleri gizleme özelliği Premium pakete dahildir.',
       };
       reasonText.textContent = reasonMessages[reason] || 'Bu özellik mevcut planınızda kapalı.';
     }
@@ -366,6 +368,7 @@ function renderPlanComparison(data) {
     { feature: 'AI Ücretli Modeller', free: false, premium: false, premiumPlus: true },
     { feature: 'Token Paketleri', free: false, premium: false, premiumPlus: true },
     { feature: 'Satışlar Modülü', free: false, premium: true, premiumPlus: true },
+    { feature: 'Kişisel üst menü düzeni (sıra + gizle)', free: false, premium: true, premiumPlus: true },
     { feature: 'Hakediş Modülü', free: false, premium: false, premiumPlus: true },
     { feature: 'Rate Limit (req/60s)', free: data.aiPolicy.rateLimits.freeMax, premium: data.aiPolicy.rateLimits.premiumMax, premiumPlus: data.aiPolicy.rateLimits.premiumPlusMax },
   ];
@@ -375,7 +378,8 @@ function renderPlanComparison(data) {
       (reason === 'sales' && row.feature === 'Satışlar Modülü') ||
       (reason === 'interim_payments' && row.feature === 'Hakediş Modülü') ||
       (reason === 'ai_paid_models' && row.feature === 'AI Ücretli Modeller') ||
-      (reason === 'token_packages' && row.feature === 'Token Paketleri')
+      (reason === 'token_packages' && row.feature === 'Token Paketleri') ||
+      (reason === 'menu_customization' && row.feature === 'Kişisel üst menü düzeni (sıra + gizle)')
     );
 
     const rowStyle = isHighlighted ? 'background:#fef3c7;' : '';

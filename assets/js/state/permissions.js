@@ -482,6 +482,8 @@ function buildAdminPerms() {
     findByKey('admin.metrics.view') || findByLabel('Sistem Metrikleri Gör');
   const errorsViewKey =
     findByKey('admin.errors.view') || findByLabel('Client Hata Raporları Gör');
+  const categoryRulesManageKey =
+    findByKey('admin.categoryRules.manage') || findByLabel('Kategori Kuralları Yönet');
 
   return {
     metrics: {
@@ -489,6 +491,9 @@ function buildAdminPerms() {
     },
     errors: {
       view: errorsViewKey || 'admin.errors.view'
+    },
+    categoryRules: {
+      manage: categoryRulesManageKey || 'admin.categoryRules.manage'
     }
   };
 }
@@ -586,6 +591,9 @@ async function loadRolePermissions(companyId, roleKeyInternal) {
       } else if (typeof roleDefaults[permKey] === 'boolean') {
         // Template default
         perms[permKey] = roleDefaults[permKey];
+      } else if (permKey === 'admin.categoryRules.manage') {
+        // Teklifbul Rule v1.0 - Yeni admin yetkisi için fail-closed varsayılan
+        perms[permKey] = false;
       } else {
         // Varsayılan: izin ver (EVET)
         perms[permKey] = true;

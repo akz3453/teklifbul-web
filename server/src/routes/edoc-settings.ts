@@ -17,6 +17,15 @@ import { getEdocSettingsQuerySchema, updateEdocSettingsBodySchema, updateEdocCre
 
 const router = express.Router();
 
+/** users/{uid} ile şirket eşlemesi — yalnızca companyId alanına bakma (solo / çoklu şirket) */
+function userBelongsToCompany(userData: Record<string, unknown> | undefined, companyId: string): boolean {
+  if (!userData || !companyId) return false;
+  if (userData.companyId === companyId) return true;
+  if (userData.activeCompanyId === companyId) return true;
+  if (Array.isArray(userData.companies) && userData.companies.includes(companyId)) return true;
+  return false;
+}
+
 // Tüm route'lar authentication gerektirir
 router.use(verifyToken);
 
@@ -49,7 +58,7 @@ router.get('/settings',
     // Company kontrolü
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    if (userData?.companyId !== companyId) {
+    if (!userBelongsToCompany(userData, companyId)) {
       return res.status(403).json({ ok: false, error: 'Yetkisiz erişim' });
     }
 
@@ -138,7 +147,7 @@ router.put('/settings',
     // Company kontrolü
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    if (userData?.companyId !== body.companyId) {
+    if (!userBelongsToCompany(userData, body.companyId)) {
       return res.status(403).json({ ok: false, error: 'Yetkisiz erişim' });
     }
 
@@ -222,7 +231,7 @@ router.put('/credentials',
     // Company kontrolü
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    if (userData?.companyId !== body.companyId) {
+    if (!userBelongsToCompany(userData, body.companyId)) {
       return res.status(403).json({ ok: false, error: 'Yetkisiz erişim' });
     }
 

@@ -7,16 +7,33 @@ import DOMPurify from 'https://cdn.jsdelivr.net/npm/dompurify@3.2.2/+esm';
 import { t } from './i18n.js';
 import { auth } from '../firebase.js';
 import { logger } from '../../src/shared/log/logger.js';
+import { isCategoryAllowed, onCookieConsentChange } from './cookieConsent.js';
 
 let chatPanel = null;
 let chatButton = null;
 let isOpen = false;
+let isInitialized = false;
+let isConsentListenerBound = false;
 
 /**
  * Initialize chat widget
  * Named export for ES modules
  */
 export function initChatWidget() {
+  if (!isConsentListenerBound) {
+    onCookieConsentChange((preferences) => {
+      if (preferences?.functional && !isInitialized) {
+        createChatWidget();
+      }
+    });
+    isConsentListenerBound = true;
+  }
+
+  if (!isCategoryAllowed('functional')) {
+    logger.info('Chat widget skipped until functional consent is granted');
+    return;
+  }
+
   createChatWidget();
 }
 
@@ -24,6 +41,7 @@ export function initChatWidget() {
  * Create chat widget
  */
 function createChatWidget() {
+  if (isInitialized) return;
   // Chat button
   chatButton = document.createElement('button');
   chatButton.className = 'chat-button';
@@ -75,6 +93,7 @@ function createChatWidget() {
     const event = new Event('i18n-update');
     document.dispatchEvent(event);
   }, 100);
+  isInitialized = true;
 }
 
 /**

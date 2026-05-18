@@ -10,6 +10,7 @@ import {
 import { logger } from '../../src/shared/log/logger.js';
 import { getAdminDb } from '../utils/firestore.js';
 import { FieldValue } from 'firebase-admin/firestore';
+import { isPremiumBypassEmail } from '../utils/premiumBypass.js';
 // Teklifbul Rule v1.0 - Input Validation
 import { validateRequest, commonSchemas } from '../utils/input-validation.js';
 import { z } from 'zod';
@@ -235,11 +236,19 @@ router.get('/subscriptions',
           const userDoc = await db.collection('users').doc(item.userId).get();
           if (userDoc.exists) {
             const userData = userDoc.data();
-            return {
+            const userEmail = userData?.email || userData?.contactEmails?.[0] || null;
+            const mappedItem: any = {
               ...item,
-              userEmail: userData?.email || userData?.contactEmails?.[0],
+              email: userEmail, // UI compatibility
+              userEmail,
               companyName: userData?.companyName
             };
+            if (isPremiumBypassEmail(userEmail)) {
+              mappedItem.planId = 'premium_plus_admin';
+              mappedItem.planName = 'Premium Plus (Admin)';
+              mappedItem.status = 'active';
+            }
+            return mappedItem;
           }
         } catch (error) {
           logger.warn('User data fetch failed for subscription', { userId: item.userId });
@@ -250,7 +259,8 @@ router.get('/subscriptions',
     
     logger.info('Admin subscriptions list fetched', { count: subscriptions.length });
     logger.end();
-    res.json({ subscriptions });
+    // Teklifbul Rule v1.0 - Backward compatibility: return both keys
+    res.json({ items: subscriptions, subscriptions });
   } catch (error: any) {
     logger.error('Admin subscription list error', error);
     logger.end();

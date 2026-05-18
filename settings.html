@@ -2039,6 +2039,7 @@
     import { showToastNotification } from './assets/js/ui/errors.js';
     // Teklifbul Rule v1.0 - Structured Logging
     import { logger } from './src/shared/log/logger.js';
+    import { ensureDefaultCentralDepotLocation } from './assets/js/services/ensure-default-central-depot.js';
     // Teklifbul Rule v1.0 - Toast Notification System
     import { toast } from './src/shared/ui/toast.js';
     // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
@@ -6924,19 +6925,77 @@
       });
     }
 
+    // Teklifbul Rule v1.0 — Koşullu sekme görünürlüğü önbelleği (sayfa açılışında anında gösterim)
+    const SETTINGS_NAV_VIS_CACHE_KEY = 'tb_settings_nav_visibility_v1';
+    const SETTINGS_NAV_VIS_CACHE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+
+    function readCachedSettingsNavVisibility() {
+      try {
+        const raw = sessionStorage.getItem(SETTINGS_NAV_VIS_CACHE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== 'object') return null;
+        if (parsed.uid && auth.currentUser?.uid && parsed.uid !== auth.currentUser.uid) return null;
+        if (parsed.at && Date.now() - parsed.at > SETTINGS_NAV_VIS_CACHE_MAX_AGE_MS) return null;
+        return parsed.visibility || null;
+      } catch {
+        return null;
+      }
+    }
+
+    function writeCachedSettingsNavVisibility(visibility) {
+      try {
+        sessionStorage.setItem(
+          SETTINGS_NAV_VIS_CACHE_KEY,
+          JSON.stringify({ uid: auth.currentUser?.uid || null, at: Date.now(), visibility })
+        );
+      } catch {
+        /* ignore */
+      }
+    }
+
+    function applySettingsNavVisibility(visibility) {
+      if (!visibility) return;
+      const entries = [
+        ['nav-system-status', 'systemStatus'],
+        ['nav-error-reports', 'errorReports'],
+        ['nav-admin-profit', 'adminProfit'],
+        ['nav-ai-usage-report', 'aiUsageReport'],
+      ];
+      entries.forEach(([id, key]) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const show = !!visibility[key];
+        el.style.display = show ? 'block' : 'none';
+        el.setAttribute('aria-hidden', show ? 'false' : 'true');
+        if (id === 'nav-error-reports') {
+          if (show) {
+            el.disabled = false;
+            el.removeAttribute('aria-disabled');
+            el.removeAttribute('data-loading');
+            el.title = '';
+          } else {
+            el.disabled = true;
+            el.setAttribute('aria-disabled', 'true');
+            el.removeAttribute('data-loading');
+            el.title = '';
+          }
+        }
+      });
+    }
+
+    function applyCachedSettingsNavEarly() {
+      const cached = readCachedSettingsNavVisibility();
+      if (cached) applySettingsNavVisibility(cached);
+    }
+
     /**
-     * Koşullu ayar sekmelerini tek seferde güncelle (paralel admin kontrolü, sıralı DOM yazımı).
+     * Koşullu ayar sekmelerini tek seferde güncelle.
      * Teklifbul Rule v1.0
      */
-    async function applyConditionalSettingsNav(ctx, adminPerms) {
-      const navSystemStatus = document.getElementById('nav-system-status');
-      const navErrorReports = document.getElementById('nav-error-reports');
-      const navAdminProfit = document.getElementById('nav-admin-profit');
-      const navAiUsageReport = document.getElementById('nav-ai-usage-report');
-
-      const { isAdmin: checkIsAdmin } = await import('/src/shared/utils/admin-helper.js');
-      const user = auth.currentUser;
-      const isAdminUser = user ? await checkIsAdmin(user) : false;
+    async function applyConditionalSettingsNav(ctx, adminPerms, permState = null) {
+      const metricsKey = adminPerms?.metrics?.view;
+      const errorsKey = adminPerms?.errors?.view;
 
       let isIsveren = false;
       try {
@@ -6952,61 +7011,34 @@
         /* ignore */
       }
 
-      const hasReportPerm = adminPerms?.reports?.view === true;
-      const showAiUsage = !!(hasReportPerm || isIsveren || isAdminUser);
-
-      if (navSystemStatus) {
-        const show = !!adminPerms?.metrics?.view;
-        navSystemStatus.style.display = show ? 'block' : 'none';
-        navSystemStatus.setAttribute('aria-hidden', show ? 'false' : 'true');
+      let isAdminUser = !!(permState?.isAdmin);
+      if (!isAdminUser && auth.currentUser) {
+        const { isAdmin: checkIsAdmin } = await import('/src/shared/utils/admin-helper.js');
+        isAdminUser = await checkIsAdmin(auth.currentUser);
       }
 
-      if (navErrorReports) {
-        const show = !!adminPerms?.errors?.view;
-        navErrorReports.style.display = show ? 'block' : 'none';
-        navErrorReports.setAttribute('aria-hidden', show ? 'false' : 'true');
-        if (show) {
-          navErrorReports.disabled = false;
-          navErrorReports.removeAttribute('aria-disabled');
-          navErrorReports.removeAttribute('data-loading');
-          navErrorReports.title = '';
-        } else {
-          navErrorReports.disabled = true;
-          navErrorReports.setAttribute('aria-disabled', 'true');
-          navErrorReports.removeAttribute('data-loading');
-          navErrorReports.title = '';
-        }
-      }
+      const visibility = {
+        systemStatus: metricsKey ? can(metricsKey) : false,
+        errorReports: errorsKey ? can(errorsKey) : false,
+        adminProfit: isAdminUser,
+        aiUsageReport: !!(isIsveren || isAdminUser),
+      };
 
-      if (navAdminProfit) {
-        const show = isAdminUser;
-        navAdminProfit.style.display = show ? 'block' : 'none';
-        navAdminProfit.setAttribute('aria-hidden', show ? 'false' : 'true');
-      }
-
-      if (navAiUsageReport) {
-        const show = showAiUsage;
-        navAiUsageReport.style.display = show ? 'block' : 'none';
-        navAiUsageReport.setAttribute('aria-hidden', show ? 'false' : 'true');
-      }
+      applySettingsNavVisibility(visibility);
+      writeCachedSettingsNavVisibility(visibility);
     }
 
     async function initSettingsRoot() {
       try {
         logger.group('Settings Root Init');
 
-        // Teklifbul Rule v1.0 - UX: Sol menü sekmeleri ilk paint'te görünsün (async beklemeden)
-        // Navigation event'lerini hemen bağla; permission kontrolleri daha sonra menü item'larını enable/disable eder.
+        // Teklifbul Rule v1.0 - UX: Navigasyon + önbellekli koşullu sekmeler anında
         try {
           initSettingsNavigation();
+          applyCachedSettingsNavEarly();
         } catch (e) {
           logger.warn('Settings navigation early init failed', e);
         }
-
-        // Koşullu sekmeler (Sistem / Hata / Finans / AI raporu) HTML'de display:none — tek batch'te açılır (layout shift azaltılır)
-
-        // İlk paint'e izin ver (özellikle yavaş makinelerde sidebar "sonradan çıkıyor" hissini bitirir)
-        await new Promise((r) => requestAnimationFrame(() => r(null)));
 
         // Company context — çıkış/giriş sonrası önbellek + istemci önbelleği tutarsızlığını önle
         clearCompanyContextCache();
@@ -7037,23 +7069,7 @@
         // Global referans
         window.__settingsCompanyContext = ctx;
 
-        // === Legacy Initialization Bridge (Unification) ===
-        // Bu bölüm eski initialize() içindeki kritik çağrıları içerir
-        try {
-          wireLogoutButtons();
-          await buildTaxOfficeSelect();
-          bindTaxOfficeHandlers();
-          await bindStructuredAddressControls();
-          await loadUserProfile(); // Profil verisini ve UI'ı doldurur
-          await setupCompanyAdminUI(); // Admin sekmelerini hazırlar
-          await initializeCategoryManagement(); // Kategorileri yükler
-          initSaveButton(); // Ana kaydet butonunu bağlar
-          initTabSaveButtons(); // Diğer sekme butonlarını bağlar
-        } catch (legacyInitErr) {
-          logger.warn('Legacy initialization modules failed partly', legacyInitErr);
-        }
-
-        // Permission state (settings + user mgmt + role matrix + payments / e-fatura / AI)
+        // Permission state — profil/kategori yüklemesinden önce (sol menü gecikmesini önler)
         const permState = await initPermissions({ redirectOnPending: true });
         const settingsPerms = getSettingsPerms();
         const userMgmtPerms = getUserMgmtPerms();
@@ -7063,7 +7079,6 @@
         const aiPerms = getAiPerms();
         const adminPerms = getAdminPerms();
 
-        // Global debug / reuse için sakla
         window.__settingsPerms = settingsPerms;
         window.__userMgmtPerms = userMgmtPerms;
         window.__roleMatrixPerms = roleMatrixPerms;
@@ -7071,6 +7086,29 @@
         window.__einvoicePerms = einvoicePerms;
         window.__aiPerms = aiPerms;
         window.__adminPerms = adminPerms;
+
+        try {
+          await applyConditionalSettingsNav(ctx, adminPerms, permState);
+        } catch (e) {
+          logger.warn('Ayarlar sol menü görünürlüğü ayarlanamadı', e);
+        }
+
+        // Legacy init — sol menü ile paralel
+        const legacyInitPromise = (async () => {
+          try {
+            wireLogoutButtons();
+            await buildTaxOfficeSelect();
+            bindTaxOfficeHandlers();
+            await bindStructuredAddressControls();
+            await loadUserProfile();
+            await setupCompanyAdminUI();
+            await initializeCategoryManagement();
+            initSaveButton();
+            initTabSaveButtons();
+          } catch (legacyInitErr) {
+            logger.warn('Legacy initialization modules failed partly', legacyInitErr);
+          }
+        })();
 
         // Genel Ayarlar (firma bilgileri) view guard
         const generalPage = document.getElementById('page-general');
@@ -7196,21 +7234,14 @@
           logger.warn('Premium sekmesi plan bilgisi yüklenemedi', e);
         }
 
-        // Rol & Yetki Yönetimi sayfasını başlat
+        await legacyInitPromise;
+
         try {
           await initRolePermissionsPage(ctx);
         } catch (e) {
           logger.warn('Rol & Yetki Yönetimi sayfası başlatılamadı', e);
         }
 
-        // Teklifbul Rule v1.0 — Koşullu sol menü (Sistem / Hata / Finans / AI): tek batch, tek admin kontrolü
-        try {
-          await applyConditionalSettingsNav(ctx, adminPerms);
-        } catch (e) {
-          logger.warn('Ayarlar sol menü görünürlüğü ayarlanamadı', e);
-        }
-
-        // Navigation zaten early init ile bağlandı; tekrar bağlamaya gerek yok.
         saveCompanyProfile();
 
         // URL hash'ine göre başlangıç sayfasını seç
@@ -8174,6 +8205,9 @@
           }, { merge: true });
           companyDoc = { id: companyRef.id, name: profile.companyName, code, ownerUid: user.uid, taxNumber: profile.taxNumber || null };
           await ensureUserOwnerFields(code);
+          await updateDoc(userRef, { companyId, companyCode: code }, { merge: true });
+          updatedUser = true;
+          await ensureDefaultCentralDepotLocation(db, { companyId, createdByUid: user.uid });
         }
         if (!profile.companyRole || !profile.companyJoinStatus || profile.companyJoinStatus === 'pending') {
           await ensureUserOwnerFields(companyDoc?.code || profile.companyCode || generateCompanyCode());
@@ -8269,6 +8303,7 @@
             ...assignOwnerFields
           });
           updatedUser = true;
+          await ensureDefaultCentralDepotLocation(db, { companyId, createdByUid: user.uid });
         }
       }
 

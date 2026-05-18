@@ -6,6 +6,7 @@
 import { logger } from '../../src/shared/log/logger.js';
 
 const COOKIE_CONSENT_KEY = 'cookieConsent';
+const COOKIE_CONSENT_EVENT = 'cookie-consent-updated';
 
 /**
  * Get current cookie preferences
@@ -254,12 +255,20 @@ function showCookieSettingsModal() {
 }
 
 /**
+ * Public helper: open cookie settings modal on demand
+ */
+export function openCookieSettings() {
+  showCookieSettingsModal();
+}
+
+/**
  * Save preferences and update UI
  * @param {Object} preferences 
  */
 function saveCookiePreferences(preferences) {
   localStorage.setItem(COOKIE_CONSENT_KEY, JSON.stringify(preferences));
   hideBanner();
+  document.dispatchEvent(new CustomEvent(COOKIE_CONSENT_EVENT, { detail: preferences }));
 
   if (preferences.analytics || preferences.marketing) {
     logger.info('Consent updated: Non-essential cookies allowed', preferences);
@@ -314,6 +323,21 @@ export function initCookieConsent() {
   if (shouldShowBanner()) {
     createCookieBanner();
   }
+}
+
+/**
+ * Subscribe to consent updates
+ * @param {(preferences: object) => void} callback
+ * @returns {() => void}
+ */
+export function onCookieConsentChange(callback) {
+  if (typeof callback !== 'function') return () => {};
+
+  const handler = (event) => {
+    callback(event.detail || getCookiePreferences());
+  };
+  document.addEventListener(COOKIE_CONSENT_EVENT, handler);
+  return () => document.removeEventListener(COOKIE_CONSENT_EVENT, handler);
 }
 
 // Auto-initialize on DOM ready

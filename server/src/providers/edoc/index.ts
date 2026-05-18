@@ -7,6 +7,7 @@ import { getAdminDb } from '../../../utils/firestore.js';
 import { logger } from '../../../../src/shared/log/logger.js';
 import type { IEdocProvider, EdocProviderCredentials } from './types.js';
 import { MockEdocProvider } from './mock.js';
+import { IntegratorStubProvider } from './integratorStubProvider.js';
 import { getFromReqCache, setInReqCache } from '../../utils/requestCache.js';
 import { ttlCache, CacheKeys } from '../../utils/ttlCache.js';
 import type { Request } from 'express';
@@ -22,11 +23,9 @@ function createProvider(providerKey: string): IEdocProvider {
     case 'mock':
       return new MockEdocProvider();
     case 'integrator_x':
-      // TODO: Integrator X implementasyonu
-      throw new Error('Integrator X provider henüz implement edilmedi');
+      return new IntegratorStubProvider('integrator_x');
     case 'integrator_y':
-      // TODO: Integrator Y implementasyonu
-      throw new Error('Integrator Y provider henüz implement edilmedi');
+      return new IntegratorStubProvider('integrator_y');
     default:
       throw new Error(`Bilinmeyen provider: ${providerKey}`);
   }

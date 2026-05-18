@@ -43,6 +43,8 @@ export type CatalogModel = {
   isActive?: boolean;
   freeEligible?: boolean;
   sort?: number;
+  inputCostPer1MTokensUSD?: number;
+  outputCostPer1MTokensUSD?: number;
   costPer1kTokensUSD?: number; // Teklifbul Rule v1.9 - Cost per 1k tokens in USD
   currency?: string; // Default: "USD"
 };

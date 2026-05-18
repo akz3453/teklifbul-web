@@ -183,7 +183,8 @@ async function initDemandsPage() {
       if (PAGING.activeTab === 'incoming') {
         ti.textContent = `Toplam: ${PAGING.currentVisibleCount}`;
       } else {
-        ti.textContent = PAGING.totalItems > 0 ? `Toplam: ${PAGING.totalItems}` : 'Yükleniyor...';
+        // Teklifbul Rule v1.0 — totalItems 0 olabilir (bos liste); "Yukleniyor" yalnizca fetch surerken
+        ti.textContent = isLoading ? 'Yükleniyor...' : `Toplam: ${PAGING.totalItems}`;
       }
     }
     
@@ -447,7 +448,8 @@ async function initDemandsPage() {
   async function loadDemandsPaged(reset = false, direction = 'next') {
     if (isLoading) return;
     isLoading = true;
-    
+    let pageFetchDocCount = -1;
+
     try {
       if (reset) {
         PAGING.currentPage = 1;
@@ -585,6 +587,7 @@ async function initDemandsPage() {
       }
 
       const snap = await getDocs(finalQ);
+      pageFetchDocCount = snap.docs.length;
       let rows = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
       // Teklifbul Rule v1.0 - Outgoing fallback rows:
@@ -600,6 +603,7 @@ async function initDemandsPage() {
           );
           const fallbackSnap = await getDocs(fallbackQ);
           rows = fallbackSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+          pageFetchDocCount = fallbackSnap.docs.length;
           logger.info('Outgoing fallback by createdBy applied', { count: rows.length, uid });
         } catch (e) {
           logger.warn('Outgoing fallback rows query failed', e);
@@ -700,11 +704,6 @@ async function initDemandsPage() {
         renderDraft(filteredRows, '#draftRows', '#draftEmpty');
       }
 
-      // 7. Update UI
-      updatePagerUI();
-      const btnNext = document.getElementById('btnNext');
-      if (btnNext) btnNext.disabled = snap.docs.length < PAGING.pageSize;
-
     } catch (err) {
       logger.error('loadDemandsPaged error', err);
       if (err.code === 'failed-precondition' || String(err).includes('index')) {
@@ -715,6 +714,11 @@ async function initDemandsPage() {
       }
     } finally {
       isLoading = false;
+      updatePagerUI();
+      const btnNext = document.getElementById('btnNext');
+      if (btnNext && pageFetchDocCount >= 0) {
+        btnNext.disabled = pageFetchDocCount < PAGING.pageSize;
+      }
     }
   }
 
@@ -959,35 +963,48 @@ async function initDemandsPage() {
           let companyName = 'Bilinmeyen Firma';
           let email = '';
           let companyId = '';
+          // Teklifbul Rule v1.0 — profiles/users PII kurallari baskasinin dokumanini engeller;
+          // publicProfiles tum giris yapanlar icin okunabilir (PERMISSION_FIXES_SUMMARY ile uyumlu).
+          const applyDisplayFields = (d) => {
+            if (!d || typeof d !== 'object') return;
+            const nm = d.companyName || d.companyTitle || d.displayName || d.name;
+            if (nm) companyName = nm;
+            if (d.email) email = d.email;
+            const cid = d.companyId || d.currentCompanyId || d.activeCompanyId;
+            if (cid) companyId = cid;
+          };
           try {
-             // Try profiles first
-             const pSnap = await getDoc(doc(db, 'profiles', sId));
-             if (pSnap.exists()) {
-               const pData = pSnap.data();
-               companyName = pData.companyName || pData.companyTitle || pData.name || 'Bilinmeyen Firma';
-               email = pData.email || '';
-               companyId = pData.companyId || pData.activeCompanyId || '';
-             }
-             
-             // If no companyId or not found, try users
-             if (!companyId) {
-               const uSnap = await getDoc(doc(db, 'users', sId));
-               if (uSnap.exists()) {
-                 const uData = uSnap.data();
-                 if (companyName === 'Bilinmeyen Firma') {
-                   companyName = uData.companyName || uData.companyTitle || uData.name || 'Bilinmeyen Firma';
-                   email = uData.email || email || '';
-                 }
-                 companyId = uData.companyId || uData.activeCompanyId || '';
-               }
-             }
-             
-             // Fallback for companyId: if it's still empty and sId looks like a company ID or starts with solo
-             if (!companyId && (sId.startsWith('solo-') || sId.length > 20)) {
-               // In some cases sId might be the company ID itself if we reached a company
-               // But usually it's a user ID. 
-             }
-          } catch (err) { logger.warn('Kullanıcı bilgisi çekilemedi', err); }
+            try {
+              const pubSnap = await getDoc(doc(db, 'publicProfiles', sId));
+              if (pubSnap.exists()) applyDisplayFields(pubSnap.data());
+            } catch (e) {
+              logger.warn('publicProfiles okunamadı', e);
+            }
+            if (companyName === 'Bilinmeyen Firma' || !companyId) {
+              try {
+                const uSnap = await getDoc(doc(db, 'users', sId));
+                if (uSnap.exists()) applyDisplayFields(uSnap.data());
+              } catch (e) {
+                const code = e && typeof e === 'object' && 'code' in e ? e.code : '';
+                if (code === 'permission-denied') {
+                  logger.debug('users okuması yok (kurallar); publicProfiles yeterli olmalı', { sId });
+                } else {
+                  logger.warn('users kaydı okunamadı', e);
+                }
+              }
+            }
+            if (sId === uid && (companyName === 'Bilinmeyen Firma' || !companyId)) {
+              try {
+                const pSnap = await getDoc(doc(db, 'profiles', sId));
+                if (pSnap.exists()) applyDisplayFields(pSnap.data());
+              } catch (e) {
+                const code = e && typeof e === 'object' && 'code' in e ? e.code : '';
+                if (code !== 'permission-denied') logger.warn('profiles okunamadı', e);
+              }
+            }
+          } catch (err) {
+            logger.warn('Kullanıcı bilgisi çekilemedi', err);
+          }
           
           const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
           const item = document.createElement('div');

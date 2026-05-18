@@ -57,34 +57,45 @@ async function checkAdminAccess() {
 // Tab navigation
 function initTabs() {
   const navLinks = document.querySelectorAll('.admin-sidebar-nav .nav-link');
+  const activateTab = async (tab) => {
+    if (!tab) return;
+    const target = document.getElementById(`tab-${tab}`);
+    if (!target) return;
+    navLinks.forEach(l => l.classList.remove('active'));
+    const activeLink = document.querySelector(`.admin-sidebar-nav .nav-link[data-tab="${tab}"]`);
+    if (activeLink) activeLink.classList.add('active');
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    target.classList.add('active');
+    const titles = {
+      users: 'Kullanıcılar',
+      subscriptions: 'Paketler',
+      logs: 'Loglar',
+      errors: 'Hatalar',
+      settings: 'Sistem Ayarları',
+      'ai-catalog': 'AI Katalog Yönetimi'
+    };
+    document.getElementById('page-title').textContent = titles[tab] || 'Admin Panel';
+    window.location.hash = tab;
+    await loadTabData(tab);
+  };
+
   navLinks.forEach(link => {
-    link.addEventListener('click', (e) => {
-      e.preventDefault();
+    link.addEventListener('click', async (e) => {
       const tab = link.dataset.tab;
-      if (!tab) return;
-      
-      // Update active state
-      navLinks.forEach(l => l.classList.remove('active'));
-      link.classList.add('active');
-      
-      // Show/hide tabs
-      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-      document.getElementById(`tab-${tab}`).classList.add('active');
-      
-      // Update page title
-      const titles = {
-        users: 'Kullanıcılar',
-        subscriptions: 'Paketler',
-        logs: 'Loglar',
-        errors: 'Hatalar',
-        settings: 'Sistem Ayarları'
-      };
-      document.getElementById('page-title').textContent = titles[tab] || 'Admin Panel';
-      
-      // Load tab data
-      loadTabData(tab);
+      const isExternal = link.dataset.external === 'true';
+      if (!tab || isExternal) {
+        // External admin links should navigate normally
+        return;
+      }
+      e.preventDefault();
+      await activateTab(tab);
     });
   });
+
+  const initialTab = (window.location.hash || '').replace('#', '').trim();
+  if (initialTab && document.getElementById(`tab-${initialTab}`)) {
+    void activateTab(initialTab);
+  }
 }
 
 // Teklifbul Rule v1.0 - Debounce helper
@@ -474,6 +485,9 @@ async function loadTabData(tab) {
       break;
     case 'settings':
       await loadSettings();
+      break;
+    case 'ai-catalog':
+      // iframe içerik kendi sayfasında yönetilir
       break;
   }
 }

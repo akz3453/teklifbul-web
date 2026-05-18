@@ -7,9 +7,17 @@ import { db, auth } from '../firebase.js';
 let contextCache = null;
 let cacheTimestamp = 0;
 const CACHE_TTL = 5000; // 5 saniye
+
+/** Oturum değişince veya zorunlu yenilemede önbelleği sıfırla */
+export function clearCompanyContextCache() {
+  contextCache = null;
+  cacheTimestamp = 0;
+}
+
 import {
   doc,
   getDoc,
+  getDocFromServer,
   updateDoc,
   serverTimestamp,
   collection,
@@ -21,6 +29,12 @@ import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.1/f
 import { logger } from '../../../src/shared/log/logger.js';
 import { toast } from '../../../src/shared/ui/toast.js';
 import { MESSAGES } from '../../../src/shared/constants/messages.js';
+
+if (typeof window !== 'undefined') {
+  onAuthStateChanged(auth, (u) => {
+    if (!u) clearCompanyContextCache();
+  });
+}
 
 /**
  * Tek bir yerden şirket bağlamını çözer.
@@ -56,7 +70,12 @@ export async function resolveCompanyContext(user, options = {}) {
 
     // Kullanıcı dokümanını her çağrıda taze çek - Teklifbul Rule v1.0
     const userRef = doc(db, 'users', user.uid);
-    const userSnap = await getDoc(userRef);
+    let userSnap;
+    try {
+      userSnap = await getDocFromServer(userRef);
+    } catch {
+      userSnap = await getDoc(userRef);
+    }
 
     if (!userSnap.exists()) {
       logger.error('resolveCompanyContext: user doc bulunamadı', { uid: user.uid });

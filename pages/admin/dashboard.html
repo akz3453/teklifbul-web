@@ -161,6 +161,13 @@
     .tab-content.active {
       display: block;
     }
+    .admin-embed-frame {
+      width: 100%;
+      min-height: 78vh;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      background: #fff;
+    }
 
     /* Cards */
     .admin-card {
@@ -534,6 +541,8 @@
           <li><a href="#logs" class="nav-link" data-tab="logs">📋 Loglar</a></li>
           <li><a href="#errors" class="nav-link" data-tab="errors">🐛 Hatalar</a></li>
           <li><a href="#settings" class="nav-link" data-tab="settings">⚙️ Sistem Ayarları</a></li>
+          <li><a href="#ai-catalog" class="nav-link" data-tab="ai-catalog">🧠 AI Katalog Yönetimi</a></li>
+          <li><a href="/pages/admin/migration-dashboard.html" class="nav-link" data-external="true">🚀 Veri Göçü Paneli</a></li>
         </ul>
       </nav>
     </aside>
@@ -690,6 +699,20 @@
               </div>
               <button type="submit" class="btn btn-primary">Kaydet</button>
             </form>
+          </div>
+        </div>
+
+        <div id="tab-ai-catalog" class="tab-content">
+          <div class="admin-card">
+            <h3>AI Katalog Yönetimi</h3>
+            <p class="muted" style="margin-bottom:12px;">AI modelleri bu panel içinde görüntülenir.</p>
+            <iframe
+              id="admin-ai-catalog-frame"
+              class="admin-embed-frame"
+              title="AI Katalog Yönetimi"
+              aria-label="AI Katalog Yönetimi"
+              loading="lazy"
+              src="/pages/admin/ai-catalog.html"></iframe>
           </div>
         </div>
       </div>

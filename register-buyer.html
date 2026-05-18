@@ -368,6 +368,7 @@
     import { toast } from './src/shared/ui/toast.js';
     // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
     import { MESSAGES } from './src/shared/constants/messages.js';
+    import { ensureDefaultCentralDepotLocation } from '/assets/js/services/ensure-default-central-depot.js';
     import {
       doc, setDoc, getDoc, serverTimestamp, collection, addDoc, query, where, getDocs
     } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
@@ -993,6 +994,10 @@
 
         // Save to Firestore
         await setDoc(userRef, payload, { merge: true });
+
+        if (mode === 'create' && companyId) {
+          await ensureDefaultCentralDepotLocation(db, { companyId, createdByUid: user.uid });
+        }
 
         logger.info("User profile saved", { uid: user.uid });
         

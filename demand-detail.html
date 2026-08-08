@@ -1759,6 +1759,18 @@
     import { CATEGORIES, getCategoryNameById, getCategoryIdByName } from "./categories.js";
     import { slugifyTr } from "./utils/slugify-tr.js";
 
+    // Teklifbul Rule v1.0 - Module scripts do not share locals across <script type="module"> blocks
+    function categoryIdToName(id) {
+      if (!id) return id;
+      const name = getNameById(id);
+      if (name && name !== id) return name;
+      const legacyName = getCategoryNameById(id);
+      return legacyName || id;
+    }
+    function toSlug(name) {
+      return slugifyTr(name);
+    }
+
     const user = await requireAuth();
 
     // Readonly mod kontrolü - Teklifbul Rule v1.0
@@ -2292,6 +2304,13 @@
         demandStatus = demandStatusValue;
         // Check both status field and isPublished field for backward compatibility
         isPublished = demandStatusValue === 'published' || demandStatusValue === 'approved' || demandData.isPublished === true;
+
+        // Teklifbul Rule v1.0 — Onaylanmamış taslak: düzenleme formuna yönlendir (bilgiler prefills)
+        const urlReadonly = new URLSearchParams(location.search).get('readonly') === 'true';
+        if (!urlReadonly && !isPublished && (isOwner || isCompanyOwner) && demandStatusValue === 'draft') {
+          location.replace(`./demand-new.html?id=${encodeURIComponent(demandId)}`);
+          return;
+        }
 
         // Load creator's company name for "Talep Eden" field
         let creatorCompanyName = demandData.requester || '-';
@@ -6133,13 +6152,21 @@
         }
 
         // demandRecipients: create missing ones only
-        const existingSnap = await getDocs(query(collection(db, 'demandRecipients'), where('demandId', '==', demandId), limit(2000)));
-        const existingSupplierIds = new Set(existingSnap.docs.map(d => d.data()?.supplierId).filter(Boolean));
+        let existingSupplierIds = new Set();
+        try {
+          const existingSnap = await getDocs(query(collection(db, 'demandRecipients'), where('demandId', '==', demandId), limit(2000)));
+          existingSupplierIds = new Set(existingSnap.docs.map(d => d.data()?.supplierId).filter(Boolean));
+        } catch (existingErr) {
+          logger.warn('Existing demandRecipients query failed; continuing with create-only', {
+            code: existingErr?.code,
+            message: existingErr?.message
+          });
+        }
         const toCreate = supplierIds.filter(sid => !existingSupplierIds.has(sid));
 
         await Promise.all(toCreate.map(supplierId => addDoc(collection(db, 'demandRecipients'), {
           demandId,
-          buyerId: demand.createdBy,
+          buyerId: demand.createdBy || auth.currentUser?.uid,
           supplierId,
           matchedAt: serverTimestamp(),
           status: 'pending',
@@ -6172,7 +6199,15 @@
           recipientCreatedCount: toCreate.length
         });
       } catch (err) {
-        logger.error('publishDemandAndMatchSuppliers(v2) - fatal error', { routingTraceId, err });
+        const errMsg = err?.message || String(err);
+        const errCode = err?.code || 'unknown';
+        logger.error('publishDemandAndMatchSuppliers(v2) - fatal error', {
+          routingTraceId,
+          code: errCode,
+          message: errMsg,
+          err
+        });
+        toast.error(`Tedarikçi eşleştirme hatası: ${errMsg}`);
       }
     }
 

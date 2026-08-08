@@ -17,11 +17,23 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
+    // Teklifbul Rule v1.0 — pending/rejected üyelik şirket verisine erişemez
+    // approved_pending_permissions: şirket verisi kapalı, yayınlı talep pazarı açık kalır
+    function hasAcceptedCompanyMembership() {
+      let u = currentUserData();
+      return !('companyJoinStatus' in u) ||
+        u.companyJoinStatus == null ||
+        u.companyJoinStatus == '' ||
+        u.companyJoinStatus == 'accepted' ||
+        u.companyJoinStatus == 'approved';
+    }
+
     // Teklifbul Rule v1.0
     function companyMatch(companyId) {
       let u = currentUserData();
       return isSignedIn() &&
         companyId is string &&
+        hasAcceptedCompanyMembership() &&
         (
           companyId == u.companyId ||
           companyId == u.activeCompanyId ||
@@ -29,9 +41,126 @@ service cloud.firestore {
         );
     }
 
+    function isUnsetOrSoloCompanyId(cid) {
+      return !(cid is string) || cid == '' || cid.matches('solo-.*');
+    }
+
+    // Solo/boş profil → gerçek şirkete pending katılım (companyMatch accepted sonrası açılır)
+    function isPendingSelfJoinUpdate() {
+      let oldCid = ('companyId' in resource.data) ? resource.data.companyId : '';
+      return isUnsetOrSoloCompanyId(oldCid) &&
+        request.resource.data.companyId is string &&
+        !isUnsetOrSoloCompanyId(request.resource.data.companyId) &&
+        request.resource.data.companyJoinStatus == 'pending' &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(protectedUserEscalationKeys()) &&
+        createUserHasNoPrivilegeEscalation();
+    }
+
+    // Owner onayından sonra rol doğrulanınca kullanıcı accepted'a geçebilir
+    function isSelfAcceptAfterPermissions() {
+      return resource.data.companyJoinStatus == 'approved_pending_permissions' &&
+        request.resource.data.companyJoinStatus == 'accepted' &&
+        request.resource.data.companyId == resource.data.companyId &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['companyJoinStatus', 'updatedAt']);
+    }
+
+    // Şirketi yeni oluşturan sahibi kendi profiline bağlayabilir
+    function isSelfClaimOwnedCompany() {
+      return request.resource.data.companyId is string &&
+        !isUnsetOrSoloCompanyId(request.resource.data.companyId) &&
+        isCompanyOwner(request.resource.data.companyId) &&
+        request.resource.data.companyJoinStatus in ['accepted', 'approved'] &&
+        createUserHasNoPrivilegeEscalation();
+    }
+
     // Teklifbul Rule v1.0
     function canAccessByCompany(resourceCompanyId) {
       return isSuperAdmin() || companyMatch(resourceCompanyId);
+    }
+
+    // Teklifbul Rule v1.0 — update'te companyId taşımayı engelle
+    function companyIdUnchanged() {
+      return !('companyId' in request.resource.data.diff(resource.data).affectedKeys());
+    }
+
+    // Teklifbul Rule v1.0 — şirket Premium (stok/satış UI ile uyumlu)
+    function companyHasPremiumAccess(companyId) {
+      let c = get(/databases/$(database)/documents/companies/$(companyId)).data;
+      return isSuperAdmin() ||
+        c.isPremium == true ||
+        (c.planId is string && c.planId.matches('.*premium.*')) ||
+        (c.plan is string && c.plan.matches('.*premium.*')) ||
+        (c.subscriptionPlanId is string && c.subscriptionPlanId.matches('.*premium.*'));
+    }
+
+    // Teklifbul Rule v1.0 — alıcı rolü: map ({buyer:true}) veya list (["buyer"]) veya companyRoleType
+    function requesterIsBuyer() {
+      let u = currentUserData();
+      return isSignedIn() && (
+        u.isBuyer == true ||
+        u.role == 'buyer' ||
+        u.role == 'both' ||
+        u.companyRoleType == 'buyer' ||
+        (
+          u.roles is map &&
+          (u.roles.buyer == true || u.roles.both == true)
+        ) ||
+        (
+          u.roles is list &&
+          u.roles.hasAny(['buyer', 'both'])
+        ) ||
+        (
+          u.companyRoles is list &&
+          u.companyRoles.hasAny(['buyer', 'both'])
+        )
+      );
+    }
+
+    function resourceHasSupplierCategories() {
+      return (
+        (
+          resource.data.supplierCategoryIds is list &&
+          resource.data.supplierCategoryIds.size() > 0
+        ) ||
+        (
+          resource.data.supplierCategoryKeys is list &&
+          resource.data.supplierCategoryKeys.size() > 0
+        ) ||
+        (
+          resource.data.supplierCategories is list &&
+          resource.data.supplierCategories.size() > 0
+        )
+      );
+    }
+
+    function isCompanyOwner(companyId) {
+      let c = get(/databases/$(database)/documents/companies/$(companyId)).data;
+      return isSignedIn() &&
+        companyId is string &&
+        (
+          ('ownerId' in c && c.ownerId == request.auth.uid) ||
+          ('ownerUid' in c && c.ownerUid == request.auth.uid)
+        );
+    }
+
+    // Client asla yazmamalı (yalnız Admin SDK / superAdmin / owner onay yolu)
+    function protectedUserEscalationKeys() {
+      return ['isAdmin', 'isOps', 'isPremium', 'plan', 'planId', 'permissions', 'subscription', 'aiProvider'];
+    }
+
+    function createUserHasNoPrivilegeEscalation() {
+      let d = request.resource.data;
+      return (!('isAdmin' in d) || d.isAdmin != true) &&
+        (!('isOps' in d) || d.isOps != true) &&
+        (!('isPremium' in d) || d.isPremium != true) &&
+        (!('planId' in d)) &&
+        (!('plan' in d) || d.plan == 'free' || d.plan == null) &&
+        (!('role' in d) || !(d.role in ['admin', 'ops', 'superadmin', 'superAdmin'])) &&
+        (!('permissions' in d));
+    }
+
+    function companyBillingProtectedKeys() {
+      return ['planId', 'plan', 'isPremium', 'subscription', 'subscriptionPlanId', 'subscriptionStatus', 'balanceTokens', 'ownerId', 'ownerUid', 'billing'];
     }
 
     function demandById(demandId) {
@@ -105,46 +234,91 @@ service cloud.firestore {
     //  - SuperAdmin her zaman
     // Genel `isSignedIn()` PII sizintisi nedeniyle kaldirildi.
     match /users/{userId} {
+      // Teklifbul Rule v1.0 — Kendi profil / aynı şirket
       allow read: if isSuperAdmin() || (
         isSignedIn() && (
           request.auth.uid == userId ||
           (
             'companyId' in resource.data &&
             companyMatch(resource.data.companyId)
-          ) ||
-          (
-            'roles' in resource.data &&
-            resource.data.roles is map &&
-            resource.data.roles.supplier == true
-          ) ||
-          (
-            'role' in resource.data &&
-            resource.data.role == 'supplier'
           )
         )
       );
-      allow create: if isSuperAdmin() || (isSignedIn() && request.auth.uid == userId);
+      // Pazaryeri eşleme: her kategori alanı ayrı allow (OR+query güvenilirliği)
+      // array-contains-any sorguları bu kurallarla kural-güvenli çalışır
+      allow read: if isSignedIn() &&
+        hasAcceptedCompanyMembership() &&
+        resource.data.supplierCategoryIds is list;
+      allow read: if isSignedIn() &&
+        hasAcceptedCompanyMembership() &&
+        resource.data.supplierCategoryKeys is list;
+      allow read: if isSignedIn() &&
+        hasAcceptedCompanyMembership() &&
+        resource.data.supplierCategories is list;
+      allow create: if isSuperAdmin() || (
+        isSignedIn() &&
+        request.auth.uid == userId &&
+        createUserHasNoPrivilegeEscalation() &&
+        (
+          !('companyId' in request.resource.data) ||
+          isUnsetOrSoloCompanyId(request.resource.data.companyId)
+        ) &&
+        (
+          !('companyJoinStatus' in request.resource.data) ||
+          request.resource.data.companyJoinStatus == null ||
+          request.resource.data.companyJoinStatus == '' ||
+          request.resource.data.companyJoinStatus == 'pending'
+        )
+      );
       allow update: if isSuperAdmin() || (
         isSignedIn() && (
           (
             request.auth.uid == userId &&
             (
-              // If the profile is already set up, block changing sensitive fields
+              // Profil kurulu (solo hariç gerçek şirket): hassas alanlar kilitli
               (
-                'companyId' in resource.data && resource.data.companyId != null && resource.data.companyId != "" &&
-                !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'roles', 'companyId', 'companies', 'activeCompanyId', 'permissions', 'isAdmin', 'companyRole', 'companyRoleType', 'companyRoleKey', 'companyRoles']) &&
+                'companyId' in resource.data &&
+                resource.data.companyId != null &&
+                resource.data.companyId != "" &&
+                !isUnsetOrSoloCompanyId(resource.data.companyId) &&
+                !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'roles', 'companyId', 'companies', 'activeCompanyId', 'permissions', 'isAdmin', 'isOps', 'isPremium', 'plan', 'planId', 'companyRole', 'companyRoleType', 'companyRoleKey', 'companyRoles', 'companyJoinStatus']) &&
                 isValidUiPrefs()
               ) ||
-              // Or if the profile is NOT set up yet, allow initializing them
+              // Solo / boş profil → gerçek şirkete pending katılım
               (
-                !('companyId' in resource.data) || resource.data.companyId == null || resource.data.companyId == ""
+                isPendingSelfJoinUpdate()
+              ) ||
+              // Yeni şirket kurucusu kendi şirketini bağlar
+              (
+                isSelfClaimOwnedCompany()
+              ) ||
+              // Owner onayından sonra yetki doğrulanınca accepted
+              (
+                isSelfAcceptAfterPermissions()
+              ) ||
+              // Profil henüz kurulmamış / solo: companyId yalnız solo-* kalabilir; keyfi şirket spoof yasak
+              (
+                isUnsetOrSoloCompanyId(('companyId' in resource.data) ? resource.data.companyId : '') &&
+                (
+                  !('companyId' in request.resource.data) ||
+                  isUnsetOrSoloCompanyId(request.resource.data.companyId) ||
+                  request.resource.data.companyId == resource.data.companyId
+                ) &&
+                (
+                  !('companyJoinStatus' in request.resource.data) ||
+                  !(request.resource.data.companyJoinStatus in ['accepted', 'approved']) ||
+                  (('companyJoinStatus' in resource.data) && request.resource.data.companyJoinStatus == resource.data.companyJoinStatus)
+                ) &&
+                !request.resource.data.diff(resource.data).affectedKeys().hasAny(protectedUserEscalationKeys()) &&
+                createUserHasNoPrivilegeEscalation() &&
+                isValidUiPrefs()
               )
             )
           ) ||
           (
-            // Şirket sahibinin katılım isteğini onaylamasına izin ver
+            // Katılım onayı: yalnızca şirket sahibi
             request.resource.data.companyId != null &&
-            canAccessByCompany(request.resource.data.companyId) &&
+            isCompanyOwner(request.resource.data.companyId) &&
             request.resource.data.diff(resource.data).affectedKeys().hasOnly(['companyId', 'companies', 'activeCompanyId', 'roles', 'companyRoleKey', 'companyRole', 'companyRoleType', 'companyRoles', 'companyJoinStatus', 'updatedAt'])
           )
         )
@@ -158,22 +332,31 @@ service cloud.firestore {
     // Company-bound business collections
     match /stockGroups/{id} {
       allow read: if canAccessByCompany(resource.data.companyId);
-      allow create: if canAccessByCompany(request.resource.data.companyId);
-      allow update: if canAccessByCompany(resource.data.companyId);
+      allow create: if canAccessByCompany(request.resource.data.companyId) &&
+        companyHasPremiumAccess(request.resource.data.companyId);
+      allow update: if canAccessByCompany(resource.data.companyId) &&
+        companyIdUnchanged() &&
+        companyHasPremiumAccess(resource.data.companyId);
       allow delete: if isSuperAdmin();
     }
 
     match /stocks/{id} {
       allow read: if canAccessByCompany(resource.data.companyId);
-      allow create: if canAccessByCompany(request.resource.data.companyId);
-      allow update: if canAccessByCompany(resource.data.companyId);
+      allow create: if canAccessByCompany(request.resource.data.companyId) &&
+        companyHasPremiumAccess(request.resource.data.companyId);
+      allow update: if canAccessByCompany(resource.data.companyId) &&
+        companyIdUnchanged() &&
+        companyHasPremiumAccess(resource.data.companyId);
       allow delete: if isSuperAdmin();
     }
 
     match /stock_locations/{id} {
       allow read: if canAccessByCompany(resource.data.companyId);
-      allow create: if canAccessByCompany(request.resource.data.companyId);
-      allow update: if canAccessByCompany(resource.data.companyId);
+      allow create: if canAccessByCompany(request.resource.data.companyId) &&
+        companyHasPremiumAccess(request.resource.data.companyId);
+      allow update: if canAccessByCompany(resource.data.companyId) &&
+        companyIdUnchanged() &&
+        companyHasPremiumAccess(resource.data.companyId);
       allow delete: if isSuperAdmin();
     }
 
@@ -183,70 +366,107 @@ service cloud.firestore {
         (resource == null)
       ));
       allow list: if canAccessByCompany(resource.data.companyId);
-      allow create: if canAccessByCompany(request.resource.data.companyId);
-      allow update: if canAccessByCompany(resource.data.companyId);
+      // Miktar/avgCost yalnız Admin SDK; client sadece min/max seviye metadata
+      allow create: if canAccessByCompany(request.resource.data.companyId) &&
+        companyHasPremiumAccess(request.resource.data.companyId) &&
+        request.resource.data.quantity == 0 &&
+        (!('avgCost' in request.resource.data) || request.resource.data.avgCost == 0);
+      allow update: if canAccessByCompany(resource.data.companyId) &&
+        companyIdUnchanged() &&
+        companyHasPremiumAccess(resource.data.companyId) &&
+        request.resource.data.quantity == resource.data.quantity &&
+        request.resource.data.avgCost == resource.data.avgCost &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['sku', 'locationId', 'stockId']);
       allow delete: if isSuperAdmin();
     }
 
+    // Client write kapalı — mutation Admin SDK (/api/stock-movements)
     match /stock_movements/{id} {
       allow read: if canAccessByCompany(resource.data.companyId);
-      allow create: if canAccessByCompany(request.resource.data.companyId);
-      allow update: if canAccessByCompany(resource.data.companyId);
-      allow delete: if isSuperAdmin();
+      allow create, update, delete: if isSuperAdmin();
     }
 
     match /stock_counts/{id} {
       allow read: if canAccessByCompany(resource.data.companyId);
-      allow create: if canAccessByCompany(request.resource.data.companyId);
-      allow update: if canAccessByCompany(resource.data.companyId);
+      allow create: if canAccessByCompany(request.resource.data.companyId) &&
+        companyHasPremiumAccess(request.resource.data.companyId);
+      allow update: if canAccessByCompany(resource.data.companyId) &&
+        companyIdUnchanged() &&
+        companyHasPremiumAccess(resource.data.companyId);
       allow delete: if isSuperAdmin();
 
       match /count_items/{itemId} {
         allow read: if canAccessByCompany(get(/databases/$(database)/documents/stock_counts/$(id)).data.companyId);
-        allow create, update, delete: if canAccessByCompany(get(/databases/$(database)/documents/stock_counts/$(id)).data.companyId);
+        allow create, update, delete: if canAccessByCompany(get(/databases/$(database)/documents/stock_counts/$(id)).data.companyId) &&
+          companyHasPremiumAccess(get(/databases/$(database)/documents/stock_counts/$(id)).data.companyId);
       }
     }
 
     match /customers/{id} {
       allow read: if canAccessByCompany(resource.data.companyId);
-      allow create: if canAccessByCompany(request.resource.data.companyId);
-      allow update: if canAccessByCompany(resource.data.companyId);
+      allow create: if canAccessByCompany(request.resource.data.companyId) &&
+        companyHasPremiumAccess(request.resource.data.companyId);
+      allow update: if canAccessByCompany(resource.data.companyId) &&
+        companyIdUnchanged() &&
+        companyHasPremiumAccess(resource.data.companyId);
       allow delete: if isSuperAdmin();
     }
 
     match /sales/{id} {
       allow read: if canAccessByCompany(resource.data.companyId);
-      allow create: if canAccessByCompany(request.resource.data.companyId);
-      allow update: if canAccessByCompany(resource.data.companyId);
+      allow create: if canAccessByCompany(request.resource.data.companyId) &&
+        companyHasPremiumAccess(request.resource.data.companyId);
+      allow update: if canAccessByCompany(resource.data.companyId) &&
+        companyIdUnchanged() &&
+        companyHasPremiumAccess(resource.data.companyId);
       allow delete: if isSuperAdmin();
     }
 
     match /invoices/{id} {
       allow read: if canAccessByCompany(resource.data.companyId);
       allow create: if canAccessByCompany(request.resource.data.companyId);
-      allow update: if canAccessByCompany(resource.data.companyId);
+      allow update: if canAccessByCompany(resource.data.companyId) && companyIdUnchanged();
       allow delete: if isSuperAdmin();
     }
 
     match /incoming_edocs/{id} {
       allow read: if canAccessByCompany(resource.data.companyId);
       allow create: if canAccessByCompany(request.resource.data.companyId);
-      allow update: if canAccessByCompany(resource.data.companyId);
+      allow update: if canAccessByCompany(resource.data.companyId) && companyIdUnchanged();
       allow delete: if isSuperAdmin();
     }
 
     match /supplier_item_mappings/{id} {
       allow read: if canAccessByCompany(resource.data.companyId);
       allow create: if canAccessByCompany(request.resource.data.companyId);
-      allow update: if canAccessByCompany(resource.data.companyId);
+      allow update: if canAccessByCompany(resource.data.companyId) && companyIdUnchanged();
       allow delete: if isSuperAdmin();
     }
 
     match /bids/{id} {
-      // Restrict read access to buyer and supplier companies only
+      // Teklifbul Rule v1.0 — Okuma: alıcı/satıcı şirket, talep sahibi, kendi teklifi
+      // demandId == X sorguları: get(demand) aynı dokümana sabitlenir → list güvenli
       allow read: if isSignedIn() && (
-        canAccessByCompany(resource.data.buyerCompanyId) || 
+        canAccessByCompany(resource.data.buyerCompanyId) ||
         canAccessByCompany(resource.data.supplierCompanyId) ||
+        (
+          resource.data.demandId is string &&
+          (
+            canAccessByCompany(demandById(resource.data.demandId).creatorCompanyId) ||
+            demandById(resource.data.demandId).createdBy == request.auth.uid
+          )
+        ) ||
+        (
+          resource.data.involvedCompanyIds is list &&
+          hasAcceptedCompanyMembership() &&
+          (
+            (currentUserData().companyId is string && currentUserData().companyId in resource.data.involvedCompanyIds) ||
+            (currentUserData().activeCompanyId is string && currentUserData().activeCompanyId in resource.data.involvedCompanyIds)
+          )
+        ) ||
+        resource.data.supplierId == request.auth.uid ||
+        resource.data.createdBy == request.auth.uid ||
+        resource.data.buyerId == request.auth.uid ||
         isSuperAdmin()
       );
       allow create: if isBidSupplierCreate() &&
@@ -288,27 +508,34 @@ service cloud.firestore {
     }
 
     match /demands/{id} {
-      // Restrict read access to creator company and potentially matched suppliers
-      // Using a slightly more permissive read for published demands to avoid query complexity issues,
-      // but still better than just 'isSignedIn()'.
+      // Yayınlı talepler: get() içermeyen ayrı kural — list/query (isPublished==true) güvenilir çalışır
+      allow read: if isSignedIn() && resource.data.isPublished == true;
+      // Şirket üyesi / sahip / admin
       allow read: if isSignedIn() && (
-        canAccessByCompany(resource.data.creatorCompanyId) || 
-        resource.data.isPublished == true ||
+        canAccessByCompany(resource.data.creatorCompanyId) ||
+        resource.data.createdBy == request.auth.uid ||
         isSuperAdmin()
       );
-      allow create: if canAccessByCompany(request.resource.data.creatorCompanyId) ||
-        (isSignedIn() && request.resource.data.createdBy == request.auth.uid);
+      allow create: if isSignedIn() &&
+        request.resource.data.createdBy == request.auth.uid &&
+        canAccessByCompany(request.resource.data.creatorCompanyId);
       allow update: if (canAccessByCompany(resource.data.creatorCompanyId) ||
         (isSignedIn() && resource.data.createdBy == request.auth.uid)) &&
         (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['creatorCompanyId', 'createdBy']));
       allow delete: if canAccessByCompany(resource.data.creatorCompanyId) ||
         (isSignedIn() && resource.data.createdBy == request.auth.uid);
 
-      // Teklifbul Rule v1.0 - demand alt koleksiyonlari (items, attachments, ...)
-      // sadece talep sahibi sirket veya talep yaraticisi tarafindan erisilebilir.
-      // Yayinda ise read'i de okuyabilen tedarikciler ek mantikla genisletilebilir.
+      // Teklifbul Rule v1.0 - demand alt koleksiyonlari
+      // Yayınlı talepler: read açık; write yalnızca sahip şirket / createdBy
       match /{allSubcollections=**} {
-        allow read, write: if isSuperAdmin() || (
+        allow read: if isSuperAdmin() || (
+          isSignedIn() && (
+            canAccessByCompany(get(/databases/$(database)/documents/demands/$(id)).data.creatorCompanyId) ||
+            get(/databases/$(database)/documents/demands/$(id)).data.createdBy == request.auth.uid ||
+            get(/databases/$(database)/documents/demands/$(id)).data.isPublished == true
+          )
+        );
+        allow write: if isSuperAdmin() || (
           isSignedIn() && (
             canAccessByCompany(get(/databases/$(database)/documents/demands/$(id)).data.creatorCompanyId) ||
             get(/databases/$(database)/documents/demands/$(id)).data.createdBy == request.auth.uid
@@ -320,28 +547,93 @@ service cloud.firestore {
     match /internalDemands/{id} {
       allow read: if canAccessByCompany(resource.data.companyId);
       allow create: if canAccessByCompany(request.resource.data.companyId);
-      allow update: if canAccessByCompany(resource.data.companyId);
+      allow update: if canAccessByCompany(resource.data.companyId) && companyIdUnchanged();
       allow delete: if isSuperAdmin();
     }
 
     match /public_listings/{id} {
-      allow read: if isSignedIn();
-      allow create: if canAccessByCompany(request.resource.data.companyId);
-      allow update: if canAccessByCompany(resource.data.companyId) &&
-        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['companyId']));
-      allow delete: if canAccessByCompany(resource.data.companyId);
+      // Teklifbul Rule v1.0 — client çoğu kayıtta buyerCompanyId yazar; companyId de kabul
+      // status==active: pazaryeri list/query (demandId+status) kural-güvenli çalışır
+      // Taslak / inactive: yalnız kendi şirketi
+      allow read: if isSignedIn() && (
+        resource.data.status == 'active' ||
+        canAccessByCompany(resource.data.companyId) ||
+        canAccessByCompany(resource.data.buyerCompanyId) ||
+        resource.data.isPublished == true ||
+        resource.data.visibility == 'public'
+      );
+      allow create: if isSignedIn() && (
+        canAccessByCompany(request.resource.data.companyId) ||
+        canAccessByCompany(request.resource.data.buyerCompanyId)
+      );
+      allow update: if isSignedIn() && (
+        canAccessByCompany(resource.data.companyId) ||
+        canAccessByCompany(resource.data.buyerCompanyId) ||
+        canAccessByCompany(request.resource.data.companyId) ||
+        canAccessByCompany(request.resource.data.buyerCompanyId)
+      ) &&
+        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['companyId', 'buyerCompanyId']) ||
+          canAccessByCompany(request.resource.data.companyId) ||
+          canAccessByCompany(request.resource.data.buyerCompanyId));
+      allow delete: if isSignedIn() && (
+        canAccessByCompany(resource.data.companyId) ||
+        canAccessByCompany(resource.data.buyerCompanyId)
+      );
     }
 
     match /notifications/{id} {
       allow read, write: if isSuperAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
-      allow create: if isSuperAdmin() || (isSignedIn() && (
-        request.resource.data.userId == request.auth.uid ||
-        request.resource.data.type == 'pending_member_request'
-      ));
+      // Create: yalnız kendi bildirimi veya şirket owner'ın pending_member_request'i
+      allow create: if isSuperAdmin() || (
+        isSignedIn() &&
+        request.resource.data.userId is string &&
+        (
+          request.resource.data.userId == request.auth.uid ||
+          (
+            request.resource.data.type == 'pending_member_request' &&
+            request.resource.data.companyId is string &&
+            isCompanyOwner(request.resource.data.companyId)
+          )
+        )
+      );
+    }
+
+    // İletişim formu mesajları — yalnız Admin SDK
+    match /contactMessages/{id} {
+      allow read, write: if false;
+    }
+
+    // Güvenlik logları — yalnız Admin SDK
+    match /security_logs/{id} {
+      allow read, write: if false;
     }
 
     match /profiles/{userId} {
-      allow read, write: if isSuperAdmin() || (isSignedIn() && request.auth.uid == userId);
+      allow read: if isSuperAdmin() || (isSignedIn() && request.auth.uid == userId);
+      // Self create/update: privilege / billing / role escalation engeli
+      allow create: if isSuperAdmin() || (
+        isSignedIn() &&
+        request.auth.uid == userId &&
+        !request.resource.data.keys().hasAny([
+          'isAdmin', 'isOps', 'isPremium', 'plan', 'planId', 'permissions',
+          'subscription', 'aiProvider', 'role', 'roles', 'companyRole',
+          'companyRoleKey', 'companyRoleType', 'companyRoles', 'superAdmin',
+          'balanceTokens', 'ownerId', 'ownerUid'
+        ]) &&
+        createUserHasNoPrivilegeEscalation()
+      );
+      allow update: if isSuperAdmin() || (
+        isSignedIn() &&
+        request.auth.uid == userId &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+          'isAdmin', 'isOps', 'isPremium', 'plan', 'planId', 'permissions',
+          'subscription', 'aiProvider', 'role', 'roles', 'companyRole',
+          'companyRoleKey', 'companyRoleType', 'companyRoles', 'superAdmin',
+          'balanceTokens', 'ownerId', 'ownerUid'
+        ]) &&
+        createUserHasNoPrivilegeEscalation()
+      );
+      allow delete: if isSuperAdmin();
     }
 
     match /publicProfiles/{userId} {
@@ -350,27 +642,79 @@ service cloud.firestore {
     }
 
     match /companyJoinRequests/{id} {
-      allow read, write: if isSuperAdmin() || 
-                           (isSignedIn() && resource.data.userId == request.auth.uid) ||
-                           canAccessByCompany(resource.data.companyId);
-      allow create: if isSuperAdmin() || (isSignedIn() && request.resource.data.userId == request.auth.uid);
+      allow read: if isSuperAdmin() ||
+        (isSignedIn() && resource.data.userId == request.auth.uid) ||
+        isCompanyOwner(resource.data.companyId);
+      // Oluşturma: yalnız kendi userId + pending; companyId zorunlu
+      allow create: if isSuperAdmin() || (
+        isSignedIn() &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.companyId is string &&
+        request.resource.data.companyId.size() > 0 &&
+        request.resource.data.status == 'pending'
+      );
+      // Talep sahibi yalnızca geri çekebilir; onay spoof yasak
+      allow update: if isSuperAdmin() ||
+        (
+          isSignedIn() &&
+          resource.data.userId == request.auth.uid &&
+          request.resource.data.userId == resource.data.userId &&
+          request.resource.data.companyId == resource.data.companyId &&
+          resource.data.status == 'pending' &&
+          request.resource.data.status in ['cancelled', 'withdrawn'] &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt', 'cancelledAt'])
+        ) ||
+        (
+          isCompanyOwner(resource.data.companyId) &&
+          request.resource.data.companyId == resource.data.companyId &&
+          request.resource.data.userId == resource.data.userId &&
+          request.resource.data.status in ['pending', 'accepted', 'approved', 'rejected', 'cancelled']
+        );
+      allow delete: if isSuperAdmin() ||
+        (isSignedIn() && resource.data.userId == request.auth.uid && resource.data.status in ['pending', 'cancelled', 'withdrawn']) ||
+        isCompanyOwner(resource.data.companyId);
     }
 
     match /internal_requests/{id} {
-      allow read: if canAccessByCompany(resource.data.companyId) || (isSignedIn() && resource.data.createdBy == request.auth.uid);
-      allow create: if canAccessByCompany(request.resource.data.companyId) || (isSignedIn() && request.resource.data.createdBy == request.auth.uid);
-      allow update: if (canAccessByCompany(resource.data.companyId) || (isSignedIn() && resource.data.createdBy == request.auth.uid)) &&
-        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['companyId', 'createdBy']));
-      allow delete: if canAccessByCompany(resource.data.companyId) || (isSignedIn() && resource.data.createdBy == request.auth.uid);
+      allow read: if canAccessByCompany(resource.data.companyId) ||
+        (isSignedIn() && (
+          resource.data.createdBy == request.auth.uid ||
+          resource.data.requesterUserId == request.auth.uid
+        ));
+      // Teklifbul Rule v1.0 — create her zaman şirket üyeliği + creator bağlama
+      allow create: if canAccessByCompany(request.resource.data.companyId) &&
+        request.resource.data.createdBy == request.auth.uid &&
+        (
+          !('requesterUserId' in request.resource.data) ||
+          request.resource.data.requesterUserId == request.auth.uid
+        );
+      allow update: if (
+          canAccessByCompany(resource.data.companyId) ||
+          (isSignedIn() && (
+            resource.data.createdBy == request.auth.uid ||
+            resource.data.requesterUserId == request.auth.uid
+          ))
+        ) &&
+        companyIdUnchanged() &&
+        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['createdBy']));
+      allow delete: if canAccessByCompany(resource.data.companyId) ||
+        (isSignedIn() && (
+          resource.data.createdBy == request.auth.uid ||
+          resource.data.requesterUserId == request.auth.uid
+        ));
       match /{allSubcollections=**} {
-        allow read, write: if canAccessByCompany(get(/databases/$(database)/documents/internal_requests/$(id)).data.companyId) || (isSignedIn() && get(/databases/$(database)/documents/internal_requests/$(id)).data.createdBy == request.auth.uid);
+        allow read, write: if canAccessByCompany(get(/databases/$(database)/documents/internal_requests/$(id)).data.companyId) ||
+          (isSignedIn() && (
+            get(/databases/$(database)/documents/internal_requests/$(id)).data.createdBy == request.auth.uid ||
+            get(/databases/$(database)/documents/internal_requests/$(id)).data.requesterUserId == request.auth.uid
+          ));
       }
     }
 
     match /price_updates/{id} {
       allow read: if canAccessByCompany(resource.data.companyId);
       allow create: if canAccessByCompany(request.resource.data.companyId);
-      allow update: if canAccessByCompany(resource.data.companyId);
+      allow update: if canAccessByCompany(resource.data.companyId) && companyIdUnchanged();
       allow delete: if isSuperAdmin();
     }
 
@@ -410,15 +754,34 @@ service cloud.firestore {
       allow delete: if isSuperAdmin();
     }
 
+    // Teklifbul Rule v1.0 - Sirket kodu lookup (kayit/katilim icin)
+    // companies koleksiyonunda code== sorgusu kural-guvenli degil;
+    // bu koleksiyon sadece { companyId, name, ownerId } tutar.
+    match /companyCodes/{code} {
+      allow get: if isSignedIn();
+      allow list: if false;
+      allow create: if isSignedIn()
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.companyId is string
+        && request.resource.data.name is string;
+      allow update: if isSignedIn()
+        && resource.data.ownerId == request.auth.uid
+        && request.resource.data.ownerId == request.auth.uid;
+      allow delete: if isSuperAdmin() || (
+        isSignedIn() && resource.data.ownerId == request.auth.uid
+      );
+    }
+
     // Optional but useful for company-aware UI reads
     // Teklifbul Rule v1.0 - companies okuma: kendi sirketi VEYA pazaryerinde
     // gorunen sirketler (isMarketplaceVisible/isSupplier flag'i) icin
+    // get: olmayan dokuman icin resource==null (vergi no varlik kontrolu)
+    // list: genis sorgular (code/taxNumber) engellenir; sadece kurala uyan dokumanlar
     match /companies/{companyId} {
-      allow read: if isSuperAdmin() || (
+      allow get: if isSuperAdmin() || (
         isSignedIn() && (
-          // Kendi sirketi
+          resource == null ||
           companyMatch(companyId) ||
-          // Owner'in kendisi
           (
             'ownerId' in resource.data &&
             resource.data.ownerId == request.auth.uid
@@ -427,7 +790,6 @@ service cloud.firestore {
             'ownerUid' in resource.data &&
             resource.data.ownerUid == request.auth.uid
           ) ||
-          // Pazaryeri gorunurlugu olan sirket (tedarikci/alici listeleme)
           (
             'isMarketplaceVisible' in resource.data &&
             resource.data.isMarketplaceVisible == true
@@ -440,12 +802,64 @@ service cloud.firestore {
             'roles' in resource.data &&
             resource.data.roles is map &&
             resource.data.roles.supplier == true
+          ) ||
+          // Yayınlı talep sahibi firmaların adını göstermek için (pazaryeri)
+          (
+            'isBuyer' in resource.data &&
+            resource.data.isBuyer == true
+          ) ||
+          (
+            'roles' in resource.data &&
+            resource.data.roles is map &&
+            resource.data.roles.buyer == true
           )
         )
       );
-      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+      // list: __name__ in sorguları için get ile aynı genişlikte olmalı
+      allow list: if isSuperAdmin() || (
+        isSignedIn() && (
+          companyMatch(companyId) ||
+          (
+            'ownerId' in resource.data &&
+            resource.data.ownerId == request.auth.uid
+          ) ||
+          (
+            'ownerUid' in resource.data &&
+            resource.data.ownerUid == request.auth.uid
+          ) ||
+          (
+            'isMarketplaceVisible' in resource.data &&
+            resource.data.isMarketplaceVisible == true
+          ) ||
+          (
+            'isSupplier' in resource.data &&
+            resource.data.isSupplier == true
+          ) ||
+          (
+            'roles' in resource.data &&
+            resource.data.roles is map &&
+            resource.data.roles.supplier == true
+          ) ||
+          (
+            'isBuyer' in resource.data &&
+            resource.data.isBuyer == true
+          ) ||
+          (
+            'roles' in resource.data &&
+            resource.data.roles is map &&
+            resource.data.roles.buyer == true
+          )
+        )
+      );
+      // Teklifbul Rule v1.0 — create'te billing/premium alanları yasak (ücretsiz Premium engeli)
+      // Not: ownerId create için zorunlu; billing koruması ownerId içermez
+      allow create: if isSignedIn() &&
+        request.resource.data.ownerId == request.auth.uid &&
+        !request.resource.data.keys().hasAny(['planId', 'isPremium', 'subscription', 'subscriptionPlanId', 'subscriptionStatus', 'balanceTokens', 'billing']) &&
+        (!('plan' in request.resource.data) || request.resource.data.plan == 'free' || request.resource.data.plan == null);
       allow update: if isSuperAdmin() || (
         companyMatch(companyId) &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(companyBillingProtectedKeys()) &&
         (
           // If sensitive security fields are changed, only the owner can do it
           !request.resource.data.diff(resource.data).affectedKeys().hasAny(['allowNegativeStock', 'allowPriceEditing']) ||
@@ -462,11 +876,54 @@ service cloud.firestore {
       match /pendingMembers/{userId} {
         allow read: if isSuperAdmin() || companyMatch(companyId) || request.auth.uid == userId;
         allow create: if isSignedIn() && request.auth.uid == userId;
-        allow update, delete: if isSuperAdmin() || companyMatch(companyId);
+        allow update, delete: if isSuperAdmin() || isCompanyOwner(companyId);
+      }
+
+      // Token cüzdanları: client yazamaz (yalnız Admin SDK / superAdmin)
+      match /aiWallets/{providerKey} {
+        allow read: if isSuperAdmin() || companyMatch(companyId);
+        allow write: if isSuperAdmin();
+      }
+      match /wallets/{walletId} {
+        allow read: if isSuperAdmin() || companyMatch(companyId);
+        allow write: if isSuperAdmin();
+      }
+      match /aiTokenPurchases/{id} {
+        allow read: if isSuperAdmin() || companyMatch(companyId);
+        allow write: if isSuperAdmin();
+      }
+      match /aiTokenLedger/{id} {
+        allow read: if isSuperAdmin() || companyMatch(companyId);
+        allow write: if isSuperAdmin();
+      }
+
+      // Teklifbul Rule v1.0 — üye erişimi gereken alt koleksiyonlar (explicit)
+      match /sites/{siteId} {
+        allow read, write: if isSuperAdmin() || companyMatch(companyId);
+      }
+      match /referralCodes/{codeId} {
+        allow read, write: if isSuperAdmin() || companyMatch(companyId);
+      }
+      match /referralCompanies/{refId} {
+        allow read, write: if isSuperAdmin() || companyMatch(companyId);
+      }
+      match /rolePermissions/{roleKey} {
+        allow read: if isSuperAdmin() || companyMatch(companyId);
+        allow write: if isSuperAdmin() || isCompanyOwner(companyId);
+      }
+      match /settings/{docId} {
+        allow read: if isSuperAdmin() || companyMatch(companyId);
+        allow write: if isSuperAdmin() || isCompanyOwner(companyId);
+      }
+      match /auditLogs/{logId} {
+        allow read: if isSuperAdmin() || companyMatch(companyId);
+        allow write: if isSuperAdmin();
       }
       
       match /{allSubcollections=**} {
-        allow read, write: if isSuperAdmin() || companyMatch(companyId);
+        // Teklifbul Rule v1.0 — bilinmeyen alt koleksiyon: okuma üye; yazma owner
+        allow read: if isSuperAdmin() || companyMatch(companyId);
+        allow write: if isSuperAdmin() || isCompanyOwner(companyId);
       }
     }
 
@@ -496,22 +953,40 @@ service cloud.firestore {
     }
 
     // Teklifbul Rule - Demand Recipients
-    // Teklifbul Rule v1.0 - sadece talep sahibi olusturabilir, alici/saglayici okuyabilir
+    // Teklifbul Rule v1.0 — talep sahibi şirketi demandId sorgusuyla listeleyebilir
     match /demandRecipients/{id} {
       allow read: if isSuperAdmin() || (
         isSignedIn() && (
           resource.data.buyerId == request.auth.uid ||
-          resource.data.supplierId == request.auth.uid
+          resource.data.supplierId == request.auth.uid ||
+          (
+            resource.data.demandId is string &&
+            (
+              canAccessByCompany(demandById(resource.data.demandId).creatorCompanyId) ||
+              demandById(resource.data.demandId).createdBy == request.auth.uid
+            )
+          )
         )
       );
       allow create: if isSignedIn() &&
-        request.resource.data.buyerId == request.auth.uid &&
         request.resource.data.supplierId is string &&
-        request.resource.data.demandId is string;
+        request.resource.data.demandId is string &&
+        (
+          request.resource.data.buyerId == request.auth.uid ||
+          canAccessByCompany(demandById(request.resource.data.demandId).creatorCompanyId) ||
+          demandById(request.resource.data.demandId).createdBy == request.auth.uid
+        );
       // Tedarikci kendi 'status' alanini guncelleyebilir (read/dismiss vs.)
       allow update: if isSuperAdmin() || (
         isSignedIn() && (
           resource.data.buyerId == request.auth.uid ||
+          (
+            resource.data.demandId is string &&
+            (
+              canAccessByCompany(demandById(resource.data.demandId).creatorCompanyId) ||
+              demandById(resource.data.demandId).createdBy == request.auth.uid
+            )
+          ) ||
           (
             resource.data.supplierId == request.auth.uid &&
             request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'readAt', 'dismissedAt'])
@@ -519,7 +994,16 @@ service cloud.firestore {
         )
       );
       allow delete: if isSuperAdmin() || (
-        isSignedIn() && resource.data.buyerId == request.auth.uid
+        isSignedIn() && (
+          resource.data.buyerId == request.auth.uid ||
+          (
+            resource.data.demandId is string &&
+            (
+              canAccessByCompany(demandById(resource.data.demandId).creatorCompanyId) ||
+              demandById(resource.data.demandId).createdBy == request.auth.uid
+            )
+          )
+        )
       );
     }
 

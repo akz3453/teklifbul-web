@@ -1,4 +1,4 @@
-import './setup-env.js';
+﻿import './setup-env.js';
 import fs from 'fs';
 import path, { join } from 'path';
 import express from 'express';
@@ -46,6 +46,7 @@ import migrationHistoryRouter from './routes/migration-history';
 import migrationExportRouter from './routes/migration-export';
 import recaptchaRouter from './routes/recaptcha';
 import supplierMemoryRouter from './routes/supplier-memory';
+import suppliersMatchRouter from './routes/suppliers-match';
 import userRouter from './routes/user';
 import authRouter from './routes/auth';
 import purchaseAssistantSettingsRouter from './routes/purchase-assistant-settings';
@@ -67,9 +68,9 @@ import { getAdminDb } from './utils/firestore.js';
 import interimPaymentsRouter from './routes/interim-payments';
 import contractsRouter from './routes/contracts';
 import waybillRouter from './routes/waybills';
-// Teklifbul Rule v1.0 - Tedarikçi teklif sistemi
+// Teklifbul Rule v1.0 - Tedarik├ği teklif sistemi
 import supplierQuotesRouter from './routes/supplier-quotes';
-// Teklifbul Rule v1.0 - Customers router (Satış Modülü)
+// Teklifbul Rule v1.0 - Customers router (Sat─▒┼ş Mod├╝l├╝)
 import customersRouter from './src/routes/customers';
 import salesRouter from './src/routes/sales';
 import invoicesRouter from './src/routes/invoices';
@@ -124,13 +125,13 @@ app.use(helmet({
       upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null
     }
   },
-  crossOriginEmbedderPolicy: false, // Firebase ve CDN'ler için
-  crossOriginResourcePolicy: { policy: "cross-origin" } // Firebase için
+  crossOriginEmbedderPolicy: false, // Firebase ve CDN'ler i├ğin
+  crossOriginResourcePolicy: { policy: "cross-origin" } // Firebase i├ğin
 }));
 
-// Teklifbul Rule v1.0 - Production Hardening: CORS sıkılaştırma
-// Varsayılan origin: local dev için 5173 → 5174 çağrıları
-// Hem ALLOWED_ORIGINS hem CORS_ALLOWED_ORIGINS env değişkenleri destekleniyor (legacy uyum)
+// Teklifbul Rule v1.0 - Production Hardening: CORS s─▒k─▒la┼şt─▒rma
+// Varsay─▒lan origin: local dev i├ğin 5173 ÔåÆ 5174 ├ğa─şr─▒lar─▒
+// Hem ALLOWED_ORIGINS hem CORS_ALLOWED_ORIGINS env de─şi┼şkenleri destekleniyor (legacy uyum)
 const envAllowedOrigins = (process.env.ALLOWED_ORIGINS || process.env.CORS_ALLOWED_ORIGINS || '')
   .split(',')
   .map((s) => s.trim())
@@ -160,9 +161,9 @@ const corsConfig = {
     }
   },
   credentials: true,
-  // Özellikle GET/POST/OPTIONS için izin ver, diğerleri de desteklenir
+  // ├ûzellikle GET/POST/OPTIONS i├ğin izin ver, di─şerleri de desteklenir
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  // reCAPTCHA, auth ve company context için gerekli header'lar
+  // reCAPTCHA, auth ve company context i├ğin gerekli header'lar
   allowedHeaders: [
     'Content-Type',
     'Authorization',
@@ -170,16 +171,16 @@ const corsConfig = {
     'x-recaptcha-token',
     'X-Recaptcha-Token',
     'x-company-id', // Teklifbul Rule v1.0 - Company context header
-    'X-Company-Id' // Case-insensitive için büyük harf versiyonu
+    'X-Company-Id' // Case-insensitive i├ğin b├╝y├╝k harf versiyonu
   ],
   exposedHeaders: ['RateLimit-Limit', 'RateLimit-Remaining', 'RateLimit-Reset']
 };
 
-// CORS middleware (tüm router'lardan önce)
+// CORS middleware (t├╝m router'lardan ├Ânce)
 app.use(cors(corsConfig));
 
-// Preflight OPTIONS isteklerini global olarak yanıtla
-// Express 5'te wildcard route için middleware yaklaşımı kullan
+// Preflight OPTIONS isteklerini global olarak yan─▒tla
+// Express 5'te wildcard route i├ğin middleware yakla┼ş─▒m─▒ kullan
 app.use((req, res, next) => {
   if (req.method === 'OPTIONS') {
     cors(corsConfig)(req, res, next);
@@ -189,9 +190,9 @@ app.use((req, res, next) => {
 });
 
 // Teklifbul Rule v1.0 - Response Compression (gzip/br)
-// API response'larını sıkıştır (büyük JSON'lar için network ve sayfa hızına katkı)
+// API response'lar─▒n─▒ s─▒k─▒┼şt─▒r (b├╝y├╝k JSON'lar i├ğin network ve sayfa h─▒z─▒na katk─▒)
 app.use(compression({
-  threshold: 1024, // 1KB üstünü sıkıştır (küçük response'ları boşuna sıkıştırma)
+  threshold: 1024, // 1KB ├╝st├╝n├╝ s─▒k─▒┼şt─▒r (k├╝├ğ├╝k response'lar─▒ bo┼şuna s─▒k─▒┼şt─▒rma)
   filter: (req, res) => {
     // Default compression filter
     const shouldCompress = compression.filter(req, res);
@@ -200,7 +201,7 @@ app.use(compression({
       return false;
     }
 
-    // PDF endpoint'lerini hariç tut (ileride stream edilecekse güvenli)
+    // PDF endpoint'lerini hari├ğ tut (ileride stream edilecekse g├╝venli)
     const path = req.path || '';
     if (path.endsWith('/pdf')) {
       return false;
@@ -215,7 +216,7 @@ app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Teklifbul Rule v1.0 - Observability v1: Request metrics middleware
-// Router'lardan önce ekle (tüm request'leri yakalamak için)
+// Router'lardan ├Ânce ekle (t├╝m request'leri yakalamak i├ğin)
 app.use(requestMetrics);
 
 // Teklifbul Rule v1.0 - Performance: Static assets with cache headers
@@ -227,30 +228,30 @@ app.use(express.static(join(process.cwd(), 'public'), {
 }));
 
 // Teklifbul Rule v1.0 - Production Hardening: Rate limiting
-// Global API rate limit - Tüm /api/ isteklerine uygulanır (15 dk / 500 istek olarak rate-limit.ts içinde güncellenecek)
+// Global API rate limit - T├╝m /api/ isteklerine uygulan─▒r (15 dk / 500 istek olarak rate-limit.ts i├ğinde g├╝ncellenecek)
 app.use('/api', apiLimiter);
 
-// Auth endpoint'lerine özel, daha sıkı limiter (brute-force koruması)
+// Auth endpoint'lerine ├Âzel, daha s─▒k─▒ limiter (brute-force korumas─▒)
 app.use('/api/auth', authLimiter);
 
 // Teklifbul Rule v1.0 - Webhook endpoint'leri (signature/secret tabanli) icin sikilastirilmis limit
 app.use('/api/payments/webhook', webhookLimiter);
 
-// Alt router'lar - Rate limit global uygulandığı için tekrar eklenmiyor
+// Alt router'lar - Rate limit global uyguland─▒─ş─▒ i├ğin tekrar eklenmiyor
 app.use('/api/categories', categoriesRouter);
 app.use('/api/tax-offices', taxOfficesRouter);
 app.use('/api/addr', addrRouter); // Teklifbul Rule v1.0 - Adres sistemi
 app.use('/api/recaptcha', recaptchaRouter);
-app.use('/api/auth', authRouter); // Rate limiter yukarıda eklendi
-// Teklifbul Rule v1.0 - External bid submission (no auth required, token-based) + sıkı limit
+app.use('/api/auth', authRouter); // Rate limiter yukar─▒da eklendi
+// Teklifbul Rule v1.0 - External bid submission (no auth required, token-based) + s─▒k─▒ limit
 app.use('/api/bid-invites', publicTokenLimiter, bidInvitesRouter);
 app.use('/api/submit-bid', publicTokenLimiter, bidInvitesRouter);
 
-// Protected routes (auth middleware zaten rate limit içeriyor)
+// Protected routes (auth middleware zaten rate limit i├ğeriyor)
 app.use('/api/import', verifyToken, requirePremium, importRouter);
-app.use('/api/template', verifyToken, templateRouter); // Teklifbul Rule v1.0 - Şablon indirme sistemi (Premium kontrolü router içinde yapılacak)
+app.use('/api/template', verifyToken, templateRouter); // Teklifbul Rule v1.0 - ┼Şablon indirme sistemi (Premium kontrol├╝ router i├ğinde yap─▒lacak)
 // Teklifbul Rule v1.3 - AI Rate Limiting (company-based)
-app.use('/api/ai', verifyToken, rateLimitAi, aiRouter); // Teklifbul Rule v1.0 - Yapay zekâ satın alma asistanı
+app.use('/api/ai', verifyToken, rateLimitAi, aiRouter); // Teklifbul Rule v1.0 - Yapay zek├ó sat─▒n alma asistan─▒
 app.use('/api/ai', verifyToken, rateLimitAi, aiTokenPurchasesRouter); // Teklifbul Rule v1.0 - AI token packages + purchases (company)
 app.use('/api/ai', verifyToken, aiUsageReportRouter); // Teklifbul Rule v1.5 - AI Usage Report (no rate limit needed for read-only)
 app.use('/api/ai', verifyToken, rateLimitAi, aiClassifyRouter); // Teklifbul Rule v1.0 - AI tools (classification, etc.) - Security Hardening
@@ -260,13 +261,14 @@ app.use('/api/inventory', verifyToken, fefoInventoryRouter); // Teklifbul SAP FE
 // Teklifbul Rule v1.3.1 - Boot warning: in-memory limiter active
 logger.warn('[AI-RL] in-memory limiter active; multi-instance deployments should use Redis.');
 // Global limiter varken burada ekstra apiLimiter'a gerek yok
-app.use('/api/fx', fxRouter); // Teklifbul Rule v1.0 - Döviz kuru proxy
+app.use('/api/fx', fxRouter); // Teklifbul Rule v1.0 - D├Âviz kuru proxy
 app.use('/api/migration-status', verifyToken, requirePremium, migrationStatusRouter);
 app.use('/api/migration-history', verifyToken, requirePremium, migrationHistoryRouter);
 app.use('/api/migration-export', verifyToken, requirePremium, migrationExportRouter);
 app.use('/api/supplier-memory', verifyToken, requirePremium, supplierMemoryRouter);
+app.use('/api/suppliers', verifyToken, suppliersMatchRouter);
 app.use('/api/account/subscription', verifyToken, accountSubscriptionRouter);
-app.use('/api/payments', paymentsRouter); // Webhook endpoint'i kendi auth mekanizmasını kullanır
+app.use('/api/payments', paymentsRouter); // Webhook endpoint'i kendi auth mekanizmas─▒n─▒ kullan─▒r
 app.use('/api/payment-preference', verifyToken, paymentPreferenceRouter);
 app.use('/api/user', verifyToken, userRouter);
 app.use('/api/settings/purchase-assistant', verifyToken, purchaseAssistantSettingsRouter);
@@ -274,20 +276,20 @@ app.use('/api/settings/purchase-assistant', verifyToken, purchaseAssistantRestor
 app.use('/api/billing', verifyToken, billingPlanRouter); // Teklifbul Rule v1.6 - Plan & Usage Page
 app.use('/api/leads', verifyToken, leadsRouter); // Teklifbul Rule v1.8 - Upgrade Leads
 
-// Teklifbul Rule v1.0 - Admin check endpoint'i requireAdmin kullanmadan önce mount edilmeli
-// Bu endpoint admin kontrolü yapar, admin olmayı gerektirmez
+// Teklifbul Rule v1.0 - Admin check endpoint'i requireAdmin kullanmadan ├Ânce mount edilmeli
+// Bu endpoint admin kontrol├╝ yapar, admin olmay─▒ gerektirmez
 app.get('/api/admin/check', verifyToken, async (req: any, res) => {
   try {
     if (!req.user) {
       return res.json({ isAdmin: false });
     }
 
-    // Custom claims'den admin kontrolü
+    // Custom claims'den admin kontrol├╝
     const customClaims = req.user.customClaims || {};
     let isAdmin = customClaims.admin === true || customClaims.role === 'admin';
     let isOps = customClaims.ops === true || customClaims.role === 'ops';
 
-    // Eğer custom claims'de admin yoksa Firestore'dan kontrol et
+    // E─şer custom claims'de admin yoksa Firestore'dan kontrol et
     if (!isAdmin && !isOps) {
       try {
         const db = await getAdminDb();
@@ -308,17 +310,17 @@ app.get('/api/admin/check', verifyToken, async (req: any, res) => {
 
     return res.json({ isAdmin: isAdmin || isOps });
   } catch (error: any) {
-    logger.error('Admin kontrolü hatası', {
+    logger.error('Admin kontrol├╝ hatas─▒', {
       error: error?.message || String(error)
     });
     return res.json({ isAdmin: false });
   }
 });
 
-app.use('/api/admin', verifyToken, requireAdmin, adminUsersRouter); // Teklifbul Rule v1.0 - Admin kullanıcı yönetimi
+app.use('/api/admin', verifyToken, requireAdmin, adminUsersRouter); // Teklifbul Rule v1.0 - Admin kullan─▒c─▒ y├Ânetimi
 app.use('/api/admin', verifyToken, requireAdmin, adminSubscriptionsRouter);
-app.use('/api/admin', verifyToken, requireAdmin, adminLogsRouter); // Teklifbul Rule v1.0 - Admin log yönetimi
-app.use('/api/admin', verifyToken, requireAdmin, adminSettingsRouter); // Teklifbul Rule v1.0 - Admin sistem ayarları
+app.use('/api/admin', verifyToken, requireAdmin, adminLogsRouter); // Teklifbul Rule v1.0 - Admin log y├Ânetimi
+app.use('/api/admin', verifyToken, requireAdmin, adminSettingsRouter); // Teklifbul Rule v1.0 - Admin sistem ayarlar─▒
 app.use('/api/admin', verifyToken, requireAdmin, adminAiCatalogRouter); // Teklifbul Rule v1.4 - Admin AI Catalog Management
 app.use('/api/admin', verifyToken, requireAdmin, adminProfitRouter); // Teklifbul Rule v2.0 - Admin Profit Report
 app.use('/api/admin', verifyToken, requireAdmin, adminProfitDetailRouter); // Teklifbul Rule v2.5 - Admin Profit Detail
@@ -329,31 +331,31 @@ app.use('/api/admin/ai-controls', verifyToken, requireAdmin, adminAiControlsRout
 app.use('/api/admin', verifyToken, requireAdmin, adminEntitlementsRouter); // Teklifbul Rule v3.14 - Admin Entitlements Debug
 app.use('/api/admin/finance', verifyToken, requireAdmin, adminFinanceSnapshotsRouter); // Teklifbul Rule v3.18 - Admin Finance Snapshots
 app.use('/api/admin/auto-protection', verifyToken, requireAdmin, adminAutoProtectionRouter); // Teklifbul Rule v3.20 - Admin Auto-Protection
-app.use('/api/admin/errors', verifyToken, requireAdmin, adminErrorsRouter); // Teklifbul Rule v1.0 - Admin hata yönetimi
-app.use('/api/admin/tokens', verifyToken, requireAdmin, adminTokensRouter); // Teklifbul Rule v1.0 - Admin token yönetimi
+app.use('/api/admin/errors', verifyToken, requireAdmin, adminErrorsRouter); // Teklifbul Rule v1.0 - Admin hata y├Ânetimi
+app.use('/api/admin/tokens', verifyToken, requireAdmin, adminTokensRouter); // Teklifbul Rule v1.0 - Admin token y├Ânetimi
 import tokenPacksRouter from './routes/token-packs';
-app.use('/api/token-packs', verifyToken, tokenPacksRouter); // Teklifbul Rule v1.0 - Token paketi satın alma
-app.use('/api/interim-payments', verifyToken, interimPaymentsRouter); // Teklifbul Rule v1.0 - Hakediş yönetim sistemi
-app.use('/api/contracts', verifyToken, contractsRouter); // Teklifbul Rule v1.0 - Sözleşme yönetim sistemi
-app.use('/api/waybills', verifyToken, waybillRouter); // Teklifbul Rule v1.0 - İrsaliye karşılaştırma sistemi
-// Teklifbul Rule v1.0 - Tedarikçi teklif sistemi:
+app.use('/api/token-packs', verifyToken, tokenPacksRouter); // Teklifbul Rule v1.0 - Token paketi sat─▒n alma
+app.use('/api/interim-payments', verifyToken, interimPaymentsRouter); // Teklifbul Rule v1.0 - Hakedi┼ş y├Ânetim sistemi
+app.use('/api/contracts', verifyToken, contractsRouter); // Teklifbul Rule v1.0 - S├Âzle┼şme y├Ânetim sistemi
+app.use('/api/waybills', verifyToken, waybillRouter); // Teklifbul Rule v1.0 - ─░rsaliye kar┼ş─▒la┼şt─▒rma sistemi
+// Teklifbul Rule v1.0 - Tedarik├ği teklif sistemi:
 // public/token tabanli alt yollara sikilastirilmis limit (validate-token, request/:token, submit/:token)
 app.use('/api/supplier-quotes/validate-token', publicTokenLimiter);
 app.use('/api/supplier-quotes/request', publicTokenLimiter);
 app.use('/api/supplier-quotes/submit', publicTokenLimiter);
 app.use('/api/supplier-quotes', supplierQuotesRouter);
-// Teklifbul Rule v1.0 - Satış Modülü routes
+// Teklifbul Rule v1.0 - Sat─▒┼ş Mod├╝l├╝ routes
 app.use('/api/customers', verifyToken, customersRouter);
 app.use('/api/sales', verifyToken, salesRouter);
 app.use('/api/invoices', verifyToken, invoicesRouter);
 app.use('/api/delivery-notes', verifyToken, deliveryNotesRouter);
 app.use('/api/incoming-docs', verifyToken, incomingDocsRouter);
-// Teklifbul Rule v1.0 - Kasa Modülü (ETA uyumlu)
+// Teklifbul Rule v1.0 - Kasa Mod├╝l├╝ (ETA uyumlu)
 import cashRouter from './src/routes/cash';
 app.use('/api/cash-accounts', verifyToken, cashRouter);
-app.use('/api/edoc', edocSettingsRouter); // Teklifbul Rule v1.0 - E-Belge ayarları (içinde verifyToken var)
+app.use('/api/edoc', edocSettingsRouter); // Teklifbul Rule v1.0 - E-Belge ayarlar─▒ (i├ğinde verifyToken var)
 
-// Export: Satın Alma Formu (Excel) - Auth + Rate Limit korumalı
+// Export: Sat─▒n Alma Formu (Excel) - Auth + Rate Limit korumal─▒
 app.get('/api/export/purchase-form', (_req, res) => {
   res.status(405).json({ ok: false, error: 'method_not_allowed', hint: 'Use POST with meta, items' });
 });
@@ -363,9 +365,9 @@ app.post('/api/export/purchase-form', exportLimiter, verifyToken, async (req, re
     const code = demandCode || `SATFK-${Date.now()}`;
     // Resolve template path with fallbacks
     const candidates = [
-      join(process.cwd(), 'backend', 'templates', 'örnek satın alma formu.xlsx'),
+      join(process.cwd(), 'backend', 'templates', '├Ârnek sat─▒n alma formu.xlsx'),
       join(process.cwd(), 'backend', 'templates', 'ornek satin alma formu.xlsx'),
-      join(process.cwd(), 'assets', 'örnek satın alma formu.xlsx'),
+      join(process.cwd(), 'assets', '├Ârnek sat─▒n alma formu.xlsx'),
       join(process.cwd(), 'assets', 'ornek satin alma formu.xlsx'),
     ];
     const templatePath = candidates.find(p => fs.existsSync(p));
@@ -378,7 +380,7 @@ app.post('/api/export/purchase-form', exportLimiter, verifyToken, async (req, re
       const ws = wb.addWorksheet('SATFK');
       ws.getCell('H3').value = 'SATFK';
       ws.getCell('I3').value = code;
-      ws.getRow(5).values = [, 'No', 'Stok Kodu', 'Malzeme Tanımı', 'Marka/Model', 'Miktar', 'Birim', 'Depo', 'Görsel', 'Termin', 'Açıklama'];
+      ws.getRow(5).values = [, 'No', 'Stok Kodu', 'Malzeme Tan─▒m─▒', 'Marka/Model', 'Miktar', 'Birim', 'Depo', 'G├Ârsel', 'Termin', 'A├ğ─▒klama'];
     }
     const ws = wb.worksheets[0];
 
@@ -386,16 +388,16 @@ app.post('/api/export/purchase-form', exportLimiter, verifyToken, async (req, re
     // I3: Talep Kodu (SATFK)
     ws.getCell('I3').value = code;
 
-    // I2: Başlık
+    // I2: Ba┼şl─▒k
     if (demandData?.title) ws.getCell('I2').value = demandData.title;
 
     // K2: Talep Tarihi
     if (demandData?.demandDate) ws.getCell('K2').value = demandData.demandDate;
 
-    // I4: Alım Yeri (İl)
+    // I4: Al─▒m Yeri (─░l)
     if (demandData?.purchaseLocation) ws.getCell('I4').value = demandData.purchaseLocation;
 
-    // I1: Şantiye
+    // I1: ┼Şantiye
     if (demandData?.siteName) ws.getCell('I1').value = demandData.siteName;
 
     // K1: Talep Tipi
@@ -404,18 +406,18 @@ app.post('/api/export/purchase-form', exportLimiter, verifyToken, async (req, re
       ws.getCell('K1').value = biddingModeText;
     }
 
-    // K3: Süreli (Başlangıç ve Bitiş Tarihi)
+    // K3: S├╝reli (Ba┼şlang─▒├ğ ve Biti┼ş Tarihi)
     if (demandData?.phaseStart && demandData?.phaseEnd) {
       ws.getCell('K3').value = `${demandData.phaseStart} / ${demandData.phaseEnd}`;
     }
 
-    // K4: Öncelik
+    // K4: ├ûncelik
     if (demandData?.priority) ws.getCell('K4').value = demandData.priority;
 
     // Para birimi (default TRY if not specified)
     const _currency = demandData?.currency || "TRY";
 
-    // L6: Ödeme Şartları (for first item)
+    // L6: ├ûdeme ┼Şartlar─▒ (for first item)
     if (demandData?.paymentTerms && items.length > 0) {
       ws.getCell('L6').value = demandData.paymentTerms;
     }
@@ -423,14 +425,14 @@ app.post('/api/export/purchase-form', exportLimiter, verifyToken, async (req, re
     // Role-dependent names
     // K11: Onay Veren
     if (userRole === 'approver') ws.getCell('K11').value = userName || '';
-    // H11: Genel Müdür
+    // H11: Genel M├╝d├╝r
     if (demandData?.generalManager) ws.getCell('H11').value = demandData.generalManager;
-    // G11: Satın Alma Yetkilisi
+    // G11: Sat─▒n Alma Yetkilisi
     if (userRole === 'satinalma_yetkilisi') ws.getCell('G11').value = userName || '';
     // F11: Talep Eden
     if (demandData?.requester) ws.getCell('F11').value = demandData.requester;
 
-    // A11 and onwards: Açıklamalar
+    // A11 and onwards: A├ğ─▒klamalar
     if (Array.isArray(demandData?.descriptions)) {
       demandData.descriptions.forEach((desc: string, index: number) => {
         if (desc && desc.trim()) {
@@ -442,7 +444,7 @@ app.post('/api/export/purchase-form', exportLimiter, verifyToken, async (req, re
       ws.getCell('A11').value = demandData.spec;
     }
 
-    // D12: Teslim Şekli + Adres
+    // D12: Teslim ┼Şekli + Adres
     const deliveryCombined = `${meta.deliveryMethod || ''} ${meta.deliveryAddress || ''}`.trim();
     ws.getCell('D12').value = deliveryCombined || null;
 
@@ -457,9 +459,9 @@ app.post('/api/export/purchase-form', exportLimiter, verifyToken, async (req, re
       r.getCell(5).value = it.qty ?? null;              // E: Miktar
       r.getCell(6).value = it.unit || '';               // F: Birim
       r.getCell(7).value = it.warehouseQty ?? null;     // G: Depodaki
-      r.getCell(8).value = it.imageUrl || '';           // H: Görsel
+      r.getCell(8).value = it.imageUrl || '';           // H: G├Ârsel
       r.getCell(9).value = it.requestedDate || '';      // I: Termin
-      r.getCell(10).value = it.note || '';              // J: Açıklama
+      r.getCell(10).value = it.note || '';              // J: A├ğ─▒klama
       r.commit();
 
       // For each item, set the delivery date in the appropriate cell
@@ -483,8 +485,8 @@ app.post('/api/export/purchase-form', exportLimiter, verifyToken, async (req, re
 function getBiddingModeText(mode: string) {
   const modeMap: Record<string, string> = {
     "secret": "Gizli Teklif (tek tur)",
-    "open": "Açık Teklif (tek tur)",
-    "hybrid": "Hibrit (1. tur gizli, 2. tur açık)"
+    "open": "A├ğ─▒k Teklif (tek tur)",
+    "hybrid": "Hibrit (1. tur gizli, 2. tur a├ğ─▒k)"
   };
   return modeMap[mode] || mode || "-";
 }
@@ -495,14 +497,14 @@ function ensureDirSync(p: string) {
 }
 
 // POST /save-mahalle-json { districtId, districtName, neighborhoods }
-// Teklifbul Rule v1.0 - Security: Admin auth + Path traversal koruması
+// Teklifbul Rule v1.0 - Security: Admin auth + Path traversal korumas─▒
 app.post('/save-mahalle-json', verifyToken, requireAdmin, (req, res) => {
   try {
     const { districtId, districtName, neighborhoods } = req.body || {};
     if (!districtId || !Array.isArray(neighborhoods)) {
       return res.status(400).json({ ok: false, error: 'invalid_body' });
     }
-    // Path traversal koruması: sadece alfanumerik ve tire/alt çizgi kabul et
+    // Path traversal korumas─▒: sadece alfanumerik ve tire/alt ├ğizgi kabul et
     const safeDistrictId = String(districtId).replace(/[^a-zA-Z0-9_-]/g, '');
     if (!safeDistrictId || safeDistrictId !== String(districtId)) {
       return res.status(400).json({ ok: false, error: 'invalid_districtId' });
@@ -520,14 +522,14 @@ app.post('/save-mahalle-json', verifyToken, requireAdmin, (req, res) => {
 });
 
 // POST /save-street-json { districtId, districtName, neighborhoodId, neighborhoodName, streets }
-// Teklifbul Rule v1.0 - Security: Admin auth + Path traversal koruması
+// Teklifbul Rule v1.0 - Security: Admin auth + Path traversal korumas─▒
 app.post('/save-street-json', verifyToken, requireAdmin, (req, res) => {
   try {
     const { districtId, neighborhoodId, districtName, neighborhoodName, streets } = req.body || {};
     if (!districtId || !neighborhoodId || !Array.isArray(streets)) {
       return res.status(400).json({ ok: false, error: 'invalid_body' });
     }
-    // Path traversal koruması
+    // Path traversal korumas─▒
     const safeDistrictId = String(districtId).replace(/[^a-zA-Z0-9_-]/g, '');
     const safeNeighborhoodId = String(neighborhoodId).replace(/[^a-zA-Z0-9_-]/g, '');
     if (!safeDistrictId || safeDistrictId !== String(districtId) || !safeNeighborhoodId || safeNeighborhoodId !== String(neighborhoodId)) {
@@ -551,11 +553,11 @@ app.use('/metrics', metricsRouter);
 // Teklifbul Rule v1.0 - Client Error Reporting v1
 app.use('/api/client-errors', clientErrorsRouter);
 
-// Teklifbul Rule v1.0 - Global error handler (tüm route'lardan sonra)
+// Teklifbul Rule v1.0 - Global error handler (t├╝m route'lardan sonra)
 app.use(async (err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   const statusCode = err?.status || 500;
 
-  // Teklifbul Rule v1.0 - Security: 5xx hatalarını logla
+  // Teklifbul Rule v1.0 - Security: 5xx hatalar─▒n─▒ logla
   if (statusCode >= 500) {
     serverLogger.security.serverError(req, err instanceof Error ? err : new Error(String(err)), statusCode);
   } else {
@@ -567,50 +569,50 @@ app.use(async (err: any, req: express.Request, res: express.Response, next: expr
     });
   }
 
-  // Teklifbul Rule v1.0 - Error tracker ile hataları Firestore'a kaydet
+  // Teklifbul Rule v1.0 - Error tracker ile hatalar─▒ Firestore'a kaydet
   try {
     const { trackBackendError } = await import('./utils/error-tracker.js');
     await trackBackendError(err instanceof Error ? err : new Error(String(err)), req, statusCode);
   } catch (trackError) {
-    // Error tracker hatası kritik değil, sessizce devam et
+    // Error tracker hatas─▒ kritik de─şil, sessizce devam et
     logger.warn('Error tracker failed', trackError);
   }
 
-  // Hata mesajını güvenli şekilde döndür (Teklifbul Rule v1.0 - Centralized Error Catalog)
+  // Hata mesaj─▒n─▒ g├╝venli ┼şekilde d├Ând├╝r (Teklifbul Rule v1.0 - Centralized Error Catalog)
   const { Errors } = await import('./src/errors/errorCatalog.js');
   const { respondError } = await import('./src/errors/respondError.js');
   respondError(
     res,
-    Errors.internal(process.env.NODE_ENV === 'development' ? (err?.message || String(err)) : 'Bir hata oluştu')
+    Errors.internal(process.env.NODE_ENV === 'development' ? (err?.message || String(err)) : 'Bir hata olu┼ştu')
   );
 });
 
-// 404 handler (tüm route'lardan sonra)
+// 404 handler (t├╝m route'lardan sonra)
 app.use(async (req: express.Request, res: express.Response) => {
   // Teklifbul Rule v1.0 - Centralized Error Catalog
   const { Errors } = await import('./src/errors/errorCatalog.js');
   const { respondError } = await import('./src/errors/respondError.js');
   respondError(
     res,
-    Errors.notFound(`Endpoint bulunamadı: ${req.method} ${req.path}`)
+    Errors.notFound(`Endpoint bulunamad─▒: ${req.method} ${req.path}`)
   );
 });
 
 const PORT = process.env.API_PORT ? Number(process.env.API_PORT) : (process.env.PORT ? Number(process.env.PORT) : 5174);
-// Teklifbul Rule v1.0 - Server başlatma mesajı için logger kullan
-// Not: Server dosyalarında console.log'a izin verilir (eslint config'de exception var)
-// Ancak tutarlılık için logger kullanıyoruz
+// Teklifbul Rule v1.0 - Server ba┼şlatma mesaj─▒ i├ğin logger kullan
+// Not: Server dosyalar─▒nda console.log'a izin verilir (eslint config'de exception var)
+// Ancak tutarl─▒l─▒k i├ğin logger kullan─▒yoruz
 
-// OPENAI_API_KEY kontrolü (log seviyesi: debug, anahtar bilgisi loglanmaz)
+// OPENAI_API_KEY kontrol├╝ (log seviyesi: debug, anahtar bilgisi loglanmaz)
 if (!process.env.OPENAI_API_KEY) {
   logger.warn('OPENAI_API_KEY is not configured');
 }
 
-// Teklifbul Rule v1.0 - Graceful shutdown için server instance'ı sakla
+// Teklifbul Rule v1.0 - Graceful shutdown i├ğin server instance'─▒ sakla
 let server: any;
 
-// Teklifbul Rule v1.0 - Sadece ana modül olarak çalıştırıldığında listen yap
-// Cloud Functions ve diğer import durumlarında listen atlanır
+// Teklifbul Rule v1.0 - Sadece ana mod├╝l olarak ├ğal─▒┼şt─▒r─▒ld─▒─ş─▒nda listen yap
+// Cloud Functions ve di─şer import durumlar─▒nda listen atlan─▒r
 if (process.env.NODE_ENV !== 'production' || !process.env.FUNCTION_SIGNATURE_TYPE) {
   server = app.listen(PORT, () => {
     console.log(`[API] listening on http://localhost:${PORT}`);
@@ -631,16 +633,16 @@ function gracefulShutdown(signal: string) {
   if (isShuttingDown) return;
   isShuttingDown = true;
 
-  console.log(`\n🛑 API server kapatılıyor (${signal})...`);
+  console.log(`\n­şøæ API server kapat─▒l─▒yor (${signal})...`);
 
   server.close(() => {
-    console.log('✅ API server güvenli şekilde kapatıldı');
+    console.log('Ô£à API server g├╝venli ┼şekilde kapat─▒ld─▒');
     process.exit(0);
   });
 
   // Force shutdown after 10 seconds
   setTimeout(() => {
-    console.error('⚠️  Force shutdown after timeout');
+    console.error('ÔÜá´©Å  Force shutdown after timeout');
     process.exit(1);
   }, 10000);
 }
@@ -648,7 +650,7 @@ function gracefulShutdown(signal: string) {
 // Windows'ta process exit event'i
 process.on('exit', (code) => {
   if (code !== 0 && !isShuttingDown) {
-    console.log(`ℹ️  API server exit code: ${code}`);
+    console.log(`Ôä╣´©Å  API server exit code: ${code}`);
   }
 });
 

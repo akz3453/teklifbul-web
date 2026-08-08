@@ -2232,7 +2232,8 @@
 
         // Teklifbul Rule v1.0 - Authenticated fetch helper (ortak helper kullan)
         // x-company-id header'ı otomatik eklenir
-        const { authFetch: commonAuthFetch } = await import('./assets/js/utils/api-helpers.js');
+        const { authFetch: commonAuthFetch, resolveApiBaseUrl } = await import('./assets/js/utils/api-helpers.js');
+        const { downloadBlobFile } = await import('./assets/js/utils/download-file.js');
         const authFetch = commonAuthFetch;
 
         // Teklifbul Rule v1.0 - Şablon indirme
@@ -2242,27 +2243,42 @@
             logger.group('Şablon İndirme');
             toast.info('Şablon indiriliyor...');
 
-            const API_BASE = window.location.hostname === 'localhost'
-              ? 'http://localhost:5174'
-              : window.location.origin;
-
+            const API_BASE = resolveApiBaseUrl();
             const response = await authFetch(`${API_BASE}/api/template/demand`);
 
             if (!response.ok) {
-              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+              let detail = `HTTP ${response.status}`;
+              try {
+                const errJson = await response.clone().json();
+                detail = errJson?.message || errJson?.error || detail;
+              } catch (_e) {
+                detail = response.statusText || detail;
+              }
+              if (response.status === 401) {
+                throw new Error('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
+              }
+              if (response.status === 402) {
+                throw new Error('Bu özellik için Premium gerekli.');
+              }
+              throw new Error(detail);
             }
 
             const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `Satin_Alma_Talep_Formu_Sablonu_${new Date().toISOString().split('T')[0]}.xlsx`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
+            if (!blob || blob.size === 0) {
+              throw new Error('Sunucudan boş dosya geldi');
+            }
+            // JSON hata gövdesi blob olarak gelirse yakala
+            if ((blob.type || '').includes('application/json')) {
+              const text = await blob.text();
+              let msg = 'Şablon indirilemedi';
+              try { msg = JSON.parse(text)?.message || msg; } catch (_e) { /* ignore */ }
+              throw new Error(msg);
+            }
 
-            logger.info('Şablon indirildi');
+            const filename = `Satin_Alma_Talep_Formu_Sablonu_${new Date().toISOString().split('T')[0]}.xlsx`;
+            await downloadBlobFile(blob, filename);
+
+            logger.info('Şablon indirildi', { size: blob.size });
             logger.end();
             toast.success('Şablon başarıyla indirildi');
           } catch (error) {
@@ -2726,6 +2742,11 @@ ornek2@tedarikci.com"
         // Modal artık otomatik olarak yükleniyor - import gerekmiyor
         import { searchStocks } from "./scripts/lib/stock-search.js";
 
+        // Teklifbul Rule v1.0 - Kullanıcı kontrollü HTML metinlerini güvenle görüntüle.
+        function escapeHtml(str) {
+          return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
         // Global stock cache
         let COMPANY_STOCKS = null;
         let COMPANY_STOCKS_LOADING = false;
@@ -3152,7 +3173,8 @@ ornek2@tedarikci.com"
 
         // Check for edit mode
         const params = new URLSearchParams(location.search);
-        const editId = params.get("id");
+        // Teklifbul Rule v1.0 — ?id= birincil; eski ?edit= alias
+        const editId = params.get("id") || params.get("edit");
         let editing = false;
         let demandRef = null;
 
@@ -3977,6 +3999,9 @@ ornek2@tedarikci.com"
 
           filteredSuppliers.forEach(supplier => {
             const div = document.createElement('div');
+            const supplierCategories = Array.isArray(supplier.supplierCategories || supplier.categories)
+              ? (supplier.supplierCategories || supplier.categories).map(escapeHtml).join(', ')
+              : '';
             div.style.cssText = `
           padding: 12px; 
           border-bottom: 1px solid #e5e7eb; 
@@ -3991,9 +4016,9 @@ ornek2@tedarikci.com"
             div.innerHTML = `
           <input type="checkbox" ${selectedSuppliers.has(supplier.id) ? 'checked' : ''} style="margin: 0;">
           <div style="flex: 1; min-width: 0;">
-            <div style="font-weight: 600; color: #1f2937; word-break: break-word;">${supplier.companyName || 'İsimsiz Firma'}</div>
-            <div style="font-size: 12px; color: #6b7280; word-break: break-word;">${supplier.email || 'E-posta yok'}</div>
-            <div style="font-size: 11px; color: #9ca3af; word-break: break-word; white-space: normal;">Kategoriler: ${(supplier.supplierCategories || supplier.categories || []).join(', ') || 'Belirtilmemiş'}</div>
+            <div style="font-weight: 600; color: #1f2937; word-break: break-word;">${escapeHtml(supplier.companyName || 'İsimsiz Firma')}</div>
+            <div style="font-size: 12px; color: #6b7280; word-break: break-word;">${escapeHtml(supplier.email || 'E-posta yok')}</div>
+            <div style="font-size: 11px; color: #9ca3af; word-break: break-word; white-space: normal;">Kategoriler: ${supplierCategories || 'Belirtilmemiş'}</div>
           </div>
         `;
 
@@ -4050,7 +4075,7 @@ ornek2@tedarikci.com"
 
           display.innerHTML = `
         <div style="margin-bottom: 4px;"><strong>Seçilen Tedarikçiler:</strong></div>
-        <div style="font-size: 11px;">${selectedNames.join(', ')}</div>
+        <div style="font-size: 11px;">${selectedNames.map(escapeHtml).join(', ')}</div>
       `;
         }
 
@@ -4553,8 +4578,24 @@ ornek2@tedarikci.com"
 
             const d = snap.data();
 
-            // Check ownership
-            if (d.createdBy !== user.uid) {
+            // Check ownership — oluşturan veya aynı şirket üyesi düzenleyebilir
+            let editorCompanyIds = [];
+            try {
+              const editorSnap = await getDoc(doc(db, 'users', user.uid));
+              if (editorSnap.exists()) {
+                const ud = editorSnap.data() || {};
+                editorCompanyIds = [ud.companyId, ud.activeCompanyId]
+                  .concat(Array.isArray(ud.companies) ? ud.companies : [])
+                  .filter((id) => typeof id === 'string' && id.length > 0);
+              }
+            } catch (e) {
+              logger.warn('Edit ownership company resolve failed', e);
+            }
+            const ownsDemand = d.createdBy === user.uid;
+            const sameCompany = editorCompanyIds.some((cid) =>
+              cid === d.creatorCompanyId || cid === d.companyId || cid === d.buyerCompanyId
+            );
+            if (!ownsDemand && !sameCompany) {
               toast.error(MESSAGES.ERROR_DEMAND_EDIT_PERMISSION);
               location.href = "./demands.html";
               throw new Error("UNAUTHORIZED");
@@ -4665,19 +4706,24 @@ ornek2@tedarikci.com"
             const itemsQ = query(collection(db, "demands", editId, "items"), orderBy("lineNo", "asc"));
             const itemsSnap = await getDocs(itemsQ);
 
-            // Teklifbul Rule v1.0 - public_listings'den publishToMarket bilgisini yükle
-            const listingsQuery = query(
-              collection(db, 'public_listings'),
-              where('demandId', '==', editId),
-              where('status', '==', 'active')
-            );
-            const listingsSnap = await getDocs(listingsQuery);
-            const publishedItemIndexes = new Set(
-              listingsSnap.docs.map(doc => {
-                const data = doc.data();
-                return data.itemIndex || parseInt(doc.id.split('_').pop()) || null;
-              }).filter(idx => idx !== null)
-            );
+            // Teklifbul Rule v1.0 - public_listings'den publishToMarket (opsiyonel; izin hatası formu bozmasın)
+            let publishedItemIndexes = new Set();
+            try {
+              const listingsQuery = query(
+                collection(db, 'public_listings'),
+                where('demandId', '==', editId),
+                where('status', '==', 'active')
+              );
+              const listingsSnap = await getDocs(listingsQuery);
+              publishedItemIndexes = new Set(
+                listingsSnap.docs.map(listingDoc => {
+                  const data = listingDoc.data();
+                  return data.itemIndex || parseInt(listingDoc.id.split('_').pop()) || null;
+                }).filter(idx => idx !== null)
+              );
+            } catch (listingsErr) {
+              logger.warn('public_listings yüklenemedi (publishToMarket atlandı)', listingsErr);
+            }
 
             itemsSnap.docs.forEach(docSnap => {
               const item = docSnap.data();
@@ -4895,7 +4941,7 @@ ornek2@tedarikci.com"
           stocks.forEach(stock => {
             const li = document.createElement('li');
             li.style.cssText = `padding: 8px 12px; border-bottom: 1px solid ${borderColor}; cursor: pointer; display: flex; justify-content: space-between; align-items: center; color: ${textColor};`;
-            li.innerHTML = `<div><div style="font-weight: 500;">${stock.name}</div><div style="font-size: 12px; opacity: 0.7;">SKU: ${stock.sku || '-'}</div></div><div style="font-size: 12px; font-weight: 600; color: #10b981;">${stock.qty || 0} ${stock.unit || ''}</div>`;
+            li.innerHTML = `<div><div style="font-weight: 500;">${escapeHtml(stock.name)}</div><div style="font-size: 12px; opacity: 0.7;">SKU: ${escapeHtml(stock.sku || '-')}</div></div><div style="font-size: 12px; font-weight: 600; color: #10b981;">${escapeHtml(stock.qty || 0)} ${escapeHtml(stock.unit || '')}</div>`;
             li.onmouseover = () => li.style.background = hoverColor;
             li.onmouseout = () => li.style.background = 'transparent';
 
@@ -5716,6 +5762,8 @@ ornek2@tedarikci.com"
             }
           });
         }
+        // Teklifbul Rule v1.0 - Cross-module access for setupExistingItemNameFields
+        window.setupCategorySuggestionForItemName = setupCategorySuggestionForItemName;
 
         // Teklifbul Rule v1.0 - Ürün ismi için kategori önerisi (AI kaldırıldı)
         // NOTE: Eski AI tabanlı öneri motoru kaldırıldı. Artık rule + learned auto-fill kullanılıyor.
@@ -5752,18 +5800,22 @@ ornek2@tedarikci.com"
             const scorePercent = Math.round(suggestion.score * 100);
             const isHighConfidence = suggestion.score >= 0.70;
             const badgeColor = isHighConfidence ? '#10b981' : '#f59e0b';
+            const suggestionName = escapeHtml(suggestion.name);
+            const suggestionReasons = Array.isArray(suggestion.reasons)
+              ? suggestion.reasons.slice(0, 3).map(escapeHtml).join(', ')
+              : '';
 
             content += `<div style="margin-bottom: 8px; padding: 8px; background: white; border-radius: 6px; border-left: 3px solid ${badgeColor};">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-            <span style="font-weight: 600; color: #1f2937;">${idx + 1}. ${suggestion.name}</span>
+            <span style="font-weight: 600; color: #1f2937;">${idx + 1}. ${suggestionName}</span>
             <span style="font-size: 11px; color: ${badgeColor}; font-weight: 600;">${scorePercent}%</span>
           </div>
           ${suggestion.reasons && suggestion.reasons.length > 0 ? `
             <div style="font-size: 11px; color: #6b7280; margin-top: 4px;">
-              Eşleşen: ${suggestion.reasons.slice(0, 3).join(', ')}
+              Eşleşen: ${suggestionReasons}
             </div>
           ` : ''}
-          <button class="apply-category-btn" data-category="${suggestion.name}" data-line="${lineNo}"
+          <button class="apply-category-btn" data-category="${suggestionName}" data-line="${escapeHtml(lineNo)}"
                   style="margin-top: 6px; padding: 4px 10px; background: ${badgeColor}; color: white; 
                          border: none; border-radius: 4px; font-size: 11px; cursor: pointer;">
             ${isHighConfidence ? '✅ Otomatik Uygula' : 'Seç'}
@@ -5955,23 +6007,26 @@ ornek2@tedarikci.com"
           const publishToMarketChecked = data.publishToMarket === true ? 'checked' : '';
           const publishToMarketDisabled = userPlanLimit === 0 ? 'disabled' : '';
           const publishToMarketTitle = userPlanLimit === 0 ? 'Premium ile açılır' : '';
+          const featuresJson = JSON.stringify(Array.isArray(data.ozellikler) ? data.ozellikler : []);
+          const certsJson = JSON.stringify(Array.isArray(data.kaliteSertifika) ? data.kaliteSertifika : []);
+          const itemCategoryIdsJson = JSON.stringify(Array.isArray(data.itemCategoryIds) ? data.itemCategoryIds : []);
           tr.innerHTML = `
-        <td>${data.lineNo || lineCounter}</td>
-        <td><input type="text" class="sku" placeholder="Stok Kodu" value="${data.sku || ""}" /></td>
-        <td><textarea class="itemName auto-resize" placeholder="Malzeme tanımı" required rows="2" data-min-height="32" data-max-height="120">${data.name || ""}</textarea></td>
-        <td><input type="text" class="brandModel" placeholder="Marka/Model" value="${data.brandModel || ""}" /></td>
-        <td><input type="number" class="qty" min="1" step="0.01" placeholder="Miktar" required value="${data.qty || ""}" /></td>
-        <td><input type="text" class="unit" list="unitList" placeholder="Birim" required value="${data.unit || ""}" /></td>
-        <td><input type="number" class="stockQty" min="0" step="0.01" placeholder="Depo" value="${data.stockQty || ""}" /></td>
-        <td><input type="number" class="targetPrice" min="0" step="0.01" placeholder="Hedef" value="${data.targetPrice || ""}" /></td>
+        <td>${escapeHtml(data.lineNo || lineCounter)}</td>
+        <td><input type="text" class="sku" placeholder="Stok Kodu" value="${escapeHtml(data.sku || "")}" /></td>
+        <td><textarea class="itemName auto-resize" placeholder="Malzeme tanımı" required rows="2" data-min-height="32" data-max-height="120">${escapeHtml(data.name || "")}</textarea></td>
+        <td><input type="text" class="brandModel" placeholder="Marka/Model" value="${escapeHtml(data.brandModel || "")}" /></td>
+        <td><input type="number" class="qty" min="1" step="0.01" placeholder="Miktar" required value="${escapeHtml(data.qty || "")}" /></td>
+        <td><input type="text" class="unit" list="unitList" placeholder="Birim" required value="${escapeHtml(data.unit || "")}" /></td>
+        <td><input type="number" class="stockQty" min="0" step="0.01" placeholder="Depo" value="${escapeHtml(data.stockQty || "")}" /></td>
+        <td><input type="number" class="targetPrice" min="0" step="0.01" placeholder="Hedef" value="${escapeHtml(data.targetPrice || "")}" /></td>
         <td>
           <input type="file" class="itemImage" accept="image/*" style="max-width:150px;">
-          <input type="hidden" class="itemImageData" value="${data.productImage || ""}">
+          <input type="hidden" class="itemImageData">
           <div class="itemImagePreview" style="font-size:11px;color:#6b7280;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${data.productImage ? 'Seçildi' : 'Seçilmedi'}</div>
         </td>
-        <td><input type="date" class="itemDueDate" value="${data.itemDueDate || el("dueDate").value || ""}" /></td>
+        <td><input type="date" class="itemDueDate" value="${escapeHtml(data.itemDueDate || el("dueDate").value || "")}" /></td>
         <td style="text-align:center;">
-          <input type="checkbox" class="publishToMarket" ${publishToMarketChecked} ${publishToMarketDisabled} title="${publishToMarketTitle}" />
+          <input type="checkbox" class="publishToMarket" ${publishToMarketChecked} ${publishToMarketDisabled} title="${escapeHtml(publishToMarketTitle)}" />
         </td>
         <td style="white-space:nowrap; vertical-align:middle;">
           <div style="display:flex; align-items:center; gap:4px; justify-content:center;">
@@ -5982,13 +6037,19 @@ ornek2@tedarikci.com"
             <button type="button" class="delBtn btn-sm" title="Kalemi sil" 
                     style="background:#fee2e2; color:#b91c1c; border:1px solid #fecaca; padding:4px 8px;">×</button>
           </div>
-          <input type="hidden" class="featuresJson" value='${JSON.stringify(Array.isArray(data.ozellikler) ? data.ozellikler : [])}'>
-          <input type="hidden" class="certsJson" value='${JSON.stringify(Array.isArray(data.kaliteSertifika) ? data.kaliteSertifika : [])}'>
-          <input type="hidden" class="altAcceptVal" value='${typeof data.alternatifKabul === "boolean" ? String(data.alternatifKabul) : ""}'>
-          <input type="hidden" class="itemCategoryIdsJson" value='${JSON.stringify(Array.isArray(data.itemCategoryIds) ? data.itemCategoryIds : [])}'>
-          <input type="hidden" class="selectedStockId" value='${data.stockId || ""}'>
+          <input type="hidden" class="featuresJson">
+          <input type="hidden" class="certsJson">
+          <input type="hidden" class="altAcceptVal">
+          <input type="hidden" class="itemCategoryIdsJson">
+          <input type="hidden" class="selectedStockId">
         </td>
       `;
+          tr.querySelector('.itemImageData').value = String(data.productImage || '');
+          tr.querySelector('.featuresJson').value = featuresJson;
+          tr.querySelector('.certsJson').value = certsJson;
+          tr.querySelector('.altAcceptVal').value = typeof data.alternatifKabul === 'boolean' ? String(data.alternatifKabul) : '';
+          tr.querySelector('.itemCategoryIdsJson').value = itemCategoryIdsJson;
+          tr.querySelector('.selectedStockId').value = String(data.stockId || '');
           itemsBody.appendChild(tr);
 
           // Advanced editor row (collapsible) tied to this item row
@@ -6069,6 +6130,7 @@ ornek2@tedarikci.com"
           // Teklifbul Rule v1.0 - Ürün ismi için kategori önerisi ve stok araması (birleştirildi)
           const itemNameTextarea = tr.querySelector('.itemName');
           if (itemNameTextarea) {
+            itemNameTextarea.dataset.categorySuggestBound = '1';
             setupCategorySuggestionForItemName(itemNameTextarea, tr.dataset.lineNo, tr);
           }
 
@@ -7399,6 +7461,36 @@ ornek2@tedarikci.com"
                 secondRoundDays: biddingMode === 'hybrid' ? parseInt(el("secondRoundDays").value) || 7 : null
               };
 
+              // Teklifbul Rule v1.0 — talep süresi alanlarını kalıcı kaydet
+              const isTimeBound = !!el("isTimeBound")?.checked;
+              const phaseStartAt = isTimeBound ? datetimeLocalToTimestamp(el("phaseStart")?.value) : null;
+              const phaseEndAt = isTimeBound ? datetimeLocalToTimestamp(el("phaseEnd")?.value) : null;
+              const round1Start = isTimeBound ? datetimeLocalToTimestamp(el("round1Start")?.value) : null;
+              const round1End = isTimeBound ? datetimeLocalToTimestamp(el("round1End")?.value) : null;
+              const round2Start = isTimeBound ? datetimeLocalToTimestamp(el("round2Start")?.value) : null;
+              const round2End = isTimeBound ? datetimeLocalToTimestamp(el("round2End")?.value) : null;
+
+              let computedExpiresAt = null;
+              const expiryCandidates = [];
+              if (phaseEndAt) expiryCandidates.push(phaseEndAt);
+              if (round2End) expiryCandidates.push(round2End);
+              else if (round1End) expiryCandidates.push(round1End);
+              if (dueDate) {
+                const dueEnd = new Date(`${dueDate}T23:59:59`);
+                if (!Number.isNaN(dueEnd.getTime())) expiryCandidates.push(dueEnd);
+              }
+              if (biddingMode === 'hybrid' && hybridSettings.firstRoundDays) {
+                const days = (hybridSettings.firstRoundDays || 0) + (hybridSettings.secondRoundDays || 0);
+                if (days > 0) {
+                  const fromNow = new Date();
+                  fromNow.setDate(fromNow.getDate() + days);
+                  expiryCandidates.push(fromNow);
+                }
+              }
+              if (expiryCandidates.length) {
+                computedExpiresAt = new Date(Math.min(...expiryCandidates.map((d) => d.getTime())));
+              }
+
               const specValue = document.getElementById("spec")?.value?.trim() || null;
               const deliveryCityValue = document.getElementById("deliveryCity")?.value?.trim() || null;
 
@@ -7608,6 +7700,14 @@ ornek2@tedarikci.com"
                 excludeSuppliers,
                 biddingMode, // 'secret', 'open', 'hybrid'
                 hybridSettings, // Hibrit mod ayarları
+                isTimeBound,
+                phaseStartAt,
+                phaseEndAt,
+                round1Start,
+                round1End,
+                round2Start,
+                round2End,
+                expiresAt: computedExpiresAt,
                 updatedAt: serverTimestamp(),
                 companyId: companyId, // Set companyId from profile with fallback (backward compatibility)
                 // REFACTORED: Yeni alanlar - refactor için
@@ -7964,13 +8064,27 @@ ornek2@tedarikci.com"
           try {
             logger.group('Sync Public Listings');
 
-            // Mevcut import'ları kullan: query, collection, where, getDocs, setDoc, deleteDoc, doc zaten import edilmiş
-            // Mevcut listing'leri bul ve sil (yeniden yazmak için)
-            const existingListingsQuery = query(
-              collection(db, 'public_listings'),
-              where('demandId', '==', demandId)
-            );
-            const existingSnap = await getDocs(existingListingsQuery);
+            // Mevcut listing'leri bul (şirket filtresi: inactive kayıtlar için kural uyumu)
+            const listingCompanyId = headerData.companyId || headerData.creatorCompanyId || null;
+            let existingSnap;
+            try {
+              if (listingCompanyId) {
+                existingSnap = await getDocs(query(
+                  collection(db, 'public_listings'),
+                  where('demandId', '==', demandId),
+                  where('buyerCompanyId', '==', listingCompanyId)
+                ));
+              } else {
+                existingSnap = await getDocs(query(
+                  collection(db, 'public_listings'),
+                  where('demandId', '==', demandId),
+                  where('status', '==', 'active')
+                ));
+              }
+            } catch (existingErr) {
+              logger.warn('Mevcut public_listings okunamadı; senkron devam ediyor', existingErr);
+              existingSnap = { docs: [] };
+            }
             const existingListingIds = existingSnap.docs.map(d => d.id);
 
             // publishToMarket=true olan kalemleri say
@@ -8007,6 +8121,7 @@ ornek2@tedarikci.com"
             // Her publishToMarket=true olan kalem için listing oluştur
             const listingPromises = itemsToPublish.map(async (item, index) => {
               const listingId = `${demandId}_${item.lineNo || index}`;
+              const listingCompanyId = headerData.companyId || headerData.creatorCompanyId || null;
               const listingData = {
                 demandId: demandId,
                 itemIndex: item.lineNo || index,
@@ -8018,7 +8133,9 @@ ornek2@tedarikci.com"
                 deliveryLocation: deliveryLocation,
                 deadline: deadline,
                 createdAt: serverTimestamp(),
-                buyerCompanyId: headerData.companyId || null,
+                // Teklifbul Rule v1.0 — rules companyId veya buyerCompanyId ile canAccessByCompany
+                companyId: listingCompanyId,
+                buyerCompanyId: listingCompanyId,
                 status: 'active',
                 satfk: headerData.satfk || null
               };
@@ -8137,7 +8254,8 @@ ornek2@tedarikci.com"
 
             closeApprovalModal();
             toast.success(MESSAGES.SUCCESS_DEMAND_DRAFT);
-            location.href = `./demand-detail.html?id=${demandId}`;
+            // Teklifbul Rule v1.0 — taslak kaydı sonrası düzenleme formunda kalsın
+            location.href = `./demand-new.html?id=${encodeURIComponent(demandId)}`;
 
           } catch (error) {
             logger.error('Taslak kaydetme hatası', error);
@@ -8308,8 +8426,16 @@ ornek2@tedarikci.com"
             }
 
             // demandRecipients kayıtları oluştur (idempotent)
-            const existingSnap = await getDocs(query(collection(db, 'demandRecipients'), where('demandId', '==', demandId), limit(2000)));
-            const existingSupplierIds = new Set(existingSnap.docs.map(d => d.data()?.supplierId).filter(Boolean));
+            let existingSupplierIds = new Set();
+            try {
+              const existingSnap = await getDocs(query(collection(db, 'demandRecipients'), where('demandId', '==', demandId), limit(2000)));
+              existingSupplierIds = new Set(existingSnap.docs.map(d => d.data()?.supplierId).filter(Boolean));
+            } catch (existingErr) {
+              logger.warn('Existing demandRecipients query failed; continuing with create-only', {
+                code: existingErr?.code,
+                message: existingErr?.message
+              });
+            }
 
             const recipientsToCreate = Array.from(supplierMap.values()).filter(x => {
               if (existingSupplierIds.has(x.supplierId)) return false;
@@ -8321,7 +8447,7 @@ ornek2@tedarikci.com"
             const recipientPromises = recipientsToCreate.map(({ supplierId, recipientCategoryIds, supplierCategoryIds }) =>
               addDoc(collection(db, 'demandRecipients'), {
                 demandId,
-                buyerId: demandData.createdBy,
+                buyerId: demandData.createdBy || auth.currentUser?.uid,
                 supplierId,
                 matchedAt: serverTimestamp(),
                 status: 'pending',
@@ -8365,7 +8491,12 @@ ornek2@tedarikci.com"
             });
 
           } catch (error) {
-            logger.error('Error in publishDemandAndMatchSuppliers', { error });
+            logger.error('Error in publishDemandAndMatchSuppliers', {
+              code: error?.code,
+              message: error?.message,
+              error
+            });
+            toast.error(`Tedarikçi eşleştirme hatası: ${error?.message || error}`);
             throw error;
           }
         }
@@ -8919,6 +9050,10 @@ ornek2@tedarikci.com"
         import { requireCompanyContext } from './assets/js/state/company-context.js';
 
         // ---------- helpers ----------
+        function escapeHtml(str) {
+          return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
         async function getCurrentUser() {
           if (auth.currentUser) return auth.currentUser;
           return await new Promise((resolve, reject) => {
@@ -9111,18 +9246,22 @@ ornek2@tedarikci.com"
             const scorePercent = Math.round(suggestion.score * 100);
             const isHighConfidence = suggestion.score >= 0.70;
             const badgeColor = isHighConfidence ? '#10b981' : '#f59e0b';
+            const suggestionName = escapeHtml(suggestion.name);
+            const suggestionReasons = Array.isArray(suggestion.reasons)
+              ? suggestion.reasons.slice(0, 3).map(escapeHtml).join(', ')
+              : '';
 
             content += `<div style="margin-bottom: 8px; padding: 8px; background: white; border-radius: 6px; border-left: 3px solid ${badgeColor};">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-            <span style="font-weight: 600; color: #1f2937;">${idx + 1}. ${suggestion.name}</span>
+            <span style="font-weight: 600; color: #1f2937;">${idx + 1}. ${suggestionName}</span>
             <span style="font-size: 11px; color: ${badgeColor}; font-weight: 600;">${scorePercent}%</span>
           </div>
           ${suggestion.reasons && suggestion.reasons.length > 0 ? `
             <div style="font-size: 11px; color: #6b7280; margin-top: 4px;">
-              Eşleşen: ${suggestion.reasons.slice(0, 3).join(', ')}
+              Eşleşen: ${suggestionReasons}
             </div>
           ` : ''}
-          <button class="apply-category-btn" data-category="${suggestion.name}" 
+          <button class="apply-category-btn" data-category="${suggestionName}"
                   style="margin-top: 6px; padding: 4px 10px; background: ${badgeColor}; color: white; 
                          border: none; border-radius: 4px; font-size: 11px; cursor: pointer;">
             ${isHighConfidence ? '✅ Otomatik Uygula' : 'Seç'}
@@ -9227,13 +9366,25 @@ ornek2@tedarikci.com"
         }
 
         // Teklifbul Rule v1.0 - Mevcut ürün satırları için kategori önerisi setup
-        function setupExistingItemNameFields() {
+        function setupExistingItemNameFields(attempt = 0) {
+          const setupFn = window.setupCategorySuggestionForItemName;
+          if (typeof setupFn !== 'function') {
+            // Main module may still be awaiting auth before exposing the helper
+            if (attempt < 40) {
+              setTimeout(() => setupExistingItemNameFields(attempt + 1), 100);
+            } else {
+              logger.warn('setupCategorySuggestionForItemName henüz hazır değil');
+            }
+            return;
+          }
           const existingItemNames = document.querySelectorAll('#itemsBody .itemName');
           existingItemNames.forEach((textarea) => {
+            if (textarea.dataset.categorySuggestBound === '1') return;
+            textarea.dataset.categorySuggestBound = '1';
             const row = textarea.closest('tr');
             const lineNo = row?.dataset?.lineNo || Math.random().toString(36).substring(7);
             // Teklifbul Rule v1.0 - tr parametresi eklendi (stok araması için)
-            setupCategorySuggestionForItemName(textarea, lineNo, row);
+            setupFn(textarea, lineNo, row);
           });
         }
 
@@ -9294,18 +9445,22 @@ ornek2@tedarikci.com"
             const scorePercent = Math.round(suggestion.score * 100);
             const isHighConfidence = suggestion.score >= 0.70;
             const badgeColor = isHighConfidence ? '#10b981' : '#f59e0b';
+            const suggestionName = escapeHtml(suggestion.name);
+            const suggestionReasons = Array.isArray(suggestion.reasons)
+              ? suggestion.reasons.slice(0, 3).map(escapeHtml).join(', ')
+              : '';
 
             content += `<div style="margin-bottom: 8px; padding: 8px; background: white; border-radius: 6px; border-left: 3px solid ${badgeColor};">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-            <span style="font-weight: 600; color: #1f2937;">${idx + 1}. ${suggestion.name}</span>
+            <span style="font-weight: 600; color: #1f2937;">${idx + 1}. ${suggestionName}</span>
             <span style="font-size: 11px; color: ${badgeColor}; font-weight: 600;">${scorePercent}%</span>
           </div>
           ${suggestion.reasons && suggestion.reasons.length > 0 ? `
             <div style="font-size: 11px; color: #6b7280; margin-top: 4px;">
-              Eşleşen: ${suggestion.reasons.slice(0, 3).join(', ')}
+              Eşleşen: ${suggestionReasons}
             </div>
           ` : ''}
-          <button class="apply-category-btn" data-category="${suggestion.name}" data-line="${lineNo}"
+          <button class="apply-category-btn" data-category="${suggestionName}" data-line="${escapeHtml(lineNo)}"
                   style="margin-top: 6px; padding: 4px 10px; background: ${badgeColor}; color: white; 
                          border: none; border-radius: 4px; font-size: 11px; cursor: pointer;">
             ${isHighConfidence ? '✅ Otomatik Uygula' : 'Seç'}

@@ -5,6 +5,11 @@ import DOMPurify from 'https://cdn.jsdelivr.net/npm/dompurify@3.2.2/+esm';
 import { db, requireAuth } from "../firebase.js";
 // Teklifbul Rule v1.0 - Structured Logging
 import { logger } from '../../src/shared/log/logger.js';
+import { toast } from '../../src/shared/ui/toast.js';
+import { MESSAGES } from '../../src/shared/constants/messages.js';
+import { setTableEmpty } from './utils/safe-table.js';
+import { resolveSharedCompanyId } from './utils/api-helpers.js';
+import { isDemandExpired } from './utils/demand-expiry.js';
 import {
   collection, getDocs, getDoc, query, where, orderBy, limit, doc
 } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
@@ -59,14 +64,6 @@ try {
   // Get user's company ID and supplier categories (same as demands.html)
   const userDoc = await getDoc(doc(db, 'users', uid));
   const userData = userDoc.exists() ? userDoc.data() : {};
-  
-  // Teklifbul Rule v1.0 - Resolve shared company ID (şirket kod ile kaydolan kullanıcılar için)
-  function resolveSharedCompanyId(userData) {
-    if (!userData) return null;
-    const companyId = userData.activeCompanyId || userData.companyId || (Array.isArray(userData.companies) && userData.companies.length ? userData.companies[0] : null);
-    if (companyId && typeof companyId === 'string' && companyId.trim() !== '') return companyId;
-    return null;
-  }
   
   let userCompanyId = resolveSharedCompanyId(userData);
   
@@ -271,6 +268,8 @@ try {
       logger.error("   3. Wait a few minutes for the index to build, then refresh the page.");
     }
   }
+
+  incomingDemands = incomingDemands.filter((demand) => !isDemandExpired(demand));
   
   // OPTIMIZED: Load incoming bids using bidCount summation (Teklifbul Rule v1.3)
   // Teklifbul Rule v1.2.24 - Sadece buyer veya both rolüne sahip kullanıcılar için
@@ -296,20 +295,60 @@ try {
   
   // Load outgoing bids (bids I sent)
   // Teklifbul Rule v1.2.24 - Sadece supplier veya both rolüne sahip kullanıcılar için
+  // Teklifbul Rule v1.0 — supplierId + supplierCompanyId tek list query rules'ta
+  // permission-denied olur (OR içinde get()). bids.html gibi ayrı sorgular.
+  const dashboardBidsQueryLimit = 300;
   let outgoingBids = [];
   try {
     if (hasSupplierRole) {
-      const qOutgoingBids = query(
-        collection(db, "bids"),
-        where("supplierId", "==", uid)
-      );
-      const outgoingBidsSnap = await getDocs(qOutgoingBids);
-      outgoingBids = outgoingBidsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-    } else {
-      // Teklifbul Rule v1.2.24 - Supplier rolü yoksa gönderilen teklifler gösterilmez
+      const bidMap = new Map();
+      let companyQueryOk = false;
+      let userQueryOk = false;
+      const outgoingBidErrors = [];
+
+      if (userCompanyId && !String(userCompanyId).startsWith('solo-')) {
+        try {
+          const byCompanySnap = await getDocs(query(
+            collection(db, "bids"),
+            where("supplierCompanyId", "==", userCompanyId),
+            limit(dashboardBidsQueryLimit)
+          ));
+          byCompanySnap.docs.forEach((d) => bidMap.set(d.id, { id: d.id, ...d.data() }));
+          companyQueryOk = true;
+        } catch (companyQueryError) {
+          outgoingBidErrors.push(companyQueryError);
+          logger.warn('Dashboard: outgoing bids company query failed', companyQueryError);
+        }
+      } else if (!userCompanyId) {
+        logger.warn('Dashboard: Supplier rolü var ancak userCompanyId bulunamadı, şirket sorgusu atlandı');
+      } else {
+        companyQueryOk = true;
+      }
+
+      try {
+        const byUserSnap = await getDocs(query(
+          collection(db, "bids"),
+          where("supplierId", "==", uid),
+          limit(dashboardBidsQueryLimit)
+        ));
+        byUserSnap.docs.forEach((d) => {
+          if (!bidMap.has(d.id)) bidMap.set(d.id, { id: d.id, ...d.data() });
+        });
+        userQueryOk = true;
+      } catch (userQueryError) {
+        outgoingBidErrors.push(userQueryError);
+        logger.warn('Dashboard: outgoing bids user query failed', userQueryError);
+      }
+
+      outgoingBids = Array.from(bidMap.values());
+      if (!companyQueryOk && !userQueryOk) {
+        logger.error('Error loading outgoing bids', outgoingBidErrors[0]);
+        toast.error(MESSAGES.ERROR_LOADING_OUTGOING_BIDS);
+      }
     }
   } catch (error) {
     logger.error('Error loading outgoing bids', error);
+    toast.error(MESSAGES.ERROR_LOADING_OUTGOING_BIDS);
   }
 
   // Load all user demands (for "Son Taleplerim" table) - creatorCompanyId or createdBy
@@ -483,11 +522,8 @@ try {
   
   const last5 = sent.slice(0, 5);
   if (last5.length === 0) {
-    // Teklifbul Rule v1.0 - XSS Protection
-    lastBody.innerHTML = DOMPurify.sanitize('<tr><td colspan="6" style="text-align:center;color:#6b7280;padding:20px">Henüz talep yok</td></tr>', {
-      ALLOWED_TAGS: ['tr', 'td'],
-      ALLOWED_ATTR: ['colspan', 'style']
-    });
+    // Teklifbul Rule v1.0 — DOMPurify <tr>/<td>'yi table dışında siler; createElement kullan
+    setTableEmpty(lastBody, 6, 'Henüz talep yok');
   } else {
     // No need for batch bid loading, we use x.bidCount directly from the demand document
     

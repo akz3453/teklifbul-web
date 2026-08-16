@@ -1,5 +1,8 @@
 // Teklifbul Rule v1.0 - XSS Protection
 import DOMPurify from 'https://cdn.jsdelivr.net/npm/dompurify@3.2.2/+esm';
+import { appendTextCell, setTableEmpty } from './utils/safe-table.js';
+import { isDemandExpired } from './utils/demand-expiry.js';
+import { resolveSharedCompanyId } from './utils/api-helpers.js';
 import { db, requireAuth, logout } from "../firebase.js";
 import {
   collection, getDocs, getDoc, query, where, deleteDoc, doc, orderBy, limit, startAfter,
@@ -38,8 +41,19 @@ async function initDemandsPage() {
   const fIncomingStatus = document.getElementById("f-incoming-status");
   const fKeyword = document.getElementById("f-keyword");
   const fCategory = document.getElementById("f-category");
+  const fExpiry = document.getElementById("f-expiry");
   const incomingFilters = document.getElementById("incoming-filters");
   const outgoingFilters = document.getElementById("outgoing-filters");
+  const expiryFilters = document.getElementById("expiry-filters");
+  const SATFK_PATTERN = /^SATFK-\d{8}-[0-9A-Z]+$/i;
+
+  function normalizeSatfk(value) {
+    return String(value || '').trim().toUpperCase();
+  }
+
+  function isSatfkCode(value) {
+    return SATFK_PATTERN.test(String(value || '').trim());
+  }
 
   // Populate Categories
   const COMPANY_CACHE = new Map(); // Teklifbul Rule v1.0 - Firma isimlerini önbelleğe al
@@ -359,7 +373,6 @@ async function initDemandsPage() {
     )];
 
     if (cIds.length === 0) {
-      // Tüm isimler zaten önbellekte, sadece ata
       rows.forEach(r => {
         if (!r.companyName && r.creatorCompanyId) {
           r.companyName = COMPANY_CACHE.get(r.creatorCompanyId) || 'Bilinmeyen Firma';
@@ -368,23 +381,22 @@ async function initDemandsPage() {
       return;
     }
 
-    // Firestore 'in' limiti 10 olduğu için parçalara bölerek çekiyoruz
-    for (let i = 0; i < cIds.length; i += 10) {
-      const chunk = cIds.slice(i, i + 10);
+    // Teklifbul Rule v1.0 — list yerine getDoc: şirket list kuralları pazaryeri firmalarında kırılmasın
+    await Promise.all(cIds.map(async (companyId) => {
       try {
-        const q = query(collection(db, 'companies'), where('__name__', 'in', chunk));
-        const snap = await getDocs(q);
-        snap.forEach(doc => {
-          const data = doc.data();
-          // companyName, name veya title alanlarından birini al
-          COMPANY_CACHE.set(doc.id, data.companyName || data.name || data.title || 'Bilinmeyen Firma');
-        });
+        const snap = await getDoc(doc(db, 'companies', companyId));
+        if (snap.exists()) {
+          const data = snap.data() || {};
+          COMPANY_CACHE.set(companyId, data.companyName || data.name || data.title || 'Bilinmeyen Firma');
+        } else {
+          COMPANY_CACHE.set(companyId, 'Bilinmeyen Firma');
+        }
       } catch (err) {
-        logger.error('Firma isimleri yüklenirken hata oluştu', err);
+        logger.warn('Firma adı okunamadı', { companyId, error: err?.message || err });
+        COMPANY_CACHE.set(companyId, 'Bilinmeyen Firma');
       }
-    }
+    }));
 
-    // İsimleri dökümanlara ata
     rows.forEach(r => {
       if (!r.companyName && r.creatorCompanyId) {
         r.companyName = COMPANY_CACHE.get(r.creatorCompanyId) || 'Bilinmeyen Firma';
@@ -410,6 +422,7 @@ async function initDemandsPage() {
     if (fPriority) fPriority.value = '';
     if (fBiddingMode) fBiddingMode.value = '';
     if (fGroup) fGroup.value = '';
+    if (fExpiry) fExpiry.value = 'open';
     
     // reset searchInput too as it affects loadDemandsPaged
     const sInput = document.getElementById('searchInput');
@@ -432,12 +445,19 @@ async function initDemandsPage() {
     if (which === 'incoming') {
       if (incomingFilters) incomingFilters.style.setProperty('display', 'flex', 'important');
       if (outgoingFilters) outgoingFilters.style.setProperty('display', 'none', 'important');
+      if (expiryFilters) expiryFilters.style.setProperty('display', 'flex', 'important');
     } else if (which === 'outgoing') {
       if (incomingFilters) incomingFilters.style.setProperty('display', 'none', 'important');
       if (outgoingFilters) outgoingFilters.style.setProperty('display', 'flex', 'important');
+      if (expiryFilters) expiryFilters.style.setProperty('display', 'flex', 'important');
     } else if (which === 'draft') {
       if (incomingFilters) incomingFilters.style.setProperty('display', 'none', 'important');
       if (outgoingFilters) outgoingFilters.style.setProperty('display', 'none', 'important');
+      if (expiryFilters) expiryFilters.style.setProperty('display', 'none', 'important');
+    } else {
+      if (incomingFilters) incomingFilters.style.setProperty('display', 'none', 'important');
+      if (outgoingFilters) outgoingFilters.style.setProperty('display', 'none', 'important');
+      if (expiryFilters) expiryFilters.style.setProperty('display', 'none', 'important');
     }
 
     // Pager elements are now shared
@@ -483,10 +503,10 @@ async function initDemandsPage() {
       let basePath = 'demands';
       let conditions = [];
 
-      // Keyword search (SATFK) - If searchInput has value, filter by SATFK exactly
+      // Keyword search (SATFK) — tam SATFK Ara ile detaya gider; burada yalnızca tam kod listesini daraltır
       const searchInput = document.getElementById('searchInput');
-      const satfkFilter = searchInput?.value?.trim();
-      if (satfkFilter) {
+      const satfkFilter = normalizeSatfk(searchInput?.value);
+      if (satfkFilter && isSatfkCode(satfkFilter)) {
         conditions.push(where('satfk', '==', satfkFilter));
       }
 
@@ -623,32 +643,45 @@ async function initDemandsPage() {
         const dIds = rows.map(r => r.id);
         const bidCountsMap = new Map();
         const bidSupplierKeyMap = new Map();
-        for (let i = 0; i < dIds.length; i += 10) {
-          const batch = dIds.slice(i, i + 10);
-          const bQ = query(collection(db, 'bids'), where('demandId', 'in', batch));
-          const bSnap = await getDocs(bQ);
-          bSnap.docs.forEach(bd => {
-            const bidData = bd.data();
-            const did = bidData.demandId;
-            const supplierKey = bidData.supplierCompanyId || bidData.supplierId || bd.id;
-            if (!did) return;
-            if (!bidSupplierKeyMap.has(did)) bidSupplierKeyMap.set(did, new Set());
-            bidSupplierKeyMap.get(did).add(String(supplierKey));
-          });
+
+        // Teklifbul Rule v1.0 — Gelen taleplerde tüm bids listesi permission kırar.
+        // Teklif sayısı yalnız giden/taslak (alıcı) tarafında çekilir.
+        if (PAGING.activeTab === 'outgoing' || PAGING.activeTab === 'draft') {
+          try {
+            for (let i = 0; i < dIds.length; i += 10) {
+              const batch = dIds.slice(i, i + 10);
+              const bQ = query(collection(db, 'bids'), where('demandId', 'in', batch));
+              const bSnap = await getDocs(bQ);
+              bSnap.docs.forEach(bd => {
+                const bidData = bd.data();
+                const did = bidData.demandId;
+                const supplierKey = bidData.supplierCompanyId || bidData.supplierId || bd.id;
+                if (!did) return;
+                if (!bidSupplierKeyMap.has(did)) bidSupplierKeyMap.set(did, new Set());
+                bidSupplierKeyMap.get(did).add(String(supplierKey));
+              });
+            }
+            bidSupplierKeyMap.forEach((supplierSet, did) => {
+              bidCountsMap.set(did, supplierSet.size);
+            });
+          } catch (bidErr) {
+            logger.warn('Teklif sayıları yüklenemedi', bidErr);
+          }
         }
-        bidSupplierKeyMap.forEach((supplierSet, did) => {
-          bidCountsMap.set(did, supplierSet.size);
-        });
         rows.forEach(r => r._bidCount = bidCountsMap.get(r.id) || 0);
 
         // For incoming/pool, check own bid
         if (PAGING.activeTab === 'incoming' || PAGING.activeTab === 'pool') {
           const ownBidSet = new Set();
-          for (let i = 0; i < dIds.length; i += 10) {
-            const batch = dIds.slice(i, i + 10);
-            const ownBQ = query(collection(db, 'bids'), where('demandId', 'in', batch), where('supplierId', '==', uid));
-            const ownBSnap = await getDocs(ownBQ);
-            ownBSnap.docs.forEach(bd => ownBidSet.add(bd.data().demandId));
+          try {
+            for (let i = 0; i < dIds.length; i += 10) {
+              const batch = dIds.slice(i, i + 10);
+              const ownBQ = query(collection(db, 'bids'), where('demandId', 'in', batch), where('supplierId', '==', uid));
+              const ownBSnap = await getDocs(ownBQ);
+              ownBSnap.docs.forEach(bd => ownBidSet.add(bd.data().demandId));
+            }
+          } catch (ownBidErr) {
+            logger.warn('Kendi teklif kontrolü yapılamadı', ownBidErr);
           }
           rows.forEach(r => r.hasOwnBid = ownBidSet.has(r.id));
         }
@@ -694,13 +727,39 @@ async function initDemandsPage() {
         }
       }
 
+      // Açık / süresi biten (termin veya talep tipi süresi)
+      let expiredHiddenCount = 0;
+      if (PAGING.activeTab === 'outgoing' || PAGING.activeTab === 'incoming') {
+        const expiryFilter = fExpiry?.value || 'open';
+        if (expiryFilter === 'open') {
+          expiredHiddenCount = filteredRows.filter((r) => isDemandExpired(r)).length;
+          filteredRows = filteredRows.filter((r) => !isDemandExpired(r));
+        } else if (expiryFilter === 'expired') {
+          filteredRows = filteredRows.filter((r) => isDemandExpired(r));
+        }
+      }
+
       // 7. Render
       PAGING.currentVisibleCount = filteredRows.length;
       if (PAGING.activeTab === 'incoming') {
+        const emptyEl = document.getElementById('incomingEmpty');
+        if (emptyEl) {
+          emptyEl.textContent = (filteredRows.length === 0 && expiredHiddenCount > 0)
+            ? MESSAGES.INFO_INCOMING_EMPTY_EXPIRED.replace('{count}', String(expiredHiddenCount))
+            : MESSAGES.INFO_INCOMING_EMPTY;
+        }
         renderIncomingGroups(filteredRows);
       } else if (PAGING.activeTab === 'outgoing') {
+        const emptyEl = document.getElementById('outgoingEmpty');
+        if (emptyEl) {
+          emptyEl.textContent = (filteredRows.length === 0 && expiredHiddenCount > 0)
+            ? MESSAGES.INFO_OUTGOING_EMPTY_EXPIRED.replace('{count}', String(expiredHiddenCount))
+            : MESSAGES.INFO_OUTGOING_EMPTY;
+        }
         render(filteredRows, '#outgoingRows', '#outgoingEmpty');
       } else if (PAGING.activeTab === 'draft') {
+        const emptyEl = document.getElementById('draftEmpty');
+        if (emptyEl) emptyEl.textContent = MESSAGES.INFO_DRAFT_EMPTY;
         renderDraft(filteredRows, '#draftRows', '#draftEmpty');
       }
 
@@ -750,7 +809,7 @@ async function initDemandsPage() {
   document.getElementById('btnNext')?.addEventListener('click', () => loadDemandsPaged(false, 'next'));
 
   // Filter listeners
-  [fPriority, fBiddingMode, fGroup, fUser, fCategory, fIncomingStatus].forEach(el => {
+  [fPriority, fBiddingMode, fGroup, fUser, fCategory, fIncomingStatus, fExpiry].forEach(el => {
     el?.addEventListener('change', () => loadDemandsPaged(true));
   });
 
@@ -818,29 +877,39 @@ async function initDemandsPage() {
     }
   });
 
+  function runDemandSearch() {
+    const raw = document.getElementById('searchInput')?.value || '';
+    if (isSatfkCode(raw)) {
+      searchBySATFK();
+      return;
+    }
+    loadDemandsPaged(true);
+  }
+
   // Search functionality
-  document.getElementById('searchBtn')?.addEventListener('click', (e) => { 
-    e.preventDefault?.(); 
-    // If SATFK exists, we can still do a direct search/redirect, 
-    // but also refresh the list if they just press search.
-    loadDemandsPaged(true); 
+  document.getElementById('searchBtn')?.addEventListener('click', (e) => {
+    e.preventDefault?.();
+    runDemandSearch();
   });
-  document.getElementById('searchForm')?.addEventListener('submit', (e) => { 
-    e.preventDefault(); 
-    loadDemandsPaged(true); 
+  document.getElementById('searchForm')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    runDemandSearch();
   });
   document.getElementById('clearSearchBtn')?.addEventListener('click', () => {
     document.getElementById('searchInput').value = '';
     loadDemandsPaged(true);
   });
   document.getElementById('searchInput')?.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') loadDemandsPaged(true);
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      runDemandSearch();
+    }
   });
 
   // Search by SATFK function
   async function searchBySATFK() {
     const searchInput = document.getElementById('searchInput');
-    const satfk = searchInput.value.trim();
+    const satfk = normalizeSatfk(searchInput?.value);
 
     if (!satfk) {
       toast.warn(MESSAGES.WARN_SATFK_REQUIRED);
@@ -848,35 +917,70 @@ async function initDemandsPage() {
     }
 
     // Validate SATFK format
-    if (!satfk.match(/^SATFK-\d{8}-[0-9A-Z]+$/)) {
+    if (!isSatfkCode(satfk)) {
       toast.error(MESSAGES.ERROR_SATFK_INVALID);
       return;
     }
 
     try {
-      // Search in all demands
-      const q = query(
-        collection(db, 'demands'),
-        where('satfk', '==', satfk)
-      );
+      logger.group('SATFK ara');
+      toast.info(MESSAGES.INFO_SATFK_SEARCHING);
+      const pageCompanyId = resolveSharedCompanyId(userData);
+      let foundDoc = null;
 
-      const snap = await getDocs(q);
+      const findBySatfk = (docs) => (docs || []).find((d) => normalizeSatfk(d.data().satfk) === satfk) || null;
 
-      if (snap.empty) {
+      if (pageCompanyId) {
+        try {
+          const ownSnap = await getDocs(query(
+            collection(db, 'demands'),
+            where('creatorCompanyId', '==', pageCompanyId),
+            limit(300)
+          ));
+          foundDoc = findBySatfk(ownSnap.docs);
+        } catch (ownErr) {
+          logger.warn('SATFK şirket sorgusu başarısız', ownErr);
+        }
+      }
+
+      if (!foundDoc) {
+        const catIds = normalizeToIds(
+          userData.supplierCategoryIds || userData.supplierCategoryKeys || userData.supplierCategories || []
+        ).slice(0, 10);
+        if (catIds.length > 0) {
+          try {
+            const pubSnap = await getDocs(query(
+              collection(db, 'demands'),
+              where('isPublished', '==', true),
+              where('categoryIds', 'array-contains-any', catIds),
+              limit(100)
+            ));
+            foundDoc = findBySatfk(pubSnap.docs);
+          } catch (pubErr) {
+            logger.warn('SATFK yayınlı sorgu başarısız', pubErr);
+          }
+        }
+      }
+
+      if (!foundDoc) {
         toast.warn(MESSAGES.WARN_SATFK_NOT_FOUND);
+        logger.end();
         return;
       }
 
-      const demand = snap.docs[0].data();
-      const demandId = snap.docs[0].id;
-
-      // Redirect to demand detail
+      const foundData = foundDoc.data() || {};
+      const isLive =
+        foundData.isPublished === true ||
+        foundData.status === 'published' ||
+        foundData.status === 'approved';
       const readonlyParam = readonlyMode ? '&readonly=true' : '';
-      window.location.href = `./demand-detail.html?id=${demandId}${readonlyParam}`;
-
+      const viewParam = !isLive ? '&view=1' : '';
+      window.location.href = `./demand-detail.html?id=${foundDoc.id}${readonlyParam}${viewParam}`;
+      logger.end();
     } catch (error) {
       logger.error('Arama hatası', error);
       toast.error(MESSAGES.ERROR_SEARCH);
+      logger.end();
     }
   }
 
@@ -1132,7 +1236,10 @@ async function initDemandsPage() {
     tb.innerHTML = '';
 
     if (rows.length === 0) {
-      document.querySelector(emptySel).classList.remove('hidden');
+      const emptyEl = document.querySelector(emptySel);
+      const emptyMsg = emptyEl?.textContent || MESSAGES.INFO_DRAFT_EMPTY;
+      setTableEmpty(tb, 8, emptyMsg);
+      if (emptyEl) emptyEl.classList.add('hidden');
       return;
     }
 
@@ -1194,9 +1301,15 @@ async function initDemandsPage() {
       td1.appendChild(satfkSpan);
       tr.appendChild(td1);
 
-      // Title column
+      // Title column — taslak düzenleme ekranına
       const td2 = document.createElement('td');
-      td2.textContent = safeTitle;
+      const titleLink = document.createElement('a');
+      titleLink.href = `./demand-new.html?id=${encodeURIComponent(safeId)}`;
+      titleLink.textContent = safeTitle;
+      titleLink.style.cssText = 'color:inherit;text-decoration:underline;font-weight:600;';
+      titleLink.setAttribute('aria-label', `${safeTitle} taslağını düzenle`);
+      titleLink.title = 'Taslağı düzenle';
+      td2.appendChild(titleLink);
       tr.appendChild(td2);
 
       // Categories column
@@ -1262,7 +1375,9 @@ async function initDemandsPage() {
     tb.innerHTML = '';
     const emptyEl = document.querySelector(emptySel);
     if (!rows.length) {
-      if (emptyEl) emptyEl.classList.remove('hidden');
+      const emptyMsg = emptyEl?.textContent || MESSAGES.INFO_OUTGOING_EMPTY;
+      setTableEmpty(tb, 7, emptyMsg);
+      if (emptyEl) emptyEl.classList.add('hidden');
       return;
     }
     if (emptyEl) emptyEl.classList.add('hidden');
@@ -1532,7 +1647,13 @@ async function initDemandsPage() {
       if (bodyWaiting?.parentElement) bodyWaiting.parentElement.classList.remove('hidden');
     }
 
-    if ((given.length + waiting.length) === 0) { if (emptyEl) emptyEl.classList.remove('hidden'); return; } else { if (emptyEl) emptyEl.classList.add('hidden'); }
+    if ((given.length + waiting.length) === 0) {
+      if (emptyEl) emptyEl.classList.remove('hidden');
+      if (bodyWaiting) {
+        setTableEmpty(bodyWaiting, 8, emptyEl?.textContent || MESSAGES.INFO_INCOMING_EMPTY);
+      }
+      return;
+    } else { if (emptyEl) emptyEl.classList.add('hidden'); }
     // Helper function to create a table row using DOM API (preserves <td> structure)
     function createIncomingRow(r) {
       const tr = document.createElement('tr');
@@ -2340,25 +2461,62 @@ async function initDemandsPage() {
         const lim = (typeof r.routingMaxRecipients === 'number' && Number.isFinite(r.routingMaxRecipients)) ? r.routingMaxRecipients : 200;
         const poolReasonText = `Havuz: ${reasonLabel} (aday: ${cand}, limit: ${lim})`;
 
-        const safeSatfk = DOMPurify.sanitize(r.satfk || '-', { ALLOWED_TAGS: [] });
-        const safeTitle = DOMPurify.sanitize(r.title || '-', { ALLOWED_TAGS: [] });
-        const safeBuyer = DOMPurify.sanitize(buyerCompany || '—', { ALLOWED_TAGS: [] });
-        const chips = interNames.slice(0, 6).map(n => `<span class="cat-chip">${DOMPurify.sanitize(n, { ALLOWED_TAGS: [] })}</span>`).join(' ')
-          + (interNames.length > 6 ? ` <span class="cat-chip">+${interNames.length - 6}</span>` : '');
+        // Teklifbul Rule v1.0 — DOMPurify <td>'yi table dışında siler; createElement kullan
         const link = `./demand-detail.html?id=${encodeURIComponent(r.id)}&source=pool${readonlyMode ? '&readonly=true' : ''}`;
 
-        tr.innerHTML = DOMPurify.sanitize(
-          `<td><span>${safeSatfk}</span></td>
-           <td>
-             <div style="font-weight:700;">${safeTitle}</div>
-             <div style="margin-top:4px; font-size:12px; color:#6b7280;">${DOMPurify.sanitize(poolReasonText, { ALLOWED_TAGS: [] })}</div>
-           </td>
-           <td>${safeBuyer}</td>
-           <td class="td-cats">${chips || '-'}</td>
-           <td>${dateStr}</td>
-           <td><a href="${link}" style="color:#3b82f6; font-weight:600;">Görüntüle →</a></td>`,
-          { ALLOWED_TAGS: ['td', 'span', 'a', 'div'], ALLOWED_ATTR: ['href', 'style', 'class'] }
-        );
+        const satfkTd = document.createElement('td');
+        const satfkSpan = document.createElement('span');
+        satfkSpan.textContent = r.satfk || '-';
+        satfkTd.appendChild(satfkSpan);
+        tr.appendChild(satfkTd);
+
+        const titleTd = document.createElement('td');
+        const titleDiv = document.createElement('div');
+        titleDiv.style.fontWeight = '700';
+        titleDiv.textContent = r.title || '-';
+        const reasonDiv = document.createElement('div');
+        reasonDiv.style.marginTop = '4px';
+        reasonDiv.style.fontSize = '12px';
+        reasonDiv.textContent = poolReasonText;
+        titleTd.appendChild(titleDiv);
+        titleTd.appendChild(reasonDiv);
+        tr.appendChild(titleTd);
+
+        appendTextCell(tr, buyerCompany || '—');
+
+        const catsTd = document.createElement('td');
+        catsTd.className = 'td-cats';
+        if (interNames.length === 0) {
+          catsTd.textContent = '-';
+        } else {
+          interNames.slice(0, 6).forEach((n, i) => {
+            if (i > 0) catsTd.appendChild(document.createTextNode(' '));
+            const chip = document.createElement('span');
+            chip.className = 'cat-chip';
+            chip.textContent = String(n);
+            catsTd.appendChild(chip);
+          });
+          if (interNames.length > 6) {
+            catsTd.appendChild(document.createTextNode(' '));
+            const more = document.createElement('span');
+            more.className = 'cat-chip';
+            more.textContent = `+${interNames.length - 6}`;
+            catsTd.appendChild(more);
+          }
+        }
+        tr.appendChild(catsTd);
+
+        appendTextCell(tr, dateStr);
+
+        const actionTd = document.createElement('td');
+        const viewLink = document.createElement('a');
+        viewLink.href = link;
+        viewLink.textContent = 'Görüntüle →';
+        viewLink.style.fontWeight = '600';
+        viewLink.setAttribute('aria-label', 'Havuz talebini görüntüle');
+        actionTd.appendChild(viewLink);
+        tr.appendChild(actionTd);
+
         poolRows.appendChild(tr);
       });
     } finally {
@@ -2769,7 +2927,8 @@ async function initDemandsPage() {
 
   // Taslak talepler için action fonksiyonları
   window.editDraftDemand = function (demandId) {
-    location.href = `./demand-new.html?edit=${demandId}`;
+    // Teklifbul Rule v1.0 — demand-new editId = ?id=
+    location.href = `./demand-new.html?id=${encodeURIComponent(demandId)}`;
   };
 
   window.approveDraftDemand = async function approveDraftDemand(demandId, companyId = null) {
@@ -2937,8 +3096,16 @@ async function initDemandsPage() {
       logger.debug('Found suppliers', { count: allSuppliers.size });
 
       // demandRecipients kayıtları oluştur (idempotent + recipientCategoryIds)
-      const existingSnap = await getDocs(query(collection(db, 'demandRecipients'), where('demandId', '==', demandId), limit(2000)));
-      const existingSupplierIds = new Set(existingSnap.docs.map(d => d.data()?.supplierId).filter(Boolean));
+      let existingSupplierIds = new Set();
+      try {
+        const existingSnap = await getDocs(query(collection(db, 'demandRecipients'), where('demandId', '==', demandId), limit(2000)));
+        existingSupplierIds = new Set(existingSnap.docs.map(d => d.data()?.supplierId).filter(Boolean));
+      } catch (existingErr) {
+        logger.warn('Existing demandRecipients query failed; continuing with create-only', {
+          code: existingErr?.code,
+          message: existingErr?.message
+        });
+      }
 
       const normalizeSupplierToIds = (supplier = {}) => {
         const t = [];
@@ -3100,13 +3267,27 @@ async function initDemandsPage() {
     }
     if (isDarkMode()) {
       return null; // Koyu modda çerçeve yok
-    } else {
-      // Açık mod: Beyaz arka plan, #1f2937 metin, #1f2937 border (ince çizgili)
-      return `style="background:#ffffff;color:#1f2937;padding:2px 6px;border:1px solid #1f2937;border-radius:4px;display:inline-block;font-size:12px;"`;
     }
+    // Açık mod: Beyaz arka plan, #1f2937 metin, #1f2937 border (ince çizgili)
+    return 'background:#ffffff;color:#1f2937;padding:2px 6px;border:1px solid #1f2937;border-radius:4px;display:inline-block;font-size:12px;';
+  }
+
+  function appendMaybeStyledCell(tr, text, styleCss) {
+    const value = text == null || text === '' ? '-' : String(text);
+    if (!styleCss) {
+      return appendTextCell(tr, value);
+    }
+    const td = document.createElement('td');
+    const span = document.createElement('span');
+    span.setAttribute('style', styleCss);
+    span.textContent = value;
+    td.appendChild(span);
+    tr.appendChild(td);
+    return td;
   }
 
   // --- Row HTML (gerçek <td>'ler!) ---
+  // Teklifbul Rule v1.0 — DOMPurify <td>'yi table dışında siler; createElement kullan
   function rowHtml(d) {
     const tr = document.createElement("tr");
 
@@ -3114,7 +3295,6 @@ async function initDemandsPage() {
       ...(Array.isArray(d.categoryTags) ? d.categoryTags : []),
       ...(d.customCategory ? [d.customCategory] : [])
     ];
-    const catsHtml = cats.slice(0, 3).map(c => `<span class="badge">${c}</span>`).join(" ") + (cats.length > 3 ? ` +${cats.length - 3}` : "");
 
     const mode = d.biddingMode || "secret";
     const modeLabel = ({ secret: "Gizli", open: "Açık", hybrid: "Hibrit" })[mode] || "Gizli";
@@ -3170,35 +3350,78 @@ async function initDemandsPage() {
     const modeStyle = getTableCellStyle(modeLabel);
     const siteStyle = getTableCellStyle(d.siteName);
     const createdStyle = getTableCellStyle(created);
-    const statusText = (d.status === 'draft' || (!d.published && !d.isPublished)) ? 'Taslak' : 'Gönderildi';
+    const statusText = (d.status === 'draft' || (!d.published && !d.isPublished))
+      ? 'Taslak'
+      : (isDemandExpired(d) ? 'Süresi Bitti' : 'Açık');
     const statusStyle = getTableCellStyle(statusText);
 
-    // Teklifbul Rule v1.0 - XSS Protection
-    const safeSatfk = DOMPurify.sanitize(d.satfk || "-", { ALLOWED_TAGS: [] });
-    const safeTitle = DOMPurify.sanitize(d.title || "-", { ALLOWED_TAGS: [] });
-    const safeId = DOMPurify.sanitize(d.id || '', { ALLOWED_TAGS: [] });
-    const safeSiteName = DOMPurify.sanitize(d.siteName || "-", { ALLOWED_TAGS: [] });
-    const safeStatusText = DOMPurify.sanitize(statusText || '', { ALLOWED_TAGS: [] });
-    const safeDueDateText = DOMPurify.sanitize(dueDateText || "-", { ALLOWED_TAGS: [] });
-    const safePriorityText = DOMPurify.sanitize(priorityText || '', { ALLOWED_TAGS: [] });
-    const safeModeLabel = DOMPurify.sanitize(modeLabel || '', { ALLOWED_TAGS: [] });
-    const safeCreated = DOMPurify.sanitize(created || '', { ALLOWED_TAGS: [] });
-    const rowHTML = `
-      <td>${satfkStyle ? `<span ${satfkStyle}>${safeSatfk}</span>` : safeSatfk}</td>
-      <td><a href="./demand-detail.html?id=${safeId}${readonlyMode ? '&readonly=true' : ''}">${safeTitle}</a></td>
-      <td>${catsHtml || "-"}</td>
-      <td>${dueDateStyle ? `<span ${dueDateStyle}>${safeDueDateText}</span>` : safeDueDateText}</td>
-      <td>${priorityStyle ? `<span ${priorityStyle}>${safePriorityText}</span>` : safePriorityText}</td>
-      <td>${modeStyle ? `<span ${modeStyle}>${safeModeLabel}</span>` : safeModeLabel}</td>
-      <td>${siteStyle ? `<span ${siteStyle}>${safeSiteName}</span>` : safeSiteName}</td>
-      <td>${statusStyle ? `<span ${statusStyle}>${safeStatusText}</span>` : ((d.status === 'draft' || (!d.published && !d.isPublished)) ? '<span class="badge warn">Taslak</span>' : '<span class="badge success">Gönderildi</span>')}</td>
-      <td>${createdStyle ? `<span ${createdStyle}>${safeCreated}</span>` : safeCreated}</td>
-      <td>${isOwner ? `<button class="danger small" data-id="${safeId}">Sil</button>` : ""}</td>
-    `;
-    tr.innerHTML = DOMPurify.sanitize(rowHTML, {
-      ALLOWED_TAGS: ['td', 'span', 'a', 'button'],
-      ALLOWED_ATTR: ['style', 'class', 'href', 'data-id']
-    });
+    const demandId = String(d.id || '');
+    const isDraftRow = d.status === 'draft' || (!d.published && !d.isPublished);
+    const demandHref = isDraftRow && !readonlyMode
+      ? `./demand-new.html?id=${encodeURIComponent(demandId)}`
+      : `./demand-detail.html?id=${encodeURIComponent(demandId)}${readonlyMode ? '&readonly=true' : ''}`;
+
+    appendMaybeStyledCell(tr, d.satfk || '-', satfkStyle);
+
+    const titleTd = document.createElement('td');
+    const titleLink = document.createElement('a');
+    titleLink.href = demandHref;
+    titleLink.textContent = d.title || '-';
+    titleLink.setAttribute('aria-label', 'Talep detayını görüntüle');
+    titleTd.appendChild(titleLink);
+    tr.appendChild(titleTd);
+
+    const catsTd = document.createElement('td');
+    if (cats.length === 0) {
+      catsTd.textContent = '-';
+    } else {
+      cats.slice(0, 3).forEach((c, i) => {
+        if (i > 0) catsTd.appendChild(document.createTextNode(' '));
+        const badge = document.createElement('span');
+        badge.className = 'badge';
+        badge.textContent = String(c);
+        catsTd.appendChild(badge);
+      });
+      if (cats.length > 3) {
+        catsTd.appendChild(document.createTextNode(` +${cats.length - 3}`));
+      }
+    }
+    tr.appendChild(catsTd);
+
+    appendMaybeStyledCell(tr, dueDateText || '-', dueDateStyle);
+    appendMaybeStyledCell(tr, priorityText || '', priorityStyle);
+    appendMaybeStyledCell(tr, modeLabel || '', modeStyle);
+    appendMaybeStyledCell(tr, d.siteName || '-', siteStyle);
+
+    const statusTd = document.createElement('td');
+    if (statusStyle) {
+      const span = document.createElement('span');
+      span.setAttribute('style', statusStyle);
+      span.textContent = statusText || '';
+      statusTd.appendChild(span);
+    } else {
+      const badge = document.createElement('span');
+      const isDraft = d.status === 'draft' || (!d.published && !d.isPublished);
+      badge.className = isDraft ? 'badge warn' : 'badge success';
+      badge.textContent = isDraft ? 'Taslak' : 'Gönderildi';
+      statusTd.appendChild(badge);
+    }
+    tr.appendChild(statusTd);
+
+    appendMaybeStyledCell(tr, created || '', createdStyle);
+
+    const actionsTd = document.createElement('td');
+    if (isOwner) {
+      const btnDelete = document.createElement('button');
+      btnDelete.type = 'button';
+      btnDelete.className = 'danger small';
+      btnDelete.dataset.id = demandId;
+      btnDelete.textContent = 'Sil';
+      btnDelete.setAttribute('aria-label', 'Talebi sil');
+      actionsTd.appendChild(btnDelete);
+    }
+    tr.appendChild(actionsTd);
+
     return tr;
   }
 

@@ -1555,6 +1555,7 @@
     import DOMPurify from 'https://cdn.jsdelivr.net/npm/dompurify@3.2.2/+esm';
     import { initAuthGuard } from './assets/js/auth-guard.js';
     import { initGlobalHeader } from './assets/js/ui/header.js';
+    import { setTableEmpty } from './assets/js/utils/safe-table.js';
     import { db, auth, requireAuth, logout } from "./firebase.js";
 
     // Teklifbul Rule v1.0 - Auth guard'ı başlat (oturum yoksa login'e yönlendirir)
@@ -2307,7 +2308,8 @@
 
         // Teklifbul Rule v1.0 — Onaylanmamış taslak: düzenleme formuna yönlendir (bilgiler prefills)
         const urlReadonly = new URLSearchParams(location.search).get('readonly') === 'true';
-        if (!urlReadonly && !isPublished && (isOwner || isCompanyOwner) && demandStatusValue === 'draft') {
+        const urlView = new URLSearchParams(location.search).get('view') === '1';
+        if (!urlReadonly && !urlView && !isPublished && (isOwner || isCompanyOwner) && demandStatusValue === 'draft') {
           location.replace(`./demand-new.html?id=${encodeURIComponent(demandId)}`);
           return;
         }
@@ -4253,15 +4255,19 @@
 
     function applyVisibilityRules() {
       const priceCompSection = document.getElementById('price-comparison-section');
+      const canShowPriceCompare = isOwner || isCompanyOwner;
       
       if (!isPublished) {
         // DRAFT: hide both bids section and bid form
         hide(bidsSection);
         hide(bidFormSection);
         hide(ownBidSection);
-        if (priceCompSection) hide(priceCompSection);
+        if (priceCompSection) {
+          if (canShowPriceCompare) show(priceCompSection);
+          else hide(priceCompSection);
+        }
       } else {
-        if (isOwner || isCompanyOwner) {
+        if (canShowPriceCompare) {
           // PUBLISHED & OWNER: show bids list, hide bid form
           show(bidsSection);
           hide(bidFormSection);
@@ -4986,11 +4992,7 @@
         logger.error("Kalemler yüklenemedi", e);
         itemsData = [];
         setText("#d-itemcount", "0");
-        // Teklifbul Rule v1.0 - XSS Protection: Sanitize error message
-        itemsBody.innerHTML = DOMPurify.sanitize("<tr><td colspan='7' style='text-align: center; color: #64748b;'>Ürün kalemleri yüklenemedi</td></tr>", {
-          ALLOWED_TAGS: ['tr', 'td'],
-          ALLOWED_ATTR: ['colspan', 'style']
-        });
+        setTableEmpty(itemsBody, 7, 'Ürün kalemleri yüklenemedi');
       }
 
       // Supplier form görünüyorsa, items yüklendikten sonra yeniden render et
@@ -5138,7 +5140,7 @@
         // OPTIMIZED: Batch load all supplier names and company info in parallel - Teklifbul Rule v1.2.9
         if (supplierIdsToLoad.size > 0) {
           const supplierIdsArray = Array.from(supplierIdsToLoad);
-          const collections = ["users", "profiles", "publicProfiles"]; // Reordered: users first (most common)
+          const collections = ["publicProfiles", "profiles", "users"];
 
           // Load all supplier names and company info in parallel (Promise.all)
           const namePromises = supplierIdsArray.map(async (uid) => {
@@ -5199,7 +5201,7 @@
         const STATUS_USER_NAME_CACHE = new Map();
         if (statusUserIdsToLoad.size > 0) {
           const actorPromises = Array.from(statusUserIdsToLoad).map(async (uid) => {
-            const collections = ["users", "profiles", "publicProfiles"];
+            const collections = ["publicProfiles", "profiles", "users"];
             for (const collectionName of collections) {
               try {
                 const p = await getDoc(doc(db, collectionName, uid));
@@ -6717,7 +6719,7 @@
           const cid = userData?.companyId;
           const aid = userData?.activeCompanyId;
           const arr0 = Array.isArray(userData?.companies) && userData.companies.length ? userData.companies[0] : null;
-          if (cid && typeof cid === "string" && !cid.startsWith("solo-") && !cid.startsWith("tax-")) return cid;
+          if (cid && typeof cid === "string" && !cid.startsWith("solo-")) return cid;
           if (aid && typeof aid === "string" && aid.startsWith("solo-") && cid) return cid;
           return aid || cid || arr0;
         }
@@ -6726,7 +6728,7 @@
 
         // Şirket bilgilerini al
         let companyData = {};
-        if (companyId && !companyId.startsWith('solo-') && !companyId.startsWith('tax-')) {
+        if (companyId && !companyId.startsWith('solo-')) {
           try {
             const companyDoc = await getDoc(doc(db, 'companies', companyId));
             if (companyDoc.exists()) {
@@ -6915,7 +6917,7 @@ Bu teklifi göndermek istediğinizden emin misiniz?`;
           const cid = userData?.companyId;
           const aid = userData?.activeCompanyId;
           const arr0 = Array.isArray(userData?.companies) && userData.companies.length ? userData.companies[0] : null;
-          if (cid && typeof cid === "string" && !cid.startsWith("solo-") && !cid.startsWith("tax-")) return cid;
+          if (cid && typeof cid === "string" && !cid.startsWith("solo-")) return cid;
           if (aid && typeof aid === "string" && aid.startsWith("solo-") && cid) return cid;
           return aid || cid || arr0 || `solo-${currentUser.uid}`;
         }
@@ -7635,7 +7637,7 @@ Bu teklifi göndermek istediğinizden emin misiniz?`;
       }
 
       if (bidsArr.length === 0) {
-        toast.warn('Bu talep için henüz teklif yok.');
+        toast.warn(MESSAGES.WARN_NO_BIDS);
         return;
       }
 
@@ -7994,6 +7996,11 @@ Bu teklifi göndermek istediğinizden emin misiniz?`;
 
     async function generatePriceComparisonExcel() {
       try {
+        if (!isOwner && !isCompanyOwner) {
+          toast.error(MESSAGES.ERROR_BIDS_COMPARE_OWNER_ONLY);
+          return;
+        }
+
         // Talep verilerini al
         const demandRef = doc(db, "demands", demandId);
         const demandSnap = await getDoc(demandRef);
@@ -8010,7 +8017,16 @@ Bu teklifi göndermek istediğinizden emin misiniz?`;
           where("demandId", "==", demandId)
         );
 
-        const bidsSnap = await getDocs(bidsQuery);
+        let bidsSnap;
+        try {
+          bidsSnap = await getDocs(bidsQuery);
+        } catch (bidErr) {
+          if (bidErr?.code === 'permission-denied') {
+            toast.error(MESSAGES.ERROR_BIDS_COMPARE_OWNER_ONLY);
+            return;
+          }
+          throw bidErr;
+        }
         const bidsData = [];
 
         // Her teklif için tedarikçi bilgilerini al
@@ -8025,7 +8041,7 @@ Bu teklifi göndermek istediğinizden emin misiniz?`;
           // Tedarikçi bilgilerini al (Yetki hatasına karşı try/catch ile korunmalı)
           let actualCompanyName = null;
           let supplierPhone = "";
-          const fetchCollections = ["users", "profiles", "publicProfiles"];
+          const fetchCollections = ["publicProfiles", "profiles", "users"];
           
           for (const coll of fetchCollections) {
             try {
@@ -8035,7 +8051,6 @@ Bu teklifi göndermek istediğinizden emin misiniz?`;
               if (supplierSnap.exists()) {
                 const supplierData = supplierSnap.data();
                 actualCompanyName = supplierData.companyName || supplierData.displayName || supplierData.company?.name || actualCompanyName;
-                supplierPhone = supplierData.phone || supplierPhone;
                 
                 // Kullanıcı profilindeki adres/vergi bilgilerini de al (fallback olarak)
                 let tempTax = `VD: ${supplierData.taxOffice || '-'} / No: ${supplierData.taxNumber || '-'}`;

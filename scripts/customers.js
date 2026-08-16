@@ -30,6 +30,7 @@ import { requireCompanyContext } from '../assets/js/state/company-context.js';
 import { initPermissions, can, getCustomerPerms } from '../assets/js/state/permissions.js';
 import { authFetch } from '../assets/js/utils/api-helpers.js';
 import { debounce } from '../assets/js/utils/debounce.js';
+import { setTableEmpty } from '../assets/js/utils/safe-table.js';
 
 const qs = (s) => document.querySelector(s);
 const qsa = (s) => document.querySelectorAll(s);
@@ -53,7 +54,8 @@ const state = {
     pageHistory: [null], // Page 1 starts at null
     totalItems: 0,
     hasMore: false
-  }
+  },
+  premiumBlocked: false
 };
 
 const CUSTOMER_PERMS = getCustomerPerms();
@@ -73,6 +75,7 @@ const CUSTOMER_PERMS = getCustomerPerms();
     if (!companyContext || !companyContext.companyId) {
       logger.warn('Customers: company context alınamadı');
       toast.error(MESSAGES.ERROR_CUSTOMER_COMPANY_VERIFY);
+      renderTableError('Firma bilgisi doğrulanamadı. Lütfen sayfayı yenileyin.');
       return;
     }
 
@@ -82,6 +85,7 @@ const CUSTOMER_PERMS = getCustomerPerms();
     const permState = await initPermissions({ redirectOnPending: true });
     if (!permState) {
       logger.warn('Customers: initPermissions sonuç vermedi');
+      renderTableError('Yetki bilgisi yüklenemedi. Lütfen sayfayı yenileyin.');
       return;
     }
 
@@ -102,6 +106,11 @@ const CUSTOMER_PERMS = getCustomerPerms();
     }
 
     // Initial load
+    const premiumBlocked = await applyCustomersPremiumGate();
+    if (premiumBlocked) {
+      setupEventListeners();
+      return;
+    }
     await loadCustomers();
     setupEventListeners();
     
@@ -124,8 +133,43 @@ const CUSTOMER_PERMS = getCustomerPerms();
     }
     
     toast.error(MESSAGES.ERROR_CUSTOMER_INIT.replace('{message}', error.message));
+    renderTableError(`Başlatılamadı: ${error.message}`);
   }
 })();
+
+/**
+ * Teklifbul Rule v1.0 - Tablo hata / boş durum mesajı
+ */
+function renderTableError(message) {
+  const tbody = qs('#customersTableBody');
+  if (!tbody) return;
+  // Teklifbul Rule v1.0 — DOMPurify <tr>/<td>'yi table dışında siler; createElement kullan
+  setTableEmpty(tbody, 8, message || MESSAGES.ERROR_GENERAL);
+}
+
+function disableNewCustomerButton() {
+  const btn = qs('#btnNewCustomer');
+  if (!btn) return;
+  btn.disabled = true;
+  btn.setAttribute('aria-disabled', 'true');
+  btn.title = MESSAGES.ERROR_CUSTOMERS_PREMIUM_REQUIRED;
+}
+
+async function applyCustomersPremiumGate() {
+  try {
+    const res = await authFetch('/api/customers?pageSize=1');
+    if (res.status !== 402) return false;
+    state.premiumBlocked = true;
+    disableNewCustomerButton();
+    renderTableError(MESSAGES.ERROR_CUSTOMERS_PREMIUM_REQUIRED);
+    toast.info(MESSAGES.ERROR_CUSTOMERS_PREMIUM_REQUIRED);
+    logger.info('Customers: Premium gerekli (402)');
+    return true;
+  } catch (err) {
+    logger.warn('Customers: premium kontrolü başarısız', err);
+    return false;
+  }
+}
 
 /**
  * Müşterileri yükle (Firestore Pagination)
@@ -133,6 +177,12 @@ const CUSTOMER_PERMS = getCustomerPerms();
 async function loadCustomers(reset = true) {
   try {
     logger.group('Müşteriler Yükleniyor');
+
+    if (state.premiumBlocked) {
+      renderTableError(MESSAGES.ERROR_CUSTOMERS_PREMIUM_REQUIRED);
+      logger.end();
+      return;
+    }
     
     if (CUSTOMER_PERMS.view && !can(CUSTOMER_PERMS.view)) {
       logger.warn('Customers: view yetkisi olmadan loadCustomers çağrıldı');
@@ -160,46 +210,64 @@ async function loadCustomers(reset = true) {
     }
 
     let qConstraints = [
-      where('companyId', '==', state.companyId),
-      orderBy('createdAt', 'desc'),
-      limit(pageSize + 1)
+      where('companyId', '==', state.companyId)
     ];
+
+    if (state.currentTab === 'pending') {
+      qConstraints.push(where('status', '==', 'pending'));
+    } else if (state.currentTab === 'cari') {
+      qConstraints.push(where('customerType', '==', 'cari'));
+    }
+
+    qConstraints.push(orderBy('createdAt', 'desc'));
+    qConstraints.push(limit(pageSize + 1));
 
     if (state.paging.currentPage > 1 && state.paging.lastVisible) {
       qConstraints.splice(qConstraints.length - 1, 0, startAfter(state.paging.lastVisible));
     }
 
-    const q = query(collection(db, 'customers'), ...qConstraints);
-    const snapshot = await getDocs(q);
-    
+    let snapshot;
+    try {
+      const q = query(collection(db, 'customers'), ...qConstraints);
+      snapshot = await getDocs(q);
+    } catch (queryErr) {
+      logger.warn('Müşteri sorgusu başarısız, istemci filtresine düşülüyor', queryErr);
+      const fallbackConstraints = [
+        where('companyId', '==', state.companyId),
+        orderBy('createdAt', 'desc'),
+        limit(pageSize + 1)
+      ];
+      if (state.paging.currentPage > 1 && state.paging.lastVisible) {
+        fallbackConstraints.splice(fallbackConstraints.length - 1, 0, startAfter(state.paging.lastVisible));
+      }
+      snapshot = await getDocs(query(collection(db, 'customers'), ...fallbackConstraints));
+    }
+
     let docs = snapshot.docs;
     state.paging.hasMore = docs.length > pageSize;
-    
-    if (state.paging.hasMore) {
-      docs = docs.slice(0, pageSize);
-    }
+    if (state.paging.hasMore) docs = docs.slice(0, pageSize);
 
-    state.customers = docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data()
+    state.customers = docs.map((docSnap) => ({
+      id: docSnap.id,
+      ...docSnap.data()
     }));
-    
-    if (docs.length > 0) {
-      state.paging.lastVisible = docs[docs.length - 1];
-    }
 
-    logger.info('Müşteriler yüklendi', { 
-      count: state.customers.length, 
+    if (docs.length > 0) state.paging.lastVisible = docs[docs.length - 1];
+
+    logger.info('Müşteriler yüklendi', {
+      count: state.customers.length,
       currentPage: state.paging.currentPage,
-      hasMore: state.paging.hasMore
+      hasMore: state.paging.hasMore,
+      tab: state.currentTab
     });
-    
+
     logger.end();
     applyFilters();
     updatePagerUI();
   } catch (error) {
     logger.error('Müşteriler yüklenirken hata', error);
     toast.error(MESSAGES.ERROR_CUSTOMER_LOAD.replace('{message}', error.message));
+    renderTableError(`Müşteriler yüklenemedi: ${error.message}`);
   }
 }
 
@@ -230,13 +298,13 @@ function updatePagerUI() {
  */
 function switchTab(tab) {
   state.currentTab = tab;
-  
-  // Tab butonlarını güncelle
   qs('#tabAll')?.classList.toggle('active', tab === 'all');
   qs('#tabCari')?.classList.toggle('active', tab === 'cari');
   qs('#tabPending')?.classList.toggle('active', tab === 'pending');
-  
-  applyFilters();
+  const tbody = qs('#customersTableBody');
+  // Teklifbul Rule v1.0 — DOMPurify <tr>/<td>'yi table dışında siler; createElement kullan
+  if (tbody) setTableEmpty(tbody, 8, 'Yükleniyor...');
+  loadCustomers(true);
 }
 
 /**
@@ -264,8 +332,8 @@ function applyFilters() {
       // Tüm müşteriler
     }
 
-    // Arşiv filtresi
-    if (!showArchived && (customer.isArchived || !customer.isActive)) {
+    // Arşiv filtresi — sadece arşiv bayrağı
+    if (!showArchived && customer.isArchived) {
       return false;
     }
 
@@ -302,17 +370,8 @@ function renderTable() {
   if (!tbody) return;
 
   if (state.filteredCustomers.length === 0) {
-    // Teklifbul Rule v1.0 - XSS Protection
-    tbody.innerHTML = DOMPurify.sanitize(`
-      <tr>
-        <td colspan="8" style="text-align:center;padding:40px;color:#6b7280">
-          Müşteri bulunamadı
-        </td>
-      </tr>
-    `, {
-      ALLOWED_TAGS: ['tr', 'td'],
-      ALLOWED_ATTR: ['colspan', 'style']
-    });
+    // Teklifbul Rule v1.0 — DOMPurify <tr>/<td>'yi table dışında siler; createElement kullan
+    setTableEmpty(tbody, 8, MESSAGES.ERROR_CUSTOMER_NOT_FOUND);
     return;
   }
 
@@ -530,6 +589,10 @@ function setupEventListeners() {
 
   // Yeni müşteri butonu
   qs('#btnNewCustomer')?.addEventListener('click', () => {
+    if (state.premiumBlocked) {
+      toast.info(MESSAGES.ERROR_CUSTOMERS_PREMIUM_REQUIRED);
+      return;
+    }
     if (CUSTOMER_PERMS.create && !can(CUSTOMER_PERMS.create)) {
       toast.error(MESSAGES.ERROR_CUSTOMER_CREATE_PERMISSION);
       return;
@@ -551,12 +614,20 @@ function setupEventListeners() {
 
   // Form submit
   qs('#customerForm')?.addEventListener('submit', handleFormSubmit);
+
+  qs('#btnQueryEFatura')?.addEventListener('click', () => {
+    queryEFaturaStatus();
+  });
 }
 
 /**
  * Müşteri modal'ını aç
  */
 async function openCustomerModal(customerId = null) {
+  if (state.premiumBlocked) {
+    toast.info(MESSAGES.ERROR_CUSTOMERS_PREMIUM_REQUIRED);
+    return;
+  }
   state.editingCustomerId = customerId;
   const modal = qs('#customerModal');
   const form = qs('#customerForm');
@@ -1354,4 +1425,68 @@ function updateRemoveButtons() {
   removeButtons.forEach(btn => {
     btn.style.display = rows.length > 1 ? 'block' : 'none';
   });
+}
+
+
+async function queryEFaturaStatus() {
+  const taxNumber = (qs('#taxNumber')?.value || '').trim();
+  if (!taxNumber || taxNumber.length < 10) {
+    toast.warn('e-Fatura sorgulaması için geçerli VKN/TCKN girin.');
+    return;
+  }
+  const btn = qs('#btnQueryEFatura');
+  const badge = qs('#efaturaStatusBadge');
+  try {
+    logger.group('e-Fatura Mükellef Sorgusu');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Sorgulanıyor...'; }
+    toast.info('Mükellef durumu sorgulanıyor...');
+    let isEInvoice = null;
+    try {
+      const response = await authFetch(`/api/einvoice/check-user?taxNumber=${encodeURIComponent(taxNumber)}`);
+      if (response.ok) {
+        const data = await response.json();
+        isEInvoice = data?.isEFaturaUser === true || data?.isEinvoice === true;
+      } else if (response.status === 404) {
+        logger.warn('e-Fatura check endpoint yok');
+      } else {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.message || 'Sorgulama başarısız');
+      }
+    } catch (apiErr) {
+      if (apiErr.message && !apiErr.message.includes('Failed to fetch')) {
+        logger.warn('e-Fatura API yanıt vermedi', apiErr);
+      }
+    }
+    if (isEInvoice === null) {
+      if (badge) {
+        badge.textContent = 'Sorgulanamadı';
+        badge.style.background = '#fef3c7';
+        badge.style.borderColor = '#fbbf24';
+        badge.style.color = '#92400e';
+      }
+      toast.info('e-Fatura mükellef sorgusu henüz aktif değil. Entegratör bağlantısı sonrası çalışacaktır.');
+      return;
+    }
+    if (badge) {
+      if (isEInvoice) {
+        badge.textContent = 'Mükellef';
+        badge.style.background = '#d1fae5';
+        badge.style.borderColor = '#10b981';
+        badge.style.color = '#065f46';
+        toast.success('Bu müşteri e-fatura mükellefidir.');
+      } else {
+        badge.textContent = 'Mükellef Değil';
+        badge.style.background = '#fee2e2';
+        badge.style.borderColor = '#ef4444';
+        badge.style.color = '#991b1b';
+        toast.info('Bu müşteri e-fatura kullanıcısı değil (e-arşiv).');
+      }
+    }
+  } catch (error) {
+    logger.error('e-Fatura sorgulama hatası', error);
+    toast.error(`Hata: ${error.message}`);
+  } finally {
+    logger.end();
+    if (btn) { btn.disabled = false; btn.textContent = '🔍 Mükellef Sorgula'; }
+  }
 }

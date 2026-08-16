@@ -82,9 +82,9 @@
     /* Kategori hücresi sarılsın, uzun listeler sayfaya sığsın */
     .td-cats{white-space:normal;word-break:break-word;max-width:380px}
     /* Search UI */
-    .search-form{display:flex;gap:8px;align-items:center}
+    .search-form{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
     .search-label{font-size:13px;font-weight:600;color:#374151}
-    .search-input{padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;min-width:340px}
+    .search-input{padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;min-width:0;flex:1 1 200px}
     html[data-theme="dark"] .search-label{color:#ffffff}
     html[data-theme="dark"] .search-input{background:#111827;border-color:rgba(255,255,255,0.25);color:#ffffff}
     html[data-theme="dark"] .search-input::placeholder{color:rgba(255,255,255,0.6)}
@@ -289,12 +289,21 @@
     </div>
     
     <!-- Giden Talepler için filtreler -->
-    <div id="outgoing-filters" class="hidden" style="display:flex; align-items:center; gap:6px;">
+    <div id="outgoing-filters" class="hidden" style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
       <label for="f-user" style="font-size:13px; font-weight:600; color:#1f2937; min-width:70px;">Kullanıcı:</label>
       <select id="f-user" style="padding:6px 10px; border-radius:4px; border:1px solid #d1d5db; background:#ffffff; color:#1f2937; font-size:13px; min-width:140px;">
         <option value="">— Tümü —</option>
         <option value="own">Kendi Taleplerim</option>
         <option value="others">Şirket Diğer Kullanıcıları</option>
+      </select>
+    </div>
+
+    <div id="expiry-filters" class="hidden" style="display:none; align-items:center; gap:6px;">
+      <label for="f-expiry" style="font-size:13px; font-weight:600; color:#1f2937; min-width:70px;">Süre:</label>
+      <select id="f-expiry" style="padding:6px 10px; border-radius:4px; border:1px solid #d1d5db; background:#ffffff; color:#1f2937; font-size:13px; min-width:160px;" aria-label="Talep süre durumu" title="Açık veya süresi biten talepler">
+        <option value="open">Açık talepler</option>
+        <option value="expired">Süresi biten</option>
+        <option value="all">Tümü</option>
       </select>
     </div>
 

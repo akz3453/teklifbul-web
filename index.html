@@ -4,12 +4,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>NEFISOFT — Uçtan Uca Ticari Operasyon Yönetimi</title>
+  <title>NEFISOFT — Satın Alma ve Teklif Yönetimi</title>
 
   <!-- PWA Meta Tags -->
   <meta name="theme-color" content="#2563EB" />
   <meta name="description"
-    content="NEFISOFT ile işletmenizin satın alma, teklif, stok, satış, hakediş, e-fatura ve finansal operasyonlarını tek merkezden yönetin" />
+    content="NEFISOFT ile satın alma, teklif, stok ve satış operasyonlarını tek merkezden yönetin. Teklifbul, NEFISOFT’un satın alma ve teklif modülüdür." />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="NEFISOFT" />
@@ -30,8 +30,8 @@
   <!-- Header -->
   <header class="site-header">
     <div class="header-content">
-      <a href="/index.html" class="header-logo">
-        <span>NEFISOFT</span>
+      <a href="/index.html" class="header-logo" aria-label="NEFISOFT">
+        <img src="/assets/images/brand/nefisoft-web-stacked.png" alt="NEFISOFT" width="160" height="160" decoding="async" />
       </a>
 
       <nav class="header-nav">
@@ -87,20 +87,18 @@
             </div>
             <h1 style="line-height: 1.2;">NEFISOFT ile işletmenizin tüm operasyonları tek sistemde</h1>
             <p style="font-size: var(--font-size-lg); margin-bottom: var(--spacing-lg);">
-              NEFISOFT, işletmelerin satın alma, teklif, stok, satış, hakediş, e-fatura ve
-              finansal operasyonlarını tek merkezden yöneten, tüm bu süreçleri entegre bir yapı
-              içinde birleştirerek kontrol, hız ve verimlilik sağlayan kapsamlı bir iş yazılımıdır.
+              NEFISOFT, işletmelerin satın alma, teklif, stok, satış ve hakediş
+              süreçlerini tek merkezden yöneten bir iş yazılımıdır. E-fatura ve muhasebe
+              modülleri yakında eklenecektir.
             </p>
 
-            <div
-              style="display: inline-block; padding: var(--spacing-xs) var(--spacing-md); background: var(--color-bg-light); border-radius: var(--radius-md); font-size: 0.875rem; color: var(--color-text-muted); margin-bottom: var(--spacing-lg); margin-top: 2cm;">
+            <div class="hero-teklifbul-badge">
               Teklifbul — NEFISOFT'un satın alma ve teklif yönetimi modülü
             </div>
 
-            <div
-              style="display: flex; align-items: flex-start; gap: 1cm; width: 100%; margin-bottom: var(--spacing-lg); flex-wrap: nowrap;">
-              <div style="flex: 0 0 auto;">
-                <ul class="hero-features" style="margin: 0; padding: 0;">
+            <div class="hero-row">
+              <div class="hero-row__content">
+                <ul class="hero-features">
                   <li>Satın alma & teklif yönetimi (Teklifbul modülü)</li>
                   <li>Stok ve depo takibi</li>
                   <li>Satış, hakediş ve finans süreçleri</li>
@@ -108,21 +106,19 @@
                   <li>Muhasebe sistemi — Yakında</li>
                 </ul>
 
-                <div class="hero-actions" style="margin-top: var(--spacing-lg);">
+                <div class="hero-actions">
                   <a href="/signup.html" class="btn btn-accent btn-lg">Ücretsiz Dene</a>
                   <a href="#features" class="btn btn-outline btn-lg">Özellikleri İncele</a>
                 </div>
 
-                <p style="font-size: 0.875rem; color: var(--color-text-muted); margin-top: var(--spacing-md);">
+                <p class="hero-trust-line">
                   Temel kullanım ücretsiz • Gelişmiş özellikler ücretli • Kredi kartı gerekmez
                 </p>
               </div>
 
-              <div class="hero-visual-inline"
-                style="position: relative; background: var(--color-bg) !important; border-radius: var(--radius-xl); box-shadow: var(--shadow-xl); overflow: hidden !important; flex: 1; min-width: 600px; height: auto; min-height: calc(400px + 4cm); max-height: calc(600px + 4cm); margin-left: 2cm; margin-top: calc(-2cm + 1cm - 2cm); margin-bottom: -2cm;">
+              <div class="hero-visual-inline">
                 <img id="dashboard-preview-img" src="/assets/images/dashboard-preview.png"
-                  alt="NEFISOFT kontrol paneli ekran görüntüsü" loading="eager"
-                  style="width: 100% !important; height: 100% !important; min-height: calc(400px + 4cm) !important; object-fit: cover !important; object-position: top left !important; display: block !important; position: absolute !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; z-index: 2 !important; visibility: visible !important; opacity: 1 !important;" />
+                  alt="NEFISOFT kontrol paneli ekran görüntüsü" loading="eager" />
               </div>
             </div>
           </div>
@@ -170,8 +166,8 @@
 
           <div class="feature-card card">
             <div class="feature-icon">🧾</div>
-            <h3>Finans & E-Fatura</h3>
-            <p>Cari hesap, fatura, ödeme ve tahsilat süreçlerinin uçtan uca yönetimi.</p>
+            <h3>Finans &amp; E-Fatura — Yakında</h3>
+            <p>E-fatura / e-irsaliye gönderimi henüz aktif değildir. Fatura kayıtları uygulama içinde tutulur.</p>
           </div>
 
           <div class="feature-card card">
@@ -262,14 +258,14 @@
 
             <ul class="hero-features">
               <li>Tedarikçi veya alıcıya e-posta ile ödeme linki gönderin.</li>
-              <li>Teklif onayı ve ödeme aynı ekranda tamamlansın.</li>
-              <li>Kredi / banka kartı ile ödeme (PayTR, iyzico altyapısı).</li>
-              <li>Havale / EFT ile ödeme seçenekleri ve kayıt altına alma.</li>
+              <li>Teklif onayı ve tahsilat sürecini tek yerden takip edin.</li>
+              <li>Kart ile ödeme altyapısı yakında eklenecek.</li>
+              <li>Havale / EFT ile ödeme kayıtları (mevcut finans modülü).</li>
             </ul>
 
             <p
               style="font-size: 0.8125rem; color: var(--color-text-muted); margin-top: var(--spacing-lg); line-height: 1.5;">
-              Ödeme altyapısı, Türkiye'de lisanslı ödeme kuruluşları üzerinden sağlanır.
+              Çevrimiçi kart ödemesi henüz aktif değildir. Premium erişim şu an kayıt sonrası bilgilendirme ve admin onayı ile yönetilir.
             </p>
 
             <div
@@ -291,7 +287,7 @@
                 Ödeme Linki</p>
               <p
                 style="font-size: var(--font-size-sm); color: var(--color-text-muted); margin-bottom: var(--spacing-sm);">
-                PayTR / iyzico + Havale/EFT</p>
+                Kart ödemesi yakında</p>
               <div
                 style="display: inline-block; padding: 0.25rem 0.75rem; background: rgba(37, 99, 235, 0.1); border-radius: var(--radius-sm); font-size: 0.75rem; color: var(--color-primary); font-weight: 500; margin-top: var(--spacing-xs);">
                 Yakında: Escrow & Open Banking
@@ -562,12 +558,10 @@
         </div>
 
         <div class="footer-section">
-          <h3 data-i18n="footer.downloadApp">Uygulamayı indir</h3>
+          <h3 data-i18n="footer.downloadApp">Mobil uygulama</h3>
           <ul>
-            <li><a href="https://play.google.com/store/apps" target="_blank" rel="noopener noreferrer"
-                data-i18n="footer.downloadGoogle">Google Play'den indir</a></li>
-            <li><a href="https://www.apple.com/app-store/" target="_blank" rel="noopener noreferrer"
-                data-i18n="footer.downloadApple">App Store'dan indir</a></li>
+            <li>Google Play — Yakında</li>
+            <li>App Store — Yakında</li>
           </ul>
         </div>
 
@@ -601,13 +595,17 @@
     import { initCommonLayout } from '/assets/js/commonLayout.js';
     import { initChatWidget } from '/assets/js/chatWidget.js';
     import { initPWAInstall } from '/assets/js/pwa-install.js';
+    import { initNativeBridge } from '/assets/js/native-bridge.js';
+    import { initLandingAnalytics } from '/assets/js/analytics.js';
 
     // Initialize all modules
     initI18n('tr');
     initCookieConsent();
     initCommonLayout();
     initChatWidget();
-    initPWAInstall(); // Teklifbul Rule v1.0 - PWA install prompt
+    initPWAInstall();
+    initNativeBridge();
+    initLandingAnalytics();
 
     // Teklifbul Rule v1.0 - Giriş yap tıklandığında mevcut oturumu kapat ve login sayfasına yönlendir
     (function setupLoginRedirect() {

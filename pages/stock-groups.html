@@ -92,9 +92,12 @@
   </div>
 
   <script type="module">
+    import { initAuthGuard } from '/assets/js/auth-guard.js';
     import { initGlobalHeader } from '../assets/js/ui/header.js';
     import { toast } from '../src/shared/ui/toast.js';
     window.toast = toast;
+    initAuthGuard().catch((err) => { console.error('Auth guard init failed', err); });
+
     initGlobalHeader({ mount: '#app-header', activeRoute: 'inventory' });
   </script>
   <script type="module" src="/scripts/stock-groups.js"></script>

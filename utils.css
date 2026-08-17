@@ -1,4 +1,5 @@
 /* ====== CSS VARIABLES / TOKENS ====== */
+@import url('./assets/css/mobile.css');
 :root {
   /* Colors */
   --primary: #2563EB;
@@ -478,7 +479,12 @@ body > .app,
   width: 100%;
   border-collapse: collapse;
   table-layout: auto;   /* kolon genişliği içeriğe göre ayarlansın */
-  min-width: 700px;     /* dar ekranlarda tablo içinde kaydırma sağlansın; ihtiyaca göre arttır */
+}
+
+/* Yatay kaydırma yalnızca sarmalayıcı içindeki geniş veri tablolarında */
+.table-responsive table,
+.table {
+  min-width: 700px;
 }
 
 /* Tek satırda gösterilmesi gereken sütunlar için bozma/kırpma davranışı */

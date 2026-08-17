@@ -41,6 +41,8 @@ export const AI_ERROR_CODES = {
   AI_PROVIDER_CONFIG_ERROR: 'ai_provider_config_error',
   AI_DISABLED: 'AI_DISABLED', // Teklifbul Rule v3.11 - Kill-switch
   INVALID_PROVIDER: 'INVALID_PROVIDER', // Teklifbul Rule v3.12 - Provider key required
+  AI_REQUEST_IN_PROGRESS: 'AI_REQUEST_IN_PROGRESS', // H-007 idempotent replay
+  AI_REQUEST_ALREADY_PROCESSED: 'AI_REQUEST_ALREADY_PROCESSED', // H-007 idempotent replay
 } as const;
 
 export type AiErrorCode = typeof AI_ERROR_CODES[keyof typeof AI_ERROR_CODES];

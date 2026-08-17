@@ -8,8 +8,9 @@
 import { logger } from '../../../src/shared/log/logger.js';
 // Teklifbul Rule v1.0 - Bundle Size: Use shared debounce utility
 import { debounce } from '../utils/debounce.js';
+import { resolveApiBaseUrl } from '../utils/api-helpers.js';
 
-const API_BASE = window.API_URL || 'http://localhost:5174';
+const API_BASE = resolveApiBaseUrl();
 
 /**
  * Suggest categories based on text

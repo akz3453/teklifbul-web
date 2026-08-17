@@ -13,6 +13,7 @@ import { getAdminDb } from '../utils/firestore.js';
 import { FieldValue } from 'firebase-admin/firestore';
 import { validateRequest } from '../utils/input-validation.js';
 import { z } from 'zod';
+import { resolveCheckoutBaseUrl } from '../services/paymentsService.js';
 
 const router = Router();
 
@@ -78,7 +79,7 @@ router.post('/initiate-payment',
         logger.warn('Firestore unavailable, payment_intents metadata atlandi');
       }
 
-      const checkoutBase = process.env.PAYMENT_CHECKOUT_BASE_URL || 'https://pay.teklifbul-sandbox.local/checkout';
+      const checkoutBase = resolveCheckoutBaseUrl();
       const checkoutUrl = `${checkoutBase}?session=${providerSessionId}&intent=${paymentIntent.id}&type=token_pack`;
 
       logger.info('Token pack payment initiated', { userId, packId, paymentIntentId: paymentIntent.id });

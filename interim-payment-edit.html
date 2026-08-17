@@ -648,6 +648,7 @@
     import { initAuthGuard } from './assets/js/auth-guard.js';
     // Teklifbul Rule v1.0 - XSS Protection
     import DOMPurify from 'https://cdn.jsdelivr.net/npm/dompurify@3.2.2/+esm';
+    import { setTableEmpty, appendTextCell } from './assets/js/utils/safe-table.js';
     // Teklifbul Rule v1.0
     import { initGlobalHeader } from './assets/js/ui/header.js';
     import { switchTab } from './assets/js/ui/tabs.js';
@@ -946,14 +947,19 @@
         }
       });
       
-      if (siteId && contractId && periodStart && periodEnd) {
+      if (siteId && periodStart && periodEnd) {
         // Önerilerden gelen verileri doldur
         document.getElementById('period-start').value = periodStart.split('T')[0];
         document.getElementById('period-end').value = periodEnd.split('T')[0];
         await loadSitesAndContracts();
         document.getElementById('site-select').value = siteId;
-        document.getElementById('contract-select').value = contractId;
-        await loadContractData(contractId);
+        const ctx = await requireCompanyContext({ redirectOnPending: false }).catch(() => null);
+        const companyIdForPrefill = ctx?.companyId || null;
+        await loadContracts(siteId, companyIdForPrefill);
+        if (contractId && contractId !== 'null' && contractId !== 'undefined') {
+          document.getElementById('contract-select').value = contractId;
+          await loadContractData(contractId);
+        }
       } else {
         await loadSitesAndContracts();
       }
@@ -1076,7 +1082,8 @@
               // Sözleşme seçimi temizlendiğinde pozları temizle
               const tbody = document.getElementById('items-table-body');
               if (tbody) {
-                tbody.innerHTML = DOMPurify.sanitize('<tr><td colspan="8" style="text-align: center; padding: 40px; color: #6b7280;">Sözleşme seçiniz</td></tr>');
+                // Teklifbul Rule v1.0 — DOMPurify <tr>/<td>'yi table dışında siler; createElement kullan
+                setTableEmpty(tbody, 8, 'Sözleşme seçiniz');
               }
             }
           });
@@ -1168,8 +1175,8 @@
         if (!tbody) return;
         
         if (items.length === 0) {
-          // Teklifbul Rule v1.0 - XSS Protection
-          tbody.innerHTML = DOMPurify.sanitize('<tr><td colspan="8" style="text-align: center; padding: 40px; color: #6b7280;">Henüz poz bulunmuyor</td></tr>');
+          // Teklifbul Rule v1.0 — DOMPurify <tr>/<td>'yi table dışında siler; createElement kullan
+          setTableEmpty(tbody, 8, 'Henüz poz bulunmuyor');
           logger.info('Poz bulunamadı', { contractId });
           logger.end();
           return;
@@ -1189,50 +1196,43 @@
           });
         }
         
-        // Teklifbul Rule v1.0 - XSS Protection: Sanitize user input
-        const sanitize = (str) => DOMPurify.sanitize(String(str || ''), { ALLOWED_TAGS: [] });
-        const sanitizeAttr = (str) => DOMPurify.sanitize(String(str || ''), { ALLOWED_TAGS: [] });
-        
-        const html = items.map(item => {
-          const safeCode = sanitize(item.code || '-');
-          const safeDescription = sanitize(item.description || '-');
-          const safeUnit = sanitize(item.unit || '-');
-          const safeItemId = sanitizeAttr(item.id);
+        // Teklifbul Rule v1.0 — DOMPurify <tr>/<td>'yi table dışında siler; createElement kullan
+        tbody.textContent = '';
+        items.forEach((item) => {
           const unitPrice = Number(item.unitPrice || 0);
-          
-          // Mevcut hakediş verilerinden miktarları al
           const paymentItem = paymentItemsMap.get(item.id) || paymentItemsMap.get(item.code) || null;
           const currentQuantity = paymentItem ? (paymentItem.quantity || 0) : 0;
           const previousQuantity = paymentItem ? (paymentItem.previousQuantity || 0) : 0;
-          
-          return `
-            <tr>
-              <td>${safeCode}</td>
-              <td>${safeDescription}</td>
-              <td>${safeUnit}</td>
-              <td>${unitPrice.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}</td>
-              <td>${previousQuantity.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</td>
-              <td>
-                <input type="number" 
-                       class="current-quantity" 
-                       data-item-id="${safeItemId}"
-                       data-unit-price="${unitPrice}"
-                       value="${currentQuantity}" 
-                       min="0" 
-                       step="0.01"
-                       style="width: 100px; padding: 6px; border: 1px solid #e5e7eb; border-radius: 4px;"
-                       onchange="calculateItemTotal(this)" />
-              </td>
-              <td>${(previousQuantity + currentQuantity).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</td>
-              <td class="item-total">${(unitPrice * currentQuantity).toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}</td>
-            </tr>
-          `;
-        }).join('');
-        
-        // Sanitize final HTML - Teklifbul Rule v1.0 - XSS Protection
-        tbody.innerHTML = DOMPurify.sanitize(html, {
-          ALLOWED_TAGS: ['tr', 'td', 'input'],
-          ALLOWED_ATTR: ['class', 'type', 'data-item-id', 'data-unit-price', 'value', 'min', 'step', 'style', 'onchange', 'colspan']
+
+          const tr = document.createElement('tr');
+          appendTextCell(tr, item.code || '-');
+          appendTextCell(tr, item.description || '-');
+          appendTextCell(tr, item.unit || '-');
+          appendTextCell(tr, unitPrice.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' }));
+          appendTextCell(tr, previousQuantity.toLocaleString('tr-TR', { minimumFractionDigits: 2 }));
+
+          const qtyTd = document.createElement('td');
+          const qtyInput = document.createElement('input');
+          qtyInput.type = 'number';
+          qtyInput.className = 'current-quantity';
+          qtyInput.dataset.itemId = String(item.id || '');
+          qtyInput.dataset.unitPrice = String(unitPrice);
+          qtyInput.value = String(currentQuantity);
+          qtyInput.min = '0';
+          qtyInput.step = '0.01';
+          qtyInput.style.cssText = 'width: 100px; padding: 6px; border: 1px solid #e5e7eb; border-radius: 4px;';
+          qtyInput.setAttribute('aria-label', 'Bu dönem miktarı');
+          qtyInput.addEventListener('change', () => window.calculateItemTotal(qtyInput));
+          qtyTd.appendChild(qtyInput);
+          tr.appendChild(qtyTd);
+
+          appendTextCell(tr, (previousQuantity + currentQuantity).toLocaleString('tr-TR', { minimumFractionDigits: 2 }));
+          const totalTd = appendTextCell(
+            tr,
+            (unitPrice * currentQuantity).toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })
+          );
+          totalTd.className = 'item-total';
+          tbody.appendChild(tr);
         });
         
         // İlk yüklemede toplamları hesapla
@@ -2847,7 +2847,8 @@
       
       // Stok hareketlerinden gelen giderleri de buraya ekleyebiliriz (şimdilik sadece manuel giderler)
       if (manualCosts.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #6b7280;">Henüz gider eklenmemiş</td></tr>';
+        // Teklifbul Rule v1.0 — DOMPurify <tr>/<td>'yi table dışında siler; createElement kullan
+        setTableEmpty(tbody, 7, 'Henüz gider eklenmemiş');
         return;
       }
       
@@ -2866,33 +2867,29 @@
         other: 'Diğer'
       };
       
-      const html = manualCosts.map(cost => {
-        const safeId = DOMPurify.sanitize(cost.id, { ALLOWED_TAGS: [] });
-        const safeDate = DOMPurify.sanitize(cost.date || '-', { ALLOWED_TAGS: [] });
-        const safeType = DOMPurify.sanitize(typeLabels[cost.type] || cost.type || '-', { ALLOWED_TAGS: [] });
-        const safeDescription = DOMPurify.sanitize(cost.description || '-', { ALLOWED_TAGS: [] });
-        const safeAmount = (cost.amount || 0).toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' });
-        const safeSource = DOMPurify.sanitize(sourceLabels[cost.source] || cost.source || '-', { ALLOWED_TAGS: [] });
-        const safeDocumentNumber = DOMPurify.sanitize(cost.documentNumber || '-', { ALLOWED_TAGS: [] });
-        
-        return `
-          <tr>
-            <td>${safeDate}</td>
-            <td>${safeType}</td>
-            <td>${safeDescription}</td>
-            <td>${safeAmount}</td>
-            <td>${safeSource}</td>
-            <td>${safeDocumentNumber}</td>
-            <td>
-              <button class="btn btn-outline" onclick="deleteCost('${safeId}')" style="padding: 4px 8px; font-size: 12px;">Sil</button>
-            </td>
-          </tr>
-        `;
-      }).join('');
-      
-      tbody.innerHTML = DOMPurify.sanitize(html, {
-        ALLOWED_TAGS: ['tr', 'td', 'button'],
-        ALLOWED_ATTR: ['class', 'onclick', 'style']
+      // Teklifbul Rule v1.0 — DOMPurify <tr>/<td>'yi table dışında siler; createElement kullan
+      tbody.textContent = '';
+      manualCosts.forEach((cost) => {
+        const costId = String(cost.id || '');
+        const tr = document.createElement('tr');
+        appendTextCell(tr, cost.date || '-');
+        appendTextCell(tr, typeLabels[cost.type] || cost.type || '-');
+        appendTextCell(tr, cost.description || '-');
+        appendTextCell(tr, (cost.amount || 0).toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' }));
+        appendTextCell(tr, sourceLabels[cost.source] || cost.source || '-');
+        appendTextCell(tr, cost.documentNumber || '-');
+
+        const actionsTd = document.createElement('td');
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn btn-outline';
+        btn.textContent = 'Sil';
+        btn.setAttribute('aria-label', 'Gideri sil');
+        btn.style.cssText = 'padding: 4px 8px; font-size: 12px;';
+        btn.addEventListener('click', () => window.deleteCost(costId));
+        actionsTd.appendChild(btn);
+        tr.appendChild(actionsTd);
+        tbody.appendChild(tr);
       });
       
       // Toplam gideri hesapla
@@ -2964,31 +2961,31 @@
       if (!tbody) return;
       
       if (manualDeductions.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #6b7280;">Henüz manuel kesinti eklenmemiş</td></tr>';
+        // Teklifbul Rule v1.0 — DOMPurify <tr>/<td>'yi table dışında siler; createElement kullan
+        setTableEmpty(tbody, 4, 'Henüz manuel kesinti eklenmemiş');
         return;
       }
       
-      const html = manualDeductions.map(deduction => {
-        const safeId = DOMPurify.sanitize(deduction.id, { ALLOWED_TAGS: [] });
-        const safeName = DOMPurify.sanitize(deduction.name || '-', { ALLOWED_TAGS: [] });
-        const safeAmount = (deduction.amount || 0).toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' });
-        const safeDescription = DOMPurify.sanitize(deduction.description || '-', { ALLOWED_TAGS: [] });
-        
-        return `
-          <tr>
-            <td>${safeName}</td>
-            <td>${safeAmount}</td>
-            <td>${safeDescription}</td>
-            <td>
-              <button class="btn btn-outline" onclick="deleteManualDeduction('${safeId}')" style="padding: 4px 8px; font-size: 12px;">Sil</button>
-            </td>
-          </tr>
-        `;
-      }).join('');
-      
-      tbody.innerHTML = DOMPurify.sanitize(html, {
-        ALLOWED_TAGS: ['tr', 'td', 'button'],
-        ALLOWED_ATTR: ['class', 'onclick', 'style']
+      // Teklifbul Rule v1.0 — DOMPurify <tr>/<td>'yi table dışında siler; createElement kullan
+      tbody.textContent = '';
+      manualDeductions.forEach((deduction) => {
+        const deductionId = String(deduction.id || '');
+        const tr = document.createElement('tr');
+        appendTextCell(tr, deduction.name || '-');
+        appendTextCell(tr, (deduction.amount || 0).toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' }));
+        appendTextCell(tr, deduction.description || '-');
+
+        const actionsTd = document.createElement('td');
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn btn-outline';
+        btn.textContent = 'Sil';
+        btn.setAttribute('aria-label', 'Kesintiyi sil');
+        btn.style.cssText = 'padding: 4px 8px; font-size: 12px;';
+        btn.addEventListener('click', () => window.deleteManualDeduction(deductionId));
+        actionsTd.appendChild(btn);
+        tr.appendChild(actionsTd);
+        tbody.appendChild(tr);
       });
     }
     

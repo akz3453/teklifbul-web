@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="/assets/css/layout.css" />
   <style>
     body {
-      font-family: system-ui, Arial;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
       background: #f8fafc;
       color: #111827;
       margin: 0
@@ -20,7 +20,10 @@
     .container {
       max-width: 1200px;
       margin: 0 auto;
-      padding: 20px
+      padding: 20px;
+      width: 100%;
+      box-sizing: border-box;
+      overflow-x: hidden;
     }
 
     h1 {
@@ -32,10 +35,27 @@
       margin: 0 0 32px 0
     }
 
+    .tb-breadcrumb {
+      flex-wrap: wrap;
+    }
+
+    /* utils.css .section/.card kart stillerini bu sayfada iç içe bozmasın */
+    .section {
+      background: none;
+      border: none;
+      box-shadow: none;
+      padding: 0;
+      margin: 28px 0 0;
+    }
+
+    .section:hover {
+      box-shadow: none;
+    }
+
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 20px
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+      gap: 16px;
     }
 
     .card {
@@ -43,6 +63,10 @@
       border: 1px solid #e5e7eb;
       border-radius: 8px;
       padding: 20px;
+      margin: 0;
+      min-width: 0;
+      max-width: 100%;
+      box-sizing: border-box;
       cursor: pointer;
       transition: all 0.2s
     }
@@ -154,6 +178,39 @@
     html[data-theme="dark"] div[style*="color:#6b7280"],
     html.force-dark div[style*="color:#6b7280"] {
       color: #9ca3af !important;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 16px 12px;
+      }
+
+      h1 {
+        font-size: 1.35rem;
+        line-height: 1.3;
+      }
+
+      .subtitle {
+        margin-bottom: 16px;
+        font-size: 14px;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .card {
+        padding: 16px;
+      }
+
+      .section {
+        margin-top: 24px;
+      }
+
+      .section h2 {
+        font-size: 1.05rem;
+      }
     }
   </style>
 </head>

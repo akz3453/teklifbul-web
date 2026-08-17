@@ -168,6 +168,31 @@
       background: #fff
     }
 
+    /* Teklifbul Rule v1.0 — Detay kalemleri mobilde yatay kaydır */
+    .items-table-scroll {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-x: contain;
+      padding-bottom: 8px;
+    }
+
+    .items-table-hint {
+      display: none;
+      font-size: 12px;
+      color: #6b7280;
+      margin: 0 0 8px;
+    }
+
+    @media (max-width: 900px) {
+      .items-table-hint { display: block; }
+      #saleItemsTable {
+        width: max-content;
+        min-width: 980px;
+      }
+    }
+
     th,
     td {
       border-bottom: 1px solid #e5e7eb;
@@ -365,26 +390,29 @@
     <div class="card">
       <h2 style="margin-top:0">Satış Kalemleri</h2>
 
-      <table id="saleItemsTable">
-        <thead>
-          <tr>
-            <th>SKU</th>
-            <th>Ürün Adı</th>
-            <th>Miktar</th>
-            <th>Birim</th>
-            <th>Lokasyon</th>
-            <th>Birim Fiyat</th>
-            <th>KDV %</th>
-            <th>İndirim %</th>
-            <th>Tutar</th>
-          </tr>
-        </thead>
-        <tbody id="saleItemsTableBody">
-          <tr>
-            <td colspan="9" style="text-align:center;padding:40px;color:#6b7280">Yükleniyor...</td>
-          </tr>
-        </tbody>
-      </table>
+      <p class="items-table-hint" aria-hidden="true">Tabloyu görmek için yatay kaydırın →</p>
+      <div class="items-table-scroll table-responsive" role="region" aria-label="Satış kalemleri" tabindex="0">
+        <table id="saleItemsTable">
+          <thead>
+            <tr>
+              <th>SKU</th>
+              <th>Ürün Adı</th>
+              <th>Miktar</th>
+              <th>Birim</th>
+              <th>Lokasyon</th>
+              <th>Birim Fiyat</th>
+              <th>KDV %</th>
+              <th>İndirim %</th>
+              <th>Tutar</th>
+            </tr>
+          </thead>
+          <tbody id="saleItemsTableBody">
+            <tr>
+              <td colspan="9" style="text-align:center;padding:40px;color:#6b7280">Yükleniyor...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <div class="card">
@@ -468,7 +496,10 @@
 
   <!-- Header -->
   <script type="module">
+    import { initAuthGuard } from '/assets/js/auth-guard.js';
     import { initGlobalHeader } from '../assets/js/ui/header.js';
+    initAuthGuard().catch((err) => { console.error('Auth guard init failed', err); });
+
     initGlobalHeader({ mount: '#app-header', activeRoute: 'sales' });
   </script>
 

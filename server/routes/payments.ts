@@ -1,6 +1,7 @@
 // Teklifbul Rule v1.0
 import { Router } from 'express';
 import { verifyToken, type AuthenticatedRequest } from '../middleware/auth.js';
+import { requireEmailVerified } from '../middleware/requireEmailVerified.js';
 import { initiatePayment, handlePaymentWebhook, type PaymentWebhookPayload } from '../services/paymentsService.js';
 import { logger } from '../../src/shared/log/logger.js';
 import { validateRequest } from '../utils/input-validation.js';
@@ -15,7 +16,7 @@ const initiatePaymentSchema = z.object({
   couponCode: z.string().optional()
 });
 
-router.post('/initiate', verifyToken, validateRequest({ body: initiatePaymentSchema }), async (req: AuthenticatedRequest, res) => {
+router.post('/initiate', verifyToken, requireEmailVerified, validateRequest({ body: initiatePaymentSchema }), async (req: AuthenticatedRequest, res) => {
   try {
     if (!req.user) {
       return res.status(401).json({

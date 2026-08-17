@@ -8,6 +8,7 @@ import { logger } from '../src/shared/log/logger.js';
 import { toast } from '../src/shared/ui/toast.js';
 import { can, getEinvoicePerms } from '../assets/js/state/permissions.js';
 import { requireCompanyContext } from '../assets/js/state/company-context.js';
+import { setTableEmpty, appendTextCell, fillTableRows } from '../assets/js/utils/safe-table.js';
 import DOMPurify from 'https://cdn.jsdelivr.net/npm/dompurify@3.2.2/+esm';
 import { formatCurrency, formatDate } from './sales.js';
 
@@ -97,9 +98,14 @@ function renderInvoiceDetail(invoice) {
   }
 
   // Status badge
-  const statusBadge = getDocumentStatusBadge(invoice.status);
-  if (qs('#invoiceStatus')) {
-    qs('#invoiceStatus').innerHTML = statusBadge;
+  const statusEl = qs('#invoiceStatus');
+  if (statusEl) {
+    const statusInfo = getDocumentStatusInfo(invoice.status);
+    statusEl.textContent = '';
+    const statusSpan = document.createElement('span');
+    statusSpan.className = `badge ${statusInfo.class}`;
+    statusSpan.textContent = statusInfo.label;
+    statusEl.appendChild(statusSpan);
   }
 
   // Ödeme durumu badge
@@ -110,7 +116,12 @@ function renderInvoiceDetail(invoice) {
       unpaid: { label: 'Ödenmedi', class: 'badge-unpaid' }
     };
     const pStatus = paymentStatusMap[invoice.paymentStatus] || { label: invoice.paymentStatus || 'Ödenmedi', class: 'badge-unpaid' };
-    qs('#paymentStatus').innerHTML = `<span class="badge ${pStatus.class}">${pStatus.label}</span>`;
+    const payEl = qs('#paymentStatus');
+    payEl.textContent = '';
+    const paySpan = document.createElement('span');
+    paySpan.className = `badge ${pStatus.class}`;
+    paySpan.textContent = String(pStatus.label || '');
+    payEl.appendChild(paySpan);
   }
 
   // Tarihler
@@ -197,6 +208,7 @@ function renderInvoiceDetail(invoice) {
 /**
  * Fatura kalemlerini render et
  */
+// Teklifbul Rule v1.0 — DOMPurify <tr>/<td>'yi table dışında siler; createElement kullan
 function renderInvoiceItems(invoice) {
   const tbody = qs('#invoiceItemsTableBody');
   if (!tbody) return;
@@ -204,69 +216,55 @@ function renderInvoiceItems(invoice) {
   const items = invoice.items || invoice.snapshot?.items || [];
   const currency = invoice.currency || invoice.snapshot?.totals?.currency || 'TRY';
 
-  if (items.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:#6b7280">Kalem bulunamadı</td></tr>';
-    return;
-  }
-
-  const html = items.map(item => `
-    <tr>
-      <td>${DOMPurify.sanitize(item.sku || 'N/A', { ALLOWED_TAGS: [] })}</td>
-      <td>${DOMPurify.sanitize(item.name || item.productName || 'N/A', { ALLOWED_TAGS: [] })}</td>
-      <td>${item.quantity || 0}</td>
-      <td>${DOMPurify.sanitize(item.unit || 'AD', { ALLOWED_TAGS: [] })}</td>
-      <td>${formatCurrency(item.unitPrice || 0, currency)}</td>
-      <td>${item.vatRate || 0}%</td>
-      <td>${formatCurrency(item.totalWithVat || item.totalPrice || 0, currency)}</td>
-    </tr>
-  `).join('');
-
-  tbody.innerHTML = DOMPurify.sanitize(html, {
-    ALLOWED_TAGS: ['tr', 'td'],
-    ALLOWED_ATTR: []
-  });
+  fillTableRows(
+    tbody,
+    items.map((item) => [
+      item.sku || 'N/A',
+      item.name || item.productName || 'N/A',
+      item.quantity || 0,
+      item.unit || 'AD',
+      formatCurrency(item.unitPrice || 0, currency),
+      `${item.vatRate || 0}%`,
+      formatCurrency(item.totalWithVat || item.totalPrice || 0, currency),
+    ]),
+    7,
+    'Kalem bulunamadı'
+  );
 }
 
 /**
  * Ödeme kayıtlarını render et
  */
+// Teklifbul Rule v1.0 — DOMPurify <tr>/<td>'yi table dışında siler; createElement kullan
 function renderPayments(invoice) {
   const tbody = qs('#paymentsTableBody');
   if (!tbody) return;
 
   const payments = invoice.payments || [];
-
-  if (payments.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:#6b7280">Ödeme kaydı bulunamadı</td></tr>';
-    return;
-  }
-
   const currency = invoice.currency || invoice.snapshot?.totals?.currency || 'TRY';
 
-  const html = payments.map(payment => {
-    const methodLabel = {
-      nakit: 'Nakit',
-      havale: 'Havale',
-      kredi_karti: 'Kredi Kartı',
-      cek: 'Çek',
-      senet: 'Senet'
-    }[payment.method] || payment.method || 'N/A';
+  fillTableRows(
+    tbody,
+    payments.map((payment) => {
+      const methodLabel = {
+        nakit: 'Nakit',
+        havale: 'Havale',
+        kredi_karti: 'Kredi Kartı',
+        cek: 'Çek',
+        senet: 'Senet'
+      }[payment.method] || payment.method || 'N/A';
 
-    return `
-      <tr>
-        <td>${formatDate(payment.date)}</td>
-        <td>${formatCurrency(payment.amount || 0, currency)}</td>
-        <td>${DOMPurify.sanitize(methodLabel, { ALLOWED_TAGS: [] })}</td>
-        <td>${DOMPurify.sanitize(payment.reference || '-', { ALLOWED_TAGS: [] })}</td>
-        <td>${DOMPurify.sanitize(payment.createdBy || '-', { ALLOWED_TAGS: [] })}</td>
-      </tr>
-    `;
-  }).join('');
-
-  tbody.innerHTML = DOMPurify.sanitize(html, {
-    ALLOWED_TAGS: ['tr', 'td'],
-    ALLOWED_ATTR: []
-  });
+      return [
+        formatDate(payment.date),
+        formatCurrency(payment.amount || 0, currency),
+        methodLabel,
+        payment.reference || '-',
+        payment.createdBy || '-',
+      ];
+    }),
+    5,
+    'Ödeme kaydı bulunamadı'
+  );
 }
 
 /**
@@ -320,28 +318,28 @@ function renderSnapshot(snapshot) {
   }
 
   // Items snapshot
+  // Teklifbul Rule v1.0 — DOMPurify <tr>/<td>'yi table dışında siler; createElement kullan
   if (snapshot.items && qs('#snapshotItemsTableBody')) {
     const tbody = qs('#snapshotItemsTableBody');
+    const currency = snapshot.totals?.currency || 'TRY';
     if (snapshot.items.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:#6b7280">Kalem bulunamadı</td></tr>';
+      setTableEmpty(tbody, 7, 'Kalem bulunamadı');
     } else {
-      const itemsHTML = snapshot.items.map((item) => {
-        return `
-          <tr>
-            <td style="padding:12px; border-bottom:1px solid #e5e7eb">${DOMPurify.sanitize(item.sku || 'N/A', { ALLOWED_TAGS: [] })}</td>
-            <td style="padding:12px; border-bottom:1px solid #e5e7eb">${DOMPurify.sanitize(item.name || 'N/A', { ALLOWED_TAGS: [] })}</td>
-            <td style="padding:12px; border-bottom:1px solid #e5e7eb; text-align:right">${item.quantity || 0}</td>
-            <td style="padding:12px; border-bottom:1px solid #e5e7eb">${DOMPurify.sanitize(item.unit || 'AD', { ALLOWED_TAGS: [] })}</td>
-            <td style="padding:12px; border-bottom:1px solid #e5e7eb; text-align:right">${formatCurrency(item.unitPrice || 0, snapshot.totals?.currency || 'TRY')}</td>
-            <td style="padding:12px; border-bottom:1px solid #e5e7eb; text-align:right">${item.vatRate || 0}%</td>
-            <td style="padding:12px; border-bottom:1px solid #e5e7eb; text-align:right">${formatCurrency(item.totalWithVat || item.totalPrice || 0, snapshot.totals?.currency || 'TRY')}</td>
-          </tr>
-        `;
-      }).join('');
-
-      tbody.innerHTML = DOMPurify.sanitize(itemsHTML, {
-        ALLOWED_TAGS: ['tr', 'td'],
-        ALLOWED_ATTR: ['style']
+      tbody.textContent = '';
+      snapshot.items.forEach((item) => {
+        const tr = document.createElement('tr');
+        appendTextCell(tr, item.sku || 'N/A');
+        appendTextCell(tr, item.name || 'N/A');
+        const qtyTd = appendTextCell(tr, item.quantity || 0);
+        qtyTd.style.textAlign = 'right';
+        appendTextCell(tr, item.unit || 'AD');
+        const priceTd = appendTextCell(tr, formatCurrency(item.unitPrice || 0, currency));
+        priceTd.style.textAlign = 'right';
+        const vatTd = appendTextCell(tr, `${item.vatRate || 0}%`);
+        vatTd.style.textAlign = 'right';
+        const totalTd = appendTextCell(tr, formatCurrency(item.totalWithVat || item.totalPrice || 0, currency));
+        totalTd.style.textAlign = 'right';
+        tbody.appendChild(tr);
       });
     }
   }
@@ -645,7 +643,7 @@ async function cancelInvoice(invoiceId) {
 /**
  * Document status badge oluştur
  */
-function getDocumentStatusBadge(status) {
+function getDocumentStatusInfo(status) {
   const statusMap = {
     draft: { label: 'Taslak', class: 'badge-draft' },
     ready: { label: 'Hazır', class: 'badge-warning' },
@@ -654,7 +652,10 @@ function getDocumentStatusBadge(status) {
     rejected: { label: 'Reddedildi', class: 'badge-cancelled' },
     cancelled: { label: 'İptal Edildi', class: 'badge-cancelled' }
   };
-  const statusInfo = statusMap[status] || { label: status, class: 'badge-secondary' };
-  return `<span class="badge ${statusInfo.class}">${DOMPurify.sanitize(statusInfo.label, { ALLOWED_TAGS: [] })}</span>`;
+  const statusInfo = statusMap[status] || { label: status || '-', class: 'badge-secondary' };
+  return {
+    class: statusInfo.class,
+    label: String(statusInfo.label || '-'),
+  };
 }
 

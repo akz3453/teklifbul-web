@@ -6,7 +6,7 @@
 
 import { getAdminDb } from '../../utils/firestore.js';
 import { logger } from '../../../src/shared/log/logger.js';
-import { FieldValue, Timestamp } from 'firebase-admin/firestore';
+import { FieldValue, type DocumentReference } from 'firebase-admin/firestore';
 import { logAuditEvent } from './auditService.js';
 
 /**
@@ -411,3 +411,245 @@ export async function createPurchaseMovements(
 
   return movementIds;
 }
+
+export type ManualStockMovementType = 'IN' | 'OUT' | 'TRANSFER' | 'ADJUST';
+
+export interface ManualStockMovementInput {
+  companyId: string;
+  userId: string;
+  createdByName?: string;
+  type: ManualStockMovementType;
+  stockId: string;
+  sku: string;
+  stockName?: string;
+  unit?: string;
+  locationId: string;
+  siteId?: string | null;
+  toLocationId?: string | null;
+  qty: number;
+  unitCost?: number;
+  extras?: Array<{ name: string; amount: number }>;
+  ref?: { kind: string; id: string; lineId?: string };
+  lotNo?: string | null;
+  expiryDate?: Date | null;
+  toSiteName?: string | null;
+  /** Client confirm for negative stock when company allows it */
+  confirmNegative?: boolean;
+}
+
+/**
+ * Manuel stok hareketi — tek transaction (movement + balances + opsiyonel stock avgCost)
+ * Teklifbul Rule v1.0
+ */
+export async function recordManualStockMovement(input: ManualStockMovementInput): Promise<{
+  movementId: string;
+  quantity: number;
+  avgCost: number;
+  toQuantity?: number;
+}> {
+  const db = await getAdminDb();
+  if (!db) throw new Error('Firestore unavailable');
+
+  const {
+    companyId,
+    userId,
+    createdByName,
+    type,
+    stockId,
+    sku,
+    stockName,
+    unit = 'ADT',
+    locationId,
+    siteId = null,
+    toLocationId = null,
+    qty,
+    unitCost = 0,
+    extras = [],
+    ref = { kind: 'MANUAL', id: '' },
+    lotNo = null,
+    expiryDate = null,
+    toSiteName = null,
+    confirmNegative = false,
+  } = input;
+
+  if (!companyId || !userId || !stockId || !sku || !locationId) {
+    throw new Error('Zorunlu alanlar eksik');
+  }
+  if (!['IN', 'OUT', 'TRANSFER', 'ADJUST'].includes(type)) {
+    throw new Error('Geçersiz hareket tipi');
+  }
+  if (type !== 'ADJUST' && (!(qty > 0) || Number.isNaN(qty))) {
+    throw new Error('Miktar pozitif olmalıdır');
+  }
+  if (type === 'ADJUST' && (qty < 0 || Number.isNaN(qty))) {
+    throw new Error('Düzeltme miktarı 0 veya pozitif olmalıdır');
+  }
+  if (type === 'TRANSFER' && !toLocationId) {
+    throw new Error('Transfer için hedef lokasyon zorunlu');
+  }
+
+  const companyDoc = await db.collection('companies').doc(companyId).get();
+  const companyData = companyDoc.exists ? companyDoc.data() || {} : {};
+  const allowNegativeStock = companyData.allowNegativeStock === true;
+
+  const sourceBalanceId = getBalanceDocId(companyId, sku, locationId);
+  const sourceBalanceRef = db.collection('stock_balances').doc(sourceBalanceId);
+  const movementRef = db.collection('stock_movements').doc();
+  const stockRef = db.collection('stocks').doc(stockId);
+
+  const result = await db.runTransaction(async (tx) => {
+    const sourceSnap = await tx.get(sourceBalanceRef);
+    const source = sourceSnap.exists ? sourceSnap.data() || {} : {};
+    const oldQty = Number(source.quantity) || 0;
+    const oldAvg = Number(source.avgCost) || 0;
+
+    let newQty = oldQty;
+    let newAvg = oldAvg;
+    let effectiveUnitCost = unitCost;
+    let toQty: number | undefined;
+
+    if (type === 'IN') {
+      newQty = oldQty + qty;
+      newAvg = weightedAvgCost(oldQty, oldAvg, qty, unitCost);
+      effectiveUnitCost = unitCost;
+    } else if (type === 'OUT' || type === 'TRANSFER') {
+      if (oldQty <= 0) {
+        throw new Error(`Bu lokasyonda stok yok (mevcut: ${oldQty}).`);
+      }
+      if (!allowNegativeStock && oldQty < qty) {
+        throw new Error(`Yetersiz stok. Mevcut: ${oldQty}, istenen: ${qty}`);
+      }
+      if (allowNegativeStock && oldQty < qty && !confirmNegative) {
+        const err: any = new Error('NEGATIVE_STOCK_CONFIRM_REQUIRED');
+        err.code = 'NEGATIVE_STOCK_CONFIRM_REQUIRED';
+        err.currentQty = oldQty;
+        throw err;
+      }
+      newQty = allowNegativeStock ? oldQty - qty : Math.max(0, oldQty - qty);
+      newAvg = oldAvg;
+      effectiveUnitCost = oldAvg;
+    } else if (type === 'ADJUST') {
+      newQty = qty;
+      newAvg = oldAvg;
+      effectiveUnitCost = 0;
+    }
+
+    let toBalanceRef: DocumentReference | null = null;
+    let toOldQty = 0;
+    let toOldAvg = 0;
+    if (type === 'TRANSFER' && toLocationId) {
+      toBalanceRef = db.collection('stock_balances').doc(getBalanceDocId(companyId, sku, toLocationId));
+      const toSnap = await tx.get(toBalanceRef);
+      const toData = toSnap.exists ? toSnap.data() || {} : {};
+      toOldQty = Number(toData.quantity) || 0;
+      toOldAvg = Number(toData.avgCost) || 0;
+      toQty = toOldQty + qty;
+      // Transfer: hedef avgCost kaynak unitCost (eski avg) ile ağırlıklı
+      const toNewAvg = weightedAvgCost(toOldQty, toOldAvg, qty, effectiveUnitCost);
+
+      tx.set(
+        toBalanceRef,
+        {
+          companyId,
+          sku,
+          locationId: toLocationId,
+          stockId,
+          quantity: toQty,
+          avgCost: toNewAvg,
+          lastUpdated: FieldValue.serverTimestamp(),
+          lastMovementId: movementRef.id,
+        },
+        { merge: true }
+      );
+    }
+
+    const movementData: Record<string, unknown> = {
+      companyId,
+      stockId,
+      sku,
+      locationId,
+      siteId: siteId || null,
+      type,
+      qty,
+      unit,
+      unitCost: effectiveUnitCost,
+      totalCost: effectiveUnitCost * (type === 'ADJUST' ? 0 : qty),
+      extras: extras || [],
+      ref: {
+        kind: ref?.kind || 'MANUAL',
+        id: ref?.id || '',
+        ...(ref?.lineId ? { lineId: String(ref.lineId).slice(0, 120) } : {}),
+      },
+      stockName: stockName || null,
+      lotNo: lotNo || null,
+      expiryDate: expiryDate || null,
+      toSiteName: toSiteName || null,
+      createdBy: userId,
+      createdByName: createdByName || null,
+      createdAt: FieldValue.serverTimestamp(),
+    };
+    if (type === 'TRANSFER' && toLocationId) {
+      movementData.toLocationId = toLocationId;
+      if (!ref?.id) {
+        movementData.ref = { kind: 'MANUAL', id: toLocationId };
+      }
+    }
+
+    tx.set(movementRef, movementData);
+
+    tx.set(
+      sourceBalanceRef,
+      {
+        companyId,
+        sku,
+        locationId,
+        stockId,
+        quantity: newQty,
+        avgCost: newAvg,
+        lastUpdated: FieldValue.serverTimestamp(),
+        lastMovementId: movementRef.id,
+      },
+      { merge: true }
+    );
+
+    if (type === 'IN') {
+      tx.set(
+        stockRef,
+        {
+          avgCost: newAvg,
+          lastPurchasePrice: unitCost,
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
+    }
+
+    return {
+      movementId: movementRef.id,
+      quantity: newQty,
+      avgCost: newAvg,
+      toQuantity: toQty,
+    };
+  });
+
+  await logAuditEvent({
+    companyId,
+    entityType: 'stock_movement',
+    entityId: result.movementId,
+    action: `manual_${type.toLowerCase()}`,
+    actorUserId: userId,
+    result: 'success',
+    metadata: { sku, qty, locationId, toLocationId: toLocationId || null },
+  });
+
+  logger.info('Manual stock movement recorded', {
+    movementId: result.movementId,
+    type,
+    sku,
+    qty,
+    companyId,
+  });
+
+  return result;
+}
+

@@ -208,6 +208,142 @@
       color: #111827
     }
 
+    /* Teklifbul Rule v1.0 — Hareket sekme çubuğu */
+    .movements-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 8px 0 16px;
+      padding: 0;
+      background: transparent;
+      border: none;
+    }
+
+    .movements-tabs .tab-btn {
+      appearance: none;
+      display: inline-flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 6px;
+      width: auto !important;
+      max-width: max-content;
+      flex: 0 0 auto;
+      align-self: flex-start;
+      border: 1px solid #1d4ed8;
+      background: #2563eb;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 10px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      line-height: 1.2;
+      transition: background .15s ease, border-color .15s ease, box-shadow .15s ease;
+    }
+
+    .movements-tabs .tab-btn .tab-label {
+      display: inline-block;
+      padding: 4px 10px;
+      border: 1px dashed #fff;
+      border-radius: 4px;
+      color: #fff;
+      white-space: nowrap;
+    }
+
+    .movements-tabs .tab-btn:hover {
+      background: #1d4ed8;
+      border-color: #1e40af;
+    }
+
+    .movements-tabs .tab-btn:focus-visible {
+      outline: 2px solid #93c5fd;
+      outline-offset: 2px;
+    }
+
+    .movements-tabs .tab-btn.active {
+      background: #1e40af;
+      border-color: #1e3a8a;
+      box-shadow: 0 0 0 2px #93c5fd;
+    }
+
+    .movements-tabs .tab-btn .tab-hint {
+      display: block;
+      font-size: 11px;
+      font-weight: 500;
+      color: #dbeafe;
+    }
+
+    .movements-tabs .tab-btn.active .tab-hint {
+      color: #eff6ff;
+    }
+
+    /* Teklifbul Rule v1.0 — utils.css button width:100% override */
+    .filter-section .btn,
+    #transactionActions .btn,
+    #paymentModal .btn,
+    #exportExtreModal .btn,
+    #btnAddPayment,
+    #btnExport,
+    #btnEdit {
+      width: auto !important;
+      max-width: max-content;
+      margin: 0;
+    }
+
+    #transactionActions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .export-type-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin: 12px 0 0;
+    }
+
+    .export-type-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      background: #f9fafb;
+      cursor: pointer;
+    }
+
+    .export-type-item input {
+      margin-top: 3px;
+      width: auto;
+      flex-shrink: 0;
+    }
+
+    .export-type-item strong {
+      display: block;
+      font-size: 14px;
+      color: #111827;
+    }
+
+    .export-type-item span {
+      display: block;
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 2px;
+    }
+
+    #movementsTable {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
     /* Koyu Mod */
     html[data-theme="dark"] body,
     html.force-dark body {
@@ -253,6 +389,47 @@
     html.force-dark .summary-item {
       background: #1f2937;
       border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    html[data-theme="dark"] .movements-tabs .tab-btn,
+    html.force-dark .movements-tabs .tab-btn {
+      background: #1d4ed8;
+      border-color: #3b82f6;
+      color: #fff;
+    }
+
+    html[data-theme="dark"] .movements-tabs .tab-btn .tab-label,
+    html.force-dark .movements-tabs .tab-btn .tab-label {
+      border-color: #fff;
+      color: #fff;
+    }
+
+    html[data-theme="dark"] .movements-tabs .tab-btn:hover,
+    html.force-dark .movements-tabs .tab-btn:hover {
+      background: #2563eb;
+      border-color: #60a5fa;
+      color: #fff;
+    }
+
+    html[data-theme="dark"] .movements-tabs .tab-btn.active,
+    html.force-dark .movements-tabs .tab-btn.active {
+      background: #1e3a8a;
+      border-color: #60a5fa;
+      color: #fff;
+      box-shadow: 0 0 0 2px #93c5fd;
+    }
+
+    html[data-theme="dark"] .movements-tabs .tab-btn .tab-hint,
+    html.force-dark .movements-tabs .tab-btn .tab-hint,
+    html[data-theme="dark"] .movements-tabs .tab-btn.active .tab-hint,
+    html.force-dark .movements-tabs .tab-btn.active .tab-hint {
+      color: #dbeafe;
+    }
+
+    html[data-theme="dark"] #movementsTable,
+    html.force-dark #movementsTable {
+      background: #1f2937;
+      border-color: rgba(255, 255, 255, 0.1);
     }
   </style>
 </head>
@@ -390,57 +567,66 @@
       </div>
 
       <!-- Tab Navigation -->
-      <button class="tab-btn active" id="tabAllMovements" data-tab="all"
-        style="padding:10px 20px;border:0;background:transparent;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;font-weight:600;color:#6b7280">
-        Tümü (Eski)
-      </button>
-      <button class="tab-btn" id="tabTransactions" data-tab="transactions"
-        style="padding:10px 20px;border:0;background:transparent;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;font-weight:600;color:#6b7280">
-        💰 Cari Hareketler
-      </button>
-      <button class="tab-btn" id="tabSales" data-tab="sales"
-        style="padding:10px 20px;border:0;background:transparent;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;font-weight:600;color:#6b7280">
-        Satışlar
-      </button>
-      <button class="tab-btn" id="tabInvoices" data-tab="invoices"
-        style="padding:10px 20px;border:0;background:transparent;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;font-weight:600;color:#6b7280">
-        Faturalar
-      </button>
-      <button class="tab-btn" id="tabDeliveryNotes" data-tab="deliveryNotes"
-        style="padding:10px 20px;border:0;background:transparent;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;font-weight:600;color:#6b7280">
-        İrsaliyeler
-      </button>
-    </div>
+      <nav class="movements-tabs" role="tablist" aria-label="Müşteri hareket türleri">
+        <button type="button" class="tab-btn active" id="tabAllMovements" data-tab="all" role="tab"
+          aria-selected="true" title="Tüm belge hareketlerini göster">
+          <span class="tab-label">Tüm Hareketler</span>
+          <span class="tab-hint">Satış + fatura + irsaliye</span>
+        </button>
+        <button type="button" class="tab-btn" id="tabTransactions" data-tab="transactions" role="tab"
+          aria-selected="false" title="Cari hesap tahsilat ve borç hareketleri">
+          <span class="tab-label">Cari Hareketler</span>
+          <span class="tab-hint">Tahsilat / borç bakiyesi</span>
+        </button>
+        <button type="button" class="tab-btn" id="tabSales" data-tab="sales" role="tab"
+          aria-selected="false" title="Bu müşteriye ait satışlar">
+          <span class="tab-label">Satışlar</span>
+          <span class="tab-hint">Satış kayıtları</span>
+        </button>
+        <button type="button" class="tab-btn" id="tabInvoices" data-tab="invoices" role="tab"
+          aria-selected="false" title="Bu müşteriye ait faturalar">
+          <span class="tab-label">Faturalar</span>
+          <span class="tab-hint">Kesilen faturalar</span>
+        </button>
+        <button type="button" class="tab-btn" id="tabDeliveryNotes" data-tab="deliveryNotes" role="tab"
+          aria-selected="false" title="Bu müşteriye ait irsaliyeler">
+          <span class="tab-label">İrsaliyeler</span>
+          <span class="tab-hint">Sevk irsaliyeleri</span>
+        </button>
+      </nav>
 
-    <!-- Actions Toolbar for Transactions -->
-    <div id="transactionActions" style="display:none; margin-bottom:16px;">
-      <button class="btn btn-success" id="btnAddPayment">➕ Tahsilat Ekle</button>
-    </div>
+      <!-- Actions Toolbar for Transactions -->
+      <div id="transactionActions" style="display:none; margin-bottom:16px;">
+        <button class="btn btn-success" id="btnAddPayment" type="button" aria-label="Tahsilat ekle" title="Tahsilat ekle">Tahsilat Ekle</button>
+      </div>
 
-    <table id="movementsTable">
-      <thead>
-        <tr>
-          <th>Tarih</th>
-          <th>Tip</th>
-          <th>Belge No</th>
-          <th>Tutar</th>
-          <th>Durum</th>
-          <th>İşlemler</th>
-        </tr>
-      </thead>
-      <tbody id="movementsTableBody">
-        <tr>
-          <td colspan="6" style="text-align:center;padding:40px;color:#6b7280">Yükleniyor...</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+      <table id="movementsTable" aria-label="Müşteri hareket listesi">
+        <thead>
+          <tr>
+            <th>Tarih</th>
+            <th>Tip</th>
+            <th>Belge No</th>
+            <th>Tutar</th>
+            <th>Durum</th>
+            <th>İşlemler</th>
+          </tr>
+        </thead>
+        <tbody id="movementsTableBody">
+          <tr>
+            <td colspan="6" style="text-align:center;padding:40px;color:#6b7280">Yükleniyor...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <!-- Header -->
   <script type="module">
+    import { initAuthGuard } from '/assets/js/auth-guard.js';
     import { initGlobalHeader } from '../assets/js/ui/header.js';
-    initGlobalHeader({ mount: '#app-header', activeRoute: 'sales' });
+    initAuthGuard().catch((err) => { console.error('Auth guard init failed', err); });
+
+    initGlobalHeader({ mount: '#app-header', activeRoute: 'customers' });
   </script>
 
   <script type="module" src="/scripts/customer-detail.js"></script>
@@ -451,17 +637,17 @@
     <div
       style="padding:20px;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center">
       <h3 style="margin:0">Tahsilat Ekle</h3>
-      <button id="btnCloseModalX"
-        style="background:none;border:none;font-size:18px;cursor:pointer">✕</button>
+      <button id="btnCloseModalX" type="button" aria-label="Kapat" title="Kapat"
+        style="background:none;border:none;font-size:18px;cursor:pointer;width:auto;margin:0">✕</button>
     </div>
     <div style="padding:20px">
       <div class="filter-group" style="margin-bottom:12px">
-        <label>Tutar</label>
-        <input type="number" id="payAmount" step="0.01" style="width:100%" placeholder="0.00" />
+        <label>Tutar <span aria-hidden="true">*</span></label>
+        <input type="number" id="payAmount" step="0.01" style="width:100%" placeholder="0.00" title="Bu alan zorunludur." required />
       </div>
       <div class="filter-group" style="margin-bottom:12px">
         <label>Para Birimi</label>
-        <select id="payCurrency" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px">
+        <select id="payCurrency" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px" aria-label="Para birimi">
           <option value="TRY">TRY</option>
           <option value="USD">USD</option>
           <option value="EUR">EUR</option>
@@ -469,15 +655,74 @@
       </div>
       <div class="filter-group" style="margin-bottom:12px">
         <label>Tarih</label>
-        <input type="date" id="payDate" style="width:100%" />
+        <input type="date" id="payDate" style="width:100%" aria-label="Tahsilat tarihi" />
       </div>
       <div class="filter-group" style="margin-bottom:12px">
         <label>Açıklama</label>
-        <input type="text" id="payDescription" style="width:100%" placeholder="Örn: Nakit Tahsilat" />
+        <input type="text" id="payDescription" style="width:100%" placeholder="Örn: Nakit Tahsilat" aria-label="Açıklama" />
       </div>
       <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:20px">
-        <button class="btn btn-secondary" id="btnCancelPayment">İptal</button>
-        <button class="btn btn-success" id="btnSavePayment">Kaydet</button>
+        <button class="btn btn-secondary" id="btnCancelPayment" type="button" aria-label="İptal" title="İptal">İptal</button>
+        <button class="btn btn-success" id="btnSavePayment" type="button" aria-label="Kaydet" title="Kaydet">Kaydet</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Extre Export Modal -->
+  <dialog id="exportExtreModal"
+    style="border:none;border-radius:8px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);padding:0;max-width:520px;width:100%"
+    aria-labelledby="exportExtreTitle">
+    <div
+      style="padding:20px;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center">
+      <h3 id="exportExtreTitle" style="margin:0">Extre Çıktı Seçenekleri</h3>
+      <button id="btnCloseExportModal" type="button" aria-label="Kapat" title="Kapat"
+        style="background:none;border:none;font-size:18px;cursor:pointer;width:auto;margin:0">✕</button>
+    </div>
+    <div style="padding:20px">
+      <p class="muted" style="margin:0 0 8px 0">Excel’e hangi hareketleri dahil etmek istediğinizi seçin.</p>
+      <div class="export-type-list" role="group" aria-label="Extre hareket türleri">
+        <label class="export-type-item" title="Müşteri kartı özet bilgileri">
+          <input type="checkbox" name="exportType" value="customerInfo" checked aria-label="Müşteri bilgileri" />
+          <div>
+            <strong>Müşteri Bilgileri</strong>
+            <span>Kod, adres, bakiye özeti sayfası</span>
+          </div>
+        </label>
+        <label class="export-type-item" title="Satış kayıtları">
+          <input type="checkbox" name="exportType" value="sale" checked aria-label="Satışlar" />
+          <div>
+            <strong>Satışlar</strong>
+            <span>Bu müşteriye ait satış belgeleri</span>
+          </div>
+        </label>
+        <label class="export-type-item" title="Faturalar">
+          <input type="checkbox" name="exportType" value="invoice" checked aria-label="Faturalar" />
+          <div>
+            <strong>Faturalar</strong>
+            <span>Kesilen fatura hareketleri</span>
+          </div>
+        </label>
+        <label class="export-type-item" title="İrsaliyeler">
+          <input type="checkbox" name="exportType" value="deliveryNote" checked aria-label="İrsaliyeler" />
+          <div>
+            <strong>İrsaliyeler</strong>
+            <span>Sevk irsaliyesi kayıtları</span>
+          </div>
+        </label>
+        <label class="export-type-item" title="Tahsilatlar">
+          <input type="checkbox" name="exportType" value="payment" checked aria-label="Tahsilatlar" />
+          <div>
+            <strong>Tahsilatlar</strong>
+            <span>Cari tahsilat / ödeme hareketleri</span>
+          </div>
+        </label>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:16px;flex-wrap:wrap">
+        <button class="btn btn-secondary" id="btnSelectAllExportTypes" type="button" aria-label="Tümünü seç" title="Tümünü seç">Tümünü Seç</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-secondary" id="btnCancelExport" type="button" aria-label="İptal" title="İptal">İptal</button>
+          <button class="btn btn-success" id="btnConfirmExport" type="button" aria-label="Excel indir" title="Excel indir">Excel İndir</button>
+        </div>
       </div>
     </div>
   </dialog>

@@ -22,6 +22,16 @@ import { MESSAGES } from '../src/shared/constants/messages.js';
 import { authFetch } from '../assets/js/utils/api-helpers.js';
 import { debounce } from '../assets/js/utils/debounce.js';
 
+/** Teklifbul Rule v1.0 — XSS escape */
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 const qs = s => document.querySelector(s);
 
 // State
@@ -259,8 +269,8 @@ function filterAndShowSites(query) {
   }
   
   locationDropdown.innerHTML = filtered.map(site => `
-    <div class="site-option" data-site-id="${site.id}" style="padding:8px;cursor:pointer;border-bottom:1px solid #e5e7eb">
-      <strong>${site.siteName || 'İsimsiz Şantiye'}</strong>
+    <div class="site-option" data-site-id="${escapeHtml(site.id)}" style="padding:8px;cursor:pointer;border-bottom:1px solid #e5e7eb">
+      <strong>${escapeHtml(site.siteName || 'İsimsiz Şantiye')}</strong>
     </div>
   `).join('');
   
@@ -343,8 +353,8 @@ function initAddressModal() {
     
     addressList.innerHTML = allAddresses.map((addr, idx) => `
       <div class="address-option" data-addr-idx="${idx}" style="padding:12px;margin:8px 0;border:1px solid #e5e7eb;border-radius:6px;cursor:pointer">
-        <strong>${addr.label || 'Varsayılan Adres'}</strong>
-        <div style="margin-top:4px;font-size:12px;color:#6b7280">${formatAddress(addr)}</div>
+        <strong>${escapeHtml(addr.label || 'Varsayılan Adres')}</strong>
+        <div style="margin-top:4px;font-size:12px;color:#6b7280">${escapeHtml(formatAddress(addr))}</div>
       </div>
     `).join('');
     
@@ -479,8 +489,8 @@ function attachSkuAutocomplete(input, rowIndex) {
       dropdown.className = 'sku-dropdown';
       dropdown.style.cssText = 'position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #d1d5db;border-radius:4px;max-height:200px;overflow-y:auto;z-index:1000;box-shadow:0 4px 6px rgba(0,0,0,0.1)';
       dropdown.innerHTML = results.map(inv => `
-        <div class="sku-option" data-sku="${inv.sku}" style="padding:8px;cursor:pointer;border-bottom:1px solid #e5e7eb">
-          <strong>${inv.sku || ''}</strong> - ${inv.productName || ''}
+        <div class="sku-option" data-sku="${escapeHtml(inv.sku)}" style="padding:8px;cursor:pointer;border-bottom:1px solid #e5e7eb">
+          <strong>${escapeHtml(inv.sku || '')}</strong> - ${escapeHtml(inv.productName || '')}
         </div>
       `).join('');
       
@@ -573,27 +583,27 @@ function renderLines() {
     
     tr.innerHTML = `
       <td>
-        <input type="text" class="sku-input" value="${line.sku || ''}" 
+        <input type="text" class="sku-input" value="${escapeHtml(line.sku || '')}" 
                placeholder="SKU ara..." style="width:100%;padding:4px;border:1px solid #d1d5db;border-radius:4px" />
       </td>
       <td>
-        <input type="text" class="product-name-input" value="${line.name || ''}" 
+        <input type="text" class="product-name-input" value="${escapeHtml(line.name || '')}" 
                placeholder="Ürün adı" required style="width:100%;padding:4px;border:1px solid #d1d5db;border-radius:4px" />
       </td>
       <td>
-        <input type="text" class="brand-input" value="${line.brandModel || ''}" 
+        <input type="text" class="brand-input" value="${escapeHtml(line.brandModel || '')}" 
                placeholder="Marka/Model" style="width:100%;padding:4px;border:1px solid #d1d5db;border-radius:4px" />
       </td>
       <td>
-        <input type="number" class="qty-input" value="${line.qty || ''}" 
+        <input type="number" class="qty-input" value="${escapeHtml(line.qty || '')}" 
                placeholder="Miktar" step="0.01" min="0" required style="width:100%;padding:4px;border:1px solid #d1d5db;border-radius:4px" />
       </td>
       <td>
-        <input type="text" class="unit-input" value="${line.unit || ''}" 
+        <input type="text" class="unit-input" value="${escapeHtml(line.unit || '')}" 
                placeholder="Birim" required style="width:100%;padding:4px;border:1px solid #d1d5db;border-radius:4px" />
       </td>
       <td>
-        <input type="date" class="date-input" value="${line.requestedDate || ''}" 
+        <input type="date" class="date-input" value="${escapeHtml(line.requestedDate || '')}" 
                style="width:100%;padding:4px;border:1px solid #d1d5db;border-radius:4px" />
       </td>
       <td><span class="badge ${badge}">${badgeText}</span></td>
@@ -715,6 +725,8 @@ async function saveRequest(status) {
     const requestData = {
       type: 'ŞMTF',
       title: qs('#reqTitle').value.trim(),
+      companyId: state.companyId,
+      createdBy: user.uid,
       requesterUserId: user.uid,
       requesterName: user.displayName || user.email,
       siteId: state.selectedSite.id,

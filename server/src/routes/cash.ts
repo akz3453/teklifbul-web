@@ -20,16 +20,27 @@ import {
     getDefaultCashAccount
 } from '../services/cashService.js';
 import { getAdminDb } from '../../utils/firestore.js';
+import { getCompanyIdFromRequest } from '../services/permissionService.js';
 
 const router = express.Router();
 
 // Tüm route'lar authentication gerektirir
 router.use(verifyToken);
 
-// Validation schemas
+/** Trusted companyId — query/body spoof engelli */
+async function requireTrustedCompanyId(req: any, res: any): Promise<string | null> {
+    const companyId = await getCompanyIdFromRequest(req);
+    if (!companyId) {
+        res.status(403).json({ ok: false, error: 'Geçersiz veya yetkisiz şirket bilgisi' });
+        return null;
+    }
+    return companyId;
+}
+
+// Validation schemas — companyId client'tan opsiyonel; sunucu trusted id kullanır
 const createCashAccountSchema = z.object({
     body: z.object({
-        companyId: z.string().min(1),
+        companyId: z.string().min(1).optional(),
         code: z.string().optional(),
         name: z.string().min(1, 'Kasa adı zorunludur'),
         currency: z.enum(['TRY', 'USD', 'EUR']).default('TRY'),
@@ -44,7 +55,7 @@ const updateCashAccountSchema = z.object({
         id: z.string().min(1)
     }),
     body: z.object({
-        companyId: z.string().min(1),
+        companyId: z.string().min(1).optional(),
         name: z.string().min(1).optional(),
         currency: z.enum(['TRY', 'USD', 'EUR']).optional(),
         isActive: z.boolean().optional(),
@@ -58,7 +69,7 @@ const cashTransactionSchema = z.object({
         id: z.string().min(1)
     }),
     body: z.object({
-        companyId: z.string().min(1),
+        companyId: z.string().min(1).optional(),
         type: z.enum(['in', 'out']),
         transactionType: z.enum([
             'opening_balance', 'customer_receipt', 'supplier_payment',
@@ -80,7 +91,7 @@ const cashTransactionSchema = z.object({
 
 const transferSchema = z.object({
     body: z.object({
-        companyId: z.string().min(1),
+        companyId: z.string().min(1).optional(),
         fromCashAccountId: z.string().min(1),
         toCashAccountId: z.string().min(1),
         amount: z.number().positive('Tutar sıfırdan büyük olmalı'),
@@ -98,11 +109,8 @@ router.get('/',
     requirePermission('cash.view'),
     async (req: any, res) => {
         try {
-            const companyId = req.query.companyId as string;
-
-            if (!companyId) {
-                return res.status(400).json({ ok: false, error: 'companyId gerekli' });
-            }
+            const companyId = await requireTrustedCompanyId(req, res);
+            if (!companyId) return;
 
             const accounts = await getCashAccounts(companyId);
 
@@ -128,11 +136,8 @@ router.get('/default',
     requirePermission('cash.view'),
     async (req: any, res) => {
         try {
-            const companyId = req.query.companyId as string;
-
-            if (!companyId) {
-                return res.status(400).json({ ok: false, error: 'companyId gerekli' });
-            }
+            const companyId = await requireTrustedCompanyId(req, res);
+            if (!companyId) return;
 
             const account = await getDefaultCashAccount(companyId);
 
@@ -159,11 +164,8 @@ router.get('/:id',
     async (req: any, res) => {
         try {
             const { id } = req.params;
-            const companyId = req.query.companyId as string;
-
-            if (!companyId) {
-                return res.status(400).json({ ok: false, error: 'companyId gerekli' });
-            }
+            const companyId = await requireTrustedCompanyId(req, res);
+            if (!companyId) return;
 
             const db = await getAdminDb();
             if (!db) {
@@ -209,10 +211,13 @@ router.post('/',
                 return res.status(401).json({ ok: false, error: 'Unauthorized' });
             }
 
+            const companyId = await requireTrustedCompanyId(req, res);
+            if (!companyId) return;
+
             const body = req.body;
 
             const cashAccountId = await createCashAccount({
-                companyId: body.companyId,
+                companyId,
                 code: body.code,
                 name: body.name,
                 currency: body.currency || 'TRY',
@@ -251,12 +256,15 @@ router.put('/:id',
                 return res.status(401).json({ ok: false, error: 'Unauthorized' });
             }
 
+            const companyId = await requireTrustedCompanyId(req, res);
+            if (!companyId) return;
+
             const { id } = req.params;
             const body = req.body;
 
             await updateCashAccount({
                 cashAccountId: id,
-                companyId: body.companyId,
+                companyId,
                 name: body.name,
                 currency: body.currency,
                 isActive: body.isActive,
@@ -293,11 +301,8 @@ router.delete('/:id',
             }
 
             const { id } = req.params;
-            const companyId = req.query.companyId as string;
-
-            if (!companyId) {
-                return res.status(400).json({ ok: false, error: 'companyId gerekli' });
-            }
+            const companyId = await requireTrustedCompanyId(req, res);
+            if (!companyId) return;
 
             await deleteCashAccount(id, companyId, userId);
 
@@ -324,14 +329,12 @@ router.get('/:id/transactions',
     async (req: any, res) => {
         try {
             const { id } = req.params;
-            const companyId = req.query.companyId as string;
+            const companyId = await requireTrustedCompanyId(req, res);
+            if (!companyId) return;
+
             const startDate = req.query.startDate as string;
             const endDate = req.query.endDate as string;
             const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : undefined;
-
-            if (!companyId) {
-                return res.status(400).json({ ok: false, error: 'companyId gerekli' });
-            }
 
             const transactions = await getCashTransactions(companyId, id, {
                 startDate: startDate ? new Date(startDate) : undefined,
@@ -367,11 +370,14 @@ router.post('/:id/transactions',
                 return res.status(401).json({ ok: false, error: 'Unauthorized' });
             }
 
+            const companyId = await requireTrustedCompanyId(req, res);
+            if (!companyId) return;
+
             const { id } = req.params;
             const body = req.body;
 
             const transactionId = await recordCashTransaction({
-                companyId: body.companyId,
+                companyId,
                 cashAccountId: id,
                 type: body.type,
                 transactionType: body.transactionType,
@@ -416,10 +422,13 @@ router.post('/transfer',
                 return res.status(401).json({ ok: false, error: 'Unauthorized' });
             }
 
+            const companyId = await requireTrustedCompanyId(req, res);
+            if (!companyId) return;
+
             const body = req.body;
 
             const result = await transferBetweenCashAccounts({
-                companyId: body.companyId,
+                companyId,
                 fromCashAccountId: body.fromCashAccountId,
                 toCashAccountId: body.toCashAccountId,
                 amount: body.amount,

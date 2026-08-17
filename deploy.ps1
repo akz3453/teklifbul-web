@@ -1,26 +1,26 @@
 $ErrorActionPreference = "Stop"
 
-Write-Host "🚀 Teklifbul Deployment Başlatılıyor..." -ForegroundColor Green
+Write-Host "Deployment started..." -ForegroundColor Green
 
 # 1. Frontend Build
-Write-Host "`n📦 Frontend Build (Vite)..." -ForegroundColor Cyan
+Write-Host "Frontend Build (Vite)..." -ForegroundColor Cyan
 npm run build
-if ($LASTEXITCODE -ne 0) { Write-Error "Frontend build başarısız!" }
+if ($LASTEXITCODE -ne 0) { Write-Error "Frontend build failed!" }
 
 # 2. Backend Build
-Write-Host "`n⚙️ Backend Build (TypeScript)..." -ForegroundColor Cyan
+Write-Host "Backend Build (TypeScript)..." -ForegroundColor Cyan
 npm run build:api
-if ($LASTEXITCODE -ne 0) { Write-Error "Backend build başarısız!" }
+if ($LASTEXITCODE -ne 0) { Write-Error "Backend build failed!" }
 
 # 3. Functions Dependencies
-Write-Host "`n📚 Functions Dependencies..." -ForegroundColor Cyan
+Write-Host "Functions Dependencies..." -ForegroundColor Cyan
 Push-Location functions
 npm install
-if ($LASTEXITCODE -ne 0) { Write-Error "Functions npm install başarısız!" }
+if ($LASTEXITCODE -ne 0) { Write-Error "Functions npm install failed!" }
 Pop-Location
 
 # 4. Deploy
-Write-Host "`n🔥 Firebase Deploy..." -ForegroundColor Cyan
+Write-Host "Firebase Deploy..." -ForegroundColor Cyan
 firebase deploy
 
-Write-Host "`n✅ Deployment Tamamlandı!" -ForegroundColor Green
+Write-Host "Deployment Completed!" -ForegroundColor Green

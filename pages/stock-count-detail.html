@@ -11,7 +11,7 @@
   <!-- ExcelJS CDN -->
   <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
   <style>
-    body{font-family:system-ui, Arial; background:#f8fafc; color:#111827; margin:0}
+    body{font-family:system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; background:#f8fafc; color:#111827; margin:0}
     .container{max-width:1400px;margin:0 auto;padding:20px}
     h1{margin:0 0 8px 0}
     .card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:20px;margin:16px 0}
@@ -126,6 +126,29 @@
   <header id="app-header"></header>
 
   <div class="container">
+    <!-- Teklifbul Rule v1.0 - Breadcrumb -->
+    <div class="tb-breadcrumb" id="breadcrumb" aria-label="Sayfa konumu">
+      <span class="tb-crumb">
+        <span class="ico">🏠</span>
+        <a href="/dashboard.html" title="Ana Sayfa">Ana Sayfa</a>
+      </span>
+      <span class="tb-sep">›</span>
+      <span class="tb-crumb">
+        <span class="ico">📦</span>
+        <a href="/inventory-index.html" title="Stok Takip">Stok Takip</a>
+      </span>
+      <span class="tb-sep">›</span>
+      <span class="tb-crumb">
+        <span class="ico">🧮</span>
+        <a href="/pages/stock-count.html" title="Stok Sayım">Stok Sayım</a>
+      </span>
+      <span class="tb-sep">›</span>
+      <span class="tb-crumb">
+        <span class="ico">📋</span>
+        <span>Sayım Detayı</span>
+      </span>
+    </div>
+
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
       <div>
         <h1 id="countTitle">Sayım Detayı</h1>
@@ -234,12 +257,15 @@
     // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
     import { MESSAGES } from '../src/shared/constants/messages.js';
     // Teklifbul Rule v1.0 - Auth Guard (tek kaynaktan yönlendirme)
+    import { initAuthGuard } from '/assets/js/auth-guard.js';
     import { initGlobalHeader } from '../assets/js/ui/header.js';
     
     // Teklifbul Rule v1.0 - Toast'u global scope'a ekle (onclick attribute'ları için)
     window.toast = toast;
     
-    // Initialize global header
+    initAuthGuard().catch((err) => {
+      logger.error('Auth guard init failed', err);
+    });
     initGlobalHeader({ mount: '#app-header', activeRoute: 'inventory' });
   </script>
   <script type="module" src="/scripts/stock-count-detail.js"></script>

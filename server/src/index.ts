@@ -17,6 +17,7 @@ import salesRouter from "./routes/sales";
 import invoicesRouter from "./routes/invoices";
 import deliveryNotesRouter from "./routes/delivery-notes.js";
 import incomingDocsRouter from "./routes/incoming-docs.js";
+import stockMovementsRouter from "./routes/stock-movements.js";
 import efaturaRouter from "./routes/efatura.js";
 // Teklifbul Rule v1.0 - Production Hardening
 import { apiLimiter, authLimiter, uploadLimiter, exportLimiter } from "../middleware/rate-limit";
@@ -36,6 +37,7 @@ import supplierMemoryRouter from "../routes/supplier-memory";
 import aiAssistantRouter from "../routes/ai-assistant";
 // Teklifbul Rule v1.0 - Structured Logging
 import { logger } from "../../src/shared/log/logger.js";
+import { resolveAllowedOrigins, corsOriginDelegate } from "../constants/allowed-origins.js";
 
 const app = express();
 
@@ -46,26 +48,14 @@ app.use(helmet({
 }));
 
 // Teklifbul Rule v1.0 - Sirket whitelist tabanli CORS (server/index.ts ile uyumlu)
-// İki ortam değişkeni de destekleniyor: ALLOWED_ORIGINS (production) ve CORS_ALLOWED_ORIGINS (legacy)
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || process.env.CORS_ALLOWED_ORIGINS || '')
-  .split(',')
-  .map((s) => s.trim())
-  .filter(Boolean);
-const defaultOrigins = [
-  'http://localhost:5173',
-  'http://localhost:5174',
-  'http://localhost:3000',
-  'https://teklifbul.web.app',
-  'https://teklifbul.firebaseapp.com'
-];
-const finalOrigins = allowedOrigins.length > 0 ? allowedOrigins : defaultOrigins;
+const finalOrigins = resolveAllowedOrigins();
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin) return callback(null, true); // same-origin / curl
-    if (finalOrigins.includes(origin)) return callback(null, true);
-    logger.warn('CORS blocked origin', { origin });
-    return callback(new Error('Not allowed by CORS'));
+    if (origin && !finalOrigins.includes(origin)) {
+      logger.warn('CORS blocked origin', { origin });
+    }
+    return corsOriginDelegate(finalOrigins)(origin, callback);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
@@ -111,15 +101,16 @@ if (process.env.NODE_ENV !== 'production' && process.env.ENABLE_ESCROW_DEMO === 
 }
 app.use("/api/import", verifyToken, requirePremium, importRouter);
 app.use("/api/offers", verifyToken, offersRouter);
-app.use("/api/customers", verifyToken, customersRouter);
-app.use("/api/sales", verifyToken, salesRouter);
-app.use("/api/invoices", verifyToken, invoicesRouter);
-app.use("/api/delivery-notes", verifyToken, deliveryNotesRouter);
-app.use("/api/incoming-docs", verifyToken, incomingDocsRouter);
+app.use("/api/customers", verifyToken, requirePremium, customersRouter);
+app.use("/api/sales", verifyToken, requirePremium, salesRouter);
+app.use("/api/invoices", verifyToken, requirePremium, invoicesRouter);
+app.use("/api/delivery-notes", verifyToken, requirePremium, deliveryNotesRouter);
+app.use("/api/incoming-docs", verifyToken, requirePremium, incomingDocsRouter);
+app.use("/api/stock-movements", verifyToken, stockMovementsRouter);
 app.use("/api/efatura", verifyToken, efaturaRouter);
 app.use("/api/categories", categoriesRouter);
 app.use("/api/tax-offices", taxOfficesRouter);
-app.use("/api/template", verifyToken, requirePremium, templateRouter);
+  app.use("/api/template", verifyToken, templateRouter);
 app.use("/api/supplier-memory", verifyToken, requirePremium, supplierMemoryRouter);
 app.use("/api/ai", verifyToken, requirePremium, aiAssistantRouter);
 
@@ -134,9 +125,17 @@ app.use('/api/migration-history', verifyToken, requirePremium, migrationHistoryR
 // Migration Export (admin-only, rate limited)
 app.use('/api/migrations', exportLimiter, verifyToken, requireAdmin, migrationExportRouter);
 
+// Teklifbul Rule v1.0 - Sadece doğrudan çalıştırıldığında listen (Functions import'ta port açma)
 const PORT = process.env.API_PORT ? Number(process.env.API_PORT) : 5174;
-app.listen(PORT, () => {
-  logger.info(`API listening on http://localhost:${PORT}`);
-});
+const isFirebaseManaged =
+  Boolean(process.env.K_SERVICE) ||
+  Boolean(process.env.FUNCTION_TARGET) ||
+  Boolean(process.env.FIREBASE_CONFIG);
+
+if (!isFirebaseManaged) {
+  app.listen(PORT, () => {
+    logger.info(`API listening on http://localhost:${PORT}`);
+  });
+}
 
 

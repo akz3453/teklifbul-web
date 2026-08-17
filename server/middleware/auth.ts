@@ -123,10 +123,6 @@ export async function verifyToken(
         const data = userDoc.data() || {};
         mergedUser = {
           ...baseUser,
-          isAdmin: typeof data.isAdmin === 'boolean' ? data.isAdmin : baseUser.isAdmin,
-          role: typeof data.role === 'string' ? data.role : baseUser.role,
-          isPremium: typeof data.isPremium === 'boolean' ? data.isPremium : baseUser.isPremium,
-          plan: typeof data.plan === 'string' ? data.plan : baseUser.plan,
           companyName: (data.companyName as string | undefined) ?? undefined,
           activeCompanyId: (data.activeCompanyId as string | undefined) ?? undefined,
           roles: Array.isArray(data.roles) ? data.roles : undefined
@@ -183,26 +179,7 @@ export async function verifyToken(
  * Kullanıcının admin/ops olup olmadığını kontrol eder
  */
 export async function isAdmin(user: AuthUser | undefined | null): Promise<boolean> {
-  if (isAdminUser(user)) return true;
-
-  // Opsiyonel Firestore fallback (mevcut davranışı korumak için)
-  if (!user?.uid) return false;
-  try {
-    const db = admin.firestore();
-    const userDoc = await db.collection('users').doc(user.uid).get();
-    if (userDoc.exists) {
-      const userData = userDoc.data();
-      return isAdminUser({
-        ...user,
-        isAdmin: userData?.isAdmin ?? user?.isAdmin,
-        role: (userData as any)?.role ?? user?.role,
-        email: (userData as any)?.email ?? user?.email
-      });
-    }
-  } catch (firestoreError) {
-    logger.warn('Firestore admin check failed', firestoreError);
-  }
-  return false;
+  return isAdminUser(user);
 }
 
 /**
@@ -248,10 +225,6 @@ export async function optionalVerifyToken(
         const data = userDoc.data() || {};
         mergedUser = {
           ...baseUser,
-          isAdmin: typeof data.isAdmin === 'boolean' ? data.isAdmin : baseUser.isAdmin,
-          role: typeof data.role === 'string' ? data.role : baseUser.role,
-          isPremium: typeof data.isPremium === 'boolean' ? data.isPremium : baseUser.isPremium,
-          plan: typeof data.plan === 'string' ? data.plan : baseUser.plan,
           companyName: (data.companyName as string | undefined) ?? undefined,
           activeCompanyId: (data.activeCompanyId as string | undefined) ?? undefined,
           roles: Array.isArray(data.roles) ? data.roles : undefined

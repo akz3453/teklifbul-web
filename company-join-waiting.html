@@ -215,7 +215,6 @@
     // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
     import { MESSAGES } from './src/shared/constants/messages.js';
     import { doc, getDoc, onSnapshot, deleteDoc, query, collection, where, getDocs } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
-    import { signOut } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
     import { registerListener, cleanupAllListeners } from "./assets/js/firebase/listener-manager.js";
     import { resolveCompanyContext } from "./assets/js/state/company-context.js";
     
@@ -231,8 +230,7 @@
       // Çıkış butonu - Teklifbul Rule v1.0
       async function handleLogout() {
         try {
-          await signOut(auth);
-          // Çıkış yapıldıktan sonra ana sayfaya yönlendir (fromWaiting parametresi ile)
+          await logout();
           location.href = './index.html?fromWaiting=true';
         } catch (e) {
           logger.error('Çıkış hatası', e);

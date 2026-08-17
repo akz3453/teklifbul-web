@@ -5,6 +5,7 @@ import { toast } from '../../src/shared/ui/toast.js';
 import { initDashboardExcelImport } from './dashboard-excel-utils.js';
 import { hasPremiumAccess } from './auth/userHelpers.js';
 import { getCompanyPlan, isPremium as isPremiumPlan } from './state/company-plan.js';
+import { resolveSharedCompanyId } from './utils/api-helpers.js';
 
 const ALL_SHORTCUTS = [
   { id: 'excel-import', icon: '📄', title: 'Excel\'den Talep Oluştur', desc: 'Excel içeri aktar; form açıldığında alanlar dolu gelsin.', url: '#', isSpecial: 'excel-import' },
@@ -25,7 +26,7 @@ const ALL_SHORTCUTS = [
   { id: 'incoming-bids', icon: '📨', title: 'Gelen Teklifler', desc: 'Taleplerime gelen yanıtlar.', url: './bids.html?tab=incoming' },
   { id: 'settings', icon: '⚙️', title: 'Ayarlar', desc: 'Profil ve şirket ayarları.', url: './settings.html' },
   { id: 'my-offers', icon: '📤', title: 'Tekliflerim', desc: 'Girdiğim teklifleri yönet.', url: './bids.html?tab=outgoing' },
-  { id: 'notifications', icon: '🔔', title: 'Bildirimler', desc: 'Gelen tüm bildirimleri gör.', url: './notifications.html' }
+  { id: 'notifications', icon: '🔔', title: 'Bildirimler', desc: 'Gelen tüm bildirimleri gör.', url: './pages/notifications.html' }
 ];
 
 const DEFAULT_SHORTCUT_IDS = [
@@ -38,15 +39,6 @@ let userRoles = [];
 let isAdmin = false;
 
 let isPremium = false;
-
-function resolveSharedCompanyId(userData) {
-  const cid = userData?.companyId;
-  const aid = userData?.activeCompanyId;
-  const arr0 = Array.isArray(userData?.companies) && userData.companies.length ? userData.companies[0] : null;
-  if (cid && typeof cid === 'string' && !cid.startsWith('solo-') && !cid.startsWith('tax-')) return cid;
-  if (aid && typeof aid === 'string' && aid.startsWith('solo-') && cid) return cid;
-  return aid || cid || arr0 || null;
-}
 
 function ensurePremiumDefaults() {
   if (!isPremium) return;
@@ -76,8 +68,17 @@ async function initShortcuts() {
     userRoles = userData.roles || [];
     
     // Admin check logic similar to dashboard.html
-    const adminEmailList = (window.ADMIN_EMAILS || 'akyildizfaruk@gmail.com').split(',').map(e => e.trim().toLowerCase());
-    isAdmin = userData.isAdmin || userRoles.includes('admin') || (user.email && adminEmailList.includes(user.email.toLowerCase()));
+    const adminEmailList = `${window.ADMIN_EMAILS || ''}`.split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
+    // Hardcoded default e-posta yok — ADMIN_EMAILS / custom claim ile admin olunur
+    let claimAdmin = false;
+    try {
+      const tokenResult = await user.getIdTokenResult();
+      const claims = tokenResult?.claims || {};
+      claimAdmin = claims.superAdmin === true || claims.admin === true || claims.isAdmin === true || claims.role === 'admin';
+    } catch (claimError) {
+      logger.warn('Admin claim bilgisi alınamadı', claimError);
+    }
+    isAdmin = claimAdmin || (user.email && adminEmailList.includes(user.email.toLowerCase()));
 
     // Get premium info (company plan first, then profile/user fallback)
     isPremium = isAdmin;

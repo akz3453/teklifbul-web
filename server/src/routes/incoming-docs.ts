@@ -11,6 +11,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { weightedAvgCost } from './../services/stockService.js';
 import { logAuditEvent } from '../services/auditService.js';
 import { requirePermission } from '../../middleware/requirePermission.js';
+import { userBelongsToCompanyAsync } from '../../utils/companyAccess.js';
 
 const router = express.Router();
 
@@ -49,7 +50,7 @@ router.post('/:id/process-to-stock', requirePermission('stock.movements.in'), as
     // Sirket sahipligi (ek dogrulama; requirePermission da companyId/aktif sirket esleSir).
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    if (!userData || (userData.companyId !== companyId && userData.activeCompanyId !== companyId)) {
+    if (!userData || !(await userBelongsToCompanyAsync(userData, companyId, userId))) {
       return res.status(403).json({ ok: false, error: 'Yetkisiz erisim' });
     }
 

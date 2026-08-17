@@ -7,11 +7,96 @@
 
 import { auth, db, requireAuth } from '../../../firebase.js';
 import { logger } from '../../../src/shared/log/logger.js';
+import { toast } from '../../../src/shared/ui/toast.js';
+import { MESSAGES } from '../../../src/shared/constants/messages.js';
+import { AUTH_FETCH_TIMEOUT_MS, COMPANY_ID_CACHE_TTL_MS } from '../../../src/shared/constants/timing.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+
+const LOGIN_PATH = '/login.html';
+
+let companyIdHeaderCache = {
+  uid: null,
+  companyId: null,
+  at: 0,
+};
+
+export function clearCompanyIdHeaderCache() {
+  companyIdHeaderCache = { uid: null, companyId: null, at: 0 };
+}
+
+function createTimeoutController(timeoutMs, externalSignal) {
+  const controller = new AbortController();
+  const timerId = setTimeout(() => controller.abort(), timeoutMs);
+  const onExternalAbort = () => controller.abort();
+  if (externalSignal) {
+    if (externalSignal.aborted) {
+      controller.abort();
+    } else {
+      externalSignal.addEventListener('abort', onExternalAbort, { once: true });
+    }
+  }
+  return {
+    signal: controller.signal,
+    cleanup: () => {
+      clearTimeout(timerId);
+      if (externalSignal) {
+        externalSignal.removeEventListener('abort', onExternalAbort);
+      }
+    },
+  };
+}
+
+function isLoginPage() {
+  try {
+    const path = String(window.location?.pathname || '').toLowerCase();
+    return path === LOGIN_PATH || path.endsWith('/login.html') || path === '/login';
+  } catch {
+    return false;
+  }
+}
 
 // MFA veya başka patch'lerden önce gerçek fetch'i sakla (tüm authFetch çağrıları)
 if (typeof window !== 'undefined' && !window.__TEKLIFBUL_NATIVE_FETCH__) {
   window.__TEKLIFBUL_NATIVE_FETCH__ = window.fetch.bind(window);
+}
+
+/**
+ * Teklifbul Rule v1.0 - Production'da same-origin, local'de API portu.
+ * Build'e yanlışlıkla localhost gömüldüyse canlı host'ta yok sayılır.
+ * @returns {string}
+ */
+export function resolveApiBaseUrl() {
+  const host = typeof window !== 'undefined' ? window.location.hostname : '';
+  const isLocal = host === 'localhost' || host === '127.0.0.1';
+  const fromEnv =
+    (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL) ||
+    (typeof window !== 'undefined' && window.VITE_API_URL) ||
+    '';
+  const cleaned = String(fromEnv || '').trim().replace(/\/$/, '');
+
+  if (isLocal) {
+    if (cleaned && !cleaned.includes('localhost') && !cleaned.includes('127.0.0.1')) {
+      return cleaned;
+    }
+    return cleaned || 'http://localhost:5174';
+  }
+
+  if (cleaned && !cleaned.includes('localhost') && !cleaned.includes('127.0.0.1')) {
+    return cleaned;
+  }
+  return '';
+}
+
+function pickCompanyIdValue(value) {
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return trimmed !== '' ? trimmed : null;
+  }
+  if (value && typeof value === 'object' && typeof value.id === 'string') {
+    const trimmed = value.id.trim();
+    return trimmed !== '' ? trimmed : null;
+  }
+  return null;
 }
 
 /**
@@ -22,14 +107,20 @@ if (typeof window !== 'undefined' && !window.__TEKLIFBUL_NATIVE_FETCH__) {
  */
 export function resolveSharedCompanyId(userData) {
   if (!userData) return null;
-  // Teklifbul Rule v1.x - Tüm geçerli companyId yapılarını (tax-, solo-, vb.) kabul eder.
-  // Öncelik sırası: activeCompanyId > companyId > ilk şirket
-  const companyId = userData.activeCompanyId || userData.companyId || (Array.isArray(userData.companies) && userData.companies.length ? userData.companies[0] : null);
-  
-  if (companyId && typeof companyId === 'string' && companyId.trim() !== '') {
-    return companyId;
-  }
-  return null;
+  // Teklifbul Rule v1.x — tax- gerçek şirkettir; yalnız solo- kişisel bağlam atlanır.
+  // Öncelik: activeCompanyId > companyId > defaultCompanyId > companies[]
+  const fromCompanies = Array.isArray(userData.companies)
+    ? userData.companies.map(pickCompanyIdValue).filter(Boolean)
+    : [];
+  const candidates = [
+    pickCompanyIdValue(userData.activeCompanyId),
+    pickCompanyIdValue(userData.companyId),
+    pickCompanyIdValue(userData.defaultCompanyId),
+    ...fromCompanies,
+  ].filter(Boolean);
+
+  const sharedId = candidates.find((id) => !id.startsWith('solo-'));
+  return sharedId || candidates[0] || null;
 }
 
 /**
@@ -51,25 +142,34 @@ export async function authFetch(url, options = {}) {
 
     // Token al
     let token;
-    try {
-      token = await user.getIdToken();
-      if (!token) {
-        logger.error('authFetch: Token alınamadı (null/undefined)', {
+    let tokenRefreshAttempted = false;
+
+    async function obtainToken(forceRefresh = false) {
+      try {
+        const resultToken = await user.getIdToken(forceRefresh);
+        if (!resultToken) {
+          logger.error('authFetch: Token alınamadı (null/undefined)', {
+            url,
+            userId: user.uid,
+            email: user.email,
+            forceRefresh
+          });
+          throw new Error('Token alınamadı');
+        }
+        return resultToken;
+      } catch (tokenError) {
+        logger.error('authFetch: Token alma hatası', {
+          error: tokenError,
           url,
           userId: user.uid,
-          email: user.email
+          email: user.email,
+          forceRefresh
         });
-        throw new Error('Token alınamadı');
+        throw new Error(`Token alınamadı: ${tokenError.message}`);
       }
-    } catch (tokenError) {
-      logger.error('authFetch: Token alma hatası', {
-        error: tokenError,
-        url,
-        userId: user.uid,
-        email: user.email
-      });
-      throw new Error(`Token alınamadı: ${tokenError.message}`);
     }
+
+    token = await obtainToken();
 
     // Headers hazırla
     const { headers, ...rest } = options;
@@ -90,36 +190,45 @@ export async function authFetch(url, options = {}) {
       }
     }
 
-    // Teklifbul Rule v1.0 - x-company-id header'ı ekle
+    // Teklifbul Rule v1.0 - x-company-id header'ı ekle (kısa TTL cache)
     try {
-      const userDoc = await getDoc(doc(db, 'users', user.uid));
-      if (userDoc.exists()) {
-        const userData = userDoc.data() || {};
-        const companyId = resolveSharedCompanyId(userData);
-
-        if (companyId) {
-          finalHeaders.set('x-company-id', companyId);
-          // Sadece development'ta logla (production'da görünmez)
-          if (import.meta.env.DEV || import.meta.env.MODE === 'development') {
-            logger.debug('x-company-id header eklendi', { companyId: companyId.substring(0, 8) + '...', url });
-          }
-        } else {
-          // Dev-only warning (production'da log basma)
-          if (import.meta.env.DEV || import.meta.env.MODE === 'development') {
-            logger.debug('x-company-id header eklenemedi', {
-              url,
-              hasCompanyId: !!companyId,
-              companyIdType: companyId ? (companyId.startsWith('solo-') ? 'solo' : companyId.startsWith('tax-') ? 'tax' : 'regular') : 'none'
-            });
-          }
+      const now = Date.now();
+      let companyId = null;
+      if (
+        companyIdHeaderCache.uid === user.uid &&
+        companyIdHeaderCache.companyId &&
+        (now - companyIdHeaderCache.at) < COMPANY_ID_CACHE_TTL_MS
+      ) {
+        companyId = companyIdHeaderCache.companyId;
+      } else {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data() || {};
+          companyId = resolveSharedCompanyId(userData);
+          companyIdHeaderCache = {
+            uid: user.uid,
+            companyId: companyId || null,
+            at: now,
+          };
         }
       }
+
+      if (companyId) {
+        finalHeaders.set('x-company-id', companyId);
+        if (import.meta.env.DEV || import.meta.env.MODE === 'development') {
+          logger.debug('x-company-id header eklendi', { companyId: companyId.substring(0, 8) + '...', url });
+        }
+      } else if (import.meta.env.DEV || import.meta.env.MODE === 'development') {
+        logger.debug('x-company-id header eklenemedi', {
+          url,
+          hasCompanyId: !!companyId,
+          companyIdType: 'none',
+        });
+      }
     } catch (companyIdError) {
-      // CompanyId çözümleme hatası - dev-only warning
       if (import.meta.env.DEV || import.meta.env.MODE === 'development') {
         logger.debug('x-company-id header eklenirken hata', { error: companyIdError.message, url });
       }
-      // Hata olsa bile isteği devam ettir (companyId opsiyonel)
     }
 
     // Content-Type header (FormData için browser otomatik ekler)
@@ -183,8 +292,35 @@ export async function authFetch(url, options = {}) {
         : fetch.bind(window);
 
     let response;
+    const timeoutCtl = createTimeoutController(AUTH_FETCH_TIMEOUT_MS, rest.signal);
+    const fetchOptions = { ...rest, headers: finalHeaders, signal: timeoutCtl.signal };
     try {
-      response = await doFetch(finalUrl, { ...rest, headers: finalHeaders });
+      response = await doFetch(finalUrl, fetchOptions);
+
+      if (response.status === 401 && !tokenRefreshAttempted) {
+        tokenRefreshAttempted = true;
+        logger.warn('authFetch: 401 yanıtı alındı, token yenileniyor ve istek tekrar deneniyor', {
+          url: finalUrl
+        });
+        token = await obtainToken(true);
+        finalHeaders.set('Authorization', `Bearer ${token}`);
+        response = await doFetch(finalUrl, { ...fetchOptions, headers: finalHeaders });
+      }
+
+      if (response.status === 401) {
+        logger.warn('authFetch: kalıcı 401, oturum kapatılıyor', { url: finalUrl });
+        if (!isLoginPage()) {
+          toast.error(MESSAGES.ERROR_SESSION_EXPIRED);
+          try {
+            const { logout } = await import('../../../firebase.js');
+            await logout();
+          } catch (logoutErr) {
+            logger.warn('authFetch: 401 sonrası logout başarısız', logoutErr);
+          }
+          window.location.replace(LOGIN_PATH);
+        }
+        throw Object.assign(new Error(MESSAGES.ERROR_SESSION_EXPIRED), { name: 'SessionExpiredError' });
+      }
 
       // Teklifbul Rule v2.2 - 402 INSUFFICIENT_TOKENS handler
       // Teklifbul Rule v2.7.2 - 402 DAILY_CAP_REACHED handler
@@ -291,16 +427,28 @@ export async function authFetch(url, options = {}) {
         }
       }
     } catch (fetchError) {
+      if (fetchError?.name === 'SessionExpiredError') {
+        throw fetchError;
+      }
+      if (fetchError?.name === 'AbortError') {
+        logger.error('authFetch: İstek zaman aşımı', { url: finalUrl });
+        throw new Error(MESSAGES.ERROR_NETWORK);
+      }
       logger.error('authFetch: Fetch hatası', {
         error: fetchError,
         url: finalUrl,
         message: fetchError.message
       });
       throw fetchError;
+    } finally {
+      timeoutCtl.cleanup();
     }
 
     return response;
   } catch (error) {
+    if (error?.name === 'SessionExpiredError') {
+      throw error;
+    }
     logger.error('authFetch hatası', {
       error: error,
       message: error.message,

@@ -108,6 +108,7 @@
     import { logger } from './src/shared/log/logger.js';
     import { toast } from './src/shared/ui/toast.js';
     import { MESSAGES } from './src/shared/constants/messages.js';
+    import { initAuthGuard } from './assets/js/auth-guard.js';
     import { initGlobalHeader } from './assets/js/ui/header.js';
     import { requireCompanyContext } from './assets/js/state/company-context.js';
     import { initPermissions, can, requireExistingPerm } from './assets/js/state/permissions.js';
@@ -128,6 +129,7 @@
     (async () => {
       try {
         logger.group('Ödeme Talep Sayfası Yükleme');
+        await initAuthGuard();
         
         // Auth & Company Context - Header'dan önce yükle
         const user = await waitAuthReady();

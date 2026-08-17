@@ -1,7 +1,7 @@
 // Teklifbul Rule v1.0 - Hakediş Yönetim Sistemi
 import { Router } from 'express';
 import { verifyToken, type AuthenticatedRequest } from '../middleware/auth.js';
-import { requireAiAccess } from '../middleware/requireAiAccess.js';
+import { requirePremiumPlus } from '../middleware/requirePremiumPlus.js';
 import { logger } from '../../src/shared/log/logger.js';
 import { getAdminDb } from '../utils/firestore.js';
 import { FieldValue } from 'firebase-admin/firestore';
@@ -15,10 +15,110 @@ import { getUserPlan } from '../services/userService.js';
 import multer from 'multer';
 import { getAdminStorage, uploadFile, deleteFile } from '../utils/storage.js';
 // Teklifbul Rule v1.0 - Input Validation
-import { validateRequest, commonSchemas } from '../utils/input-validation.js';
+import { getCompanyIdFromRequest } from '../src/services/permissionService.js';
+import { validateRequest } from '../utils/input-validation.js';
 import { z } from 'zod';
 
 const router = Router();
+
+/** UI date (YYYY-MM-DD) veya ISO datetime → ISO string */
+function normalizeDateInput(val: string, endOfDay = false): string {
+  const v = String(val || '').trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
+    return endOfDay ? `${v}T23:59:59.999Z` : `${v}T00:00:00.000Z`;
+  }
+  const d = new Date(v);
+  if (Number.isNaN(d.getTime())) {
+    throw new Error('Geçersiz tarih formatı');
+  }
+  return d.toISOString();
+}
+
+const dateOrDateTimeSchema = z.string().min(1).transform((val, ctx) => {
+  try {
+    return normalizeDateInput(val, false);
+  } catch {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Geçersiz tarih formatı' });
+    return z.NEVER;
+  }
+});
+
+const dateOrDateTimeEndSchema = z.string().min(1).transform((val, ctx) => {
+  try {
+    return normalizeDateInput(val, true);
+  } catch {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Geçersiz tarih formatı' });
+    return z.NEVER;
+  }
+});
+
+/** UI `sent` (muhasebeye gönderildi); `paid` geriye dönük uyumluluk */
+const interimStatusSchema = z.enum([
+  'draft',
+  'pending',
+  'approved',
+  'rejected',
+  'sent',
+  'paid',
+  'cancelled',
+]);
+
+// Teklifbul Rule v1.0 — status burada YOK; onay/red/gönder ayrı route'larda
+const INTERIM_UPDATE_ALLOWLIST = [
+  'siteId',
+  'contractId',
+  'periodStart',
+  'periodEnd',
+  'items',
+  'costs',
+  'deductions',
+  'summary',
+  'previousTotal',
+  'contractValue',
+  'siteName',
+  'contractName',
+] as const;
+
+async function enrichPaymentsWithNames(db: any, payments: any[]): Promise<any[]> {
+  if (!payments.length) return payments;
+
+  const siteIds = [...new Set(payments.map((p) => p.siteId).filter(Boolean))];
+  const contractIds = [...new Set(payments.map((p) => p.contractId).filter(Boolean))];
+
+  const siteNameById = new Map<string, string>();
+  const contractNameById = new Map<string, string>();
+
+  await Promise.all([
+    ...siteIds.map(async (id) => {
+      try {
+        const snap = await db.collection('stock_locations').doc(id).get();
+        if (snap.exists) {
+          const d = snap.data() || {};
+          siteNameById.set(id, d.title || d.siteName || d.name || id);
+        }
+      } catch {
+        /* ignore */
+      }
+    }),
+    ...contractIds.map(async (id) => {
+      try {
+        const snap = await db.collection('contracts').doc(id).get();
+        if (snap.exists) {
+          const d = snap.data() || {};
+          contractNameById.set(id, d.contractName || d.name || d.contractNo || id);
+        }
+      } catch {
+        /* ignore */
+      }
+    }),
+  ]);
+
+  return payments.map((p) => ({
+    ...p,
+    siteName: p.siteName || siteNameById.get(p.siteId) || p.siteId || '-',
+    contractName: p.contractName || contractNameById.get(p.contractId) || p.contractId || '-',
+  }));
+}
 
 // Multer upload middleware - Teklifbul Rule v1.0 - Dosya yükleme için
 const upload = multer({ 
@@ -43,20 +143,22 @@ const upload = multer({
 
 // Tüm route'lar Premium Plus gerektirir
 router.use(verifyToken);
-router.use(requireAiAccess);
+router.use(requirePremiumPlus);
 
 // Teklifbul Rule v1.0 - Input Validation Schema
 const listQuerySchema = z.object({
   siteId: z.string().min(1).optional(),
   contractId: z.string().min(1).optional(),
-  status: z.enum(['draft', 'pending', 'approved', 'rejected', 'paid', 'cancelled']).optional(),
-  periodStart: z.string().datetime().optional(),
-  periodEnd: z.string().datetime().optional(),
+  status: interimStatusSchema.optional(),
+  periodStart: dateOrDateTimeSchema.optional(),
+  periodEnd: dateOrDateTimeEndSchema.optional(),
   paymentNumber: z.string().min(1).optional(),
   minAmount: z.coerce.number().min(0).optional(),
   maxAmount: z.coerce.number().min(0).optional(),
   siteIds: z.string().optional(), // Comma-separated
   contractIds: z.string().optional(), // Comma-separated
+  limit: z.coerce.number().int().min(1).max(100).optional().default(50),
+  offset: z.coerce.number().int().min(0).optional().default(0),
 });
 
 /**
@@ -84,7 +186,7 @@ router.get('/',
     }
 
     const userData = userDoc.data();
-    const companyId = userData?.companyId || userData?.activeCompanyId;
+    const companyId = await getCompanyIdFromRequest(req);
     if (!companyId) {
       return res.status(400).json({ error: 'NO_COMPANY', message: 'Şirket bilgisi bulunamadı' });
     }
@@ -101,6 +203,8 @@ router.get('/',
       maxAmount, // Maximum tutar
       siteIds, // Birden fazla şantiye (comma-separated)
       contractIds, // Birden fazla sözleşme (comma-separated)
+      limit = 50,
+      offset = 0,
     } = req.query;
 
     let query: any = db.collection('interim_payments')
@@ -185,17 +289,49 @@ router.get('/',
     }
     
     // Client-side tarih filtresi (Firestore index gerektirmemek için)
+    // Önceki filtrelerin üzerine yazmamak için filteredPayments üzerinden zincirle
     if (periodStart || periodEnd) {
-      filteredPayments = payments.filter((p: any) => {
-        if (periodStart && p.periodStart < periodStart) return false;
-        if (periodEnd && p.periodEnd > periodEnd) return false;
-        return true;
+      filteredPayments = filteredPayments.filter((p: any) => {
+        try {
+          const pStart = p.periodStart
+            ? normalizeDateInput(
+                String(p.periodStart).includes('T')
+                  ? String(p.periodStart)
+                  : String(p.periodStart).slice(0, 10),
+                false
+              )
+            : null;
+          const pEnd = p.periodEnd
+            ? normalizeDateInput(
+                String(p.periodEnd).includes('T')
+                  ? String(p.periodEnd)
+                  : String(p.periodEnd).slice(0, 10),
+                true
+              )
+            : null;
+          if (periodStart && pStart && pStart < String(periodStart)) return false;
+          if (periodEnd && pEnd && pEnd > String(periodEnd)) return false;
+          return true;
+        } catch {
+          return true;
+        }
       });
     }
 
-    logger.info('Hakedişler listelendi', { count: filteredPayments.length });
+    const total = filteredPayments.length;
+    const pageLimit = Number(limit) || 50;
+    const pageOffset = Number(offset) || 0;
+    const pageItems = filteredPayments.slice(pageOffset, pageOffset + pageLimit);
+    const enriched = await enrichPaymentsWithNames(db, pageItems);
+
+    logger.info('Hakedişler listelendi', { count: enriched.length, total, limit: pageLimit, offset: pageOffset });
     logger.end();
-    return res.json({ payments: filteredPayments });
+    return res.json({
+      payments: enriched,
+      total,
+      limit: pageLimit,
+      offset: pageOffset,
+    });
   } catch (error: any) {
     logger.error('Hakediş listesi hatası', error);
     logger.end();
@@ -275,11 +411,8 @@ router.get('/suggestions',
     }
 
     const userData = userDoc.data() as any;
-    const queryCompanyIdRaw = Array.isArray(req.query.companyId)
-      ? req.query.companyId[0]
-      : (req.query.companyId as string | undefined);
-
-    companyId = (queryCompanyIdRaw && String(queryCompanyIdRaw).trim()) || userData?.companyId || userData?.activeCompanyId;
+    // Güvenlik: query companyId'ye güvenme — her zaman kullanıcının şirketi
+    companyId = await getCompanyIdFromRequest(req);
 
     if (!companyId) {
       logger.error('interim-payments:suggestions - companyId missing', {
@@ -318,7 +451,7 @@ router.get('/suggestions',
 
     // Her şantiye için kontrol et
     for (const site of sites) {
-      if (!site.isActive) continue;
+      if (site.isActive === false) continue;
 
       // Bu şantiye için son hakedişi bul
       const lastPaymentSnapshot = await db.collection('interim_payments')
@@ -491,8 +624,11 @@ router.get('/:id',
     // Şirket kontrolü
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    const companyId = userData?.companyId || userData?.activeCompanyId;
-    
+    const companyId = await getCompanyIdFromRequest(req);
+    if (!companyId) {
+      return res.status(403).json({ error: 'NO_COMPANY', message: 'Şirket bilgisi bulunamadı' });
+    }
+
     if (data?.companyId !== companyId) {
       return res.status(403).json({ error: 'FORBIDDEN', message: 'Bu hakedişe erişim yetkiniz yok' });
     }
@@ -516,15 +652,17 @@ router.get('/:id',
 const createBodySchema = z.object({
   siteId: z.string().min(1),
   contractId: z.string().min(1),
-  periodStart: z.string().datetime(),
-  periodEnd: z.string().datetime(),
-  status: z.enum(['draft', 'pending', 'approved', 'rejected', 'paid', 'cancelled']).optional().default('draft'),
+  periodStart: dateOrDateTimeSchema,
+  periodEnd: dateOrDateTimeEndSchema,
+  status: interimStatusSchema.optional().default('draft'),
   items: z.array(z.any()).optional().default([]),
   costs: z.array(z.any()).optional().default([]),
   deductions: z.record(z.any()).optional().default({}),
   summary: z.record(z.any()).optional().default({}),
   previousTotal: z.coerce.number().min(0).optional().default(0),
   contractValue: z.coerce.number().min(0).optional().default(0),
+  siteName: z.string().optional(),
+  contractName: z.string().optional(),
 });
 
 /**
@@ -552,7 +690,7 @@ router.post('/',
     }
 
     const userData = userDoc.data();
-    const companyId = userData?.companyId || userData?.activeCompanyId;
+    const companyId = await getCompanyIdFromRequest(req);
     if (!companyId) {
       return res.status(400).json({ error: 'NO_COMPANY', message: 'Şirket bilgisi bulunamadı' });
     }
@@ -569,11 +707,35 @@ router.post('/',
       summary = {},
       previousTotal = 0,
       contractValue = 0,
+      siteName: bodySiteName,
+      contractName: bodyContractName,
     } = req.body;
 
     // Validasyon
     if (!siteId || !contractId || !periodStart || !periodEnd) {
       return res.status(400).json({ error: 'VALIDATION_ERROR', message: 'Gerekli alanlar eksik' });
+    }
+
+    // Şantiye / sözleşme adlarını kaydet (liste zenginleştirme için)
+    let siteName = typeof bodySiteName === 'string' ? bodySiteName.trim() : '';
+    let contractName = typeof bodyContractName === 'string' ? bodyContractName.trim() : '';
+    try {
+      if (!siteName) {
+        const siteDoc = await db.collection('stock_locations').doc(siteId).get();
+        if (siteDoc.exists) {
+          const d = siteDoc.data() || {};
+          siteName = d.title || d.siteName || d.name || '';
+        }
+      }
+      if (!contractName) {
+        const contractDoc = await db.collection('contracts').doc(contractId).get();
+        if (contractDoc.exists) {
+          const d = contractDoc.data() || {};
+          contractName = d.contractName || d.name || d.contractNo || '';
+        }
+      }
+    } catch (nameErr: any) {
+      logger.warn('Hakediş oluşturma: isim zenginleştirme atlandı', { message: nameErr?.message });
     }
 
     // Hakediş numarası oluştur (YYYY-MM-XXX formatında)
@@ -598,6 +760,8 @@ router.post('/',
       companyId,
       siteId,
       contractId,
+      siteName: siteName || null,
+      contractName: contractName || null,
       paymentNumber,
       periodStart,
       periodEnd,
@@ -703,8 +867,11 @@ router.put('/:id', async (req: AuthenticatedRequest, res) => {
     // Şirket kontrolü
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    const companyId = userData?.companyId || userData?.activeCompanyId;
-    
+    const companyId = await getCompanyIdFromRequest(req);
+    if (!companyId) {
+      return res.status(403).json({ error: 'NO_COMPANY', message: 'Şirket bilgisi bulunamadı' });
+    }
+
     if (data?.companyId !== companyId) {
       return res.status(403).json({ error: 'FORBIDDEN', message: 'Bu hakedişe erişim yetkiniz yok' });
     }
@@ -713,14 +880,22 @@ router.put('/:id', async (req: AuthenticatedRequest, res) => {
     const changeReason = req.body.changeReason || null;
     await saveVersion(db, id, data, userId, changeReason);
 
-    const updateData = {
-      ...req.body,
+    // Allowlist: companyId / createdBy / paymentNumber client'tan yazılamaz
+    const updateData: Record<string, any> = {
       updatedAt: FieldValue.serverTimestamp(),
       updatedBy: userId,
     };
 
-    // changeReason'ı updateData'dan çıkar (versiyon kaydında kullanıldı, ana veride saklamaya gerek yok)
-    delete updateData.changeReason;
+    for (const key of INTERIM_UPDATE_ALLOWLIST) {
+      if (req.body[key] === undefined) continue;
+      if (key === 'periodStart') {
+        updateData.periodStart = normalizeDateInput(String(req.body.periodStart), false);
+      } else if (key === 'periodEnd') {
+        updateData.periodEnd = normalizeDateInput(String(req.body.periodEnd), true);
+      } else {
+        updateData[key] = req.body[key];
+      }
+    }
 
     await db.collection('interim_payments').doc(id).update(updateData);
 
@@ -763,8 +938,11 @@ router.delete('/:id',
     // Şirket kontrolü
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    const companyId = userData?.companyId || userData?.activeCompanyId;
-    
+    const companyId = await getCompanyIdFromRequest(req);
+    if (!companyId) {
+      return res.status(403).json({ error: 'NO_COMPANY', message: 'Şirket bilgisi bulunamadı' });
+    }
+
     if (data?.companyId !== companyId) {
       return res.status(403).json({ error: 'FORBIDDEN', message: 'Bu hakedişe erişim yetkiniz yok' });
     }
@@ -818,8 +996,11 @@ router.post('/:id/send-approval',
     // Şirket kontrolü
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    const companyId = userData?.companyId || userData?.activeCompanyId;
-    
+    const companyId = await getCompanyIdFromRequest(req);
+    if (!companyId) {
+      return res.status(403).json({ error: 'NO_COMPANY', message: 'Şirket bilgisi bulunamadı' });
+    }
+
     if (paymentData?.companyId !== companyId) {
       return res.status(403).json({ error: 'FORBIDDEN', message: 'Bu hakedişe erişim yetkiniz yok' });
     }
@@ -971,8 +1152,11 @@ router.post('/:id/approve',
     // Şirket kontrolü
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    const companyId = userData?.companyId || userData?.activeCompanyId;
-    
+    const companyId = await getCompanyIdFromRequest(req);
+    if (!companyId) {
+      return res.status(403).json({ error: 'NO_COMPANY', message: 'Şirket bilgisi bulunamadı' });
+    }
+
     if (paymentData?.companyId !== companyId) {
       return res.status(403).json({ error: 'FORBIDDEN', message: 'Bu hakedişe erişim yetkiniz yok' });
     }
@@ -1078,8 +1262,11 @@ router.post('/:id/reject',
     // Şirket kontrolü
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    const companyId = userData?.companyId || userData?.activeCompanyId;
-    
+    const companyId = await getCompanyIdFromRequest(req);
+    if (!companyId) {
+      return res.status(403).json({ error: 'NO_COMPANY', message: 'Şirket bilgisi bulunamadı' });
+    }
+
     if (paymentData?.companyId !== companyId) {
       return res.status(403).json({ error: 'FORBIDDEN', message: 'Bu hakedişe erişim yetkiniz yok' });
     }
@@ -1206,8 +1393,11 @@ router.post('/:id/send-to-accountant',
     // Şirket kontrolü
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    const companyId = userData?.companyId || userData?.activeCompanyId;
-    
+    const companyId = await getCompanyIdFromRequest(req);
+    if (!companyId) {
+      return res.status(403).json({ error: 'NO_COMPANY', message: 'Şirket bilgisi bulunamadı' });
+    }
+
     if (paymentData?.companyId !== companyId) {
       return res.status(403).json({ error: 'FORBIDDEN', message: 'Bu hakedişe erişim yetkiniz yok' });
     }
@@ -1284,8 +1474,11 @@ router.get('/:id/approval-history', async (req: AuthenticatedRequest, res) => {
     // Şirket kontrolü
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    const companyId = userData?.companyId || userData?.activeCompanyId;
-    
+    const companyId = await getCompanyIdFromRequest(req);
+    if (!companyId) {
+      return res.status(403).json({ error: 'NO_COMPANY', message: 'Şirket bilgisi bulunamadı' });
+    }
+
     if (paymentData?.companyId !== companyId) {
       return res.status(403).json({ error: 'FORBIDDEN', message: 'Bu hakedişe erişim yetkiniz yok' });
     }
@@ -1373,8 +1566,11 @@ router.get('/:id/export/pdf', async (req: AuthenticatedRequest, res) => {
     // Şirket kontrolü
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    const companyId = userData?.companyId || userData?.activeCompanyId;
-    
+    const companyId = await getCompanyIdFromRequest(req);
+    if (!companyId) {
+      return res.status(403).json({ error: 'NO_COMPANY', message: 'Şirket bilgisi bulunamadı' });
+    }
+
     if (paymentData?.companyId !== companyId) {
       return res.status(403).json({ error: 'FORBIDDEN', message: 'Bu hakedişe erişim yetkiniz yok' });
     }
@@ -1943,8 +2139,11 @@ router.get('/:id/export/excel', async (req: AuthenticatedRequest, res) => {
     // Şirket kontrolü
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    const companyId = userData?.companyId || userData?.activeCompanyId;
-    
+    const companyId = await getCompanyIdFromRequest(req);
+    if (!companyId) {
+      return res.status(403).json({ error: 'NO_COMPANY', message: 'Şirket bilgisi bulunamadı' });
+    }
+
     if (paymentData?.companyId !== companyId) {
       return res.status(403).json({ error: 'FORBIDDEN', message: 'Bu hakedişe erişim yetkiniz yok' });
     }
@@ -2421,8 +2620,11 @@ router.get('/:id/versions', async (req: AuthenticatedRequest, res) => {
     // Şirket kontrolü
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    const companyId = userData?.companyId || userData?.activeCompanyId;
-    
+    const companyId = await getCompanyIdFromRequest(req);
+    if (!companyId) {
+      return res.status(403).json({ error: 'NO_COMPANY', message: 'Şirket bilgisi bulunamadı' });
+    }
+
     if (data?.companyId !== companyId) {
       return res.status(403).json({ error: 'FORBIDDEN', message: 'Bu hakedişe erişim yetkiniz yok' });
     }
@@ -2489,8 +2691,11 @@ router.post('/:id/rollback/:version', async (req: AuthenticatedRequest, res) => 
     // Şirket kontrolü
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    const companyId = userData?.companyId || userData?.activeCompanyId;
-    
+    const companyId = await getCompanyIdFromRequest(req);
+    if (!companyId) {
+      return res.status(403).json({ error: 'NO_COMPANY', message: 'Şirket bilgisi bulunamadı' });
+    }
+
     if (data?.companyId !== companyId) {
       return res.status(403).json({ error: 'FORBIDDEN', message: 'Bu hakedişe erişim yetkiniz yok' });
     }
@@ -2576,8 +2781,11 @@ router.post('/:id/attachments',
     // Şirket kontrolü
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    const companyId = userData?.companyId || userData?.activeCompanyId;
-    
+    const companyId = await getCompanyIdFromRequest(req);
+    if (!companyId) {
+      return res.status(403).json({ error: 'NO_COMPANY', message: 'Şirket bilgisi bulunamadı' });
+    }
+
     if (paymentData?.companyId !== companyId) {
       return res.status(403).json({ error: 'FORBIDDEN', message: 'Bu hakedişe erişim yetkiniz yok' });
     }
@@ -2670,8 +2878,11 @@ router.get('/:id/attachments', async (req: AuthenticatedRequest, res) => {
     // Şirket kontrolü
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    const companyId = userData?.companyId || userData?.activeCompanyId;
-    
+    const companyId = await getCompanyIdFromRequest(req);
+    if (!companyId) {
+      return res.status(403).json({ error: 'NO_COMPANY', message: 'Şirket bilgisi bulunamadı' });
+    }
+
     if (data?.companyId !== companyId) {
       return res.status(403).json({ error: 'FORBIDDEN', message: 'Bu hakedişe erişim yetkiniz yok' });
     }
@@ -2724,8 +2935,11 @@ router.delete('/:id/attachments/:attachmentId',
     // Şirket kontrolü
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    const companyId = userData?.companyId || userData?.activeCompanyId;
-    
+    const companyId = await getCompanyIdFromRequest(req);
+    if (!companyId) {
+      return res.status(403).json({ error: 'NO_COMPANY', message: 'Şirket bilgisi bulunamadı' });
+    }
+
     if (data?.companyId !== companyId) {
       return res.status(403).json({ error: 'FORBIDDEN', message: 'Bu hakedişe erişim yetkiniz yok' });
     }
@@ -2808,8 +3022,11 @@ router.post('/:id/import-metraj',
       return res.status(404).json({ error: 'USER_NOT_FOUND', message: 'Kullanıcı bulunamadı' });
     }
     const userData = userDoc.data();
-    const companyId = userData?.companyId || userData?.activeCompanyId;
-    
+    const companyId = await getCompanyIdFromRequest(req);
+    if (!companyId) {
+      return res.status(403).json({ error: 'NO_COMPANY', message: 'Şirket bilgisi bulunamadı' });
+    }
+
     if (paymentData?.companyId !== companyId) {
       return res.status(403).json({ error: 'FORBIDDEN', message: 'Bu hakedişe erişim yetkiniz yok' });
     }

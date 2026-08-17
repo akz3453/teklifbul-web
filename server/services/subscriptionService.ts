@@ -2,7 +2,7 @@
 import dayjs from 'dayjs';
 import { getAdminDb } from '../utils/firestore.js';
 import { logger } from '../../src/shared/log/logger.js';
-import { getPlanDefinition, type PlanDefinition, type PlanId } from './planCatalog.js';
+import { getPlanDefinition, isPaidPremiumPlanId, type PlanDefinition, type PlanId } from './planCatalog.js';
 
 const SUBSCRIPTIONS_COLLECTION = 'subscriptions';
 const INVOICES_COLLECTION = 'invoices';
@@ -789,7 +789,7 @@ export async function upsertSubscription(payload: SubscriptionUpsertPayload): Pr
     planId: planDefinition.id,
     planName: planDefinition.name,
     billingInterval: data.billingInterval,
-    isPremium: data.status === 'active',
+    isPremium: data.status === 'active' && isPaidPremiumPlanId(planDefinition.id),
     startedAt: startedAt.toISOString(),
     expiresAt: currentPeriodEnd.toISOString(),
     cancelAtPeriodEnd: data.cancelAtPeriodEnd,
@@ -988,13 +988,15 @@ export async function createPaymentIntentRecord(data: Omit<PaymentIntentRecord, 
 
 export async function updatePaymentIntentStatus(id: string, status: PaymentIntentRecord['status']): Promise<void> {
   const db = await getDbOrThrow();
-  await db.collection(PAYMENT_INTENTS_COLLECTION).doc(id).set(
-    {
-      status,
-      updatedAt: new Date()
-    },
-    { merge: true }
-  );
+  const ref = db.collection(PAYMENT_INTENTS_COLLECTION).doc(id);
+  const snap = await ref.get();
+  if (!snap.exists) {
+    throw new Error('payment_intent_not_found');
+  }
+  await ref.update({
+    status,
+    updatedAt: new Date()
+  });
 }
 
 export async function listSubscriptions(options: SubscriptionListOptions = {}): Promise<SubscriptionRecord[]> {

@@ -28,7 +28,8 @@
     html[data-theme="dark"] .pill { background:#111827; color:#ffffff; border:1px solid rgba(255,255,255,0.25); }
     .container { max-width:1200px; margin:0 auto; padding:20px; }
     /* Tab buttons - demands.html stili gibi */
-    .tabs { display:flex; gap:8px; width:max-content; }
+    .tabs { display:flex; gap:8px; width:100%; max-width:100%; }
+    .tab { width:auto; margin:0; }
     /* Açık mod - Teklifbul Rule v1.0 */
     .tab { padding:8px 12px; border:1px solid #e5e7eb; border-radius:8px; background:#ffffff; cursor:pointer; font-weight:600; color:#1f2937; transition:all 0.2s; }
     .tab:hover { background:#2563eb; color:#ffffff; border-color:#2563eb; }
@@ -50,11 +51,12 @@
     select, input { width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; background:#fff; color:#111827; }
     html[data-theme="dark"] select, html[data-theme="dark"] input { background:#111827; border:1px solid rgba(255,255,255,0.25); color:#ffffff; }
     html[data-theme="dark"] select::placeholder, html[data-theme="dark"] input::placeholder { color:rgba(255,255,255,0.6); }
-    /* Table responsive container - scrollbar'ı kaldır */
+    /* Table: taşmayı sayfaya değil karta hapseder */
     .table-responsive { 
       width:100%; 
-      overflow-x:visible !important; 
-      -webkit-overflow-scrolling:auto;
+      max-width:100%;
+      overflow-x:auto; 
+      -webkit-overflow-scrolling:touch;
     }
     
     table { 
@@ -206,13 +208,49 @@
     html[data-theme="dark"] h1, html[data-theme="dark"] h2, html[data-theme="dark"] h3 { color:#ffffff; }
     html[data-theme="dark"] .tb-breadcrumb { color:#ffffff; }
     html[data-theme="dark"] .tb-breadcrumb a { color:#ffffff; }
+
+    @media (max-width: 768px) {
+      .grid {
+        grid-template-columns: 1fr 1fr;
+      }
+      .filters {
+        grid-template-columns: 1fr;
+      }
+      .tabs,
+      .row {
+        flex-wrap: wrap;
+        width: 100%;
+        max-width: 100%;
+      }
+      .tab {
+        width: auto !important;
+        min-width: 0 !important;
+        flex: 1 1 calc(50% - 8px);
+        margin: 0;
+      }
+      .table-responsive {
+        overflow-x: auto !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        max-width: 100%;
+      }
+      td:nth-child(10) {
+        white-space: normal !important;
+      }
+      #pagination-controls {
+        flex-wrap: wrap;
+        gap: 8px;
+        max-width: 100%;
+        margin: 16px 0;
+      }
+    }
   </style>
 </head>
 <body>
   <!-- Common Header -->
   <header id="app-header"></header>
 
-  <div class="container--wide" style="padding:20px 0">
+  <div class="container--wide" style="padding:20px 16px">
     <nav class="tb-breadcrumb">
       <span class="tb-crumb"><span class="ico">🏠</span><a href="./index.html">Ana Sayfa</a></span>
       <span class="tb-sep">›</span>
@@ -227,12 +265,12 @@
         </div>
       </div>
     </div>
-    <div class="row" style="justify-content:flex-start; gap:8px; margin-bottom:12px; flex-wrap:nowrap; align-items:center;">
-      <div class="tabs" role="tablist" style="display:flex; gap:8px; flex-wrap:nowrap; align-items:center;">
-        <button id="tab-incoming" class="tab active" role="tab" aria-controls="view-incoming" style="height:42px; min-width:140px;">Gelen Teklifler</button>
-        <button id="tab-outgoing" class="tab" role="tab" aria-controls="view-outgoing" style="height:42px; min-width:140px;">Gönderdiğim Teklifler</button>
-        <button id="tab-approved" class="tab" role="tab" aria-controls="view-approved" style="height:42px; min-width:140px;">Onaylanan Teklifler</button>
-        <button id="btn-refresh" class="tab" style="height:42px; min-width:140px; background:#10b981; color:#fff; border-color:#10b981;">Yenile</button>
+    <div class="row" style="justify-content:flex-start; gap:8px; margin-bottom:12px; flex-wrap:wrap; align-items:center;">
+      <div class="tabs" role="tablist" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+        <button id="tab-incoming" class="tab active" role="tab" aria-controls="view-incoming" style="height:42px;">Gelen Teklifler</button>
+        <button id="tab-outgoing" class="tab" role="tab" aria-controls="view-outgoing" style="height:42px;">Gönderdiğim Teklifler</button>
+        <button id="tab-approved" class="tab" role="tab" aria-controls="view-approved" style="height:42px;">Onaylanan Teklifler</button>
+        <button id="btn-refresh" class="tab" style="height:42px; background:#10b981; color:#fff; border-color:#10b981;">Yenile</button>
       </div>
     </div>
 
@@ -394,11 +432,14 @@
     import { canViewBids, canEditBids, canCreateBids } from './assets/js/services/approval-guards.js';
     import { requireCompanyContext } from './assets/js/state/company-context.js';
     import { initPermissions, can, getBidPerms } from './assets/js/state/permissions.js';
+    import { setTableEmpty } from '/assets/js/utils/safe-table.js';
     import {
       doc, getDoc, getDocs, collection, query, where, orderBy, limit, startAfter, getCountFromServer
     } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
 
     // Teklifbul Rule v1.0 - Auth guard'ı başlat (oturum yoksa login'e yönlendirir)
+    const BIDS_PAGE_BUILD = '2026-08-04c-approved-dual-query';
+    if (typeof window !== 'undefined') window.__BIDS_PAGE_BUILD = BIDS_PAGE_BUILD;
     initAuthGuard().catch(err => {
       logger.error('Auth guard init failed', err);
     });
@@ -549,17 +590,16 @@
         } else if (BIDS_PAGING.activeTab === 'outgoing') {
           conditions = [where('supplierCompanyId', '==', companyId)];
         } else if (BIDS_PAGING.activeTab === 'approved') {
-          conditions = [
-            where('status', '==', 'accepted'),
-            where('involvedCompanyIds', 'array-contains', companyId)
-          ];
+          // involvedCompanyIds array-contains kurallarla 403 veriyor;
+          // alıcı + satıcı şirket sorgularını birleştir
+          conditions = null;
         }
 
         // --- Global Metrics Sync (One-time fetch for stats) ---
         if (reset && BIDS_PAGING.activeTab === 'incoming') {
           try {
             let companyDemandsSnap;
-            if (companyId && !companyId.startsWith('solo-') && !companyId.startsWith('tax-')) {
+            if (companyId && !companyId.startsWith('solo-')) {
               companyDemandsSnap = await getDocs(query(collection(db, 'demands'), where('creatorCompanyId', '==', companyId), where('isPublished', '==', true), limit(300)));
             } else {
               companyDemandsSnap = await getDocs(query(collection(db, 'demands'), where('createdBy', '==', auth.currentUser.uid), limit(300)));
@@ -670,7 +710,8 @@
           const bidMap = new Map();
           const uid = auth.currentUser?.uid;
 
-          if (companyId && !companyId.startsWith('solo-') && !companyId.startsWith('tax-')) {
+          // tax- şirket ID'leri geçerli Firestore company doc id'leridir; atlama
+          if (companyId && !companyId.startsWith('solo-')) {
             try {
               const byCompanyQ = query(
                 collection(db, 'bids'),
@@ -753,11 +794,102 @@
           rawRows = groupedRows.slice(startIndex, startIndex + BIDS_PAGING.pageSize);
           snapDocs = [];
           BIDS_PAGING.lastVisible = null;
+        } else if (BIDS_PAGING.activeTab === 'approved') {
+          // Teklifbul Rule v1.0 — involvedCompanyIds array-contains kurallarla 403 verir;
+          // buyerCompanyId / supplierCompanyId eşitlik sorguları canAccessByCompany ile uyumlu
+          const bidMap = new Map();
+          const uid = auth.currentUser?.uid;
+          const acceptedStatuses = ['accepted', 'approved'];
+
+          const mergeApprovedSnap = (snap) => {
+            snap.docs.forEach((d) => {
+              if (!bidMap.has(d.id)) bidMap.set(d.id, { id: d.id, ...d.data() });
+            });
+          };
+
+          if (companyId) {
+            try {
+              const byBuyerQ = query(
+                collection(db, 'bids'),
+                where('buyerCompanyId', '==', companyId),
+                where('status', 'in', acceptedStatuses),
+                limit(500)
+              );
+              mergeApprovedSnap(await getDocs(byBuyerQ));
+            } catch (e) {
+              logger.warn('Approved bids buyerCompany query failed', e);
+            }
+
+            try {
+              const bySupplierQ = query(
+                collection(db, 'bids'),
+                where('supplierCompanyId', '==', companyId),
+                where('status', 'in', acceptedStatuses),
+                limit(500)
+              );
+              mergeApprovedSnap(await getDocs(bySupplierQ));
+            } catch (e) {
+              logger.warn('Approved bids supplierCompany query failed', e);
+            }
+          }
+
+          if (uid) {
+            try {
+              const byBuyerUserQ = query(
+                collection(db, 'bids'),
+                where('buyerId', '==', uid),
+                where('status', 'in', acceptedStatuses),
+                limit(300)
+              );
+              mergeApprovedSnap(await getDocs(byBuyerUserQ));
+            } catch (e) {
+              logger.warn('Approved bids buyerId query failed', e);
+            }
+
+            try {
+              const bySupplierUserQ = query(
+                collection(db, 'bids'),
+                where('supplierId', '==', uid),
+                where('status', 'in', acceptedStatuses),
+                limit(300)
+              );
+              mergeApprovedSnap(await getDocs(bySupplierUserQ));
+            } catch (e) {
+              logger.warn('Approved bids supplierId query failed', e);
+            }
+          }
+
+          const allRows = Array.from(bidMap.values());
+          const sortDirMultiplier = BIDS_PAGING.sortDir === 'asc' ? 1 : -1;
+          allRows.sort((a, b) => {
+            const sortField = BIDS_PAGING.sortBy || 'createdAt';
+            const toMillis = (v) => (v?.toMillis?.() || (v instanceof Date ? v.getTime() : Number(v) || 0));
+            if (sortField === 'totalPrice') {
+              const getTotal = (row) => {
+                const items = Array.isArray(row.items) ? row.items : [];
+                const sumExcl = items.reduce((s, it) => s + ((Number(it.totalPrice) || 0) || ((Number(it.netPrice) || 0) * (Number(it.quantity) || 0))), 0);
+                const ship = Number(row.shipping?.cost ?? row.shippingCost ?? 0);
+                return sumExcl + ship;
+              };
+              return (getTotal(a) - getTotal(b)) * sortDirMultiplier;
+            }
+            return (toMillis(a[sortField]) - toMillis(b[sortField])) * sortDirMultiplier;
+          });
+
+          if (reset) BIDS_PAGING.totalItems = allRows.length;
+          const startIndex = (BIDS_PAGING.currentPage - 1) * BIDS_PAGING.pageSize;
+          rawRows = allRows.slice(startIndex, startIndex + BIDS_PAGING.pageSize);
+          snapDocs = [];
+          BIDS_PAGING.lastVisible = null;
         } else {
-          if (reset) {
-            const countQ = query(collection(db, collectionName), ...conditions);
-            const countSnap = await getCountFromServer(countQ);
-            BIDS_PAGING.totalItems = countSnap.data().count;
+          if (reset && Array.isArray(conditions) && conditions.length > 0) {
+            try {
+              const countQ = query(collection(db, collectionName), ...conditions);
+              const countSnap = await getCountFromServer(countQ);
+              BIDS_PAGING.totalItems = countSnap.data().count;
+            } catch (countErr) {
+              logger.warn('getCountFromServer failed; continuing without total', countErr);
+            }
           }
 
           // 3. Final Query
@@ -789,7 +921,11 @@
           const bidsMap = new Map(); // demandId -> bids[]
           for (let i = 0; i < dIds.length; i += 10) {
             const batch = dIds.slice(i, i + 10);
-            const bSnap = await getDocs(query(collection(db, 'bids'), where('demandId', 'in', batch)));
+            const bSnap = await getDocs(query(
+              collection(db, 'bids'),
+              where('demandId', 'in', batch),
+              where('buyerCompanyId', '==', companyId)
+            ));
             bSnap.docs.forEach(bd => {
               const bData = { id: bd.id, ...bd.data() };
               if (!bidsMap.has(bData.demandId)) bidsMap.set(bData.demandId, []);
@@ -954,10 +1090,8 @@
         else if (BIDS_PAGING.activeTab === 'outgoing') emptyMsg = 'Gönderdiğiniz teklif bulunmuyor.';
         else if (BIDS_PAGING.activeTab === 'approved') emptyMsg = 'Onaylanan teklif bulunmuyor.';
         
-        tbody.innerHTML = DOMPurify.sanitize(`<tr><td colspan="${colCount}" style="text-align:center;padding:30px;color:#6b7280;">${emptyMsg}</td></tr>`, {
-          ALLOWED_TAGS: ['tr', 'td'],
-          ALLOWED_ATTR: ['colspan', 'style']
-        });
+        // Teklifbul Rule v1.0 — DOMPurify <tr>/<td>'yi table dışında siler; createElement kullan
+        setTableEmpty(tbody, colCount, emptyMsg);
         $(emptySel).classList.add('hidden'); // Hide the separate empty div
         $('#stat-total').textContent = '0';
         $('#stat-avg').textContent = '—';
@@ -1251,7 +1385,7 @@
           const cid = userData?.companyId;
           const aid = userData?.activeCompanyId;
           const arr0 = Array.isArray(userData?.companies) && userData.companies.length ? userData.companies[0] : null;
-          if (cid && typeof cid === "string" && !cid.startsWith("solo-") && !cid.startsWith("tax-")) return cid;
+          if (cid && typeof cid === "string" && !cid.startsWith("solo-")) return cid;
           if (aid && typeof aid === "string" && aid.startsWith("solo-") && cid) return cid;
           return aid || cid || arr0;
         }
@@ -1263,7 +1397,7 @@
         let allBids = [];
         const bidMap = new Map(); // Duplicate'leri önlemek için
         
-        if (supplierCompanyId && !supplierCompanyId.startsWith('solo-') && !supplierCompanyId.startsWith('tax-')) {
+        if (supplierCompanyId && !supplierCompanyId.startsWith('solo-')) {
           try {
             // Şirket bazlı sorgu (aynı şirketteki tüm kullanıcıların teklifleri)
             const qCompany = query(
@@ -1434,7 +1568,7 @@
           const cid = userData?.companyId;
           const aid = userData?.activeCompanyId;
           const arr0 = Array.isArray(userData?.companies) && userData.companies.length ? userData.companies[0] : null;
-          if (cid && typeof cid === "string" && !cid.startsWith("solo-") && !cid.startsWith("tax-")) return cid;
+          if (cid && typeof cid === "string" && !cid.startsWith("solo-")) return cid;
           if (aid && typeof aid === "string" && aid.startsWith("solo-") && cid) return cid;
           return aid || cid || arr0;
         }
@@ -1449,7 +1583,7 @@
         const bidMap = new Map(); // Duplicate'leri önlemek için
         
         // 1. Gönderdiği ve onaylanan teklifler (supplierCompanyId == companyId)
-        if (companyId && !companyId.startsWith('solo-') && !companyId.startsWith('tax-')) {
+        if (companyId && !companyId.startsWith('solo-')) {
           try {
             const outgoingQuery = query(
               bidsRef,
@@ -1494,7 +1628,7 @@
         let demandIds = [];
         try {
           // Önce şirketin oluşturduğu talepleri bul
-          if (companyId && !companyId.startsWith('solo-') && !companyId.startsWith('tax-')) {
+          if (companyId && !companyId.startsWith('solo-')) {
             try {
               const demandsQuery = query(
                 collection(db, 'demands'),
@@ -1661,7 +1795,7 @@
                 const userData = userDoc.data();
                 const userCompanyId = userData.creatorCompanyId || userData.companyId || userData.activeCompanyId || 
                                       (userData.companies && userData.companies[0]);
-                if (userCompanyId && !userCompanyId.startsWith('solo-') && !userCompanyId.startsWith('tax-')) {
+                if (userCompanyId && !userCompanyId.startsWith('solo-')) {
                   // Company bilgisini yükle
                   try {
                     const companyDoc = await getDoc(doc(db, 'companies', userCompanyId));

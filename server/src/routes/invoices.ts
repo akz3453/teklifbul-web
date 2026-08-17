@@ -14,6 +14,7 @@ import { createInvoiceDraftFromSale, createDirectInvoiceDraft, recordPayment, pr
 import { sendEInvoice } from '../services/efaturaService.js';
 import { requirePermission } from '../../middleware/requirePermission.js';
 import { invoiceIdParamsSchema, companyIdBodySchema } from '../schemas/invoiceSchemas.js';
+import { userBelongsToCompanyAsync } from '../../utils/companyAccess.js';
 
 const router = express.Router();
 
@@ -44,11 +45,11 @@ router.post('/', requirePermission('einvoice.create'), async (req: any, res) => 
 
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    if (!userData || userData.companyId !== body.companyId) {
+    if (!userData || !(await userBelongsToCompanyAsync(userData, body.companyId, userId))) {
       return res.status(403).json({ ok: false, error: 'Yetkisiz erişim' });
     }
 
-    const companyId = userData.companyId;
+    const companyId = body.companyId;
 
     // Fatura oluştur
     const result = await createInvoiceDraftFromSale({
@@ -99,7 +100,7 @@ router.post('/direct', requirePermission('einvoice.create'), async (req: any, re
 
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    if (!userData || (userData.companyId !== body.companyId && userData.activeCompanyId !== body.companyId)) {
+    if (!userData || !(await userBelongsToCompanyAsync(userData, body.companyId, userId))) {
       return res.status(403).json({ ok: false, error: 'Yetkisiz erişim' });
     }
 
@@ -158,11 +159,11 @@ router.post('/:id/payments', async (req: any, res) => {
 
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    if (!userData || userData.companyId !== body.companyId) {
+    if (!userData || !(await userBelongsToCompanyAsync(userData, body.companyId, userId))) {
       return res.status(403).json({ ok: false, error: 'Yetkisiz erişim' });
     }
 
-    const companyId = userData.companyId;
+    const companyId = body.companyId;
 
     // Tarih parse et
     const paymentDate = body.date instanceof Date ? body.date : new Date(body.date);
@@ -220,7 +221,7 @@ router.get('/:id',
       // Company kontrolü
       const userDoc = await db.collection('users').doc(userId).get();
       const userData = userDoc.data();
-      if (userData?.companyId !== invoice?.companyId) {
+      if (!(await userBelongsToCompanyAsync(userData, invoice?.companyId, userId))) {
         return res.status(403).json({ ok: false, error: 'Yetkisiz erişim' });
       }
 
@@ -280,11 +281,11 @@ router.post('/:id/send-efatura', async (req: any, res) => {
 
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    if (!userData || userData.companyId !== body.companyId) {
+    if (!userData || !(await userBelongsToCompanyAsync(userData, body.companyId, userId))) {
       return res.status(403).json({ ok: false, error: 'Yetkisiz erişim' });
     }
 
-    const companyId = userData.companyId;
+    const companyId = body.companyId;
 
     // E-fatura gönder
     const eInvoiceUUID = await sendEInvoice(invoiceId, userId, companyId);
@@ -294,9 +295,10 @@ router.post('/:id/send-efatura', async (req: any, res) => {
       eInvoiceUUID,
       message: 'E-fatura gönderildi'
     });
-  } catch (error: any) {
+    } catch (error: any) {
     logger.error('E-fatura gönderim hatası (API)', error);
-    return res.status(400).json({
+    const unavailable = error?.name === 'EdocNotAvailableError' || String(error?.message || '').includes('henüz aktif değil');
+    return res.status(unavailable ? 503 : 400).json({
       ok: false,
       error: error.message || 'E-fatura gönderilemedi'
     });
@@ -346,7 +348,7 @@ router.post('/:id/prepare',
       // Company kontrolü
       const userDoc = await db.collection('users').doc(userId).get();
       const userData = userDoc.data();
-      if (userData?.companyId !== companyId && userData?.activeCompanyId !== companyId) {
+      if (!(await userBelongsToCompanyAsync(userData, companyId, userId))) {
         return res.status(403).json({ ok: false, error: 'Yetkisiz erişim' });
       }
 
@@ -410,7 +412,7 @@ router.post('/:id/send',
       // Company kontrolü
       const userDoc = await db.collection('users').doc(userId).get();
       const userData = userDoc.data();
-      if (userData?.companyId !== companyId && userData?.activeCompanyId !== companyId) {
+      if (!(await userBelongsToCompanyAsync(userData, companyId, userId))) {
         return res.status(403).json({ ok: false, error: 'Yetkisiz erişim' });
       }
 
@@ -424,7 +426,8 @@ router.post('/:id/send',
       });
     } catch (error: any) {
       logger.error('Invoice send hatası (API)', error);
-      return res.status(400).json({
+      const unavailable = error?.name === 'EdocNotAvailableError' || String(error?.message || '').includes('henüz aktif değil');
+      return res.status(unavailable ? 503 : 400).json({
         ok: false,
         error: error.message || 'Fatura gönderilemedi',
         errorType: 'PROVIDER_ERROR'
@@ -471,7 +474,7 @@ router.get('/:id/status',
       // Company kontrolü
       const userDoc = await db.collection('users').doc(userId).get();
       const userData = userDoc.data();
-      if (userData?.companyId !== companyId && userData?.activeCompanyId !== companyId) {
+      if (!(await userBelongsToCompanyAsync(userData, companyId, userId))) {
         return res.status(403).json({ ok: false, error: 'Yetkisiz erişim' });
       }
 
@@ -532,7 +535,7 @@ router.get('/:id/pdf',
       // Company kontrolü
       const userDoc = await db.collection('users').doc(userId).get();
       const userData = userDoc.data();
-      if (userData?.companyId !== companyId && userData?.activeCompanyId !== companyId) {
+      if (!(await userBelongsToCompanyAsync(userData, companyId, userId))) {
         return res.status(403).json({ ok: false, error: 'Yetkisiz erişim' });
       }
 
@@ -596,7 +599,7 @@ router.post('/:id/cancel',
       // Company kontrolü
       const userDoc = await db.collection('users').doc(userId).get();
       const userData = userDoc.data();
-      if (userData?.companyId !== companyId && userData?.activeCompanyId !== companyId) {
+      if (!(await userBelongsToCompanyAsync(userData, companyId, userId))) {
         return res.status(403).json({ ok: false, error: 'Yetkisiz erişim' });
       }
 

@@ -3,13 +3,14 @@
  * Teklifbul Rule v1.0 - SKU birleştirme arayüzü
  */
 
-import { db, auth, requireAuth } from '/firebase.js';
-import { collection, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+import { db, requireAuth } from '/firebase.js';
+import { collection, getDocs, query, where, limit } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
 import { searchStocks } from '/scripts/lib/stock-search.js';
 import { getSkuMergePreview, mergeSkus } from '/scripts/inventory-sku-merge.js';
 import { toast } from '/src/shared/ui/toast.js';
 import { MESSAGES } from '/src/shared/constants/messages.js';
 import { logger } from '/src/shared/log/logger.js';
+import { requireCompanyContext } from '/assets/js/state/company-context.js';
 
 const qs = s => document.querySelector(s);
 
@@ -20,7 +21,8 @@ const state = {
   stocks: [],
   preview: null,
   isLoadingStocks: false,
-  stocksLoaded: false
+  stocksLoaded: false,
+  emptyWarned: false
 };
 
 // Teklifbul Rule v1.0 - Debounce için timer'lar
@@ -30,286 +32,92 @@ let targetSearchTimer = null;
 // Initialize
 (async () => {
   try {
-    const user = await requireAuth();
-    
-    // Company ID'yi al
-    const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js');
-    const userDoc = await getDoc(doc(db, 'users', user.uid));
-    const userData = userDoc.exists() ? userDoc.data() : {};
-    state.companyId = userData.companyId;
-    
-    logger.info('Kullanıcı bilgileri', {
-      uid: user.uid,
-      email: user.email,
-      companyId: state.companyId,
-      userData: userData
-    });
-    
-    if (!state.companyId) {
+    await requireAuth();
+
+    // Teklifbul Rule v1.0 - Stok listesi ile aynı şirket bağlamı
+    const companyContext = await requireCompanyContext({ redirectOnPending: true });
+    if (!companyContext?.companyId) {
       logger.error('Company ID bulunamadı');
-      toast.error(MESSAGES.ERROR_SKU_COMPANY_ID_NOT_FOUND);
+      toast.error(MESSAGES.ERROR_SKU_COMPANY_ID_NOT_FOUND || 'Şirket bilgisi bulunamadı');
       return;
     }
-    
-    // Stocks yükle
+    state.companyId = companyContext.companyId;
+
+    logger.info('SKU merge şirket bağlamı', {
+      companyId: state.companyId,
+      resolvedFrom: companyContext.resolvedFrom,
+      joinStatus: companyContext.joinStatus
+    });
+
     await loadStocks();
-    
-    // Event listeners
     setupEventListeners();
   } catch (error) {
     logger.error('Initialization error', error);
-    toast.error(`${MESSAGES.ERROR_SKU_PAGE_LOAD}: ${error.message}`);
+    toast.error(error?.message || 'Sayfa başlatılamadı');
   }
 })();
 
+/**
+ * Teklifbul Rule v1.0 — yalnızca companyId filtreli sorgu + limit.
+ * Tüm stocks koleksiyonunu okumak Firestore kurallarında yasak (permission denied).
+ */
 async function loadStocks() {
-  // Teklifbul Rule v1.0 - Çoklu çağrı önleme
   if (state.isLoadingStocks) {
     logger.info('Stoklar zaten yükleniyor, bekleniyor');
     return;
   }
-  
+
   try {
     state.isLoadingStocks = true;
-    
+
     if (!state.companyId) {
       logger.warn('Company ID yok, stoklar yüklenemiyor');
-      toast.error(MESSAGES.ERROR_SKU_COMPANY_NOT_FOUND);
-      state.isLoadingStocks = false;
+      toast.error(MESSAGES.ERROR_SKU_COMPANY_NOT_FOUND || 'Şirket bilgisi yok');
       return;
     }
-    
+
     logger.info(`Stoklar yükleniyor (companyId: ${state.companyId})`);
-    
-    // Company ID ile filtrele
-    let allStocks = []; // Teklifbul Rule v1.0 - allStocks'u dış scope'ta tanımla
-    try {
-      const stocksQuery = query(
-        collection(db, 'stocks'),
-        where('companyId', '==', state.companyId)
-      );
-      const snap = await getDocs(stocksQuery);
-      
-      // Tüm stokları önce yükle (debug için)
-      snap.forEach(doc => {
-        const data = doc.data();
-        allStocks.push({ id: doc.id, ...data });
-      });
-      
-      logger.info(`Toplam ${allStocks.length} stok bulundu (companyId: ${state.companyId})`, allStocks.slice(0, 3).map(s => ({ 
-        sku: s.sku, 
-        name: s.name, 
-        companyId: s.companyId,
-        archived: s.archived,
-        merged: s.merged 
-      })));
-      
-      // Arşivlenmiş (merged) stock'ları filtrele
-      state.stocks = allStocks.filter(s => !s.archived && !s.merged);
-      
-      // Teklifbul Rule v1.0 - Eğer companyId ile hiç stok bulunamadıysa, tüm stokları yükle ve client-side filtrele
-      if (allStocks.length === 0) {
-        logger.warn('CompanyId ile stok bulunamadı, tüm stoklar yükleniyor (client-side filtreleme)');
-        const allSnap = await getDocs(collection(db, 'stocks'));
-        allSnap.forEach(doc => {
-          const data = doc.data();
-          allStocks.push({ id: doc.id, ...data });
-        });
-        
-        logger.info(`Toplam ${allStocks.length} stok bulundu (filtre olmadan)`);
-        
-        // Teklifbul Rule v1.0 - Debug: Stokların yapısını detaylı kontrol et
-        if (allStocks.length > 0) {
-          const sampleStock = allStocks[0];
-          logger.info('Örnek stok yapısı (DETAYLI)', {
-            id: sampleStock.id,
-            sku: sampleStock.sku,
-            name: sampleStock.name,
-            companyId: sampleStock.companyId,
-            companyIdType: typeof sampleStock.companyId,
-            company_id: sampleStock.company_id, // Alternatif alan adı
-            company: sampleStock.company, // Alternatif alan adı
-            targetCompanyId: state.companyId,
-            targetCompanyIdType: typeof state.companyId,
-            archived: sampleStock.archived,
-            merged: sampleStock.merged,
-            allFields: Object.keys(sampleStock).sort()
-          });
-          
-          // İlk 5 stokun companyId değerlerini göster
-          const companyIds = allStocks.slice(0, 5).map(s => ({
-            sku: s.sku,
-            companyId: s.companyId,
-            company_id: s.company_id,
-            company: s.company,
-            archived: s.archived,
-            merged: s.merged
-          }));
-          logger.info('İlk 5 stokun companyId değerleri', companyIds);
-        }
-        
-        // Client-side filtreleme: companyId eşleşen ve aktif olanlar
-        // Teklifbul Rule v1.0 - String karşılaştırması yap (tip farkı olabilir)
-        // Ayrıca alternatif alan adlarını da kontrol et (company_id, company)
-        let filteredStocks = allStocks.filter(s => {
-          const stockCompanyId = String(s.companyId || s.company_id || s.company || '').trim();
-          const targetCompanyId = String(state.companyId || '').trim();
-          const matchesCompany = stockCompanyId === targetCompanyId;
-          const isActive = !s.archived && !s.merged;
-          
-          // Debug için eşleşmeyen stokları logla (sadece ilk 3)
-          if (!matchesCompany && allStocks.indexOf(s) < 3) {
-            logger.info('CompanyId eşleşmedi (DETAYLI)', {
-              stockSku: s.sku,
-              stockCompanyId: stockCompanyId,
-              stockCompanyIdRaw: s.companyId,
-              stockCompany_id: s.company_id,
-              stockCompany: s.company,
-              targetCompanyId: targetCompanyId,
-              match: matchesCompany,
-              isActive: isActive
-            });
-          }
-          
-          return matchesCompany && isActive;
-        });
-        
-        logger.info(`${filteredStocks.length} aktif stok filtrelendi (companyId: ${state.companyId})`);
-        
-        // Teklifbul Rule v1.0 - Eğer companyId ile eşleşen stok yoksa, tüm aktif stokları göster
-        // (Stok listesi sayfası gibi davran - companyId olmayan stoklar da görünsün)
-        if (filteredStocks.length === 0 && allStocks.length > 0) {
-          const companyMatches = allStocks.filter(s => {
-            const stockCompanyId = String(s.companyId || s.company_id || s.company || '').trim();
-            const targetCompanyId = String(state.companyId || '').trim();
-            return stockCompanyId === targetCompanyId;
-          });
-          const activeStocks = allStocks.filter(s => !s.archived && !s.merged);
-          
-          if (companyMatches.length === 0) {
-            logger.warn('Hiçbir stok companyId ile eşleşmedi, tüm aktif stoklar gösteriliyor', {
-              targetCompanyId: state.companyId,
-              totalStocks: allStocks.length,
-              activeStocksCount: activeStocks.length,
-              sampleCompanyIds: [...new Set(allStocks.slice(0, 10).map(s => s.companyId || 'undefined'))]
-            });
-            // CompanyId eşleşmediyse, tüm aktif stokları göster (stok listesi sayfası gibi)
-            filteredStocks = activeStocks;
-            toast.info(`CompanyId ile eşleşen stok bulunamadı. Tüm aktif stoklar gösteriliyor (${activeStocks.length} stok).`);
-          } else if (activeStocks.length === 0) {
-            logger.warn('Tüm stoklar arşivlenmiş veya birleştirilmiş', {
-              totalStocks: allStocks.length,
-              archivedCount: allStocks.filter(s => s.archived).length,
-              mergedCount: allStocks.filter(s => s.merged).length
-            });
-            toast.warn(`Bu şirkete ait ${companyMatches.length} stok var ama hepsi arşivlenmiş veya birleştirilmiş.`);
-          }
-        }
-        
-        state.stocks = filteredStocks;
-      }
-    } catch (queryError) {
-      // Eğer companyId filtresi çalışmazsa, tüm stokları yükle ve client-side filtrele
-      logger.warn('CompanyId filtresi başarısız, tüm stoklar yükleniyor', queryError);
-      const allSnap = await getDocs(collection(db, 'stocks'));
-      allSnap.forEach(doc => {
-        const data = doc.data();
-        allStocks.push({ id: doc.id, ...data });
-      });
-      
-      logger.info(`Toplam ${allStocks.length} stok bulundu (filtre olmadan)`);
-      
-      // Teklifbul Rule v1.0 - Debug: Stokların yapısını kontrol et
-      if (allStocks.length > 0) {
-        const sampleStock = allStocks[0];
-        logger.info('Örnek stok yapısı', {
-          id: sampleStock.id,
-          sku: sampleStock.sku,
-          name: sampleStock.name,
-          companyId: sampleStock.companyId,
-          companyIdType: typeof sampleStock.companyId,
-          targetCompanyId: state.companyId,
-          targetCompanyIdType: typeof state.companyId,
-          archived: sampleStock.archived,
-          merged: sampleStock.merged,
-          allFields: Object.keys(sampleStock)
-        });
-        
-        // CompanyId eşleşmelerini kontrol et
-        const companyMatches = allStocks.filter(s => {
-          const matchesCompany = String(s.companyId || '') === String(state.companyId || '');
-          return matchesCompany;
-        });
-        logger.info(`${companyMatches.length} stok companyId ile eşleşiyor`, companyMatches.slice(0, 3).map(s => ({
-          sku: s.sku,
-          companyId: s.companyId,
-          archived: s.archived,
-          merged: s.merged
-        })));
-        
-        // Aktif stokları kontrol et
-        const activeStocks = allStocks.filter(s => !s.archived && !s.merged);
-        logger.info(`${activeStocks.length} stok aktif (archived/merged değil)`, activeStocks.slice(0, 3).map(s => ({
-          sku: s.sku,
-          companyId: s.companyId,
-          archived: s.archived,
-          merged: s.merged
-        })));
-      }
-      
-      // Client-side filtreleme: companyId eşleşen ve aktif olanlar
-      // Teklifbul Rule v1.0 - String karşılaştırması yap (tip farkı olabilir)
-      state.stocks = allStocks.filter(s => {
-        const stockCompanyId = String(s.companyId || '').trim();
-        const targetCompanyId = String(state.companyId || '').trim();
-        const matchesCompany = stockCompanyId === targetCompanyId;
-        const isActive = !s.archived && !s.merged;
-        return matchesCompany && isActive;
-      });
-      
-      logger.info(`${state.stocks.length} aktif stok filtrelendi (companyId: ${state.companyId})`);
-      
-      // Eğer hiç stok bulunamadıysa, kullanıcıya bilgi ver
-      if (state.stocks.length === 0 && allStocks.length > 0) {
-        const companyMatches = allStocks.filter(s => {
-          const stockCompanyId = String(s.companyId || '').trim();
-          const targetCompanyId = String(state.companyId || '').trim();
-          return stockCompanyId === targetCompanyId;
-        });
-        const activeStocks = allStocks.filter(s => !s.archived && !s.merged);
-        
-        if (companyMatches.length === 0) {
-          logger.warn('Hiçbir stok companyId ile eşleşmedi', {
-            targetCompanyId: state.companyId,
-            totalStocks: allStocks.length,
-            sampleCompanyIds: [...new Set(allStocks.slice(0, 10).map(s => s.companyId))]
-          });
-          toast.warn(`Bu şirkete ait stok bulunamadı. Toplam ${allStocks.length} stok var ama hiçbiri companyId: ${state.companyId} ile eşleşmiyor.`);
-        } else if (activeStocks.length === 0) {
-          logger.warn('Tüm stoklar arşivlenmiş veya birleştirilmiş', {
-            totalStocks: allStocks.length,
-            archivedCount: allStocks.filter(s => s.archived).length,
-            mergedCount: allStocks.filter(s => s.merged).length
-          });
-          toast.warn(`Bu şirkete ait ${companyMatches.length} stok var ama hepsi arşivlenmiş veya birleştirilmiş.`);
-        }
-      }
-    }
-    
-    logger.info(`${state.stocks.length} aktif stok yüklendi (${allStocks.length - state.stocks.length} arşivlenmiş/merged)`);
-    
+    toast.info(MESSAGES.INFO_STOCK_LOADING || 'Stoklar yükleniyor...');
+
+    const stocksQuery = query(
+      collection(db, 'stocks'),
+      where('companyId', '==', state.companyId),
+      limit(10000)
+    );
+    const snap = await getDocs(stocksQuery);
+
+    const allStocks = [];
+    snap.forEach((d) => {
+      allStocks.push({ id: d.id, ...d.data() });
+    });
+
+    state.stocks = allStocks.filter((s) => !s.archived && !s.merged);
     state.stocksLoaded = true;
-    
-    if (state.stocks.length === 0) {
-      // Sadece bir kez uyarı göster
-      if (!state.stocksLoaded) {
-        toast.warn('Bu şirkete ait aktif stok bulunamadı.');
+
+    logger.info('SKU merge stoklar yüklendi', {
+      total: allStocks.length,
+      active: state.stocks.length,
+      companyId: state.companyId
+    });
+
+    if (state.stocks.length === 0 && !state.emptyWarned) {
+      state.emptyWarned = true;
+      if (allStocks.length === 0) {
+        toast.warn('Bu şirkete ait stok bulunamadı. Önce stok listesine ürün ekleyin.');
+      } else {
+        toast.warn(`Bu şirkette ${allStocks.length} stok var; hepsi arşivlenmiş veya birleştirilmiş.`);
       }
     }
   } catch (error) {
     logger.error('Stocks load error', error);
-    toast.error(`${MESSAGES.ERROR_SKU_LOAD}: ${error.message}`);
     state.stocksLoaded = false;
+    state.stocks = [];
+    const code = error?.code || '';
+    if (code === 'permission-denied' || /insufficient permissions/i.test(String(error?.message || ''))) {
+      toast.error('Stok okuma izni yok. Üyelik durumunuzu kontrol edin veya sayfayı yenileyin.');
+    } else {
+      toast.error(`${MESSAGES.ERROR_SKU_LOAD || 'Stok yükleme hatası'}: ${error.message}`);
+    }
   } finally {
     state.isLoadingStocks = false;
   }

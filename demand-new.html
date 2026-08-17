@@ -226,109 +226,131 @@
 
     @media (max-width: 768px) {
       #satfk {
-        min-width: 200px;
+        min-width: 0 !important;
         width: 100% !important;
       }
 
-      /* Mobile için input alanları */
-      .items-table .qty {
-        width: 80px !important;
-        height: 30px !important;
-        min-width: 60px;
-        max-width: 100px;
+      .table-responsive {
+        overflow: visible !important;
+        max-width: 100%;
       }
 
-      .items-table .sku {
-        width: 60px !important;
-        /* Mobile'da da %40 küçük */
-        height: 30px !important;
+      .items-table,
+      .items-table thead,
+      .items-table tbody,
+      .items-table tr,
+      .items-table th,
+      .items-table td {
+        display: block !important;
+        float: none !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
       }
 
-      .items-table .itemName {
-        width: 150px !important;
-        /* Mobile'da en uzun alan */
-        height: 30px !important;
-        min-width: 120px;
-        max-width: 200px;
+      .items-table {
+        table-layout: auto !important;
+        margin: 0 0 12px !important;
+        border: none !important;
+        overflow: visible !important;
       }
 
-      .items-table .unit {
-        width: 70px !important;
-        height: 30px !important;
+      .items-table thead {
+        display: none !important;
       }
 
+      .items-table tbody {
+        display: flex !important;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .items-table tr {
+        display: flex !important;
+        flex-direction: column;
+        background: var(--card-bg, #fff);
+        border: 1px solid var(--border, #e5e7eb) !important;
+        border-radius: 12px;
+        padding: 12px !important;
+        margin: 0 !important;
+      }
+
+      html[data-theme="dark"] .items-table tr {
+        background: #111827;
+        border-color: rgba(255, 255, 255, 0.25) !important;
+      }
+
+      .items-table td {
+        display: flex !important;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+        border: none !important;
+        padding: 8px 0 !important;
+        white-space: normal !important;
+      }
+
+      .items-table td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        font-size: 13px;
+        color: var(--text-muted, #6b7280);
+      }
+
+      .items-table td[data-label="Sıra"] {
+        padding-bottom: 10px !important;
+        margin-bottom: 4px;
+        border-bottom: 1px solid var(--border, #e5e7eb) !important;
+      }
+
+      .items-table td[data-label="Sıra"]::before {
+        content: "Kalem";
+      }
+
+      .items-table td[colspan]::before {
+        display: none;
+      }
+
+      .items-table td > *,
+      .items-table input,
+      .items-table select,
+      .items-table textarea,
+      .items-table button {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+      }
+
+      .items-table input[type="checkbox"] {
+        width: auto !important;
+        max-width: none !important;
+      }
+
+      .items-table .qty,
+      .items-table .sku,
+      .items-table .itemName,
+      .items-table .unit,
       .items-table .stockQty,
-      .items-table .targetPrice {
-        width: 80px !important;
-        height: 30px !important;
+      .items-table .targetPrice,
+      .items-table .itemDueDate,
+      .items-table .brandModel {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        height: 44px !important;
+        font-size: 16px !important;
       }
 
-      .items-table .itemDueDate {
-        width: 100px !important;
-        height: 30px !important;
+      .items-table textarea.itemName {
+        height: auto !important;
+        min-height: 64px;
       }
 
-      /* Mobile için tablo sütun genişlikleri */
-      .items-table th:nth-child(1),
-      .items-table td:nth-child(1) {
-        width: 6%;
+      .items-table td[colspan] > details > div {
+        grid-template-columns: 1fr !important;
       }
-
-      /* Sıra No */
-      .items-table th:nth-child(2),
-      .items-table td:nth-child(2) {
-        width: 10%;
-      }
-
-      /* Stok Kodu */
-      .items-table th:nth-child(3),
-      .items-table td:nth-child(3) {
-        width: 30%;
-      }
-
-      /* Malzeme Tanımı (en uzun) */
-      .items-table th:nth-child(4),
-      .items-table td:nth-child(4) {
-        width: 15%;
-      }
-
-      /* Marka/Model */
-      .items-table th:nth-child(5),
-      .items-table td:nth-child(5) {
-        width: 10%;
-      }
-
-      /* Miktar */
-      .items-table th:nth-child(6),
-      .items-table td:nth-child(6) {
-        width: 8%;
-      }
-
-      /* Birim */
-      .items-table th:nth-child(7),
-      .items-table td:nth-child(7) {
-        width: 10%;
-      }
-
-      /* Ambar */
-      .items-table th:nth-child(8),
-      .items-table td:nth-child(8) {
-        width: 10%;
-      }
-
-      /* Hedef */
-      .items-table th:nth-child(9),
-      .items-table td:nth-child(9) {
-        width: 12%;
-      }
-
-      /* Teslim Tarihi */
-      .items-table th:nth-child(10),
-      .items-table td:nth-child(10) {
-        width: 9%;
-      }
-
-      /* Sil */
     }
 
     label {
@@ -2151,12 +2173,17 @@
 
             const params = new URLSearchParams(window.location.search);
             const isEditMode = !!(params.get('id') || params.get('edit'));
+            const permsLoaded = Object.keys(permState.permissions || {}).length > 0;
 
-            // Sayfa görüntüleme izni yoksa hemen yönlendir
-            if (DEMAND_PERMS_INIT.purchase.view && !can(DEMAND_PERMS_INIT.purchase.view)) {
+            // Yetki haritası yüklenemediyse yanlış "üyelik" mesajıyla sayfayı kapatma
+            if (!permsLoaded) {
+              logger.warn('demand-new: yetki haritası boş, sayfa açık bırakıldı', {
+                companyId: permState.companyId,
+                roleKey: permState.roleKey
+              });
+            } else if (DEMAND_PERMS_INIT.purchase.view && !can(DEMAND_PERMS_INIT.purchase.view)) {
               const msg =
                 MESSAGES.ERROR_PERMISSION_DEMAND_VIEW ||
-                MESSAGES.ERROR_PERMISSION_DENIED ||
                 'Bu sayfayı görüntüleme yetkiniz yok.';
               toast.error(msg);
               logger.warn('demand-new: view yetkisi yok, yönlendiriliyor', {
@@ -2276,15 +2303,20 @@
             }
 
             const filename = `Satin_Alma_Talep_Formu_Sablonu_${new Date().toISOString().split('T')[0]}.xlsx`;
-            await downloadBlobFile(blob, filename);
+            const result = await downloadBlobFile(blob, filename);
+            if (result?.cancelled) {
+              toast.info(MESSAGES.INFO_SHARE_CANCELLED);
+              logger.end();
+              return;
+            }
 
             logger.info('Şablon indirildi', { size: blob.size });
             logger.end();
-            toast.success('Şablon başarıyla indirildi');
+            toast.success(MESSAGES.SUCCESS_TEMPLATE_DOWNLOADED_ALT);
           } catch (error) {
             logger.error('Şablon indirme hatası', error);
             logger.end();
-            toast.error('Şablon indirilemedi: ' + (error.message || 'Beklenmeyen hata'));
+            toast.error(MESSAGES.ERROR_TEMPLATE_CREATE + ': ' + (error.message || MESSAGES.ERROR_GENERAL));
           }
         });
 
@@ -2713,6 +2745,7 @@ ornek2@tedarikci.com"
         import { MESSAGES } from './src/shared/constants/messages.js';
         // Teklifbul Rule v1.0 - Yetki sistemi (createBtn.onclick için gerekli)
         import { requirePerm, getDemandPerms, getAiPerms, requireExistingPerm } from './assets/js/state/permissions.js';
+        import { requireCompanyContext } from './assets/js/state/company-context.js';
         import { slugifyTr } from "./utils/slugify-tr.js";
         import { normalizeTRLower } from "./scripts/lib/tr-utils.js";
         // CRITICAL: Import new ID-based category system
@@ -2737,7 +2770,7 @@ ornek2@tedarikci.com"
         import { matchRules } from "./src/routing/category-rule-engine.js";
         import { extractEvidenceTokens, evaluateAutoApprove } from "./src/routing/category-evidence.js";
         import { debounce } from "./assets/js/utils/debounce.js";
-        import { authFetch } from "./assets/js/utils/api-helpers.js";
+        import { authFetch, resolveSharedCompanyId } from "./assets/js/utils/api-helpers.js";
         import { listGroupsForUser, createGroup, updateGroup, deleteGroup } from "./assets/js/services/category-groups.js";
         // Modal artık otomatik olarak yükleniyor - import gerekmiyor
         import { searchStocks } from "./scripts/lib/stock-search.js";
@@ -6011,24 +6044,24 @@ ornek2@tedarikci.com"
           const certsJson = JSON.stringify(Array.isArray(data.kaliteSertifika) ? data.kaliteSertifika : []);
           const itemCategoryIdsJson = JSON.stringify(Array.isArray(data.itemCategoryIds) ? data.itemCategoryIds : []);
           tr.innerHTML = `
-        <td>${escapeHtml(data.lineNo || lineCounter)}</td>
-        <td><input type="text" class="sku" placeholder="Stok Kodu" value="${escapeHtml(data.sku || "")}" /></td>
-        <td><textarea class="itemName auto-resize" placeholder="Malzeme tanımı" required rows="2" data-min-height="32" data-max-height="120">${escapeHtml(data.name || "")}</textarea></td>
-        <td><input type="text" class="brandModel" placeholder="Marka/Model" value="${escapeHtml(data.brandModel || "")}" /></td>
-        <td><input type="number" class="qty" min="1" step="0.01" placeholder="Miktar" required value="${escapeHtml(data.qty || "")}" /></td>
-        <td><input type="text" class="unit" list="unitList" placeholder="Birim" required value="${escapeHtml(data.unit || "")}" /></td>
-        <td><input type="number" class="stockQty" min="0" step="0.01" placeholder="Depo" value="${escapeHtml(data.stockQty || "")}" /></td>
-        <td><input type="number" class="targetPrice" min="0" step="0.01" placeholder="Hedef" value="${escapeHtml(data.targetPrice || "")}" /></td>
-        <td>
+        <td data-label="Sıra">${escapeHtml(data.lineNo || lineCounter)}</td>
+        <td data-label="Stok Kodu"><input type="text" class="sku" placeholder="Stok Kodu" value="${escapeHtml(data.sku || "")}" /></td>
+        <td data-label="Malzeme Tanımı"><textarea class="itemName auto-resize" placeholder="Malzeme tanımı" required rows="2" data-min-height="32" data-max-height="120">${escapeHtml(data.name || "")}</textarea></td>
+        <td data-label="Marka/Model"><input type="text" class="brandModel" placeholder="Marka/Model" value="${escapeHtml(data.brandModel || "")}" /></td>
+        <td data-label="Miktar"><input type="number" class="qty" min="1" step="0.01" placeholder="Miktar" required value="${escapeHtml(data.qty || "")}" /></td>
+        <td data-label="Birim"><input type="text" class="unit" list="unitList" placeholder="Birim" required value="${escapeHtml(data.unit || "")}" /></td>
+        <td data-label="Depodaki Miktar"><input type="number" class="stockQty" min="0" step="0.01" placeholder="Depo" value="${escapeHtml(data.stockQty || "")}" /></td>
+        <td data-label="Hedef Fiyat"><input type="number" class="targetPrice" min="0" step="0.01" placeholder="Hedef" value="${escapeHtml(data.targetPrice || "")}" /></td>
+        <td data-label="Ürün Görseli">
           <input type="file" class="itemImage" accept="image/*" style="max-width:150px;">
           <input type="hidden" class="itemImageData">
           <div class="itemImagePreview" style="font-size:11px;color:#6b7280;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${data.productImage ? 'Seçildi' : 'Seçilmedi'}</div>
         </td>
-        <td><input type="date" class="itemDueDate" value="${escapeHtml(data.itemDueDate || el("dueDate").value || "")}" /></td>
-        <td style="text-align:center;">
+        <td data-label="Teslim Tarihi"><input type="date" class="itemDueDate" value="${escapeHtml(data.itemDueDate || el("dueDate").value || "")}" /></td>
+        <td data-label="Ana İlanda Göster" style="text-align:center;">
           <input type="checkbox" class="publishToMarket" ${publishToMarketChecked} ${publishToMarketDisabled} title="${escapeHtml(publishToMarketTitle)}" />
         </td>
-        <td style="white-space:nowrap; vertical-align:middle;">
+        <td data-label="Kategori" style="white-space:nowrap; vertical-align:middle;">
           <div style="display:flex; align-items:center; gap:4px; justify-content:center;">
             <button type="button" class="btn-sm itemCatBtn" title="Tedarikçi kategorilerini seç (Zorunlu)" 
                     style="border:2px solid #f59e0b; background:#fff8e1; color:#b45309; font-weight:700; padding:4px 8px;">
@@ -7409,35 +7442,21 @@ ornek2@tedarikci.com"
                 throw new Error("Özel (Özelleştir) için en az bir tedarikçi seçmelisiniz.");
               }
 
-              // Get companyId from profile with fallback strategy
+              // Teklifbul Rule v1.0 — tax- şirket id'sini solo- ile ezme
               let companyId = null;
               try {
-                // Try multiple collections in order of preference
-                const collections = ["publicProfiles", "profiles", "users"];
-
-                for (const collection of collections) {
-                  try {
-                    const profileSnap = await getDoc(doc(db, collection, user.uid));
-                    if (profileSnap.exists()) {
-                      const profile = profileSnap.data();
-                      companyId = profile.currentCompanyId || profile.companyId || profile.activeCompanyId || `solo-${user.uid}`;
-                      logger.info(`Found companyId from ${collection}`, { companyId });
-                      break;
-                    }
-                  } catch (collectionError) {
-                    logger.warn(`Could not read from ${collection}`, collectionError.message);
-                    continue;
-                  }
-                }
-
-                // Fallback if no collection worked
+                const ctx = await requireCompanyContext({
+                  allowPending: false,
+                  redirectOnPending: false
+                });
+                companyId = (ctx && ctx.companyId) || resolveSharedCompanyId(ctx?.userDocData);
                 if (!companyId) {
-                  companyId = `solo-${user.uid}`;
-                  logger.info("Using fallback companyId", { companyId });
+                  throw new Error('Şirket bilgisi bulunamadı. Lütfen şirket seçimi yaptığınızdan emin olun.');
                 }
+                logger.info('Demand create companyId çözüldü', { companyId });
               } catch (e) {
-                logger.warn("Profile read error, using fallback", e);
-                companyId = `solo-${user.uid}`;
+                logger.error('Demand create companyId çözülemedi', e);
+                throw new Error(e?.message || 'Şirket bilgisi bulunamadı.');
               }
 
               // Teklifbul Rule v1.0 - Firma adını kalıcılık için getir
@@ -7906,6 +7925,9 @@ ornek2@tedarikci.com"
                 try {
                   newDemandRef = await addDoc(collection(db, "demands"), headerData);
                   logger.info("Demand created successfully", { demandId: newDemandRef.id });
+                  import('/assets/js/analytics.js').then(({ track, ANALYTICS_EVENTS }) => {
+                    track(ANALYTICS_EVENTS.DEMAND_CREATED, { status: headerData.isPublished ? 'published' : 'draft' });
+                  }).catch(() => {});
                 } catch (createError) {
                   logger.error("Error creating demand", createError);
                   if (createError.message && createError.message.includes("Missing or insufficient permissions")) {
@@ -8761,7 +8783,7 @@ ornek2@tedarikci.com"
                 } else {
                   // Şirket dokümanından kontrol et
                   const companyId = userData.companyId || userData.activeCompanyId || (Array.isArray(userData.companies) && userData.companies.length > 0 ? userData.companies[0] : null);
-                  if (companyId && !companyId.startsWith('solo-') && !companyId.startsWith('tax-')) {
+                  if (companyId && !companyId.startsWith('solo-')) {
                     try {
                       const companyDoc = await getDoc(doc(db, "companies", companyId));
                       if (companyDoc.exists()) {
@@ -9319,7 +9341,11 @@ ornek2@tedarikci.com"
         z-index: 100;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       `;
-          notif.innerHTML = `✅ Önerilen kategori: <strong>${categoryName}</strong>`;
+          notif.textContent = '';
+          notif.appendChild(document.createTextNode('✅ Önerilen kategori: '));
+          const strong = document.createElement('strong');
+          strong.textContent = categoryName || '';
+          notif.appendChild(strong);
 
           const row = textarea.closest('.description-item');
           if (row) {

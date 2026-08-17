@@ -10,13 +10,14 @@ import { logger } from '../../src/shared/log/logger.js';
 import { verifyToken, type AuthenticatedRequest } from '../middleware/auth.js';
 import { requirePremium } from '../middleware/requirePremium.js';
 import { getAdminDb } from '../utils/firestore.js';
-import { getAdminStorage, uploadFile } from '../utils/storage.js';
+import { getAdminStorage, uploadFile, getFileUrl } from '../utils/storage.js';
 import { extractWaybillText } from '../services/waybillText.js';
 import { parseWaybill } from '../services/waybillParser.js';
 import { compareWaybills } from '../services/waybillComparator.js';
 // Teklifbul Rule v1.0 - Input Validation
 import { validateRequest } from '../utils/input-validation.js';
 import { z } from 'zod';
+import { getCompanyIdFromRequest } from '../src/services/permissionService.js';
 
 const router = Router();
 const upload = multer({
@@ -87,10 +88,14 @@ router.post('/:demandId/upload',
     const { demandId } = req.params;
     const { role } = req.body || {};
     const userId = req.user?.uid;
-    const companyId = req.user?.activeCompanyId;
+    const companyId = await getCompanyIdFromRequest(req);
 
     if (!userId) {
       return res.status(401).json({ error: 'UNAUTHORIZED', message: 'Oturum gerekli' });
+    }
+
+    if (!companyId) {
+      return res.status(403).json({ error: 'FORBIDDEN', message: 'Şirket bilgisi bulunamadı' });
     }
 
     if (!req.file) {
@@ -145,6 +150,7 @@ router.post('/:demandId/upload',
     const updatedPayload = {
       id: fileId,
       fileUrl,
+      filePath: storagePath,
       fileName: cleanName,
       mimeType: req.file.mimetype,
       uploadedBy: userId,
@@ -211,10 +217,14 @@ router.get('/:demandId',
   try {
     const { demandId } = req.params;
     const userId = req.user?.uid;
-    const companyId = req.user?.activeCompanyId;
+    const companyId = await getCompanyIdFromRequest(req);
 
     if (!userId) {
       return res.status(401).json({ error: 'UNAUTHORIZED', message: 'Oturum gerekli' });
+    }
+
+    if (!companyId) {
+      return res.status(403).json({ error: 'FORBIDDEN', message: 'Şirket bilgisi bulunamadı' });
     }
 
     const db = await getAdminDb();
@@ -239,9 +249,31 @@ router.get('/:demandId',
       return res.status(200).json({ ok: true, data: null, exists: false });
     }
 
+    const data = snap.data() || {};
+    const bucket = await getAdminStorage();
+    const resignList = async (items: any[] | undefined) => {
+      if (!Array.isArray(items) || !bucket) return items || [];
+      return Promise.all(items.map(async (item) => {
+        if (!item?.filePath) return item;
+        try {
+          const fileUrl = await getFileUrl(bucket, item.filePath);
+          return { ...item, fileUrl };
+        } catch (err) {
+          logger.warn('waybill signed URL yenilenemedi', { demandId, filePath: item.filePath, err });
+          return item;
+        }
+      }));
+    };
+
+    const payload = {
+      ...data,
+      supplierWaybills: await resignList(data.supplierWaybills),
+      buyerWaybills: await resignList(data.buyerWaybills),
+    };
+
     logger.info('waybill fetched', { demandId });
     logger.end();
-    return res.json({ ok: true, data: snap.data(), exists: true });
+    return res.json({ ok: true, data: payload, exists: true });
   } catch (error: any) {
     logger.error('waybill get error', { error: error?.message });
     logger.end();

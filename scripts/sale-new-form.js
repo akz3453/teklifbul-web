@@ -13,6 +13,7 @@ import DOMPurify from 'https://cdn.jsdelivr.net/npm/dompurify@3.2.2/+esm';
 // Teklifbul Rule v1.0 - İl/İlçe yükleme için helper fonksiyonlar
 let provincesData = null;
 let allowPriceEditing = false; // Teklifbul Rule v1.0 - Satış fiyatı düzenleme izni (Default false)
+let allowDiscountEditing = false; // Teklifbul Rule v1.0 - İndirim % düzenleme izni (Default false)
 
 let saleItems = [];
 let selectedCustomer = null;
@@ -136,16 +137,18 @@ let userCompanyId = null; // Teklifbul Rule v1.0 - Firestore autocomplete: User 
       userCompanyId = companyId;
       logger.info('Company ID event alındı, autocomplete bağlanıyor', { companyId });
 
-      // Teklifbul Rule v1.0 - Şirket ayarlarını yükle (allowPriceEditing)
+      // Teklifbul Rule v1.0 - Şirket ayarlarını yükle (allowPriceEditing / allowDiscountEditing)
       getDoc(doc(db, 'companies', companyId)).then(docSnap => {
         if (docSnap.exists()) {
-          allowPriceEditing = docSnap.data().allowPriceEditing === true;
-          logger.info('Fiyat düzenleme ayarı yüklendi', { allowPriceEditing });
+          const companyData = docSnap.data() || {};
+          allowPriceEditing = companyData.allowPriceEditing === true;
+          allowDiscountEditing = companyData.allowDiscountEditing === true;
+          logger.info('Satış düzenleme ayarları yüklendi', { allowPriceEditing, allowDiscountEditing });
           // Eğer items varsa re-render et (lock state uygulamak için)
           if (saleItems.length > 0) renderItems();
         }
       }).catch(err => {
-        logger.error('Fiyat düzenleme ayarı yüklenirken hata', err);
+        logger.error('Satış düzenleme ayarları yüklenirken hata', err);
       });
 
       // Mevcut tüm input'lara autocomplete bağla (eğer varsa)
@@ -245,11 +248,8 @@ function setupFormListeners() {
     updateSummary();
   });
 
-  // Save sale
-  document.getElementById('saveSale')?.addEventListener('click', async () => {
-    const isRetail = document.getElementById('isRetailSale')?.checked;
-    await saveSale('saved', isRetail ? 'retail' : 'standard');
-  });
+  // Save sale — asıl bağlama DOMContentLoaded + btnSaveSale (handleSaveSale)
+  // Eski #saveSale id'si HTML'de yok; dead listener kaldırıldı
 
   // Save draft
   document.getElementById('btnSaveDraft')?.addEventListener('click', async () => {
@@ -266,30 +266,7 @@ function setupFormListeners() {
     openCustomerModal();
   });
 
-  // Teklifbul Rule v1.0 - Nakliye bilgileri: Checkbox change event
-  const isOwnDeliveryCheckbox = document.getElementById('isOwnDelivery');
-  if (isOwnDeliveryCheckbox) {
-    // preventDefault ve stopPropagation checkbox için sorun yaratabilir, kaldırıyoruz
-    isOwnDeliveryCheckbox.addEventListener('change', function () {
-      console.log('Checkbox change event triggered', this.checked);
-      toggleDeliveryDetails();
-    });
-
-    // Click event de ekle (bazı durumlarda change event çalışmayabilir)
-    isOwnDeliveryCheckbox.addEventListener('click', function () {
-      console.log('Checkbox click event triggered', this.checked);
-      setTimeout(() => toggleDeliveryDetails(), 10);
-    });
-
-    // İlk yüklemede durumu kontrol et
-    setTimeout(() => {
-      console.log('Initial toggle check');
-      toggleDeliveryDetails();
-    }, 100);
-  } else {
-    console.error('isOwnDelivery checkbox bulunamadı');
-    logger.warn('isOwnDelivery checkbox bulunamadı');
-  }
+  // Nakliye checkbox listener'ları init bloğunda (deliveryToggleGroup ile) bağlanır
 
   // Retail sale toggle
   document.getElementById('isRetailSale')?.addEventListener('change', function (e) {
@@ -546,7 +523,7 @@ function renderItems() {
     inputVat.type = 'number';
     inputVat.className = 'item-vat-rate';
     inputVat.setAttribute('data-item-id', item.id);
-    inputVat.value = item.vatRate || 18;
+    inputVat.value = item.vatRate ?? 20;
     inputVat.min = '0';
     inputVat.max = '100';
     inputVat.step = '0.01';
@@ -565,6 +542,16 @@ function renderItems() {
     inputDisc.max = '100';
     inputDisc.step = '0.01';
     inputDisc.style.width = '100%';
+    inputDisc.title = 'İndirim yüzdesi';
+    inputDisc.setAttribute('aria-label', 'İndirim yüzdesi');
+
+    // Teklifbul Rule v1.0 - İndirim düzenleme izni kontrolü
+    if (!allowDiscountEditing) {
+      inputDisc.readOnly = true;
+      inputDisc.style.backgroundColor = '#f3f4f6';
+      inputDisc.title = 'İndirim değişimi engellenmiştir (Ayarlar > Güvenlik)';
+    }
+
     td8.appendChild(inputDisc);
     tr.appendChild(td8);
 
@@ -1703,7 +1690,12 @@ async function saveSale(targetStatus, isRetail = false) {
 
     // Teklifbul Rule v1.0 - Satış numarası göster
     const saleNumberMsg = result.saleNumber ? ` (No: ${result.saleNumber})` : '';
-    toast.success((targetStatus === 'draft' ? 'Satış taslak olarak kaydedildi' : 'Satış onaya gönderildi') + saleNumberMsg);
+    const successMsg = targetStatus === 'draft'
+      ? 'Satış taslak olarak kaydedildi'
+      : targetStatus === 'pending_approval'
+        ? 'Satış onaya gönderildi'
+        : 'Satış kaydedildi';
+    toast.success(successMsg + saleNumberMsg);
 
     // Redirect to detail page
     window.location.href = `/pages/sale-detail.html?id=${result.saleId || saleId}`;
@@ -1856,7 +1848,7 @@ async function loadSaleForEdit(saleId) {
       locationId: item.locationId || '',
       locationName: item.locationName || '',
       unitPrice: item.unitPrice || 0,
-      vatRate: item.vatRate || 18,
+      vatRate: item.vatRate ?? 20,
       discount: item.discount || 0,
       discountAmount: item.discountAmount || 0,
       totalPrice: item.totalPrice || 0,
@@ -2060,13 +2052,17 @@ async function openCustomerModal(presetName = '') {
   const form = document.getElementById('customerForm');
   if (form) {
     form.reset();
-    document.getElementById('customerId').value = '';
+    const modalCustomerIdEl = document.getElementById('modalCustomerId');
+    if (modalCustomerIdEl) modalCustomerIdEl.value = '';
     document.getElementById('customerCode').value = 'Otomatik oluşturulacak';
     document.getElementById('customerName').value = presetName;
     document.getElementById('isActive').checked = true;
     document.getElementById('addressCountry').value = 'TR';
     document.getElementById('paymentTerms').value = '30';
-    document.getElementById('currency').value = 'TRY';
+    const modalCurrencyEl = document.getElementById('modalCurrency');
+    if (modalCurrencyEl) modalCurrencyEl.value = 'TRY';
+    const modalNotesEl = document.getElementById('modalNotes');
+    if (modalNotesEl) modalNotesEl.value = '';
 
     // İletişim kişilerini sıfırla
     const contactContainer = document.getElementById('contactPersonsContainer');
@@ -2169,9 +2165,9 @@ async function handleCustomerFormSubmit(e) {
       },
       paymentTerms: parseInt(document.getElementById('paymentTerms')?.value || '30', 10),
       creditLimit: document.getElementById('creditLimit')?.value ? parseFloat(document.getElementById('creditLimit').value) : null,
-      currency: document.getElementById('currency')?.value || 'TRY',
+      currency: document.getElementById('modalCurrency')?.value || 'TRY',
       isActive: document.getElementById('isActive')?.checked,
-      notes: document.getElementById('notes')?.value.trim() || null,
+      notes: document.getElementById('modalNotes')?.value.trim() || null,
       createdBy: state.userId
     };
 
@@ -2293,19 +2289,16 @@ function toggleDeliveryDetails() {
   const detailsDiv = document.getElementById('deliveryDetails');
 
   if (!checkbox) {
-    console.error('isOwnDelivery checkbox bulunamadı');
     logger.error('isOwnDelivery checkbox bulunamadı');
     return;
   }
 
   if (!detailsDiv) {
-    console.error('deliveryDetails div bulunamadı');
     logger.error('deliveryDetails div bulunamadı');
     return;
   }
 
   const isChecked = checkbox.checked;
-  console.log('Toggle delivery details', { isChecked, checkboxExists: !!checkbox, detailsDivExists: !!detailsDiv });
 
   if (isChecked) {
     detailsDiv.style.display = 'block';

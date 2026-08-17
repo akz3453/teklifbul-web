@@ -1,5 +1,19 @@
 /* Stock Groups Styles */
-.groups-container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+/* Teklifbul Rule v1.0 — diğer uygulama sayfalarıyla aynı yazı tipi */
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  background: #f8fafc;
+  color: #111827;
+  margin: 0;
+}
+
+.groups-container {
+  width: 100%;
+  max-width: min(1680px, calc(100% - 32px));
+  margin: 0;
+  padding: 16px 20px 28px;
+  box-sizing: border-box;
+}
 
 .groups-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
 .groups-header h1 { margin: 0; }

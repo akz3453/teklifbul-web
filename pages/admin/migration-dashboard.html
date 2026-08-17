@@ -216,6 +216,7 @@
     import { MESSAGES } from '/src/shared/constants/messages.js';
     import { logger } from '/src/shared/log/logger.js';
     import { requireAuth } from '/firebase.js';
+    import { authFetch } from '/assets/js/utils/api-helpers.js';
     // Teklifbul Rule v1.0 - XSS Protection
     import DOMPurify from 'https://cdn.jsdelivr.net/npm/dompurify@3.2.2/+esm';
 
@@ -225,7 +226,7 @@
     const user = await requireAuth();
     if (!user) {
       logger.warn('User not authenticated, redirecting');
-      window.location.href = '/index.html';
+      window.location.href = '/dashboard.html';
       throw new Error('User not authenticated');
     }
 
@@ -236,9 +237,19 @@
       
       // Admin veya ops kontrolü (claim + email allowlist fallback)
       const adminEmailList = `${window.ADMIN_EMAILS || ''}`.split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
-      if (!adminEmailList.length) adminEmailList.push('akyildizfaruk@gmail.com');
-      const isAdmin = claims.admin === true || claims.role === 'admin' || (user.email && adminEmailList.includes(String(user.email).toLowerCase()));
-      const isOps = claims.ops === true || claims.role === 'ops';
+      // Hardcoded default e-posta yok — ADMIN_EMAILS / custom claim ile admin olunur
+      let isAdmin = claims.admin === true || claims.isAdmin === true || claims.role === 'admin' || (user.email && adminEmailList.includes(String(user.email).toLowerCase()));
+      let isOps = claims.ops === true || claims.role === 'ops';
+
+      // Teklifbul Rule v1.0 - Firestore-only admin/ops rolleri backend doğrulamasıyla desteklenir.
+      try {
+        const adminResponse = await authFetch('/api/admin/check');
+        const adminData = await adminResponse.json().catch(() => ({ isAdmin: false, isOps: false }));
+        isAdmin = isAdmin || (adminResponse.ok && adminData?.isAdmin === true);
+        isOps = isOps || (adminResponse.ok && adminData?.isOps === true);
+      } catch (adminCheckError) {
+        logger.warn('Backend admin kontrolü başarısız, claim kontrolü kullanılıyor', adminCheckError);
+      }
       
       logger.info('User claims check', {
         uid: user.uid,
@@ -254,8 +265,7 @@
           email: user.email
         });
         
-        // Admin değilse sayfa hiç gösterilmeden yönlendir
-        window.location.href = '/index.html';
+        window.location.href = '/dashboard.html';
         throw new Error('Insufficient permissions');
       }
       
@@ -265,13 +275,20 @@
     } catch (error) {
       logger.error('Admin check failed', error);
       toast.error(MESSAGES.ERROR_ADMIN_MIGRATION_PERMISSION_CHECK);
-      window.location.href = '/index.html';
+      window.location.href = '/dashboard.html';
       throw error;
     } finally {
       logger.end();
     }
 
-    const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5174';
+    const API_BASE_URL = (() => {
+      const host = window.location.hostname;
+      const isLocal = host === 'localhost' || host === '127.0.0.1';
+      const fromEnv = String(import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+      if (isLocal) return fromEnv || 'http://localhost:5174';
+      if (fromEnv && !fromEnv.includes('localhost') && !fromEnv.includes('127.0.0.1')) return fromEnv;
+      return '';
+    })();
 
     // Teklifbul Rule v1.0 - AbortController for request cancellation
     let statusAbortController = null;

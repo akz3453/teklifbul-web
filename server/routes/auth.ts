@@ -65,8 +65,7 @@ router.post('/verify', async (req: Request, res: Response): Promise<void> => {
       valid: true,
       uid: decodedToken.uid,
       email: decodedToken.email,
-      emailVerified: decodedToken.email_verified || false,
-      customClaims: decodedToken
+      emailVerified: decodedToken.email_verified || false
     });
   } catch (error: any) {
     logger.error('Token verification failed', error);
@@ -123,21 +122,29 @@ router.get('/me', verifyToken, async (req: AuthenticatedRequest, res: Response):
       const userDoc = await admin.firestore().collection('users').doc(req.user.uid).get();
       const userData = userDoc.exists ? userDoc.data() : null;
 
+      const claims = (req.user.customClaims || {}) as Record<string, unknown>;
       res.json({
         uid: req.user.uid,
         email: req.user.email,
         emailVerified: req.user.emailVerified,
-        customClaims: req.user.customClaims,
+        customClaims: {
+          superAdmin: claims.superAdmin === true,
+          admin: claims.admin === true
+        },
         profile: userData || null
       });
     } catch (firestoreError) {
       // Firestore hatası olsa bile temel bilgileri döndür
       logger.warn('Firestore user data fetch failed, returning basic info', firestoreError);
+      const claims = (req.user.customClaims || {}) as Record<string, unknown>;
       res.json({
         uid: req.user.uid,
         email: req.user.email,
         emailVerified: req.user.emailVerified,
-        customClaims: req.user.customClaims,
+        customClaims: {
+          superAdmin: claims.superAdmin === true,
+          admin: claims.admin === true
+        },
         profile: null
       });
     }
@@ -188,6 +195,90 @@ router.post('/refresh', async (req: Request, res: Response): Promise<void> => {
     res.status(500).json({
       error: 'Sunucu hatası',
       message: error.message || 'Token refresh edilemedi'
+    });
+  }
+});
+
+/**
+ * POST /api/auth/send-verification-email
+ * Markalı doğrulama maili (Resend/Brevo/Mailjet + SENDER_EMAIL)
+ */
+router.post('/send-verification-email', verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const uid = req.user?.uid;
+    if (!uid) {
+      return res.status(401).json({ ok: false, error: 'Unauthorized' });
+    }
+
+    const authUser = await admin.auth().getUser(uid);
+    if (!authUser.email) {
+      return res.status(400).json({ ok: false, error: 'E-posta adresi bulunamadı' });
+    }
+    if (authUser.emailVerified) {
+      return res.json({ ok: true, alreadyVerified: true });
+    }
+
+    const { sendBrandedEmail, isBrandedEmailReady } = await import('../services/emailService.js');
+    if (!isBrandedEmailReady()) {
+      logger.warn('Branded verification unavailable; client Firebase fallback required', { uid });
+      return res.status(503).json({
+        ok: false,
+        fallback: true,
+        error: 'email_provider_unavailable',
+      });
+    }
+
+    const continueUrl =
+      (typeof req.body?.continueUrl === 'string' && req.body.continueUrl.startsWith('https://')
+        ? req.body.continueUrl
+        : null) ||
+      process.env.APP_PUBLIC_URL ||
+      'https://nefisoft.com/login.html';
+
+    const actionCodeSettings = {
+      url: continueUrl.includes('login') ? continueUrl : `${continueUrl.replace(/\/$/, '')}/login.html`,
+      handleCodeInApp: false,
+    };
+
+    const link = await admin.auth().generateEmailVerificationLink(authUser.email, actionCodeSettings);
+    const displayName = authUser.displayName || authUser.email.split('@')[0];
+    const html = `
+      <div style="font-family:Arial,sans-serif;line-height:1.5;color:#111827;max-width:560px;margin:0 auto;">
+        <h2 style="color:#1d4ed8;margin:0 0 12px;">NEFISOFT e-posta doğrulama</h2>
+        <p>Merhaba ${displayName},</p>
+        <p>Hesabınızı tamamlamak için e-posta adresinizi doğrulayın:</p>
+        <p style="margin:24px 0;">
+          <a href="${link}" style="background:#2563eb;color:#fff;padding:12px 18px;border-radius:8px;text-decoration:none;display:inline-block;">
+            E-postamı Doğrula
+          </a>
+        </p>
+        <p style="font-size:13px;color:#6b7280;">Buton çalışmazsa bu bağlantıyı tarayıcıya yapıştırın:<br/>${link}</p>
+        <p style="font-size:12px;color:#9ca3af;">Bu mesajı siz talep etmediyseniz yok sayabilirsiniz.</p>
+      </div>
+    `;
+
+    const sent = await sendBrandedEmail({
+      to: authUser.email,
+      subject: 'NEFISOFT — E-posta adresinizi doğrulayın',
+      html,
+    });
+
+    if (!sent.success) {
+      logger.error('Verification email send failed', sent.error);
+      return res.status(502).json({
+        ok: false,
+        fallback: true,
+        error: sent.error || 'E-posta gönderilemedi',
+      });
+    }
+
+    return res.json({ ok: true, provider: sent.provider });
+  } catch (error: any) {
+    logger.error('send-verification-email failed', error);
+    return res.status(500).json({
+      ok: false,
+      fallback: true,
+      error: error?.message || 'Doğrulama e-postası gönderilemedi',
     });
   }
 });

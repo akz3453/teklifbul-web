@@ -62,26 +62,32 @@ function getLimitForPlan(planId: string | null | undefined): number {
   return FREE_MAX;
 }
 
-function getKey(req: AuthenticatedRequest): string | null {
-  // Try companyId from header or user data
-  const headerCompanyId = req.headers['x-company-id'] as string | undefined;
-  if (headerCompanyId) return `company:${headerCompanyId}:ai`;
-  
-  // Fallback to userId for legacy flow
+function getKey(req: AuthenticatedRequest): Promise<string | null> {
+  // Teklifbul Rule v1.0 — x-company-id spoof rate-limit/plan yükseltmesin
+  return getTrustedCompanyKey(req);
+}
+
+async function getTrustedCompanyKey(req: AuthenticatedRequest): Promise<string | null> {
+  try {
+    const { getCompanyIdFromRequest } = await import('../src/services/permissionService.js');
+    const companyId = await getCompanyIdFromRequest(req);
+    if (companyId) return `company:${companyId}:ai`;
+  } catch (e) {
+    logger.warn('rateLimitAi: trusted company resolve failed', e);
+  }
   if (req.user?.uid) return `user:${req.user.uid}:ai`;
-  
   return null;
 }
 
 async function getPlanId(req: AuthenticatedRequest): Promise<string | null> {
   try {
-    // Try to get plan from company context
-    const headerCompanyId = req.headers['x-company-id'] as string | undefined;
-    if (headerCompanyId) {
+    const { getCompanyIdFromRequest } = await import('../src/services/permissionService.js');
+    const companyId = await getCompanyIdFromRequest(req);
+    if (companyId) {
       const { getAdminDb } = await import('../utils/firestore.js');
       const db = await getAdminDb();
       if (db) {
-        const companyDoc = await db.collection('companies').doc(headerCompanyId).get();
+        const companyDoc = await db.collection('companies').doc(companyId).get();
         if (companyDoc.exists) {
           const data = companyDoc.data();
           return data?.planId || null;
@@ -102,9 +108,44 @@ async function getPlanId(req: AuthenticatedRequest): Promise<string | null> {
   return null;
 }
 
+async function consumeDistributedWindow(
+  key: string,
+  limit: number,
+  windowMs: number,
+  now: number
+): Promise<'ok' | 'limited' | 'skip'> {
+  if (process.env.NODE_ENV !== 'production') return 'skip';
+  try {
+    const { getAdminDb } = await import('../utils/firestore.js');
+    const db = await getAdminDb();
+    if (!db) return 'skip';
+    const docId = key.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 700);
+    const ref = db.collection('aiRateWindows').doc(docId);
+    const limited = await db.runTransaction(async (tx) => {
+      const snap = await tx.get(ref);
+      const data = snap.data() || {};
+      let windowStart = Number(data.windowStartMs) || now;
+      let count = Number(data.count) || 0;
+      if (now - windowStart >= windowMs) {
+        windowStart = now;
+        count = 0;
+      }
+      if (count >= limit) {
+        return true;
+      }
+      tx.set(ref, { windowStartMs: windowStart, count: count + 1, updatedAt: now }, { merge: true });
+      return false;
+    });
+    return limited ? 'limited' : 'ok';
+  } catch (e) {
+    logger.warn('rateLimitAi: distributed window failed, using memory', e);
+    return 'skip';
+  }
+}
+
 export async function rateLimitAi(req: Request, res: Response, next: NextFunction) {
   const authReq = req as AuthenticatedRequest;
-  const key = getKey(authReq);
+  const key = await getKey(authReq);
   
   if (!key) {
     // No key = no rate limit (shouldn't happen with verifyToken, but safe fallback)
@@ -115,6 +156,21 @@ export async function rateLimitAi(req: Request, res: Response, next: NextFunctio
   const limit = getLimitForPlan(planId);
   const now = Date.now();
   const windowMs = WINDOW_SEC * 1000;
+
+  const distributed = await consumeDistributedWindow(key, limit, windowMs, now);
+  if (distributed === 'limited') {
+    logger.warn('AI rate limit exceeded (distributed)', { key, planId, limit });
+    res.status(429).json({
+      code: 'RATE_LIMITED',
+      message: 'Çok hızlı istek gönderildi',
+      retryAfterSec: Math.ceil(windowMs / 1000),
+    });
+    res.setHeader('Retry-After', String(Math.ceil(windowMs / 1000)));
+    return;
+  }
+  if (distributed === 'ok') {
+    return next();
+  }
 
   // Teklifbul Rule v1.3.1 - Opportunistic purge if store is large
   opportunisticPurge();

@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="/utils.css" />
   <link rel="stylesheet" href="/assets/css/layout.css" />
   <link rel="stylesheet" href="/assets/css/stock-form.css" />
+  <link rel="stylesheet" href="/assets/css/mobile.css" />
 </head>
 <body>
   <header id="app-header"></header>
@@ -23,16 +24,16 @@
     </div>
 
     <h1 id="formTitle" style="margin:0 0 4px 0">➕ Yeni Stok Kartı Oluştur</h1>
-    <p style="color:#6b7280; font-size:13px; margin:0 0 20px 0">Stok kartı bilgilerini doldurun. Sadece <strong>Stok Kodu</strong> ve <strong>Ürün Adı</strong> zorunludur.</p>
+    <p class="stock-form-lead">Stok kartı bilgilerini doldurun. <strong>Stok Kodu</strong>, <strong>Ürün Adı</strong> ve <strong>Depo / Lokasyon</strong> zorunludur.</p>
 
     <!-- 1) Temel Bilgiler -->
-    <div class="form-section" id="sectionBasic">
+    <div class="form-section" id="sectionBasic" style="margin-bottom:14px">
       <div class="form-section-header" data-section="sectionBasic">
         <h3>📋 Temel Bilgiler</h3>
         <span class="form-section-toggle">▾</span>
       </div>
       <div class="form-section-body">
-        <div class="form-grid">
+        <div class="form-grid form-grid-dense">
           <div class="form-group">
             <label>Stok Kodu (SKU) <span class="required">*</span></label>
             <input type="text" id="fieldSku" placeholder="Örn: STK-001" maxlength="50" required />
@@ -40,6 +41,12 @@
           <div class="form-group">
             <label>Ürün Adı <span class="required">*</span></label>
             <input type="text" id="fieldName" placeholder="Ürün adını yazın" required />
+          </div>
+          <div class="form-group">
+            <label>Depo / Lokasyon <span class="required">*</span></label>
+            <select id="fieldWarehouseCode" required aria-label="Depo / Lokasyon">
+              <option value="">Lokasyon seçiniz</option>
+            </select>
           </div>
           <div class="form-group">
             <label>Barkod</label>
@@ -60,6 +67,7 @@
       </div>
     </div>
 
+    <div class="form-sections-row">
     <!-- 2) Kategori & Sınıflandırma -->
     <div class="form-section" id="sectionCategory">
       <div class="form-section-header" data-section="sectionCategory">
@@ -128,8 +136,6 @@
             <label>Hacim (m³)</label>
             <input type="number" id="fieldVolume" placeholder="0.00" step="0.001" min="0" />
           </div>
-        </div>
-        <div class="form-grid-3" style="margin-top:16px">
           <div class="form-group">
             <label>Genişlik (cm)</label>
             <input type="number" id="fieldDimWidth" placeholder="0" step="0.1" min="0" />
@@ -145,7 +151,9 @@
         </div>
       </div>
     </div>
+    </div>
 
+    <div class="form-sections-row">
     <!-- 4) Fiyat Bilgileri -->
     <div class="form-section" id="sectionPrice">
       <div class="form-section-header" data-section="sectionPrice">
@@ -154,21 +162,18 @@
       </div>
       <div class="form-section-body">
         <div class="form-group full-width">
-          <p class="helper" style="margin: 0 0 12px 0; line-height: 1.45;">
+          <p class="helper" style="margin: 0 0 10px 0; line-height: 1.45;">
             <strong>Alım</strong> ve <strong>satış fiyatı</strong> alanlarına <strong>KDV hariç (net) birim fiyat</strong> yazın.
-            Aşağıdaki KDV oranı satış/teklif satırında ayrıca hesaplanır; yeni satışta stok kartındaki satış fiyatı varsayılan birim fiyat olarak <strong>KDV hariç</strong> kullanılır.
           </p>
         </div>
         <div class="form-grid">
           <div class="form-group">
             <label for="fieldPurchasePrice">Alım fiyatı (KDV hariç)</label>
             <input type="number" id="fieldPurchasePrice" placeholder="0.00" step="0.01" min="0" title="Net birim fiyat, KDV hariç. Alım faturası satırı ile uyumlu olmalıdır." aria-label="Alım fiyatı, KDV hariç birim fiyat" />
-            <div class="helper">Tedarikçi faturasındaki KDV hariç birim fiyat.</div>
           </div>
           <div class="form-group">
             <label for="fieldSalePrice">Satış fiyatı (KDV hariç)</label>
             <input type="number" id="fieldSalePrice" placeholder="0.00" step="0.01" min="0" title="Net birim fiyat, KDV hariç. Satış fişinde varsayılan birim fiyat olarak kullanılır." aria-label="Satış fiyatı, KDV hariç birim fiyat" />
-            <div class="helper">Müşteriye yansıtacağınız KDV hariç liste fiyatı.</div>
           </div>
           <div class="form-group">
             <label>Para Birimi</label>
@@ -182,7 +187,6 @@
           <div class="form-group">
             <label for="fieldVatRate">KDV oranı (%)</label>
             <input type="number" id="fieldVatRate" placeholder="20" step="1" min="0" max="100" value="20" title="Satış ve teklif satırlarında bu oranla KDV hesaplanır; birim fiyat KDV hariç girilir." aria-label="KDV oranı yüzde" />
-            <div class="helper">Satış satırında KDV bu oranla tutarın üzerine eklenir.</div>
           </div>
           <div class="form-group">
             <label>İskonto Oranı (%)</label>
@@ -230,7 +234,9 @@
         </div>
       </div>
     </div>
+    </div>
 
+    <div class="form-sections-row">
     <!-- 6) Tedarik (Collapse) -->
     <div class="form-section collapsed" id="sectionSupply">
       <div class="form-section-header" data-section="sectionSupply">
@@ -271,12 +277,6 @@
             <label>Menşei</label>
             <input type="text" id="fieldOrigin" placeholder="Üretim ülkesi" />
           </div>
-          <div class="form-group">
-            <label>Depo / Lokasyon <span class="required">*</span></label>
-            <select id="fieldWarehouseCode" required>
-              <option value="">Lokasyon seçiniz</option>
-            </select>
-          </div>
           <div class="form-group full-width">
             <label>Notlar</label>
             <textarea id="fieldNotes" placeholder="Ek notlar..."></textarea>
@@ -291,6 +291,7 @@
         </div>
       </div>
     </div>
+    </div>
 
     <!-- Actions -->
     <div class="form-actions">
@@ -300,9 +301,12 @@
   </div>
 
   <script type="module">
+    import { initAuthGuard } from '/assets/js/auth-guard.js';
     import { initGlobalHeader } from '../assets/js/ui/header.js';
     import { toast } from '../src/shared/ui/toast.js';
     window.toast = toast;
+    initAuthGuard().catch((err) => { console.error('Auth guard init failed', err); });
+
     initGlobalHeader({ mount: '#app-header', activeRoute: 'inventory' });
   </script>
   <script type="module" src="/scripts/stock-new.js"></script>

@@ -17,6 +17,9 @@ import { getAllTokenPacks } from '../services/aiTokenPackCatalog.js';
 import crypto from 'crypto';
 import { AI_ERROR_CODES } from '../constants/aiMeta.js';
 import { clearEntitlementCache, getProviderKey } from '../services/aiEntitlementService.js'; // Teklifbul Rule v3.13 + v3.15
+import { isAdminUser } from '../auth/admin-check.js';
+import { resolveTrustedCompanyIdAsync } from '../utils/companyAccess.js';
+import { isMockPurchaseEnabled, resolveCheckoutBaseUrl } from '../services/paymentsService.js';
 
 type AiTokenPackage = {
   id: string;
@@ -32,16 +35,6 @@ type AiTokenPackage = {
   description?: string;
 };
 
-function resolveSharedCompanyId(userData: any): string | null {
-  const cid = userData?.companyId;
-  const aid = userData?.activeCompanyId;
-  const arr0 = Array.isArray(userData?.companies) && userData.companies.length ? userData.companies[0] : null;
-
-  if (cid && typeof cid === 'string' && !cid.startsWith('solo-') && !cid.startsWith('tax-')) return cid;
-  if (aid && typeof aid === 'string' && aid.startsWith('solo-') && cid) return cid;
-  return aid || cid || arr0;
-}
-
 async function getCompanyContext(req: AuthenticatedRequest) {
   const userId = req.user?.uid;
   if (!userId) return { userId: null, companyId: null, userData: null as any };
@@ -52,7 +45,10 @@ async function getCompanyContext(req: AuthenticatedRequest) {
   const userDoc = await db.collection('users').doc(userId).get();
   const userData = userDoc.exists ? (userDoc.data() || {}) : {};
   const headerCompanyId = req.headers['x-company-id'] as string | undefined;
-  const companyId = headerCompanyId || resolveSharedCompanyId(userData);
+  const companyId = await resolveTrustedCompanyIdAsync(userData, headerCompanyId, {
+    userId,
+    path: req.path,
+  });
   return { userId, companyId: companyId || null, userData };
 }
 
@@ -164,8 +160,16 @@ router.post(
       const { companyId } = await getCompanyContext(req);
       if (!companyId) {
         logger.end();
-        return res.status(400).json({ ok: false, error: 'company_required', message: 'Şirket bilgisi bulunamadı.' });
+        return res.status(403).json({
+          ok: false,
+          error: 'company_forbidden',
+          message: 'Şirket erişimi doğrulanamadı. x-company-id geçersiz olabilir.',
+        });
       }
+
+      // Teklifbul Rule v1.0 — Mock satın alma yalnız admin + env; diğerleri gerçek ödeme intent
+      const allowMock =
+        isMockPurchaseEnabled() && isAdminUser(req.user);
 
       const db = await getAdminDb();
       if (!db) {
@@ -194,10 +198,63 @@ router.post(
       } catch (err: any) {
         logger.warn('Invalid package: missing providerKey', { packageId, error: err.message });
         logger.end();
-        return res.status(400).json({ 
-          ok: false, 
-          error: AI_ERROR_CODES.INVALID_PROVIDER, 
-          message: 'Paket geçersiz: providerKey belirlenemedi.' 
+        return res.status(400).json({
+          ok: false,
+          error: AI_ERROR_CODES.INVALID_PROVIDER,
+          message: 'Paket geçersiz: providerKey belirlenemedi.'
+        });
+      }
+
+      if (!allowMock) {
+        const { createPaymentIntentRecord } = await import('../services/subscriptionService.js');
+        const providerSessionId = `ai_tok_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        const paymentIntent = await createPaymentIntentRecord({
+          userId: req.user!.uid,
+          planId: `token_pack_${pkg.id}` as any,
+          amount: Number(pkg.priceTRY || 0),
+          currency: 'TRY',
+          status: 'initiated',
+          providerSessionId,
+        });
+
+        await db.collection('payment_intents').doc(paymentIntent.id).update({
+          companyId,
+          metadata: {
+            type: 'company_ai_token_pack',
+            companyId,
+            packageId: pkg.id,
+            packId: pkg.id,
+            providerKey,
+            provider: providerKey,
+            tokenAmount: pkg.tokens,
+            tokens: pkg.tokens,
+            idempotencyKey: idempotencyKey || null,
+          },
+        });
+
+        const checkoutBase = resolveCheckoutBaseUrl();
+        const checkoutUrl = `${checkoutBase}?session=${providerSessionId}&intent=${paymentIntent.id}&type=company_ai_token_pack`;
+
+        logger.info('Company AI token payment initiated', {
+          userId: req.user!.uid,
+          companyId,
+          packageId: pkg.id,
+          paymentIntentId: paymentIntent.id,
+        });
+        logger.end();
+        return res.json({
+          ok: true,
+          requiresPayment: true,
+          paymentIntentId: paymentIntent.id,
+          checkoutUrl,
+          amount: pkg.priceTRY,
+          currency: 'TRY',
+          package: {
+            id: pkg.id,
+            name: pkg.name,
+            tokens: pkg.tokens,
+            providerKey,
+          },
         });
       }
 

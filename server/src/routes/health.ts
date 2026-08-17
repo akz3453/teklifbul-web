@@ -16,12 +16,13 @@ const router = express.Router();
  */
 router.get('/', async (_req, res) => {
   try {
+    const version = process.env.APP_VERSION || process.env.npm_package_version || '1.0.1';
     const response = {
       ok: true,
       status: 'ok',
       service: 'teklifbul-api',
-      version: process.env.APP_VERSION || 'dev',
-      environment: process.env.NODE_ENV || 'development',
+      version,
+      environment: process.env.NODE_ENV === 'production' ? 'production' : (process.env.NODE_ENV || 'development'),
       uptimeSec: Math.floor(process.uptime()),
       timestamp: new Date().toISOString()
     };
@@ -50,7 +51,7 @@ router.get('/', async (_req, res) => {
       ok: false,
       status: 'error',
       service: 'teklifbul-api',
-      error: error.message || 'Health check failed'
+      error: 'Health check failed'
     });
   }
 });

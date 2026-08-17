@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Panel - NEFISOFT</title>
-  <link rel="stylesheet" href="/assets/css/admin.css">
   <style>
     /* Admin Panel Styles */
     * {
@@ -318,6 +317,20 @@
       color: #991b1b;
     }
 
+    .admin-nav-badge {
+      margin-left: 6px;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 6px;
+      border-radius: 999px;
+      background: #ef4444;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      align-items: center;
+      justify-content: center;
+    }
+
     .badge-warning {
       background: #fef3c7;
       color: #92400e;
@@ -542,6 +555,7 @@
           <li><a href="#errors" class="nav-link" data-tab="errors">🐛 Hatalar</a></li>
           <li><a href="#settings" class="nav-link" data-tab="settings">⚙️ Sistem Ayarları</a></li>
           <li><a href="#ai-catalog" class="nav-link" data-tab="ai-catalog">🧠 AI Katalog Yönetimi</a></li>
+          <li><a href="#contact-messages" class="nav-link" data-tab="contact-messages">📨 İletişim Mesajları <span id="contact-unread-badge" class="admin-nav-badge" style="display:none;"></span></a></li>
           <li><a href="/pages/admin/migration-dashboard.html" class="nav-link" data-external="true">🚀 Veri Göçü Paneli</a></li>
         </ul>
       </nav>
@@ -599,7 +613,7 @@
             <h3>Paket / Abonelik Yönetimi (Şirket Bazlı)</h3>
             <div class="admin-filters">
               <div class="admin-search">
-                <input type="text" id="subscription-search" placeholder="Şirket adı veya vergi no ara..." style="flex: 1;">
+                <input type="text" id="subscription-search" placeholder="Şirket adı, vergi no veya kurucu mail ara..." style="flex: 1;" aria-label="Şirket ara">
               </div>
               <select id="subscription-filter-plan" style="margin-left: 12px;">
                 <option value="all">Tüm Planlar</option>
@@ -627,6 +641,7 @@
                 <option value="rateLimitHit">Rate Limit</option>
                 <option value="adminAction">Admin Aksiyonları</option>
                 <option value="serverError">Sunucu Hataları</option>
+                <option value="clientError">İstemci Hataları</option>
               </select>
               <select id="log-filter-period">
                 <option value="24h">Son 24 Saat</option>
@@ -715,8 +730,83 @@
               src="/pages/admin/ai-catalog.html"></iframe>
           </div>
         </div>
+
+        <!-- Contact Messages Tab -->
+        <div id="tab-contact-messages" class="tab-content">
+          <div class="admin-card">
+            <h3>İletişim Mesajları</h3>
+            <p class="muted" style="margin-bottom:12px;">contact.html formundan gelen mesajlar</p>
+            <div class="admin-filters">
+              <div class="admin-search">
+                <input type="text" id="contact-search" placeholder="İsim, e-posta, şirket veya mesaj ara..." aria-label="İletişim mesajı ara">
+              </div>
+              <select id="contact-filter-status" aria-label="Durum filtresi">
+                <option value="all" selected>Tüm Durumlar</option>
+                <option value="new">Yeni</option>
+                <option value="read">Okundu</option>
+                <option value="replied">Yanıtlandı</option>
+                <option value="archived">Arşiv</option>
+              </select>
+              <button type="button" class="btn btn-secondary" id="btn-contact-refresh" aria-label="Mesajları yenile">Yenile</button>
+            </div>
+            <div id="contact-messages-table-container">
+              <div class="loading">Yükleniyor...</div>
+            </div>
+          </div>
+        </div>
       </div>
     </main>
+  </div>
+
+  <!-- Contact Message Detail Modal -->
+  <div id="contact-message-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1002; align-items:center; justify-content:center; padding:16px;" role="dialog" aria-modal="true" aria-labelledby="contact-message-modal-title">
+    <div style="background:#fff; border-radius:12px; max-width:720px; width:100%; max-height:90vh; overflow:auto; box-shadow:0 20px 50px rgba(0,0,0,.25);">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 20px; border-bottom:1px solid #e5e7eb; position:sticky; top:0; background:#fff; z-index:1;">
+        <h3 id="contact-message-modal-title" style="margin:0; font-size:18px;">Mesaj Detayı</h3>
+        <button type="button" class="btn btn-secondary" id="btn-contact-message-close" aria-label="Kapat">Kapat</button>
+      </div>
+      <div style="padding:20px; display:grid; gap:14px;">
+        <div>
+          <div style="font-size:12px; color:#6b7280; margin-bottom:4px;">Gönderen</div>
+          <div id="contact-modal-name" style="font-weight:700; font-size:16px;">-</div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div>
+            <div style="font-size:12px; color:#6b7280; margin-bottom:4px;">Şirket</div>
+            <div id="contact-modal-company">-</div>
+          </div>
+          <div>
+            <div style="font-size:12px; color:#6b7280; margin-bottom:4px;">Tarih</div>
+            <div id="contact-modal-date">-</div>
+          </div>
+          <div>
+            <div style="font-size:12px; color:#6b7280; margin-bottom:4px;">E-posta</div>
+            <a id="contact-modal-email" href="#">-</a>
+          </div>
+          <div>
+            <div style="font-size:12px; color:#6b7280; margin-bottom:4px;">Telefon</div>
+            <div id="contact-modal-phone">-</div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:12px; color:#6b7280; margin-bottom:4px;">Durum</div>
+          <select id="contact-modal-status" aria-label="Mesaj durumu" style="min-width:160px; padding:8px 10px; border-radius:8px; border:1px solid #d1d5db;">
+            <option value="new">Yeni</option>
+            <option value="read">Okundu</option>
+            <option value="replied">Yanıtlandı</option>
+            <option value="archived">Arşiv</option>
+          </select>
+        </div>
+        <div>
+          <div style="font-size:12px; color:#6b7280; margin-bottom:8px;">Mesaj</div>
+          <div id="contact-modal-message" style="white-space:pre-wrap; word-break:break-word; line-height:1.6; padding:14px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; min-height:120px;"></div>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <a id="contact-modal-mailto" class="btn btn-primary" href="#" aria-label="E-posta ile yanıtla">E-posta ile yanıtla</a>
+          <button type="button" class="btn btn-secondary" id="btn-contact-modal-archive" aria-label="Arşivle">Arşivle</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- User Delete Confirm Modal -->

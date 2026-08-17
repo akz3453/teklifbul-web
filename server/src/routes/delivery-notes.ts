@@ -13,6 +13,7 @@ import { logger } from '../../../src/shared/log/logger.js';
 import { createDeliveryNoteDraftFromSale, createDirectDeliveryNoteDraft, prepareDeliveryNote, sendDeliveryNote, syncDeliveryNoteStatus, getDeliveryNotePdf, cancelDeliveryNote } from '../services/deliveryNoteService.js';
 import { requirePermission } from '../../middleware/requirePermission.js';
 import { deliveryNoteIdParamsSchema, companyIdBodySchema } from '../schemas/deliveryNoteSchemas.js';
+import { userBelongsToCompanyAsync } from '../../utils/companyAccess.js';
 
 const router = express.Router();
 
@@ -46,11 +47,11 @@ router.post('/', requirePermission('edespatch.create'), async (req: any, res) =>
 
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    if (!userData || userData.companyId !== body.companyId) {
+    if (!userData || !(await userBelongsToCompanyAsync(userData, body.companyId, userId))) {
       return res.status(403).json({ ok: false, error: 'Yetkisiz erişim' });
     }
 
-    const companyId = userData.companyId;
+    const companyId = body.companyId;
 
     // İrsaliye oluştur
     const result = await createDeliveryNoteDraftFromSale({
@@ -103,7 +104,7 @@ router.post('/direct', requirePermission('edespatch.create'), async (req: any, r
 
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    if (!userData || (userData.companyId !== body.companyId && userData.activeCompanyId !== body.companyId)) {
+    if (!userData || !(await userBelongsToCompanyAsync(userData, body.companyId, userId))) {
       return res.status(403).json({ ok: false, error: 'Yetkisiz erişim' });
     }
 
@@ -166,7 +167,7 @@ router.get('/:id',
     // Company kontrolü
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    if (userData?.companyId !== deliveryNote?.companyId) {
+    if (!(await userBelongsToCompanyAsync(userData, deliveryNote?.companyId, userId))) {
       return res.status(403).json({ ok: false, error: 'Yetkisiz erişim' });
     }
 
@@ -229,7 +230,7 @@ router.post('/:id/prepare',
     // Company kontrolü
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    if (userData?.companyId !== companyId && userData?.activeCompanyId !== companyId) {
+    if (!(await userBelongsToCompanyAsync(userData, companyId, userId))) {
       return res.status(403).json({ ok: false, error: 'Yetkisiz erişim' });
     }
 
@@ -293,7 +294,7 @@ router.post('/:id/send',
     // Company kontrolü
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    if (userData?.companyId !== companyId && userData?.activeCompanyId !== companyId) {
+    if (!(await userBelongsToCompanyAsync(userData, companyId, userId))) {
       return res.status(403).json({ ok: false, error: 'Yetkisiz erişim' });
     }
 
@@ -354,7 +355,7 @@ router.get('/:id/status',
     // Company kontrolü
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    if (userData?.companyId !== companyId && userData?.activeCompanyId !== companyId) {
+    if (!(await userBelongsToCompanyAsync(userData, companyId, userId))) {
       return res.status(403).json({ ok: false, error: 'Yetkisiz erişim' });
     }
 
@@ -414,7 +415,7 @@ router.get('/:id/pdf',
     // Company kontrolü
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    if (userData?.companyId !== companyId && userData?.activeCompanyId !== companyId) {
+    if (!(await userBelongsToCompanyAsync(userData, companyId, userId))) {
       return res.status(403).json({ ok: false, error: 'Yetkisiz erişim' });
     }
 
@@ -478,7 +479,7 @@ router.post('/:id/cancel',
     // Company kontrolü
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    if (userData?.companyId !== companyId && userData?.activeCompanyId !== companyId) {
+    if (!(await userBelongsToCompanyAsync(userData, companyId, userId))) {
       return res.status(403).json({ ok: false, error: 'Yetkisiz erişim' });
     }
 

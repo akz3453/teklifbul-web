@@ -7,6 +7,7 @@
 
 import { logger } from '../../../../src/shared/log/logger.js';
 import { toast } from '../../../../src/shared/ui/toast.js';
+import { setTableEmpty } from '../../utils/safe-table.js';
 
 let initialized = false;
 let isReloading = false;
@@ -88,10 +89,11 @@ function renderShell() {
                 <th style="padding:10px; text-align:right; border-bottom:2px solid #e5e7eb; font-weight:600; color:#6b7280;">Ödenen Tüketim</th>
                 <th style="padding:10px; text-align:right; border-bottom:2px solid #e5e7eb; font-weight:600; color:#6b7280;">Ücretsiz Kullanım</th>
                 <th style="padding:10px; text-align:right; border-bottom:2px solid #e5e7eb; font-weight:600; color:#6b7280;">Satın Alınan</th>
+                <th style="padding:10px; text-align:right; border-bottom:2px solid #e5e7eb; font-weight:600; color:#6b7280;">Maliyet (USD)</th>
               </tr>
             </thead>
             <tbody id="aiur_daily_tbody">
-              <tr><td colspan="4" style="text-align:center; padding:20px; color:#9ca3af;">Yükleniyor...</td></tr>
+              <tr><td colspan="5" style="text-align:center; padding:20px; color:#9ca3af;">Yükleniyor...</td></tr>
             </tbody>
           </table>
         </div>
@@ -443,6 +445,14 @@ async function reload() {
   } catch (err) {
     logger.error('Failed to load AI usage report', err);
     toast.error(err.message || 'Rapor yüklenemedi');
+    // Teklifbul Rule v1.0 - Hata durumunda takılı "Yükleniyor..." temizle
+    const errMsg = err?.message || 'Rapor yüklenemedi';
+    const dailyTbody = el('aiur_daily_tbody');
+    const modelTbody = el('aiur_model_tbody');
+    const routeTbody = el('aiur_route_tbody');
+    if (dailyTbody) setTableEmpty(dailyTbody, 5, errMsg);
+    if (modelTbody) setTableEmpty(modelTbody, 6, errMsg);
+    if (routeTbody) setTableEmpty(routeTbody, 5, errMsg);
   } finally {
     isReloading = false;
     setLoading(false);

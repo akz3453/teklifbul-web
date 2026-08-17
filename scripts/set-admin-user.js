@@ -108,66 +108,50 @@ async function setAdminUser(email) {
       }
     }
     
-    // Mevcut admin durumunu Firestore'dan kontrol et
     const userDoc = await db.collection('users').doc(uid).get();
     const userData = userDoc.exists ? userDoc.data() : {};
-    const isAdmin = userData?.isAdmin === true || userData?.role === 'admin';
-    const isOps = userData?.isOps === true || userData?.role === 'ops';
-    
-    console.log(`📋 Mevcut Firestore verisi:`, userData);
-    console.log(`📋 Admin durumu: ${isAdmin ? '✅ Admin' : '❌ Admin değil'}`);
-    console.log(`📋 Ops durumu: ${isOps ? '✅ Ops' : '❌ Ops değil'}`);
-    
-    if (isAdmin || isOps) {
-      console.log(`\n✅ Kullanıcı zaten admin/ops yetkisine sahip!`);
-      console.log(`Kullanıcı: ${email}`);
-      console.log(`UID: ${uid}`);
-      return;
-    }
-    
-    // Firestore'da admin bilgisini güncelle
-    console.log(`\n🔧 Admin yetkisi Firestore'da ayarlanıyor...`);
-    
+
+    let authUser;
     try {
-      if (userDoc.exists) {
-        await db.collection('users').doc(uid).update({
-          isAdmin: true,
-          role: 'admin',
-          updatedAt: FieldValue.serverTimestamp(),
-          updatedBy: 'admin-script'
-        });
-        console.log(`✅ Firestore users koleksiyonu güncellendi`);
-      } else {
-        // Kullanıcı dokümanı yoksa oluştur
-        await db.collection('users').doc(uid).set({
-          email: email,
-          isAdmin: true,
-          role: 'admin',
-          createdAt: FieldValue.serverTimestamp(),
-          updatedAt: FieldValue.serverTimestamp(),
-          updatedBy: 'admin-script'
-        });
-        console.log(`✅ Firestore'da yeni kullanıcı dokümanı oluşturuldu ve admin yapıldı`);
-      }
-    } catch (firestoreError) {
-      console.error(`❌ Firestore güncelleme hatası:`, firestoreError.message);
-      throw firestoreError;
+      authUser = await admin.auth().getUser(uid);
+    } catch (authError) {
+      console.error('❌ Firebase Auth kullanıcısı okunamadı; admin claim yazılamaz.', authError.message);
+      process.exit(1);
     }
-    
-    // Firebase Auth custom claims'i güncellemeyi deneyelim (izin varsa)
-    try {
-      const authUser = await admin.auth().getUser(uid);
-      const currentClaims = authUser.customClaims || {};
-      const newClaims = {
+
+    const currentClaims = authUser.customClaims || {};
+    const hasAdminClaim = currentClaims.superAdmin === true
+      || currentClaims.admin === true
+      || currentClaims.isAdmin === true
+      || currentClaims.role === 'admin';
+
+    console.log(`📋 Mevcut Firestore isAdmin: ${userData?.isAdmin === true}`);
+    console.log(`📋 Mevcut custom claims:`, currentClaims);
+
+    if (!hasAdminClaim) {
+      await admin.auth().setCustomUserClaims(uid, {
         ...currentClaims,
+        superAdmin: true,
         admin: true,
         role: 'admin'
-      };
-      await admin.auth().setCustomUserClaims(uid, newClaims);
-      console.log(`✅ Firebase Auth custom claims güncellendi`);
-    } catch (authError) {
-      console.warn(`⚠️ Firebase Auth custom claims güncellenemedi (izin yok, normal):`, authError.message);
-      console.log(`💡 Firestore'dan admin kontrolü yapılacak, bu yeterli olacaktır.`);
+      });
+      console.log('✅ Firebase Auth custom claims güncellendi (superAdmin + admin)');
+    } else {
+      console.log('✅ Kullanıcıda zaten admin custom claim var');
+    }
+
+    // UI menü uyumu — API artık Firestore isAdmin'e güvenmez
+    try {
+      await db.collection('users').doc(uid).set({
+        email: email,
+        isAdmin: true,
+        role: 'admin',
+        updatedAt: FieldValue.serverTimestamp(),
+        updatedBy: 'admin-script'
+      }, { merge: true });
+      console.log('✅ Firestore users.isAdmin güncellendi (yalnız UI)');
+    } catch (firestoreError) {
+      console.warn('⚠️ Firestore isAdmin yazılamadı (API için gerekli değil):', firestoreError.message);
     }
     
     console.log(`\n🎉 Başarılı!`);

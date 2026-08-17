@@ -15,16 +15,7 @@ import { z } from 'zod';
 import { FieldValue } from 'firebase-admin/firestore';
 import { computeAvailableModels } from '../services/purchaseAssistantAvailabilityService.js';
 import { isPremiumBypassUser } from '../utils/premiumBypass.js';
-
-function resolveSharedCompanyId(userData: any): string | null {
-  const cid = userData?.companyId;
-  const aid = userData?.activeCompanyId;
-  const arr0 = Array.isArray(userData?.companies) && userData.companies.length ? userData.companies[0] : null;
-
-  if (cid && typeof cid === 'string' && !cid.startsWith('solo-') && !cid.startsWith('tax-')) return cid;
-  if (aid && typeof aid === 'string' && aid.startsWith('solo-') && cid) return cid;
-  return aid || cid || arr0;
-}
+import { resolveTrustedCompanyIdAsync } from '../utils/companyAccess.js';
 
 async function getCompanyContext(req: AuthenticatedRequest) {
   const userId = req.user?.uid;
@@ -36,7 +27,10 @@ async function getCompanyContext(req: AuthenticatedRequest) {
   const userDoc = await db.collection('users').doc(userId).get();
   const userData = userDoc.exists ? (userDoc.data() || {}) : {};
   const headerCompanyId = req.headers['x-company-id'] as string | undefined;
-  const companyId = headerCompanyId || resolveSharedCompanyId(userData);
+  const companyId = await resolveTrustedCompanyIdAsync(userData, headerCompanyId, {
+    userId,
+    path: req.path,
+  });
   return { userId, companyId: companyId || null, userData };
 }
 
@@ -178,9 +172,9 @@ router.get('/', verifyToken, async (req: AuthenticatedRequest, res) => {
       plan,
       settings: {
         enabled: settings.enabled !== false,
-        // Teklifbul Rule v1.0 - Default provider: groq for premium_plus
-        provider: settings.provider || (plan.isPremiumPlus ? 'groq' : null),
-        model: settings.model || null,
+        // Teklifbul Rule v1.0 - Default provider: ücretsiz Groq (tüm planlar)
+        provider: settings.provider || 'groq',
+        model: settings.model || 'llama-3.3-70b-versatile',
         profile: settings.profile || 'balanced',
         dictionaryLearning: settings.dictionaryLearning === true,
         customInstructions: settings.customInstructions || '', // Teklifbul Rule v1.0

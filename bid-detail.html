@@ -264,6 +264,7 @@
     // Satış Modülü Faz 5 - Tekliften satış oluşturma
     import { requireCompanyContext } from './assets/js/state/company-context.js';
     import { authFetch } from './assets/js/utils/api-helpers.js';
+    import { initAuthGuard } from './assets/js/auth-guard.js';
 
     // Teklifbul Rule v1.0 - Back button event listener
     document.getElementById('backToBidsBtn')?.addEventListener('click', () => {
@@ -272,6 +273,7 @@
 
     // Wrap in async IIFE to avoid top-level return issues
     (async () => {
+      await initAuthGuard();
       // Setup common header functionality
       await setupHeader();
 

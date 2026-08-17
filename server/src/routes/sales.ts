@@ -17,6 +17,7 @@ import { logAuditEvent } from '../services/auditService.js';
 import { approveSale, cancelSale, rejectSale } from '../services/saleService.js';
 import { createSaleFromBid } from '../services/bidToSaleService.js';
 import { hasPermission, getCompanyIdFromRequest } from '../services/permissionService.js';
+import { userBelongsToCompanyAsync } from '../../utils/companyAccess.js';
 import { createInvoiceDraftFromSale } from '../services/invoiceService.js';
 import { Errors } from '../errors/errorCatalog.js';
 import { respondError } from '../errors/respondError.js';
@@ -55,7 +56,7 @@ router.post('/',
 
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    if (userData?.companyId !== body.companyId) {
+    if (!(await userBelongsToCompanyAsync(userData, body.companyId, userId))) {
       return res.status(403).json({ ok: false, error: 'Yetkisiz erişim' });
     }
 
@@ -206,7 +207,7 @@ router.put('/:id',
 
       const userDoc = await db.collection('users').doc(userId).get();
       const userData = userDoc.data();
-      if (userData?.companyId !== body.companyId) {
+      if (!(await userBelongsToCompanyAsync(userData, body.companyId, userId))) {
         return res.status(403).json({ ok: false, error: 'Yetkisiz erişim' });
       }
 
@@ -601,7 +602,7 @@ router.get('/:id', requirePermission('sales.view'), async (req: any, res) => {
     // Company kontrolü
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    if (userData?.companyId !== sale?.companyId) {
+    if (!(await userBelongsToCompanyAsync(userData, sale?.companyId, userId))) {
       return res.status(403).json({ ok: false, error: 'Yetkisiz erişim' });
     }
 
@@ -639,13 +640,10 @@ router.post('/:id/approve', requirePermission('sales.approve'), async (req: any,
       return res.status(500).json({ ok: false, error: 'Firestore unavailable' });
     }
 
-    const userDoc = await db.collection('users').doc(userId).get();
-    const userData = userDoc.data();
-    if (!userData?.companyId) {
+    const companyId = await getCompanyIdFromRequest(req);
+    if (!companyId) {
       return res.status(403).json({ ok: false, error: 'Company ID bulunamadı' });
     }
-
-    const companyId = userData.companyId;
 
     // Teklifbul Rule v1.0 - Opsiyonel: Duty separation (aynı kişi onaylayamasın)
     const companyDoc = await db.collection('companies').doc(companyId).get();
@@ -720,13 +718,10 @@ router.post('/:id/cancel', requirePermission('sales.cancel'), async (req: any, r
       return res.status(500).json({ ok: false, error: 'Firestore unavailable' });
     }
 
-    const userDoc = await db.collection('users').doc(userId).get();
-    const userData = userDoc.data();
-    if (!userData?.companyId) {
+    const companyId = await getCompanyIdFromRequest(req);
+    if (!companyId) {
       return res.status(403).json({ ok: false, error: 'Company ID bulunamadı' });
     }
-
-    const companyId = userData.companyId;
 
     // İptal işlemi
     await cancelSale(saleId, userId, companyId, body.reason);
@@ -769,13 +764,10 @@ router.post('/:id/reject', requirePermission('sales.approve'), async (req: any, 
       return res.status(500).json({ ok: false, error: 'Firestore unavailable' });
     }
 
-    const userDoc = await db.collection('users').doc(userId).get();
-    const userData = userDoc.data();
-    if (!userData?.companyId) {
+    const companyId = await getCompanyIdFromRequest(req);
+    if (!companyId) {
       return res.status(403).json({ ok: false, error: 'Company ID bulunamadı' });
     }
-
-    const companyId = userData.companyId;
 
     // Reddetme işlemi
     await rejectSale(saleId, userId, companyId, body.reason.trim());
@@ -820,11 +812,11 @@ router.post('/from-bid/:bidId', requirePermission('sales.create'), async (req: a
 
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    if (!userData || userData.companyId !== body.companyId) {
+    if (!userData || !(await userBelongsToCompanyAsync(userData, body.companyId, userId))) {
       return res.status(403).json({ ok: false, error: 'Yetkisiz erişim' });
     }
 
-    const companyId = userData.companyId;
+    const companyId = body.companyId;
 
     // Tekliften satış oluştur
     const saleId = await createSaleFromBid(bidId, userId, companyId);
@@ -875,13 +867,10 @@ router.get('/',
       return res.status(500).json({ ok: false, error: 'Firestore unavailable' });
     }
 
-    const userDoc = await db.collection('users').doc(userId).get();
-    const userData = userDoc.data();
-    if (!userData?.companyId) {
+    const companyId = await getCompanyIdFromRequest(req);
+    if (!companyId) {
       return res.status(403).json({ ok: false, error: 'Company ID bulunamadı' });
     }
-
-    const companyId = userData.companyId;
     const pageSize = Math.min(parseInt(req.query.pageSize as string) || 25, 100);
     const cursor = req.query.cursor as string | undefined;
     const status = req.query.status as string | undefined;
@@ -1056,7 +1045,7 @@ router.post('/:id/archive', requirePermission('sales.archive'), async (req: any,
 
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    if (userData?.companyId !== body.companyId) {
+    if (!(await userBelongsToCompanyAsync(userData, body.companyId, userId))) {
       return res.status(403).json({ ok: false, error: 'Yetkisiz erişim' });
     }
 
@@ -1123,7 +1112,7 @@ router.delete('/:id', requirePermission('sales.edit'), async (req: any, res) => 
     }
 
     const saleId = req.params.id;
-    const companyId = (await getCompanyIdFromRequest(req)) || (req.body as any)?.companyId;
+    const companyId = await getCompanyIdFromRequest(req);
 
     if (!companyId) {
       return respondError(res, Errors.forbidden('Şirket bilgisi bulunamadı'));
@@ -1134,16 +1123,8 @@ router.delete('/:id', requirePermission('sales.edit'), async (req: any, res) => 
       return respondError(res, Errors.internal('Firestore unavailable'), 500);
     }
 
-    // User bilgilerini al
     const userDoc = await db.collection('users').doc(userId).get();
-    if (!userDoc.exists) {
-      return respondError(res, Errors.forbidden('Kullanıcı bulunamadı'), 401);
-    }
-
     const userData = userDoc.data();
-    if (userData?.companyId !== companyId && userData?.activeCompanyId !== companyId) {
-      return respondError(res, Errors.forbidden('Yetkisiz erişim'));
-    }
 
     const saleRef = db.collection('sales').doc(saleId);
     const saleDoc = await saleRef.get();
@@ -1312,7 +1293,7 @@ router.post('/:id/restore', requirePermission('sales.edit'), async (req: any, re
     }
 
     const saleId = req.params.id;
-    const companyId = (await getCompanyIdFromRequest(req)) || (req.body as any)?.companyId;
+    const companyId = await getCompanyIdFromRequest(req);
 
     if (!companyId) {
       return respondError(res, Errors.forbidden('Şirket bilgisi bulunamadı'));
@@ -1323,16 +1304,8 @@ router.post('/:id/restore', requirePermission('sales.edit'), async (req: any, re
       return respondError(res, Errors.internal('Firestore unavailable'), 500);
     }
 
-    // User bilgilerini al
     const userDoc = await db.collection('users').doc(userId).get();
-    if (!userDoc.exists) {
-      return respondError(res, Errors.forbidden('Kullanıcı bulunamadı'), 401);
-    }
-
     const userData = userDoc.data();
-    if (userData?.companyId !== companyId && userData?.activeCompanyId !== companyId) {
-      return respondError(res, Errors.forbidden('Yetkisiz erişim'));
-    }
 
     const saleRef = db.collection('sales').doc(saleId);
     const saleDoc = await saleRef.get();
@@ -1510,23 +1483,9 @@ router.post('/:saleId/invoice',
         return res.status(500).json({ ok: false, error: 'Firestore unavailable' });
       }
 
-      // CompanyId resolve (sales.ts'teki gibi)
-      let companyId = body.companyId;
-      if (!companyId) {
-        const userDoc = await db.collection('users').doc(userId).get();
-        const userData = userDoc.data();
-        companyId = userData?.companyId || userData?.activeCompanyId || null;
-      }
-
+      const companyId = await getCompanyIdFromRequest(req);
       if (!companyId) {
         return res.status(403).json({ ok: false, error: 'Company ID bulunamadı' });
-      }
-
-      // Company kontrolü
-      const userDoc = await db.collection('users').doc(userId).get();
-      const userData = userDoc.data();
-      if (userData?.companyId !== companyId && userData?.activeCompanyId !== companyId) {
-        return res.status(403).json({ ok: false, error: 'Yetkisiz erişim' });
       }
 
       // Invoice draft oluştur
@@ -1598,23 +1557,9 @@ router.post('/:saleId/delivery-note',
         return res.status(500).json({ ok: false, error: 'Firestore unavailable' });
       }
 
-      // CompanyId resolve (sales.ts'teki gibi)
-      let companyId = body.companyId;
-      if (!companyId) {
-        const userDoc = await db.collection('users').doc(userId).get();
-        const userData = userDoc.data();
-        companyId = userData?.companyId || userData?.activeCompanyId || null;
-      }
-
+      const companyId = await getCompanyIdFromRequest(req);
       if (!companyId) {
         return res.status(403).json({ ok: false, error: 'Company ID bulunamadı' });
-      }
-
-      // Company kontrolü
-      const userDoc = await db.collection('users').doc(userId).get();
-      const userData = userDoc.data();
-      if (userData?.companyId !== companyId && userData?.activeCompanyId !== companyId) {
-        return res.status(403).json({ ok: false, error: 'Yetkisiz erişim' });
       }
 
       // shipDate parse et

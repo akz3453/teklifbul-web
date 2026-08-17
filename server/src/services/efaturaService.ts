@@ -107,6 +107,12 @@ export async function sendEInvoice(
     logger.warn('E-Fatura uyarıları', { warnings: validation.warnings });
   }
 
+  if (process.env.NODE_ENV === 'production' || (process.env.K_SERVICE && process.env.NODE_ENV !== 'test')) {
+    logger.warn('E-Fatura gönderimi production\'da kapalı (GİB entegrasyonu yok)');
+    logger.end();
+    throw new Error('E-fatura gönderimi henüz aktif değil.');
+  }
+
   // 6. E-fatura durumunu güncelle (pending → sending)
   await db.collection('invoices').doc(invoiceId).update({
     'efatura.status': 'sending',
@@ -191,6 +197,12 @@ export async function sendEDeliveryNote(
   // Company kontrolü
   if (deliveryNote.companyId !== companyId) {
     throw new Error('Yetkisiz erişim');
+  }
+
+  if (process.env.NODE_ENV === 'production') {
+    logger.warn('E-irsaliye gönderimi production\'da kapalı (GİB entegrasyonu yok)');
+    logger.end();
+    throw new Error('E-irsaliye gönderimi henüz aktif değil.');
   }
 
   // 2. E-irsaliye durumunu güncelle

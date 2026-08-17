@@ -551,6 +551,34 @@
       ]
     },
     {
+      "collectionGroup": "stock_movements",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "companyId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "sku",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "stock_balances",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "companyId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "sku",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "interim_payments",
       "queryScope": "COLLECTION",
       "fields": [
@@ -1301,6 +1329,20 @@
         {
           "fieldPath": "count",
           "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "aiTokenHolds",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAtMs",
+          "order": "ASCENDING"
         }
       ]
     }

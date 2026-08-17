@@ -1,79 +1,61 @@
 import express from 'express';
-import { InventoryInboundService } from '../../src/modules/inventory/services/InventoryInboundService';
-import { InventoryPOSService } from '../../src/modules/inventory/services/InventoryPOSService';
-import { InventoryEventService } from '../../src/modules/inventory/services/InventoryEventService';
-import { getPgPool } from '../../src/db/connection.js';
+import type { AuthenticatedRequest } from '../middleware/auth.js';
+import { getCompanyIdFromRequest } from '../src/services/permissionService.js';
+import { logger } from '../../src/shared/log/logger.js';
 
 const router = express.Router();
 
 /**
- * 1. Mal Kabul (Inbound)
+ * Teklifbul Rule v1.0 — FEFO inventory API tenant gate.
+ * Postgres katmanı company scope'suz olduğu için yazma uçları fail-closed.
+ * verifyToken mount'ta; burada trusted companyId zorunlu.
  */
-router.post('/inbound', async (req, res) => {
-  try {
-    const { batch_id } = await InventoryInboundService.processInbound(req.body);
-    // Asenkron Event Tetiklemesi (Expiration check ve alias gerekirse)
-    InventoryEventService.checkExpirationEvents(batch_id).catch((err: any) => console.error(err));
-    res.json({ success: true, batch_id });
-  } catch (error: any) {
-    res.status(400).json({ success: false, message: error.message });
+async function requireTenant(req: AuthenticatedRequest, res: express.Response): Promise<string | null> {
+  const companyId = await getCompanyIdFromRequest(req);
+  if (!companyId) {
+    res.status(403).json({ success: false, message: 'Geçerli şirket bilgisi gerekli' });
+    return null;
   }
+  return companyId;
+}
+
+/**
+ * 1. Mal Kabul (Inbound) — tenant-scoped deploy tamamlanana kadar kapalı
+ */
+router.post('/inbound', async (req: AuthenticatedRequest, res) => {
+  const companyId = await requireTenant(req, res);
+  if (!companyId) return;
+  logger.warn('FEFO inbound blocked: tenant SQL scope pending', { companyId, userId: req.user?.uid });
+  return res.status(503).json({
+    success: false,
+    message: 'FEFO mal kabul API geçici olarak kapalı (kiracı izolasyonu).',
+  });
 });
 
 /**
- * 2. POS SatÄ±ÅŸÄ±
+ * 2. POS Satışı — tenant-scoped deploy tamamlanana kadar kapalı
  */
-router.post('/sale', async (req, res) => {
-  try {
-    const result = await InventoryPOSService.processSale(req.body);
-    if (!result.success) {
-      return res.status(400).json(result);
-    }
-    // Asenkron Event - SatÄ±lan herbir batch iÃ§in kontrol gerekebilir
-    if (result.processed_batches) {
-      for (const b of result.processed_batches) {
-        InventoryEventService.checkExpirationEvents(b.batch_id).catch((err: any) => console.error(err));
-      }
-    }
-    res.json(result);
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
-  }
+router.post('/sale', async (req: AuthenticatedRequest, res) => {
+  const companyId = await requireTenant(req, res);
+  if (!companyId) return;
+  logger.warn('FEFO sale blocked: tenant SQL scope pending', { companyId, userId: req.user?.uid });
+  return res.status(503).json({
+    success: false,
+    message: 'FEFO satış API geçici olarak kapalı (kiracı izolasyonu).',
+  });
 });
 
 /**
- * 3. KPI Dashboard Verisi (Read-Only Analytical Pool Gerekir Normalde)
+ * 3. KPI Dashboard — tenant-scoped deploy tamamlanana kadar kapalı
  */
-router.get('/dashboard-stats', async (req, res) => {
-  try {
-    const pool = getPgPool();
-    // Complex queries for:
-    // - Stock Aging Report
-    // - Inventory Turnover Rate
-    // - Days Sales of Inventory (DSI)
-    // - Expiry Loss Forecast
-    
-    // Yalnizca ornek amacli Expiry Loss Forecast
-    const expiryLossQ = `
-      SELECT sum(s.current_stock) as total_units_expiring_soon
-      FROM fefo_inventory_batches b
-      JOIN fefo_inventory_batch_stock s ON b.batch_id = s.batch_id
-      WHERE b.expiry_date BETWEEN CURRENT_DATE AND (CURRENT_DATE + interval '30 days')
-      AND b.status = 'ACTIVE'
-    `;
-    const lossRes = await pool.query(expiryLossQ);
-
-    res.json({
-      success: true,
-      stats: {
-        expiryLossForecast: lossRes.rows[0].total_units_expiring_soon || 0,
-        // DSI and Turnover requires massive historical aggregation.
-      }
-    });
-
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
-  }
+router.get('/dashboard-stats', async (req: AuthenticatedRequest, res) => {
+  const companyId = await requireTenant(req, res);
+  if (!companyId) return;
+  logger.warn('FEFO dashboard blocked: tenant SQL scope pending', { companyId, userId: req.user?.uid });
+  return res.status(503).json({
+    success: false,
+    message: 'FEFO dashboard API geçici olarak kapalı (kiracı izolasyonu).',
+  });
 });
 
 export default router;

@@ -5,6 +5,7 @@ import { getAdminDb } from "../../utils/firestore.js";
 import { logger } from "../../../src/shared/log/logger.js";
 import { logAuditEvent } from "../services/auditService.js";
 import type { AuthenticatedRequest } from "../../middleware/auth.js";
+import { getCompanyIdFromRequest } from "../services/permissionService.js";
 
 const router = express.Router();
 
@@ -43,15 +44,9 @@ router.post("/", async (req: AuthenticatedRequest, res) => {
 
     // ownerId istemciden gelse bile sunucu uid ile override edilir
     const enforcedOwnerId = user.uid;
-    const requestedCompanyId = body.companyId
-      || user.activeCompanyId
-      || (Array.isArray((user as any).companies) && (user as any).companies[0])
-      || null;
-
-    // Sirket header dogrulamasi (mevcutsa)
-    const headerCompanyId = (req.headers['x-company-id'] as string | undefined) || undefined;
-    if (headerCompanyId && requestedCompanyId && headerCompanyId !== requestedCompanyId) {
-      return res.status(403).json({ error: "COMPANY_MISMATCH", message: "Sirket eslesmiyor" });
+    const trustedCompanyId = await getCompanyIdFromRequest(req);
+    if (!trustedCompanyId) {
+      return res.status(403).json({ error: "COMPANY_FORBIDDEN", message: "Gecerli sirket uyeligi bulunamadi" });
     }
 
     const safeBody: DemandInput = {
@@ -74,7 +69,7 @@ router.post("/", async (req: AuthenticatedRequest, res) => {
     const demandDoc = {
       ...safeBody,
       invitedSupplierIds: invited,
-      creatorCompanyId: requestedCompanyId,
+      creatorCompanyId: trustedCompanyId,
       createdBy: enforcedOwnerId,
       createdAt: new Date(),
     };
@@ -90,7 +85,7 @@ router.post("/", async (req: AuthenticatedRequest, res) => {
         logger.info('Talep kaydedildi', { demandId: savedId, ownerId: enforcedOwnerId });
 
         await logAuditEvent({
-          companyId: requestedCompanyId || 'SYSTEM',
+          companyId: trustedCompanyId,
           entityType: 'demand',
           entityId: savedId,
           action: 'create',

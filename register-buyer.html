@@ -94,9 +94,8 @@
 <body>
   <div class="header">
     <div class="header-content">
-      <a href="./index.html" class="brand-logo">
-        <span>📋</span>
-        <span>NEFISOFT</span>
+      <a href="./index.html" class="brand-logo" aria-label="NEFISOFT">
+        <img src="/assets/images/brand/nefisoft-web-stacked.png" alt="NEFISOFT" width="160" height="160" decoding="async" style="height:52px;width:auto;object-fit:contain;" />
       </a>
       <span id="userEmail" style="font-size:13px; color:#6b7280;"></span>
     </div>
@@ -327,7 +326,8 @@
         Teklifbul platformu tarafından sunulan hizmetler kapsamında, kimlik ve iletişim bilgilerim ile firma bilgilerimin; 
         tedarikçi eşleştirme, talep iletimi, teklif süreç yönetimi ve yasal yükümlülüklerin yerine getirilmesi amaçlarıyla 
         işlenmesini; yurt içi/yurt dışı hizmet sağlayıcılarına aktarılmasını kabul ediyorum.
-        <a href="legal/kvkk-aydinlatma.html" target="_blank" rel="noopener noreferrer">Detaylı Aydınlatma Metni</a>
+        <a href="/legal/kvkk-aydinlatma.html" target="_blank" rel="noopener noreferrer">Detaylı Aydınlatma Metni</a> ·
+        <a href="/legal/alici-sozlesme.html" target="_blank" rel="noopener noreferrer">Kullanıcı Sözleşmesi</a>
       </div>
       
       <div class="checkbox-group">
@@ -438,11 +438,19 @@
     }
 
     async function findCompanyByCode(code){
-      const qref = query(collection(db, 'companies'), where('code','==', code));
-      const snap = await getDocs(qref);
-      let found = null;
-      snap.forEach(d => { if (!found) found = { id: d.id, ...d.data() }; });
-      return found;
+      // Teklifbul Rule v1.0 - companyCodes lookup (companies code== sorgusu yasak)
+      const codeKey = String(code || '').trim().toUpperCase();
+      if (!codeKey) return null;
+      const codeSnap = await getDoc(doc(db, 'companyCodes', codeKey));
+      if (!codeSnap.exists()) return null;
+      const data = codeSnap.data() || {};
+      if (!data.companyId) return null;
+      return {
+        id: data.companyId,
+        name: data.name || '',
+        code: codeKey,
+        autoApproveJoinRequests: data.autoApproveJoinRequests === true
+      };
     }
     const dataList = document.getElementById("catDatalist");
     const allCategories = getAllCategories();
@@ -836,16 +844,24 @@
         // Multi-check for uniqueness
         if (allPhonesNormalized.length > 0) {
           for (const normalizedPhone of allPhonesNormalized) {
-            const phoneQuery = query(
-              collection(db, 'users'), 
-              where('contactPhones', 'array-contains', normalizedPhone)
-            );
-            const phoneSnap = await getDocs(phoneQuery);
-            
-            // Eğer numara başka bir kullanıcıda varsa hata ver
-            const otherUserFound = phoneSnap.docs.some(doc => doc.id !== user.uid);
-            if (otherUserFound) {
-              throw new Error(`"${normalizedPhone}" numarası zaten başka bir hesapta kullanılıyor.`);
+            try {
+              const phoneQuery = query(
+                collection(db, 'users'), 
+                where('contactPhones', 'array-contains', normalizedPhone)
+              );
+              const phoneSnap = await getDocs(phoneQuery);
+              
+              // Eğer numara başka bir kullanıcıda varsa hata ver
+              const otherUserFound = phoneSnap.docs.some(doc => doc.id !== user.uid);
+              if (otherUserFound) {
+                throw new Error(`"${normalizedPhone}" numarası zaten başka bir hesapta kullanılıyor.`);
+              }
+            } catch (phoneErr) {
+              if (phoneErr.code === 'permission-denied' || phoneErr.message?.includes('permission') || phoneErr.message?.includes('denied')) {
+                logger.warn('Telefon numarası benzersizlik kontrolü yetki yetersizliği nedeniyle atlandı', phoneErr);
+              } else {
+                throw phoneErr;
+              }
             }
           }
         }
@@ -903,14 +919,25 @@
 
         if (mode === 'create') {
           const code = genCompanyCode();
+          // Teklifbul Rule v1.0 - create kurali ownerId ister (ownerUid degil)
           const cdoc = await addDoc(collection(db, 'companies'), {
             name: payload.companyName,
             taxNumber: payload.taxNumber,
             createdAt: serverTimestamp(),
+            ownerId: user.uid,
             ownerUid: user.uid,
             code
           });
+          import('/assets/js/analytics.js').then(({ track, ANALYTICS_EVENTS }) => {
+            track(ANALYTICS_EVENTS.COMPANY_CREATED, { method: 'create' });
+          }).catch(() => {});
           companyId = cdoc.id;
+          await setDoc(doc(db, 'companyCodes', code), {
+            companyId,
+            name: payload.companyName,
+            ownerId: user.uid,
+            createdAt: serverTimestamp()
+          });
           companyRole = 'isveren';
           companyJoinStatus = 'accepted'; // Teklifbul Rule v1.0 - 'approved' yerine 'accepted' kullan
           payload.companyId = companyId;
@@ -929,10 +956,8 @@
           if (!company) throw new Error('Geçersiz şirket kodu.');
           companyId = company.id; // Sadece companyJoinRequest için kullanılacak
           
-          // Şirket ayarlarını kontrol et - autoApproveJoinRequests flag'i
-          const companyDoc = await getDoc(doc(db, 'companies', companyId));
-          const companyData = companyDoc.exists() ? companyDoc.data() : {};
-          const autoApprove = companyData.autoApproveJoinRequests === true;
+          // Teklifbul Rule v1.0 - autoApprove companyCodes uzerinden gelir (companies okuma gerekmez)
+          const autoApprove = company.autoApproveJoinRequests === true;
           
           // Eğer otomatik onay aktifse, uyarı ver ama yine de pending olarak başlat
           if (autoApprove) {
@@ -975,6 +1000,14 @@
             requestedCompanyRole: roleMeta.value, // buyer:satinalma_yetkilisi gibi
             status: 'pending',
             createdAt: serverTimestampFn()
+          });
+
+          await setDoc(doc(db, 'companies', companyId, 'pendingMembers', user.uid), {
+            userId: user.uid,
+            userEmail: payload.email || user.email || '',
+            requestedRole: roleMeta.value,
+            requestedAt: serverTimestamp(),
+            status: 'pending'
           });
           
           logger.info('Company join request created', { 

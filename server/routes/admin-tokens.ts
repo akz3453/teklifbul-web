@@ -20,6 +20,56 @@ const router = Router();
 router.use(verifyToken, requireAdmin);
 
 /**
+ * GET /api/admin/tokens/cost-comparison
+ * Maliyet karşılaştırması yap — :userId'den ÖNCE kayıt edilmeli
+ */
+router.get('/cost-comparison', async (req: AuthenticatedRequest, res) => {
+  logger.group('admin-tokens:cost-comparison');
+  try {
+    const { promptTokens = 100, completionTokens = 200 } = req.query;
+
+    const prompt = parseInt(promptTokens as string, 10) || 100;
+    const completion = parseInt(completionTokens as string, 10) || 200;
+
+    const { calculateCost, PROVIDER_COSTS } = await import('../services/aiCostComparison.js');
+    
+    const openaiCost = calculateCost('openai', prompt, completion);
+    const geminiCost = calculateCost('gemini', prompt, completion);
+    const cheaper = getCheaperProvider(prompt, completion);
+
+    logger.info('Cost comparison completed', { prompt, completion, cheaper });
+    logger.end();
+    res.json({
+      ok: true,
+      comparison: {
+        promptTokens: prompt,
+        completionTokens: completion,
+        openai: {
+          cost: openaiCost,
+          costPerMillion: PROVIDER_COSTS.openai.averagePricePerMillion
+        },
+        gemini: {
+          cost: geminiCost,
+          costPerMillion: PROVIDER_COSTS.gemini.averagePricePerMillion
+        },
+        cheaper,
+        savings: cheaper === 'gemini' 
+          ? openaiCost - geminiCost 
+          : geminiCost - openaiCost
+      }
+    });
+  } catch (error: any) {
+    logger.error('Failed to compare costs', error);
+    logger.end();
+    res.status(500).json({
+      ok: false,
+      error: 'failed_to_compare_costs',
+      message: error.message || 'Maliyet karşılaştırması yapılamadı'
+    });
+  }
+});
+
+/**
  * GET /api/admin/tokens/:userId
  * Kullanıcının tüm token paketlerini getir
  */
@@ -70,7 +120,6 @@ router.post('/:userId/add',
       const { userId } = req.params;
       const { provider, tokenAmount, currency } = req.body;
 
-      // Kullanıcıyı kontrol et
       const db = await getAdminDb();
       if (!db) {
         logger.end();
@@ -83,10 +132,8 @@ router.post('/:userId/add',
         return res.status(404).json({ ok: false, error: 'user_not_found' });
       }
 
-      // Token ekle
       const updatedPack = await addTokensToUser(userId, provider, tokenAmount, currency);
 
-      // Teklifbul Rule v1.0 - Security: Admin aksiyonlarını logla
       const { serverLogger } = await import('../utils/logger.js');
       serverLogger.security.adminAction(req, 'add_tokens', userId);
 
@@ -112,56 +159,6 @@ router.post('/:userId/add',
     }
   }
 );
-
-/**
- * GET /api/admin/tokens/cost-comparison
- * Maliyet karşılaştırması yap
- */
-router.get('/cost-comparison', async (req: AuthenticatedRequest, res) => {
-  logger.group('admin-tokens:cost-comparison');
-  try {
-    const { promptTokens = 100, completionTokens = 200 } = req.query;
-
-    const prompt = parseInt(promptTokens as string, 10) || 100;
-    const completion = parseInt(completionTokens as string, 10) || 200;
-
-    const { calculateCost, PROVIDER_COSTS } = await import('../services/aiCostComparison.js');
-    
-    const openaiCost = calculateCost('openai', prompt, completion);
-    const geminiCost = calculateCost('gemini', prompt, completion);
-    const cheaper = getCheaperProvider(prompt, completion);
-
-    logger.info('Cost comparison completed', { prompt, completion, cheaper });
-    logger.end();
-    res.json({
-      ok: true,
-      comparison: {
-        promptTokens: prompt,
-        completionTokens: completion,
-        openai: {
-          cost: openaiCost,
-          costPerMillion: PROVIDER_COSTS.openai.averagePricePerMillion
-        },
-        gemini: {
-          cost: geminiCost,
-          costPerMillion: PROVIDER_COSTS.gemini.averagePricePerMillion
-        },
-        cheaper,
-        savings: cheaper === 'gemini' 
-          ? openaiCost - geminiCost 
-          : geminiCost - openaiCost
-      }
-    });
-  } catch (error: any) {
-    logger.error('Failed to compare costs', error);
-    logger.end();
-    res.status(500).json({
-      ok: false,
-      error: 'failed_to_compare_costs',
-      message: error.message || 'Maliyet karşılaştırması yapılamadı'
-    });
-  }
-});
 
 export default router;
 

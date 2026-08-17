@@ -2,6 +2,7 @@
  * Teklifbul Main Stylesheet
  * Modern marketing website styles with CSS variables
  */
+@import url('./mobile.css');
 
 :root {
   /* Colors - Teklifbul Brand */
@@ -41,7 +42,7 @@
   --spacing-2xl: 3rem;
   --spacing-3xl: 4rem;
 
-  /* Typography */
+  /* Typography — web varsayılan; native Roboto mobile.css ile override */
   --font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
   --font-size-xs: 0.75rem;
   --font-size-sm: 0.875rem;
@@ -308,8 +309,11 @@ a:hover {
 }
 
 .header-logo img {
-  height: 40px;
+  height: 52px;
   width: auto;
+  max-width: 160px;
+  object-fit: contain;
+  display: block;
 }
 
 .header-nav {
@@ -503,19 +507,37 @@ a:hover {
 }
 
 @media (max-width: 768px) {
+  .cookie-banner {
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+
   .cookie-banner-content {
     flex-direction: column;
     align-items: stretch;
-    text-align: center;
+    text-align: left;
+    gap: var(--spacing-sm);
+  }
+
+  .cookie-banner-text p {
+    margin: 0;
+    font-size: 0.8125rem;
+    line-height: 1.4;
   }
 
   .cookie-banner-actions {
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: wrap;
     width: 100%;
+    gap: var(--spacing-xs);
   }
 
-  .cookie-banner-actions button {
-    width: 100%;
+  .cookie-banner-actions button,
+  .cookie-banner-actions .btn {
+    width: auto;
+    flex: 1 1 calc(33.33% - var(--spacing-xs));
+    min-width: 5.5rem;
+    font-size: 0.8125rem;
+    padding: 0.4rem 0.55rem;
   }
 }
 
@@ -875,11 +897,8 @@ input:checked+.slider:before {
 .hero-visual {
   align-self: start;
   margin-top: 0;
-}
-
-.hero-visual {
-  min-width: 400px;
-  flex-shrink: 0;
+  min-width: 0;
+  flex-shrink: 1;
 }
 
 .hero-text h1 {
@@ -934,7 +953,7 @@ input:checked+.slider:before {
   overflow: hidden;
   position: relative;
   width: 100%;
-  min-width: 400px;
+  min-width: 0;
   z-index: 1;
   align-self: start;
   margin-top: 0;
@@ -1195,7 +1214,11 @@ input:checked+.slider:before {
 
   .cookie-banner-content {
     flex-direction: column;
-    text-align: center;
+    text-align: left;
+  }
+
+  .cookie-banner-actions .btn {
+    width: auto;
   }
 
   .chat-panel {
@@ -1220,5 +1243,87 @@ input:checked+.slider:before {
 
   .pricing-card.featured {
     transform: none;
+  }
+}
+
+/* Hero — mobil uyumlu satır ve önizleme görseli */
+.hero-teklifbul-badge {
+  display: inline-block;
+  padding: var(--spacing-xs) var(--spacing-md);
+  background: var(--color-bg-light);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  margin-bottom: var(--spacing-lg);
+  margin-top: var(--spacing-md);
+}
+
+.hero-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-xl);
+  width: 100%;
+  margin-bottom: var(--spacing-lg);
+  flex-wrap: wrap;
+}
+
+.hero-row__content {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+
+.hero-row__content .hero-features {
+  margin: 0;
+  padding: 0;
+}
+
+.hero-trust-line {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  margin-top: var(--spacing-md);
+  margin-bottom: 0;
+}
+
+.hero-visual-inline {
+  position: relative;
+  background: var(--color-bg);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
+  overflow: hidden;
+  flex: 1 1 280px;
+  min-width: 0;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  max-height: 520px;
+}
+
+.hero-visual-inline img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top left;
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .hero-row {
+    flex-direction: column;
+    gap: var(--spacing-lg);
+  }
+
+  .hero-visual-inline {
+    flex: 1 1 100%;
+    max-height: 300px;
+    aspect-ratio: 16 / 11;
+    order: -1;
+  }
+
+  .hero-text h1 {
+    font-size: var(--font-size-2xl);
+  }
+
+  .hero-visual {
+    min-height: auto !important;
+    min-width: 0 !important;
   }
 }

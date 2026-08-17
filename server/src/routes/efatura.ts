@@ -1,8 +1,8 @@
 import express from 'express';
 import { verifyToken } from '../../middleware/auth.js';
-import { getAdminDb } from '../../utils/firestore.js';
 import { logger } from '../../../src/shared/log/logger.js';
 import { checkIncomingInvoices } from '../services/efaturaService.js';
+import { getCompanyIdFromRequest } from '../services/permissionService.js';
 
 const router = express.Router();
 
@@ -12,14 +12,15 @@ router.use(verifyToken);
 /**
  * GET /api/efatura/check-incoming
  * Entegratörden gelen yeni faturaları havuzuna çeker
+ * Teklifbul Rule v1.0 — trusted companyId (query spoof engelli)
  */
 router.get('/check-incoming', async (req: any, res) => {
   try {
-    const companyId = req.query.companyId;
     const userId = req.user?.uid;
+    const companyId = await getCompanyIdFromRequest(req);
 
     if (!companyId) {
-      return res.status(400).json({ ok: false, error: 'companyId zorunludur' });
+      return res.status(403).json({ ok: false, error: 'Geçersiz veya yetkisiz şirket bilgisi' });
     }
 
     const result = await checkIncomingInvoices(companyId, userId);

@@ -143,9 +143,40 @@
       display: table !important
     }
 
-    #itemsTable {
-      table-layout: fixed;
+    /* Teklifbul Rule v1.0 — Satış kalemleri: mobilde yatay kaydır */
+    .items-table-scroll {
       width: 100%;
+      max-width: 100%;
+      overflow-x: auto;
+      overflow-y: visible;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-x: contain;
+      margin: 0 -4px;
+      padding-bottom: 8px;
+    }
+
+    .items-table-scroll::after {
+      content: none;
+    }
+
+    @media (max-width: 900px) {
+      .items-table-hint {
+        display: block;
+        font-size: 12px;
+        color: #6b7280;
+        margin: 0 0 8px;
+      }
+    }
+
+    .items-table-hint {
+      display: none;
+    }
+
+    #itemsTable {
+      table-layout: auto;
+      width: max-content;
+      min-width: 1100px;
+      max-width: none;
       display: table !important
     }
 
@@ -164,71 +195,61 @@
     #itemsTable th:nth-child(1),
     #itemsTable td:nth-child(1) {
       width: 120px;
-      min-width: 120px;
-      max-width: 120px
+      min-width: 110px
     }
 
     #itemsTable th:nth-child(2),
     #itemsTable td:nth-child(2) {
       width: 200px;
-      min-width: 200px;
-      max-width: 200px
+      min-width: 160px
     }
 
     #itemsTable th:nth-child(3),
     #itemsTable td:nth-child(3) {
       width: 100px;
-      min-width: 100px;
-      max-width: 100px
+      min-width: 88px
     }
 
     #itemsTable th:nth-child(4),
     #itemsTable td:nth-child(4) {
       width: 100px;
-      min-width: 100px;
-      max-width: 100px
+      min-width: 80px
     }
 
     #itemsTable th:nth-child(5),
     #itemsTable td:nth-child(5) {
       width: 150px;
-      min-width: 150px;
-      max-width: 150px
+      min-width: 120px
     }
 
     #itemsTable th:nth-child(6),
     #itemsTable td:nth-child(6) {
       width: 120px;
-      min-width: 120px;
-      max-width: 120px
+      min-width: 110px
     }
 
     #itemsTable th:nth-child(7),
     #itemsTable td:nth-child(7) {
       width: 90px;
-      min-width: 90px;
-      max-width: 90px
+      min-width: 72px
     }
 
     #itemsTable th:nth-child(8),
     #itemsTable td:nth-child(8) {
       width: 90px;
-      min-width: 90px;
-      max-width: 90px
+      min-width: 80px
     }
 
     #itemsTable th:nth-child(9),
     #itemsTable td:nth-child(9) {
       width: 120px;
-      min-width: 120px;
-      max-width: 120px
+      min-width: 100px
     }
 
     #itemsTable th:nth-child(10),
     #itemsTable td:nth-child(10) {
       width: 100px;
-      min-width: 100px;
-      max-width: 100px
+      min-width: 88px
     }
 
     #itemsTable td input,
@@ -386,6 +407,34 @@
     .muted {
       color: #6b7280;
       font-size: 12px
+    }
+
+    /* Teklifbul Rule v1.0 - utils.css button { width:100% } override */
+    #btnNewCustomer,
+    #btnAddItem,
+    #btnSaveSale,
+    #btnCancelCustomer,
+    #btnSaveCustomer,
+    #btnQueryEFatura,
+    #btnFetchExchangeRate,
+    #btnAddContact,
+    .tabs .btn,
+    a.btn.btn-secondary {
+      width: auto !important;
+      margin: 0;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+
+    .form-actions .btn {
+      width: auto !important;
+      min-width: 120px;
+      margin: 0;
     }
 
     /* Koyu Mod */
@@ -642,29 +691,32 @@
           <button type="button" class="btn btn-primary" id="btnAddItem">+ Kalem Ekle</button>
         </div>
 
-        <table id="itemsTable">
-          <thead>
-            <tr>
-              <th>SKU</th>
-              <th>Ürün Adı</th>
-              <th>Miktar</th>
-              <th>Birim</th>
-              <th>Lokasyon</th>
-              <th>Birim Fiyat</th>
-              <th>KDV %</th>
-              <th>İndirim %</th>
-              <th>Tutar</th>
-              <th>İşlem</th>
-            </tr>
-          </thead>
-          <tbody id="itemsTableBody">
-            <tr>
-              <td colspan="10" style="text-align:center;padding:40px;color:#6b7280">
-                Henüz kalem eklenmedi. "+ Kalem Ekle" butonuna tıklayın.
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <p class="items-table-hint" aria-hidden="true">Tabloyu görmek için yatay kaydırın →</p>
+        <div class="items-table-scroll table-responsive" role="region" aria-label="Satış kalemleri tablosu" tabindex="0">
+          <table id="itemsTable">
+            <thead>
+              <tr>
+                <th>SKU</th>
+                <th>Ürün Adı</th>
+                <th>Miktar</th>
+                <th>Birim</th>
+                <th>Lokasyon</th>
+                <th>Birim Fiyat</th>
+                <th>KDV %</th>
+                <th>İndirim %</th>
+                <th>Tutar</th>
+                <th>İşlem</th>
+              </tr>
+            </thead>
+            <tbody id="itemsTableBody">
+              <tr>
+                <td colspan="10" style="text-align:center;padding:40px;color:#6b7280">
+                  Henüz kalem eklenmedi. "+ Kalem Ekle" butonuna tıklayın.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div class="card">
@@ -719,9 +771,9 @@
         </div>
       </div>
 
-      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px">
-        <a href="/pages/sales.html" class="btn btn-secondary">İptal</a>
-        <button type="button" class="btn btn-primary" id="btnSaveSale">💾 Satışı Kaydet</button>
+      <div class="form-actions">
+        <a href="/pages/sales.html" class="btn btn-secondary" aria-label="Satış listesine dön">İptal</a>
+        <button type="button" class="btn btn-primary" id="btnSaveSale" aria-label="Satışı kaydet">💾 Satışı Kaydet</button>
       </div>
     </form>
   </div>
@@ -729,7 +781,10 @@
   <!-- Header -->
   <!-- Header -->
   <script type="module">
+    import { initAuthGuard } from '/assets/js/auth-guard.js';
     import { initGlobalHeader } from '../assets/js/ui/header.js';
+    initAuthGuard().catch((err) => { console.error('Auth guard init failed', err); });
+
     initGlobalHeader({ mount: '#app-header', activeRoute: 'sales' });
   </script>
 
@@ -744,7 +799,8 @@
         style="color:#aaa;float:right;font-size:28px;font-weight:bold;cursor:pointer">&times;</span>
       <h2 id="modalTitle" style="margin-top:0">Yeni Müşteri</h2>
       <form id="customerForm">
-        <input type="hidden" id="customerId" />
+        <!-- Teklifbul Rule v1.0 - Modal ID'leri satış formu ile çakışmasın -->
+        <input type="hidden" id="modalCustomerId" />
 
         <div class="form-group">
           <label for="customerCode">Müşteri Kodu</label>
@@ -895,8 +951,8 @@
         </div>
 
         <div class="form-group">
-          <label for="currency">Para Birimi</label>
-          <select id="currency">
+          <label for="modalCurrency">Para Birimi</label>
+          <select id="modalCurrency" aria-label="Müşteri para birimi">
             <option value="TRY">TRY - Türk Lirası</option>
             <option value="USD">USD - Amerikan Doları</option>
             <option value="EUR">EUR - Euro</option>
@@ -912,13 +968,13 @@
         </div>
 
         <div class="form-group">
-          <label for="notes">Notlar</label>
-          <textarea id="notes" rows="3"></textarea>
+          <label for="modalNotes">Notlar</label>
+          <textarea id="modalNotes" rows="3" aria-label="Müşteri notları"></textarea>
         </div>
 
-        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px">
-          <button type="button" class="btn btn-secondary" id="btnCancelCustomer">İptal</button>
-          <button type="submit" class="btn btn-primary" id="btnSaveCustomer">Kaydet</button>
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" id="btnCancelCustomer" aria-label="Müşteri formunu iptal et">İptal</button>
+          <button type="submit" class="btn btn-primary" id="btnSaveCustomer" aria-label="Müşteriyi kaydet">Kaydet</button>
         </div>
       </form>
     </div>

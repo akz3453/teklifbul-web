@@ -11,25 +11,39 @@
   <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
-    body{font-family:system-ui, Arial; background:#f8fafc; color:#111827; margin:0}
-    .container{max-width:1100px;margin:0 auto;padding:20px}
+    /* Teklifbul Rule v1.0 — rapor tabloları diğer sayfalarla aynı yazı tipi */
+    body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif; background:#f8fafc; color:#111827; margin:0}
+    .container{max-width:min(1400px, calc(100% - 24px));width:100%;margin:0 auto;padding:20px;box-sizing:border-box}
     h1{margin:0 0 8px 0}
     .card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin:12px 0}
     .tabs{display:flex;gap:8px;margin-bottom:16px; flex-wrap:wrap}
-    .tab{flex:1;min-width:200px;padding:12px;border:1px solid #e5e7eb;background:#f9fafb;cursor:pointer;text-align:center;border-radius:6px}
+    .tab{flex:1;min-width:200px;padding:12px;border:1px solid #e5e7eb;background:#f9fafb;cursor:pointer;text-align:center;border-radius:6px;font-weight:600}
     .tab.active{background:#2563eb;color:#fff;border-color:#2563eb}
     .hidden{display:none}
-    table{width:100%;border-collapse:collapse; margin-top:12px}
-    th,td{border-bottom:1px solid #e5e7eb;padding:8px;text-align:left;font-size:13px}
-    th{background:#f9fafb}
-    .badge{display:inline-block;border-radius:14px;padding:2px 8px;font-size:12px}
+    .table-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+    table{width:100%;border-collapse:collapse; margin-top:12px;table-layout:auto}
+    th,td{border-bottom:1px solid #e5e7eb;padding:10px 12px;text-align:left;font-size:13px;vertical-align:middle;font-family:inherit}
+    th{background:#f9fafb;font-weight:600;color:#374151;white-space:nowrap}
+    tbody tr:hover{background:#f8fafc}
+    td.report-empty{text-align:center;color:#6b7280;padding:24px 12px}
+    .report-empty-banner{
+      margin:12px 0 16px;
+      padding:14px 16px;
+      border-radius:8px;
+      border:1px solid #bfdbfe;
+      background:#eff6ff;
+      color:#1e3a8a;
+      font-size:14px;
+      line-height:1.45;
+    }
+    .badge{display:inline-block;border-radius:14px;padding:2px 8px;font-size:12px;font-weight:600;white-space:nowrap}
     .b-warning{background:#fef3c7;color:#92400e}
     .b-error{background:#fee2e2;color:#991b1b}
     .muted{color:#6b7280;font-size:12px}
-    .btn{padding:10px 16px;border:0;border-radius:6px;cursor:pointer;font-weight:600}
+    .btn{padding:10px 16px;border:0;border-radius:6px;cursor:pointer;font-weight:600;width:auto}
     .btn-primary{background:#2563eb;color:#fff}
     .btn-secondary{background:#6b7280;color:#fff}
-    .stat-card{display:inline-block;padding:16px;margin:8px;background:#f0f9ff;border-radius:8px;min-width:150px}
+    .stat-card{display:inline-block;padding:16px;margin:8px 8px 8px 0;background:#f0f9ff;border-radius:8px;min-width:150px}
     .stat-value{font-size:24px;font-weight:bold;color:#0284c7}
     .stat-label{font-size:12px;color:#075985}
     .chart-container{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin:16px 0}
@@ -101,6 +115,12 @@
     html.force-dark .chart-title {
       color:#ffffff;
     }
+    html[data-theme="dark"] .report-empty-banner,
+    html.force-dark .report-empty-banner {
+      background:#111827;
+      border-color:rgba(96,165,250,0.35);
+      color:#dbeafe;
+    }
     html[data-theme="dark"] select,
     html.force-dark select {
       background:#111827;
@@ -152,14 +172,16 @@
       <div class="card">
         <h2 style="margin:0 0 12px 0;font-size:18px">Minimum Stok Altında Ürünler</h2>
         <div id="minstockStats"></div>
-        <table id="minstockTable">
-          <thead>
-            <tr>
-              <th>SKU</th><th>Ürün Adı</th><th>Marka</th><th>Birim</th><th>Lokasyon</th><th>Mevcut</th><th>Minimum</th><th>Durum</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
+        <div class="table-wrap">
+          <table id="minstockTable" aria-label="Minimum stok altı ürünler">
+            <thead>
+              <tr>
+                <th>SKU</th><th>Ürün Adı</th><th>Marka</th><th>Birim</th><th>Lokasyon</th><th>Mevcut</th><th>Minimum</th><th>Durum</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -176,14 +198,16 @@
             </div>
           </div>
         </div>
-        <table id="costsaleTable">
-          <thead>
-            <tr>
-              <th>Tarih</th><th>SKU</th><th>Ürün</th><th>Miktar</th><th>Ortalama Maliyet</th><th>Satış Fiyatı</th><th>Fark</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
+        <div class="table-wrap">
+          <table id="costsaleTable" aria-label="Maliyet altı satışlar">
+            <thead>
+              <tr>
+                <th>Tarih</th><th>SKU</th><th>Ürün</th><th>Miktar</th><th>Ortalama Maliyet</th><th>Satış Fiyatı</th><th>Fark</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -191,8 +215,9 @@
       <div class="card">
         <h2 style="margin:0 0 12px 0;font-size:18px">Lokasyon (Şantiye/Depo) Stok Durumu</h2>
         <div id="locationStats"></div>
+        <div id="locationEmptyState" class="report-empty-banner" hidden role="status" aria-live="polite"></div>
         <!-- Teklifbul Rule v1.0 - Chart.js: Location Distribution Chart -->
-        <div class="chart-container">
+        <div id="locationChartContainer" class="chart-container">
           <div class="chart-card">
             <div class="chart-title">Lokasyon Bazlı Stok Dağılımı</div>
             <div class="chart-wrapper">
@@ -200,17 +225,19 @@
             </div>
           </div>
         </div>
-        <select id="locationFilter" style="margin-bottom:12px">
+        <select id="locationFilter" style="margin-bottom:12px" aria-label="Lokasyon filtresi">
           <option value="">Tüm Lokasyonlar</option>
         </select>
-        <table id="locationTable">
-          <thead>
-            <tr>
-              <th>SKU</th><th>Ürün Adı</th><th>Lokasyon</th><th>Miktar</th><th>Birim</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
+        <div id="locationTableWrap" class="table-wrap">
+          <table id="locationTable" aria-label="Lokasyon stok durumu">
+            <thead>
+              <tr>
+                <th>SKU</th><th>Ürün Adı</th><th>Lokasyon</th><th>Miktar</th><th>Birim</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -218,14 +245,16 @@
       <div class="card">
         <h2 style="margin:0 0 12px 0;font-size:18px">Gerçek Maliyet (Extras Dağıtılmış)</h2>
         <div id="costStats"></div>
-        <table id="costTable">
-          <thead>
-            <tr>
-              <th>Tarih</th><th>SKU</th><th>Ürün</th><th>Tür</th><th>Miktar</th><th>Birim Maliyet</th><th>İlave</th><th>Toplam Maliyet</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
+        <div class="table-wrap">
+          <table id="costTable" aria-label="Gerçek maliyet">
+            <thead>
+              <tr>
+                <th>Tarih</th><th>SKU</th><th>Ürün</th><th>Tür</th><th>Miktar</th><th>Birim Maliyet</th><th>İlave</th><th>Toplam Maliyet</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
@@ -234,7 +263,10 @@
   <script type="module" src="/firebase.js"></script>
   <!-- Header -->
   <script type="module">
+    import { initAuthGuard } from '/assets/js/auth-guard.js';
     import { initGlobalHeader } from '../assets/js/ui/header.js';
+    initAuthGuard().catch((err) => { console.error('Auth guard init failed', err); });
+
     initGlobalHeader({ mount: '#app-header', activeRoute: 'inventory' });
   </script>
   <!-- Main -->

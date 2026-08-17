@@ -165,7 +165,12 @@ function renderCustomerInfo() {
     statusText = 'Pasif';
     statusClass = 'badge-unpaid';
   }
-  qs('#status').innerHTML = `<span class="badge ${statusClass}">${statusText}</span>`;
+  const statusEl = qs('#status');
+  statusEl.textContent = '';
+  const span = document.createElement('span');
+  span.className = `badge ${statusClass}`;
+  span.textContent = statusText;
+  statusEl.appendChild(span);
 }
 
 /**
@@ -196,6 +201,129 @@ async function loadMovements() {
   } catch (error) {
     logger.error('Hareketler yüklenirken hata', error);
     toast.error(`Hareketler yüklenirken hata: ${error.message}`);
+  }
+}
+
+/**
+ * Cari hareketleri yükle
+ * Teklifbul Rule v1.0
+ */
+async function loadTransactions() {
+  try {
+    logger.group('Cari Hareketler Yükleniyor');
+    toast.info('Lütfen bekleyin...');
+
+    const response = await authFetch(`/api/customers/${state.customerId}/transactions?limit=100`, {
+      method: 'GET'
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.error || error.message || 'Cari hareketler yüklenemedi');
+    }
+
+    const data = await response.json();
+    state.transactions = (data.transactions || []).map((tx) => ({
+      ...tx,
+      type: tx.transactionType || tx.type,
+      documentNumber: tx.documentNumber || tx.description || '-'
+    }));
+
+    if (state.currentTab === 'transactions') {
+      renderMovements();
+    }
+
+    logger.info('Cari hareketler yüklendi', { count: state.transactions.length });
+    logger.end();
+  } catch (error) {
+    logger.error('Cari hareketler yüklenirken hata', error);
+    toast.error(`Hata: ${error.message}`);
+    logger.end();
+  }
+}
+
+/**
+ * Tahsilat modalını aç
+ * Teklifbul Rule v1.0
+ */
+function openPaymentModal() {
+  const modal = qs('#paymentModal');
+  if (!modal) {
+    toast.error('Hata: Tahsilat formu bulunamadı');
+    return;
+  }
+
+  const amountInput = qs('#payAmount');
+  const currencyInput = qs('#payCurrency');
+  const dateInput = qs('#payDate');
+  const descInput = qs('#payDescription');
+
+  if (amountInput) amountInput.value = '';
+  if (currencyInput) currencyInput.value = state.customer?.currency || 'TRY';
+  if (dateInput) dateInput.value = new Date().toISOString().slice(0, 10);
+  if (descInput) descInput.value = '';
+
+  if (typeof modal.showModal === 'function') {
+    modal.showModal();
+  } else {
+    modal.setAttribute('open', '');
+  }
+}
+
+/**
+ * Manuel tahsilat kaydet
+ * Teklifbul Rule v1.0
+ */
+async function savePayment() {
+  const saveBtn = qs('#btnSavePayment');
+  try {
+    logger.group('Tahsilat Kaydı');
+    toast.info('Lütfen bekleyin...');
+
+    const amount = Number(qs('#payAmount')?.value);
+    const currency = qs('#payCurrency')?.value || 'TRY';
+    const date = qs('#payDate')?.value || null;
+    const description = (qs('#payDescription')?.value || '').trim();
+
+    if (!amount || amount <= 0) {
+      toast.warn('Dikkat: Geçerli bir tutar giriniz');
+      return;
+    }
+
+    if (saveBtn) {
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Yükleniyor...';
+    }
+
+    const response = await authFetch(`/api/customers/${state.customerId}/payment`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        amount,
+        currency,
+        date,
+        description: description || 'Manuel Tahsilat'
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.error || error.message || 'Tahsilat kaydedilemedi');
+    }
+
+    qs('#paymentModal')?.close();
+    toast.success('İşlem tamamlandı');
+    await loadTransactions();
+    logger.info('Tahsilat kaydedildi', { amount, currency });
+  } catch (error) {
+    logger.error('Tahsilat kaydı hatası', error);
+    toast.error(`Hata: ${error.message}`);
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Kaydet';
+    }
+    logger.end();
   }
 }
 
@@ -289,7 +417,12 @@ function getTypeLabel(type) {
   const labels = {
     sale: 'Satış',
     invoice: 'Fatura',
-    deliveryNote: 'İrsaliye'
+    deliveryNote: 'İrsaliye',
+    payment: 'Tahsilat',
+    credit: 'Tahsilat',
+    debit: 'Borç',
+    opening_balance: 'Açılış',
+    adjustment: 'Düzeltme'
   };
   return labels[type] || type;
 }
@@ -326,6 +459,10 @@ function getStatusBadge(movement) {
     }
   } else if (movement.type === 'deliveryNote') {
     return '<span class="badge badge-active">Teslim Edildi</span>';
+  } else if (movement.type === 'payment' || movement.type === 'credit') {
+    return '<span class="badge badge-paid">Tahsilat</span>';
+  } else if (movement.type === 'debit') {
+    return '<span class="badge badge-unpaid">Borç</span>';
   }
   return '-';
 }
@@ -353,9 +490,23 @@ function setupEventListeners() {
     window.location.href = `/pages/customers.html?edit=${state.customerId}`;
   });
 
-  // Extre çıktı al butonu
+  // Extre çıktı al butonu — seçim modalı aç
   qs('#btnExport')?.addEventListener('click', () => {
+    openExportExtreModal();
+  });
+  qs('#btnCloseExportModal')?.addEventListener('click', () => {
+    qs('#exportExtreModal')?.close();
+  });
+  qs('#btnCancelExport')?.addEventListener('click', () => {
+    qs('#exportExtreModal')?.close();
+  });
+  qs('#btnConfirmExport')?.addEventListener('click', () => {
     exportExtre();
+  });
+  qs('#btnSelectAllExportTypes')?.addEventListener('click', () => {
+    qsa('#exportExtreModal input[name="exportType"]').forEach((el) => {
+      el.checked = true;
+    });
   });
 
   // Tab değiştirme
@@ -381,7 +532,13 @@ function setupEventListeners() {
     loadMovements();
   });
 
-  // Teklifbul Rule v1.0 - CSP Fix: Modal kapat butonları
+  // Teklifbul Rule v1.0 - Tahsilat modalı
+  qs('#btnAddPayment')?.addEventListener('click', () => {
+    openPaymentModal();
+  });
+  qs('#btnSavePayment')?.addEventListener('click', () => {
+    savePayment();
+  });
   qs('#btnCloseModalX')?.addEventListener('click', () => {
     qs('#paymentModal')?.close();
   });
@@ -415,35 +572,106 @@ function switchTab(tab) {
 
   // Tab butonlarını güncelle
   qsa('.tab-btn').forEach(btn => {
-    btn.classList.remove('active');
-    if (btn.dataset.tab === tab) {
-      btn.classList.add('active');
-    }
+    const isActive = btn.dataset.tab === tab;
+    btn.classList.toggle('active', isActive);
+    btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
   });
+
+  // Cari sekmesinde tahsilat aksiyonunu göster
+  const txActions = qs('#transactionActions');
+  if (txActions) {
+    txActions.style.display = tab === 'transactions' ? 'flex' : 'none';
+  }
+
+  if (tab === 'transactions') {
+    loadTransactions();
+    return;
+  }
 
   renderMovements();
 }
 
 /**
- * Extre çıktı al
+ * Extre seçim modalını aç
+ * Teklifbul Rule v1.0
+ */
+function openExportExtreModal() {
+  const modal = qs('#exportExtreModal');
+  if (!modal) {
+    toast.error('Hata: Extre seçim formu bulunamadı');
+    return;
+  }
+  if (typeof modal.showModal === 'function') {
+    modal.showModal();
+  } else {
+    modal.setAttribute('open', '');
+  }
+}
+
+/**
+ * Seçili extre türlerini oku
+ * Teklifbul Rule v1.0
+ */
+function getSelectedExportTypes() {
+  return Array.from(qsa('#exportExtreModal input[name="exportType"]:checked'))
+    .map((el) => el.value)
+    .filter(Boolean);
+}
+
+/**
+ * Extre çıktı al (seçilen türlerle)
+ * Teklifbul Rule v1.0
  */
 async function exportExtre() {
+  const confirmBtn = qs('#btnConfirmExport');
+  const cancelBtn = qs('#btnCancelExport');
+  let aborted = false;
+
+  const onCancel = () => {
+    aborted = true;
+  };
+
   try {
     logger.group('Extre Çıktısı Alınıyor');
 
+    const types = getSelectedExportTypes();
+    if (types.length === 0) {
+      toast.warn('Dikkat: En az bir bilgi türü seçin');
+      return;
+    }
+
     const startDate = state.startDate || qs('#startDate')?.value || '';
     const endDate = state.endDate || qs('#endDate')?.value || '';
+    const typesParam = encodeURIComponent(types.join(','));
 
-    const response = await authFetch(`/api/customers/${state.customerId}/extre?startDate=${startDate}&endDate=${endDate}`, {
-      method: 'GET'
-    });
+    toast.info('Lütfen bekleyin...');
+    if (confirmBtn) {
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = 'Yükleniyor...';
+    }
+    cancelBtn?.addEventListener('click', onCancel, { once: true });
+
+    const response = await authFetch(
+      `/api/customers/${state.customerId}/extre?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}&types=${typesParam}`,
+      { method: 'GET' }
+    );
+
+    if (aborted) {
+      toast.info('İşlem iptal edildi');
+      return;
+    }
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Extre çıktısı alınamadı');
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.error || error.message || 'Extre çıktısı alınamadı');
     }
 
     const blob = await response.blob();
+    if (aborted) {
+      toast.info('İşlem iptal edildi');
+      return;
+    }
+
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -453,12 +681,19 @@ async function exportExtre() {
     document.body.removeChild(a);
     window.URL.revokeObjectURL(url);
 
-    toast.success('Extre çıktısı indirildi');
-    logger.info('Extre çıktısı alındı');
-    logger.end();
+    qs('#exportExtreModal')?.close();
+    toast.success('İşlem tamamlandı');
+    logger.info('Extre çıktısı alındı', { types });
   } catch (error) {
     logger.error('Extre çıktısı alınırken hata', error);
-    toast.error(`Extre çıktısı alınırken hata: ${error.message}`);
+    toast.error(`Hata: ${error.message}`);
+  } finally {
+    if (confirmBtn) {
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = 'Excel İndir';
+    }
+    cancelBtn?.removeEventListener('click', onCancel);
+    logger.end();
   }
 }
 

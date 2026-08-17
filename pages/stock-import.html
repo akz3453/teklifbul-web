@@ -7,91 +7,271 @@
   <!-- Teklifbul Rule v1.0 - FOUC önleme: Tema hemen uygulanmalı -->
   <script src="/assets/js/theme-init.js"></script>
   <link rel="stylesheet" href="/utils.css" />
+  <link rel="stylesheet" href="/assets/css/mobile.css" />
   <style>
-    body{font-family:system-ui, Arial; background:#f8fafc; color:#111827; margin:0}
-    .container{max-width:1100px;margin:0 auto;padding:20px}
-    h1{margin:0 0 8px 0}
-    .card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin:12px 0}
-    .help{margin:8px 0; padding:12px; background:#f0f9ff; border-left:3px solid #0284c7; border-radius:4px}
-    .help h3{margin:0 0 8px 0; font-size:14px; color:#0c4a6e}
-    .help p{margin:4px 0; font-size:12px; color:#075985}
-    table{width:100%;border-collapse:collapse; margin-top:12px}
-    th,td{border-bottom:1px solid #e5e7eb;padding:8px;text-align:left;font-size:13px}
-    th{background:#f9fafb; font-weight:600}
-    .badge{display:inline-block;border-radius:14px;padding:2px 8px;font-size:12px}
-    .b-valid{background:#dcfce7;color:#065f46}
-    .b-invalid{background:#fee2e2;color:#991b1b}
-    .warn{color:#b45309}
-    .err{color:#b91c1c}
-    .muted{color:#6b7280;font-size:12px}
-    .btn{padding:10px 20px;border:0;border-radius:6px;cursor:pointer;font-weight:600;font-size:14px;width:160px;transition:all 0.2s;box-sizing:border-box}
-    .btn-primary{background:#2563eb;color:#fff}
-    .btn-primary:hover:not([disabled]){background:#1d4ed8}
-    .btn-secondary{background:#6b7280;color:#fff}
-    .btn-secondary:hover:not([disabled]){background:#4b5563}
-    .btn[disabled]{opacity:.5;cursor:not-allowed}
-    .btn-group{display:flex;gap:12px;align-items:center}
-    input[type=file]{width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:14px}
-    
-    /* Koyu Mod Düzenlemeleri */
+    /* Teklifbul Rule v1.0 — stock-import sayfa layout (utils.css width:100% çakışmalarını izole eder) */
+    .si-page {
+      --si-bg: #f1f5f9;
+      --si-card: #ffffff;
+      --si-border: #cbd5e1;
+      --si-text: #0f172a;
+      --si-muted: #64748b;
+      --si-primary: #2563eb;
+      --si-primary-dark: #1d4ed8;
+      --si-surface: #f8fafc;
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 20px 20px 40px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .si-page * { box-sizing: border-box; }
+    .si-page h1 { margin: 0 0 6px; color: var(--si-primary); font-size: 1.75rem; }
+    .si-page .si-lead { margin: 0 0 18px; color: var(--si-muted); font-size: 14px; }
+    .si-card {
+      background: var(--si-card);
+      border: 1px solid var(--si-border);
+      border-radius: 12px;
+      padding: 20px;
+      margin: 0 0 16px;
+      width: 100%;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+    .si-card h2 {
+      margin: 0 0 14px;
+      font-size: 17px;
+      color: var(--si-text);
+      font-weight: 700;
+    }
+    .si-help {
+      margin-top: 16px;
+      padding: 14px 16px;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 10px;
+    }
+    .si-help h3 { margin: 0 0 8px; font-size: 13px; color: #1e3a8a; }
+    .si-help p { margin: 4px 0; font-size: 12px; color: #1e40af; line-height: 1.5; }
+    .si-muted { color: var(--si-muted); font-size: 13px; }
+    .si-toolbar {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    .si-page .si-btn {
+      width: auto !important;
+      min-width: 0;
+      margin: 0 !important;
+      padding: 12px 18px !important;
+      border-radius: 10px !important;
+      font-size: 14px !important;
+      font-weight: 650 !important;
+      display: inline-flex !important;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      border: 1px solid transparent !important;
+      transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+      white-space: nowrap;
+    }
+    .si-page .si-btn:active { transform: translateY(1px); }
+    .si-page .si-btn-secondary {
+      background: #fff !important;
+      color: #334155 !important;
+      border-color: #94a3b8 !important;
+    }
+    .si-page .si-btn-secondary:hover {
+      background: #f8fafc !important;
+      border-color: #64748b !important;
+    }
+    .si-page .si-btn-primary {
+      background: var(--si-primary) !important;
+      color: #fff !important;
+      border-color: var(--si-primary) !important;
+    }
+    .si-page .si-btn-primary:hover:not([disabled]) {
+      background: var(--si-primary-dark) !important;
+      border-color: var(--si-primary-dark) !important;
+    }
+    .si-page .si-btn[disabled] {
+      opacity: 0.45;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Büyük, net dosya seçim alanı */
+    .si-dropzone {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      min-height: 148px;
+      padding: 24px 20px;
+      border: 2px dashed #94a3b8;
+      border-radius: 12px;
+      background: var(--si-surface);
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.15s ease, background 0.15s ease;
+    }
+    .si-dropzone:hover,
+    .si-dropzone.is-dragover {
+      border-color: var(--si-primary);
+      background: #eff6ff;
+    }
+    .si-dropzone-title {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--si-text);
+    }
+    .si-dropzone-sub {
+      margin: 0;
+      font-size: 13px;
+      color: var(--si-muted);
+    }
+    .si-dropzone-file {
+      margin: 4px 0 0;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--si-primary);
+      word-break: break-all;
+    }
+    .si-dropzone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      width: 100% !important;
+      height: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      opacity: 0;
+      cursor: pointer;
+      border: 0 !important;
+      background: transparent !important;
+    }
+
+    .si-preview-wrap {
+      width: 100%;
+      overflow: auto;
+      border: 1px solid var(--si-border);
+      border-radius: 10px;
+      background: var(--si-surface);
+    }
+    .si-page table {
+      width: 100%;
+      min-width: 0 !important;
+      border-collapse: collapse;
+      margin: 0;
+      table-layout: auto;
+    }
+    .si-page th,
+    .si-page td {
+      border-bottom: 1px solid #e2e8f0;
+      padding: 10px 12px;
+      text-align: left;
+      font-size: 13px;
+      white-space: nowrap;
+      color: var(--si-text);
+    }
+    .si-page th {
+      background: #e2e8f0;
+      font-weight: 700;
+      position: sticky;
+      top: 0;
+    }
+    .badge { display: inline-block; border-radius: 14px; padding: 2px 8px; font-size: 12px; }
+    .b-valid { background: #dcfce7; color: #065f46; }
+    .b-invalid { background: #fee2e2; color: #991b1b; }
+    .warn { color: #b45309; }
+    .err { color: #b91c1b; }
+
+    .si-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+    }
+    .si-stat {
+      border: 1px solid var(--si-border);
+      border-radius: 10px;
+      padding: 14px;
+      background: var(--si-surface);
+    }
+    .si-stat-label { font-size: 12px; color: var(--si-muted); margin-bottom: 4px; }
+    .si-stat-value { font-size: 20px; font-weight: 800; color: var(--si-text); }
+
+    .si-actions {
+      display: grid;
+      grid-template-columns: 1fr 1.4fr;
+      gap: 12px;
+      width: 100%;
+      margin-top: 8px;
+      padding: 16px;
+      border: 1px solid var(--si-border);
+      border-radius: 12px;
+      background: var(--si-card);
+      box-shadow: 0 -2px 12px rgba(15, 23, 42, 0.06);
+      position: sticky;
+      bottom: 12px;
+      z-index: 30;
+    }
+    .si-actions .si-btn {
+      width: 100% !important;
+      min-height: 48px;
+      font-size: 15px !important;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      background: var(--si-bg, #f1f5f9);
+      color: var(--si-text);
+      margin: 0;
+    }
+
     html[data-theme="dark"] body,
-    html.force-dark body {
-      background:#111827;
-      color:#ffffff;
+    html.force-dark body { background: #0b1220; color: #f8fafc; }
+    html[data-theme="dark"] .si-page,
+    html.force-dark .si-page {
+      --si-bg: #0b1220;
+      --si-card: #111827;
+      --si-border: rgba(255,255,255,0.14);
+      --si-text: #f8fafc;
+      --si-muted: #94a3b8;
+      --si-surface: #0f172a;
     }
-    html[data-theme="dark"] .card,
-    html.force-dark .card {
-      background:#111827;
-      border:1px solid rgba(255,255,255,0.1);
-      color:#ffffff;
+    html[data-theme="dark"] .si-help,
+    html.force-dark .si-help {
+      background: #0f172a;
+      border-color: rgba(96,165,250,0.35);
     }
-    html[data-theme="dark"] .help,
-    html.force-dark .help {
-      background:#111827;
-      border-left:3px solid #60a5fa;
-      border:1px solid rgba(255,255,255,0.1);
+    html[data-theme="dark"] .si-help h3,
+    html.force-dark .si-help h3 { color: #93c5fd; }
+    html[data-theme="dark"] .si-help p,
+    html.force-dark .si-help p { color: #bfdbfe; }
+    html[data-theme="dark"] .si-page .si-btn-secondary,
+    html.force-dark .si-page .si-btn-secondary {
+      background: #111827 !important;
+      color: #e2e8f0 !important;
+      border-color: rgba(255,255,255,0.2) !important;
     }
-    html[data-theme="dark"] .help h3,
-    html.force-dark .help h3 {
-      color:#60a5fa;
-    }
-    html[data-theme="dark"] .help p,
-    html.force-dark .help p {
-      color:#d1d5db;
-    }
-    html[data-theme="dark"] table,
-    html.force-dark table {
-      background:#111827;
-    }
-    html[data-theme="dark"] th,
-    html.force-dark th {
-      background:#111827;
-      color:#ffffff;
-      border-bottom:1px solid rgba(255,255,255,0.1);
-    }
-    html[data-theme="dark"] td,
-    html.force-dark td {
-      color:#ffffff;
-      border-bottom:1px solid rgba(255,255,255,0.1);
-    }
-    html[data-theme="dark"] .muted,
-    html.force-dark .muted {
-      color:#9ca3af;
-    }
-    html[data-theme="dark"] input[type=file],
-    html.force-dark input[type=file] {
-      background:#111827;
-      border:1px solid rgba(255,255,255,0.1);
-      color:#ffffff;
+    html[data-theme="dark"] .si-page th,
+    html.force-dark .si-page th { background: #1e293b; color: #f8fafc; }
+
+    @media (max-width: 640px) {
+      .si-page { padding: 14px 12px 28px; }
+      .si-actions { grid-template-columns: 1fr; bottom: 8px; }
+      .si-dropzone { min-height: 132px; }
     }
   </style>
 </head>
 <body>
-  <!-- Common Header -->
   <header id="app-header"></header>
 
-  <div class="container">
-    <!-- Breadcrumb Navigation -->
+  <div class="si-page">
     <div class="tb-breadcrumb" id="breadcrumb">
       <span class="tb-crumb">
         <span class="ico">🏠</span>
@@ -108,28 +288,36 @@
         <span>Stok İçe Aktar</span>
       </span>
     </div>
-    
+
     <h1>Stok Kartı İçe Aktar</h1>
-    <p class="muted">Excel dosyanızdan stok kartlarını toplu olarak içe aktarın.</p>
+    <p class="si-lead">Excel dosyanızdan stok kartlarını toplu olarak içe aktarın.</p>
 
-    <div class="card">
-      <h2 style="margin:0 0 12px 0;font-size:18px">Excel Dosyası</h2>
-      <div class="btn-group" style="margin-bottom:12px">
-        <button class="btn btn-secondary" id="btnDownloadTemplate">📥 Şablon İndir</button>
-        <input id="stockFile" type="file" accept=".xls,.xlsx" style="flex:1" />
+    <section class="si-card" aria-labelledby="si-excel-title">
+      <h2 id="si-excel-title">1) Excel Dosyası</h2>
+      <div class="si-toolbar">
+        <button type="button" class="si-btn si-btn-secondary" id="btnDownloadTemplate" title="Excel şablonunu indir" aria-label="Stok kartı Excel şablonunu indir">
+          📥 Şablon İndir
+        </button>
       </div>
-      
-      <div class="help">
-        <h3>📋 Beklenen Kolonlar:</h3>
+
+      <label class="si-dropzone" id="siDropzone" for="stockFile" title="Excel dosyası seçmek için tıklayın veya sürükleyip bırakın">
+        <input id="stockFile" type="file" accept=".xls,.xlsx" aria-label="İçe aktarılacak Excel dosyasını seç" />
+        <p class="si-dropzone-title">Dosyayı buraya bırakın veya tıklayarak seçin</p>
+        <p class="si-dropzone-sub">Sadece .xlsx / .xls — alanın tamamı tıklanabilir</p>
+        <p class="si-dropzone-file" id="siSelectedFileName">Dosya seçilmedi</p>
+      </label>
+
+      <div class="si-help">
+        <h3>Beklenen kolonlar</h3>
         <p>Sıra | Stok Kodu | Ürün Adı | <strong>Barkod</strong> | Marka | Model | Birim | KDV Oranı | Alım Fiyatı | Satış Fiyatı | Özel Kod 1 | Özel Kod 2 | Özel Kod 3 | <strong>Depo Kodu</strong> | Maksimum Yerleşim Kapasitesi | Minimum Stok Seviyesi | Kayıt Tarihi | Son Güncelleme Tarihi</p>
-        <p style="margin-top:8px"><strong>Not:</strong> İlk satır başlık olmalı. Stok Kodu ve Ürün Adı zorunludur. <strong>Depo Kodu</strong> opsiyoneldir - şablonu indirdiğinizde mevcut depo kodlarınız dropdown'dan seçilebilir. Şablonu indirip doldurarak kullanabilirsiniz.</p>
+        <p style="margin-top:8px"><strong>Not:</strong> İlk satır başlık olmalı. Stok Kodu ve Ürün Adı zorunludur. Depo Kodu opsiyoneldir.</p>
       </div>
-    </div>
+    </section>
 
-    <div class="card">
-      <h2 style="margin:0 0 12px 0;font-size:18px">Önizleme</h2>
-      <div id="previewInfo" class="muted">Henüz dosya seçilmedi.</div>
-      <div style="overflow:auto">
+    <section class="si-card" aria-labelledby="si-preview-title">
+      <h2 id="si-preview-title">2) Önizleme</h2>
+      <div id="previewInfo" class="si-muted">Henüz dosya seçilmedi.</div>
+      <div class="si-preview-wrap" style="margin-top:12px">
         <table id="previewTable" style="display:none">
           <thead>
             <tr>
@@ -139,34 +327,69 @@
           <tbody></tbody>
         </table>
       </div>
-    </div>
+    </section>
 
-    <div class="card">
-      <h2 style="margin:0 0 12px 0;font-size:18px">İstatistikler</h2>
-      <div id="statsInfo" class="muted">Henüz dosya yüklenmedi.</div>
-    </div>
+    <section class="si-card" aria-labelledby="si-stats-title">
+      <h2 id="si-stats-title">3) İstatistikler</h2>
+      <div id="statsInfo" class="si-muted">Henüz dosya yüklenmedi.</div>
+    </section>
 
-    <div class="btn-group" style="justify-content:flex-end;margin-top:16px">
-      <button class="btn btn-secondary" id="btnBack" onclick="history.back()">Geri</button>
-      <button class="btn btn-primary" id="btnImport" disabled>İçe Aktar</button>
+    <div class="si-actions" role="group" aria-label="Stok içe aktarma işlemleri">
+      <button type="button" class="si-btn si-btn-secondary" id="btnBack" onclick="history.back()" title="Geri dön" aria-label="Önceki sayfaya dön">Geri</button>
+      <button type="button" class="si-btn si-btn-primary" id="btnImport" disabled title="Geçerli satırları içe aktar" aria-label="Stok kartlarını içe aktar">İçe Aktar</button>
     </div>
   </div>
 
-  <!-- XLSX CDN -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <!-- ExcelJS CDN - Stil desteği için -->
   <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
-  <!-- Firebase -->
   <script type="module" src="/firebase.js"></script>
-  <!-- Header -->
   <script type="module">
+    import { initAuthGuard } from '/assets/js/auth-guard.js';
     import { initGlobalHeader } from '../assets/js/ui/header.js';
+    initAuthGuard().catch((err) => { console.error('Auth guard init failed', err); });
+
     initGlobalHeader({ mount: '#app-header', activeRoute: 'inventory' });
   </script>
-  <!-- Helpers -->
   <script type="module" src="/scripts/lib/tr-utils.js"></script>
-  <!-- Main -->
   <script type="module" src="/scripts/stock-import.js"></script>
+  <script type="module">
+    // Teklifbul Rule v1.0 — dropzone UX (mevcut #stockFile change handler korunur)
+    const input = document.getElementById('stockFile');
+    const zone = document.getElementById('siDropzone');
+    const nameEl = document.getElementById('siSelectedFileName');
+    if (input && zone && nameEl) {
+      const syncName = () => {
+        const f = input.files && input.files[0];
+        nameEl.textContent = f ? f.name : 'Dosya seçilmedi';
+      };
+      input.addEventListener('change', syncName);
+      ;['dragenter', 'dragover'].forEach((evt) => {
+        zone.addEventListener(evt, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          zone.classList.add('is-dragover');
+        });
+      });
+      ;['dragleave', 'drop'].forEach((evt) => {
+        zone.addEventListener(evt, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          zone.classList.remove('is-dragover');
+        });
+      });
+      zone.addEventListener('drop', (e) => {
+        const files = e.dataTransfer && e.dataTransfer.files;
+        if (!files || !files.length) return;
+        const file = files[0];
+        const ok = /\.xlsx?$/i.test(file.name || '');
+        if (!ok) return;
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        input.files = dt.files;
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+        syncName();
+      });
+    }
+  </script>
 </body>
 </html>
-

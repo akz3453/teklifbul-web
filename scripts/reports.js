@@ -20,6 +20,35 @@ const state = {
   allowNegativeStock: false // Teklifbul Rule v1.0 - Şirket ayarı cache
 };
 
+// Teklifbul Rule v1.0 — Tablo satırları: DOMPurify <td>'yi table dışında siler, createElement kullan
+function appendTextCell(tr, text) {
+  const td = document.createElement('td');
+  td.textContent = text == null ? '' : String(text);
+  tr.appendChild(td);
+  return td;
+}
+
+function appendBadgeCell(tr, text, badgeClass) {
+  const td = document.createElement('td');
+  const span = document.createElement('span');
+  span.className = `badge ${badgeClass}`;
+  span.textContent = text;
+  span.setAttribute('aria-label', text);
+  td.appendChild(span);
+  tr.appendChild(td);
+  return td;
+}
+
+function appendEmptyRow(tbody, colspan, message) {
+  const tr = document.createElement('tr');
+  const td = document.createElement('td');
+  td.colSpan = colspan;
+  td.className = 'report-empty';
+  td.textContent = message;
+  tr.appendChild(td);
+  tbody.appendChild(tr);
+}
+
 const STOCK_PERMS = getStockPerms();
 
 // Teklifbul Rule v1.0 - Chart.js: Chart instances (Min Stock Chart kaldırıldı)
@@ -492,14 +521,10 @@ async function loadMinStockReport() {
   });
   
   const tbody = qs('#minstockTable tbody');
-  tbody.innerHTML = '';
+  tbody.textContent = '';
   
   if (!lowStocks.length) {
-    // Teklifbul Rule v1.0 - XSS Protection
-    tbody.innerHTML = DOMPurify.sanitize('<tr><td colspan="8" style="text-align:center;color:#6b7280">Düşük stok bulunamadı.</td></tr>', {
-      ALLOWED_TAGS: ['tr', 'td'],
-      ALLOWED_ATTR: ['colspan', 'style']
-    });
+    appendEmptyRow(tbody, 8, 'Düşük stok bulunamadı.');
     return;
   }
   
@@ -511,23 +536,14 @@ async function loadMinStockReport() {
       current = 0;
     }
     const minStock = stock.minStock || 0;
-    // Teklifbul Rule v1.0 - XSS Protection
-    const safeSku = DOMPurify.sanitize(stock.sku || '', { ALLOWED_TAGS: [] });
-    const safeName = DOMPurify.sanitize(stock.name || '', { ALLOWED_TAGS: [] });
-    const safeBrand = DOMPurify.sanitize(stock.brand || '-', { ALLOWED_TAGS: [] });
-    tr.innerHTML = DOMPurify.sanitize(`
-      <td>${safeSku}</td>
-      <td>${safeName}</td>
-      <td>${safeBrand}</td>
-      <td>${stock.unit || 'ADT'}</td>
-      <td>${stock.locationName || '-'}</td>
-      <td>${current.toFixed(2)}</td>
-      <td>${minStock.toFixed(2)}</td>
-      <td><span class="badge b-error">⚠️ Düşük</span></td>
-    `, {
-      ALLOWED_TAGS: ['td', 'span'],
-      ALLOWED_ATTR: ['class']
-    });
+    appendTextCell(tr, stock.sku || '');
+    appendTextCell(tr, stock.name || '');
+    appendTextCell(tr, stock.brand || '-');
+    appendTextCell(tr, stock.unit || 'ADT');
+    appendTextCell(tr, stock.locationName || '-');
+    appendTextCell(tr, current.toFixed(2));
+    appendTextCell(tr, minStock.toFixed(2));
+    appendBadgeCell(tr, '⚠️ Düşük', 'b-error');
     tbody.appendChild(tr);
   });
 }
@@ -570,14 +586,10 @@ async function loadCostSaleReport() {
   updateCostSaleTrendChart(belowCost);
   
   const tbody = qs('#costsaleTable tbody');
-  tbody.innerHTML = '';
+  tbody.textContent = '';
   
   if (!belowCost.length) {
-    // Teklifbul Rule v1.0 - XSS Protection
-    tbody.innerHTML = DOMPurify.sanitize('<tr><td colspan="7" style="text-align:center;color:#6b7280">Maliyet altı satış bulunamadı.</td></tr>', {
-      ALLOWED_TAGS: ['tr', 'td'],
-      ALLOWED_ATTR: ['colspan', 'style']
-    });
+    appendEmptyRow(tbody, 7, 'Maliyet altı satış bulunamadı.');
     return;
   }
   
@@ -589,21 +601,13 @@ async function loadCostSaleReport() {
     const diff = avgCost - (mv.unitCost || 0);
     
     const tr = document.createElement('tr');
-    // Teklifbul Rule v1.0 - XSS Protection
-    const safeSku = DOMPurify.sanitize(mv.sku || '', { ALLOWED_TAGS: [] });
-    const safeStockName = DOMPurify.sanitize(stock?.name || '-', { ALLOWED_TAGS: [] });
-    tr.innerHTML = DOMPurify.sanitize(`
-      <td>${date}</td>
-      <td>${safeSku}</td>
-      <td>${safeStockName}</td>
-      <td>${mv.qty}</td>
-      <td>${avgCost.toFixed(2)}</td>
-      <td>${mv.unitCost?.toFixed(2) || 0}</td>
-      <td><span class="badge b-error">${diff.toFixed(2)}</span></td>
-    `, {
-      ALLOWED_TAGS: ['td', 'span'],
-      ALLOWED_ATTR: ['class']
-    });
+    appendTextCell(tr, date);
+    appendTextCell(tr, mv.sku || '');
+    appendTextCell(tr, stock?.name || '-');
+    appendTextCell(tr, mv.qty);
+    appendTextCell(tr, avgCost.toFixed(2));
+    appendTextCell(tr, mv.unitCost?.toFixed(2) || 0);
+    appendBadgeCell(tr, diff.toFixed(2), 'b-error');
     tbody.appendChild(tr);
   });
 }
@@ -698,92 +702,139 @@ async function loadLocationReport() {
   }
   const select = qs('#locationFilter');
   // Teklifbul Rule v1.0 - XSS Protection
-  select.innerHTML = DOMPurify.sanitize('<option value="">Tüm Lokasyonlar</option>', {
-    ALLOWED_TAGS: ['option'],
-    ALLOWED_ATTR: ['value']
-  });
+  select.textContent = '';
+  const allOpt = document.createElement('option');
+  allOpt.value = '';
+  allOpt.textContent = 'Tüm Lokasyonlar';
+  select.appendChild(allOpt);
+
   state.locations.forEach(loc => {
     const opt = document.createElement('option');
     opt.value = loc.id;
-    // Teklifbul Rule v1.0 - XSS Protection
-    const safeLocName = DOMPurify.sanitize(loc.name || '', { ALLOWED_TAGS: [] });
-    const safeLocType = DOMPurify.sanitize(loc.type || '', { ALLOWED_TAGS: [] });
-    opt.textContent = `${safeLocName} (${safeLocType})`;
+    opt.textContent = `${loc.name || ''} (${loc.type || ''})`;
     select.appendChild(opt);
   });
-  
-  select.addEventListener('change', () => {
-    const locationId = select.value;
-    renderLocationTable(locationId);
-  });
-  
-  renderLocationTable('');
+
+  if (!select.dataset.bound) {
+    select.dataset.bound = '1';
+    select.addEventListener('change', () => {
+      renderLocationTable(select.value);
+    });
+  }
+
+  renderLocationTable(select.value || '');
+}
+
+function getBalanceQty(balance) {
+  const raw = balance?.quantity ?? balance?.qty ?? 0;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function setLocationEmptyState({ hasAnyBalance, positiveCount, zeroCount }) {
+  const emptyEl = qs('#locationEmptyState');
+  const chartWrap = qs('#locationChartContainer');
+  const tableWrap = qs('#locationTableWrap');
+  if (!emptyEl) return;
+
+  if (positiveCount > 0) {
+    emptyEl.hidden = true;
+    emptyEl.textContent = '';
+    if (chartWrap) chartWrap.hidden = false;
+    if (tableWrap) tableWrap.hidden = false;
+    return;
+  }
+
+  emptyEl.hidden = false;
+  if (chartWrap) chartWrap.hidden = true;
+
+  if (!hasAnyBalance) {
+    emptyEl.textContent =
+      'Henüz lokasyon bakiyesi yok. Stok girişi, sayım veya transfer yapıldığında ürünler burada listelenir. “Min Stok Altı” sekmesi, bakiyesi oluşmamış kartları da gösterebilir.';
+  } else if (zeroCount > 0) {
+    emptyEl.textContent =
+      `Lokasyon kayıtları var ancak miktarı 0 olan ${zeroCount} satır gizlendi. Stok girişi yaptığınızda bu sekmede görünür.`;
+  } else {
+    emptyEl.textContent = 'Seçilen lokasyonda stoklu ürün bulunamadı.';
+  }
 }
 
 function renderLocationTable(locationId) {
   // Teklifbul Rule v1.0 - Stock balances'den lokasyon bazlı stok miktarlarını göster
   let filteredBalances = state.balances;
-  
+
   if (locationId) {
     filteredBalances = state.balances.filter(b => b.locationId === locationId);
   }
-  
+
+  const withQty = filteredBalances.map(b => ({
+    ...b,
+    _qty: getBalanceQty(b)
+  }));
   // Sadece stoku olan (quantity > 0) balance'ları göster
-  const activeBalances = filteredBalances.filter(b => (b.quantity || 0) > 0);
-  
-  const stats = qs('#locationStats');
-  // Teklifbul Rule v1.0 - XSS Protection
-  stats.innerHTML = DOMPurify.sanitize(`
-    <div class="stat-card">
-      <div class="stat-value">${activeBalances.length}</div>
-      <div class="stat-label">Stoklu Ürün</div>
-    </div>
-  `, {
-    ALLOWED_TAGS: ['div'],
-    ALLOWED_ATTR: ['class']
+  const activeBalances = withQty.filter(b => b._qty > 0);
+  const zeroCount = withQty.filter(b => b._qty <= 0).length;
+
+  setLocationEmptyState({
+    hasAnyBalance: filteredBalances.length > 0,
+    positiveCount: activeBalances.length,
+    zeroCount
   });
-  
+
+  const stats = qs('#locationStats');
+  stats.textContent = '';
+  const card = document.createElement('div');
+  card.className = 'stat-card';
+  const value = document.createElement('div');
+  value.className = 'stat-value';
+  value.textContent = String(activeBalances.length);
+  const label = document.createElement('div');
+  label.className = 'stat-label';
+  label.textContent = 'Stoklu Ürün';
+  card.appendChild(value);
+  card.appendChild(label);
+  stats.appendChild(card);
+
+  if (zeroCount > 0 && activeBalances.length > 0) {
+    const hint = document.createElement('div');
+    hint.className = 'muted';
+    hint.style.marginTop = '8px';
+    hint.textContent = `${zeroCount} satır miktarı 0 olduğu için listede yok.`;
+    stats.appendChild(hint);
+  }
+
   // Teklifbul Rule v1.0 - Chart.js: Update Location Distribution Chart
-  updateLocationDistributionChart(filteredBalances);
-  
+  if (activeBalances.length > 0) {
+    updateLocationDistributionChart(activeBalances);
+  } else if (locationDistributionChartInstance) {
+    locationDistributionChartInstance.destroy();
+    locationDistributionChartInstance = null;
+  }
+
   const tbody = qs('#locationTable tbody');
-  tbody.innerHTML = '';
-  
+  tbody.textContent = '';
+
   if (!activeBalances.length) {
-    // Teklifbul Rule v1.0 - XSS Protection
-    tbody.innerHTML = DOMPurify.sanitize('<tr><td colspan="5" style="text-align:center;color:#6b7280">Veri bulunamadı.</td></tr>', {
-      ALLOWED_TAGS: ['tr', 'td'],
-      ALLOWED_ATTR: ['colspan', 'style']
-    });
+    appendEmptyRow(tbody, 5, 'Miktarı 0’dan büyük lokasyon stoğu yok.');
     return;
   }
-  
+
   activeBalances.forEach(balance => {
     const stock = state.stocks.find(s => s.sku === balance.sku);
     const loc = state.locations.find(l => l.id === balance.locationId);
-    
+
+    let displayQty = balance._qty;
     // Teklifbul Rule v1.0 - Ayar kapalıysa ve negatifse 0 göster
-    let displayQty = balance.quantity || 0;
     if (!state.allowNegativeStock && displayQty < 0) {
       displayQty = 0;
     }
-    
+
     const tr = document.createElement('tr');
-    // Teklifbul Rule v1.0 - XSS Protection
-    const safeSku = DOMPurify.sanitize(balance.sku || '', { ALLOWED_TAGS: [] });
-    const safeStockName = DOMPurify.sanitize(stock?.name || '-', { ALLOWED_TAGS: [] });
-    const safeLocName = DOMPurify.sanitize(loc?.name || '-', { ALLOWED_TAGS: [] });
-    const safeUnit = DOMPurify.sanitize(stock?.unit || 'ADT', { ALLOWED_TAGS: [] });
-    tr.innerHTML = DOMPurify.sanitize(`
-      <td>${safeSku}</td>
-      <td>${safeStockName}</td>
-      <td>${safeLocName}</td>
-      <td>${displayQty.toFixed(2)}</td>
-      <td>${safeUnit}</td>
-    `, {
-      ALLOWED_TAGS: ['td'],
-      ALLOWED_ATTR: []
-    });
+    appendTextCell(tr, balance.sku || '');
+    appendTextCell(tr, stock?.name || '-');
+    appendTextCell(tr, loc?.name || '-');
+    appendTextCell(tr, displayQty.toFixed(2));
+    appendTextCell(tr, stock?.unit || 'ADT');
     tbody.appendChild(tr);
   });
 }
@@ -814,7 +865,8 @@ function updateLocationDistributionChart(movements) {
   movements.forEach(balance => {
     const loc = state.locations.find(l => l.id === balance.locationId);
     const locName = loc?.name || 'Bilinmeyen';
-    locationCounts[locName] = (locationCounts[locName] || 0) + (balance.quantity || 0);
+    const qty = typeof balance._qty === 'number' ? balance._qty : getBalanceQty(balance);
+    locationCounts[locName] = (locationCounts[locName] || 0) + qty;
   });
   
   // Sort by count (descending) and take top 10
@@ -888,14 +940,10 @@ async function loadCostReport() {
   });
   
   const tbody = qs('#costTable tbody');
-  tbody.innerHTML = '';
+  tbody.textContent = '';
   
   if (!inMovements.length) {
-    // Teklifbul Rule v1.0 - XSS Protection
-    tbody.innerHTML = DOMPurify.sanitize('<tr><td colspan="8" style="text-align:center;color:#6b7280">Giriş hareketi bulunamadı.</td></tr>', {
-      ALLOWED_TAGS: ['tr', 'td'],
-      ALLOWED_ATTR: ['colspan', 'style']
-    });
+    appendEmptyRow(tbody, 8, 'Giriş hareketi bulunamadı.');
     return;
   }
   
@@ -905,22 +953,14 @@ async function loadCostReport() {
     const extras = mv.extras?.reduce((sum, e) => sum + (e.amount || 0), 0) || 0;
     
     const tr = document.createElement('tr');
-    // Teklifbul Rule v1.0 - XSS Protection
-    const safeSku = DOMPurify.sanitize(mv.sku || '', { ALLOWED_TAGS: [] });
-    const safeStockName = DOMPurify.sanitize(stock?.name || '-', { ALLOWED_TAGS: [] });
-    tr.innerHTML = DOMPurify.sanitize(`
-      <td>${date}</td>
-      <td>${safeSku}</td>
-      <td>${safeStockName}</td>
-      <td>📥 Giriş</td>
-      <td>${mv.qty}</td>
-      <td>${mv.unitCost?.toFixed(2) || 0}</td>
-      <td>${extras.toFixed(2)}</td>
-      <td>${mv.totalCost?.toFixed(2) || 0}</td>
-    `, {
-      ALLOWED_TAGS: ['td'],
-      ALLOWED_ATTR: []
-    });
+    appendTextCell(tr, date);
+    appendTextCell(tr, mv.sku || '');
+    appendTextCell(tr, stock?.name || '-');
+    appendTextCell(tr, '📥 Giriş');
+    appendTextCell(tr, mv.qty);
+    appendTextCell(tr, mv.unitCost?.toFixed(2) || 0);
+    appendTextCell(tr, extras.toFixed(2));
+    appendTextCell(tr, mv.totalCost?.toFixed(2) || 0);
     tbody.appendChild(tr);
   });
 }

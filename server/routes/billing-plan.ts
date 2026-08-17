@@ -10,12 +10,12 @@ import { Router } from 'express';
 import { AuthenticatedRequest, verifyToken } from '../middleware/auth.js';
 import { getAdminDb } from '../utils/firestore.js';
 import { logger } from '../../src/shared/log/logger.js';
-import { getCompanyIdFromRequest } from '../src/services/permissionService.js';
 import { getCompanyPlanFlags } from '../services/purchaseAssistantAvailabilityService.js';
 import { getAiMinTokens } from '../services/aiMinTokens.js';
 import { getCompanyAiWallet } from '../services/companyAiWalletService.js';
 import { getAccountSubscriptionSummary } from '../services/subscriptionService.js';
 import { isPremiumBypassUser } from '../utils/premiumBypass.js';
+import { resolveTrustedCompanyIdAsync } from '../utils/companyAccess.js';
 
 const router = Router();
 
@@ -25,15 +25,6 @@ const FREE_MAX = Number(process.env.AI_RL_FREE_MAX) || 20;
 const PREMIUM_MAX = Number(process.env.AI_RL_PREMIUM_MAX) || 60;
 const PREMIUM_PLUS_MAX = Number(process.env.AI_RL_PREMIUM_PLUS_MAX) || 120;
 
-function resolveSharedCompanyId(userData: any): string | null {
-  const cid = userData?.companyId;
-  const aid = userData?.activeCompanyId;
-  const arr0 = Array.isArray(userData?.companies) && userData.companies.length ? userData.companies[0] : null;
-  if (cid && typeof cid === 'string' && !cid.startsWith('solo-') && !cid.startsWith('tax-')) return cid;
-  if (aid && typeof aid === 'string' && aid.startsWith('solo-') && cid) return cid;
-  return aid || cid || arr0;
-}
-
 async function getCompanyContext(req: AuthenticatedRequest): Promise<{ companyId: string; planId: string } | null> {
   const userId = req.user?.uid;
   if (!userId) return null;
@@ -42,17 +33,12 @@ async function getCompanyContext(req: AuthenticatedRequest): Promise<{ companyId
   const db = await getAdminDb();
   if (!db) return null;
 
-  let companyId = await getCompanyIdFromRequest(req);
-  if (!companyId && headerCompanyId) {
-    companyId = headerCompanyId;
-  }
-  if (!companyId) {
-    const userDoc = await db.collection('users').doc(userId).get();
-    if (userDoc.exists) {
-      const userData = userDoc.data() || {};
-      companyId = resolveSharedCompanyId(userData);
-    }
-  }
+  const userDoc = await db.collection('users').doc(userId).get();
+  const userData = userDoc.exists ? (userDoc.data() || {}) : {};
+  const companyId = await resolveTrustedCompanyIdAsync(userData, headerCompanyId, {
+    userId,
+    path: req.path,
+  });
   if (!companyId) return null;
 
   // Teklifbul Rule v1.0 - Keep billing plan resolution aligned with purchase-assistant-settings

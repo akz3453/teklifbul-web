@@ -7128,6 +7128,9 @@ Bu teklifi göndermek istediğinizden emin misiniz?`;
           bidData.createdAt = serverTimestamp();
           bidRef = await addDoc(collection(db, "bids"), bidData);
           logger.info('Yeni teklif oluşturuldu', { bidId: bidRef.id });
+          import('/assets/js/analytics.js').then(({ track, ANALYTICS_EVENTS }) => {
+            track(ANALYTICS_EVENTS.BID_CREATED, { status: 'submitted' });
+          }).catch(() => {});
         }
 
         // Teklifbul Rule v1.2.10 - Teklif geldiğinde bildirim gönder
@@ -8575,6 +8578,9 @@ Bu teklifi göndermek istediğinizden emin misiniz?`;
               approvedBy: user.uid,
               approvedAt: serverTimestamp()
             });
+            import('/assets/js/analytics.js').then(({ track, ANALYTICS_EVENTS }) => {
+              track(ANALYTICS_EVENTS.BID_ACCEPTED, { method: 'e-signature' });
+            }).catch(() => {});
 
             // Audit log - başarılı onay
             // Teklifbul Rule v1.0 - undefined değerleri filtrele (Firestore undefined kabul etmez)

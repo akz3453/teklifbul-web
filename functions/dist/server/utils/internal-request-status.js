@@ -1,0 +1,17 @@
+/**
+ * Teklifbul Rule v1.0 — İç talep onay/red geçişleri (Admin SDK API)
+ */
+const FROM_DRAFT = ['REJECTED', 'cancelled', 'CANCELLED'];
+const FROM_SENT = ['APPROVED', 'REJECTED', 'cancelled', 'CANCELLED'];
+const ALLOWED = {
+    DRAFT: FROM_DRAFT,
+    draft: FROM_DRAFT,
+    SENT: FROM_SENT,
+    pending: FROM_SENT,
+    PENDING: FROM_SENT,
+};
+export function canTransitionInternalRequestStatus(from, to) {
+    const oldStatus = from && from.length > 0 ? from : 'DRAFT';
+    const allowed = ALLOWED[oldStatus];
+    return Array.isArray(allowed) && allowed.includes(to);
+}

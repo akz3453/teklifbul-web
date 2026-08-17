@@ -133,18 +133,21 @@ export async function setupMessaging(swReg) {
 }
 
 /**
- * Token'ı Firestore'a kaydeder
+ * Token'ı Firestore'a kaydeder (web / native)
  * @param {string} token - FCM token
+ * @param {{ platform?: string }} [opts]
  */
-async function saveTokenToFirestore(token) {
+export async function saveTokenToFirestore(token, opts = {}) {
   try {
     const user = auth.currentUser;
     if (!user) {
       logger.warn('Kullanıcı oturum açmamış, token kaydedilemedi');
-      return;
+      return false;
     }
+    if (!token || typeof token !== 'string') return false;
 
     const userId = user.uid;
+    const platform = opts.platform || 'web';
     const tokenRef = doc(db, 'userTokens', userId, 'tokens', token);
 
     await setDoc(tokenRef, {
@@ -152,13 +155,15 @@ async function saveTokenToFirestore(token) {
       userId: userId,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
-      platform: 'web',
+      platform,
       userAgent: navigator.userAgent,
     }, { merge: true });
 
-    logger.info('FCM token Firestore\'a kaydedildi');
+    logger.info('FCM token Firestore\'a kaydedildi', { platform });
+    return true;
   } catch (error) {
     logger.error('Token kaydetme hatası', error);
+    return false;
   }
 }
 

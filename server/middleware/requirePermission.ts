@@ -31,19 +31,11 @@ export function requirePermission(permKey: string) {
         );
       }
 
-      // CompanyId'yi al (async version with validation)
-      let companyId = await getCompanyIdFromRequest(req);
-
-      // Eger request'te yoksa, user doc'tan al (fallback) - cache ile
-      if (!companyId) {
-        const userDoc = await getCachedUserDoc(userId, req);
-        if (userDoc.exists && userDoc.data) {
-          companyId = userDoc.data.companyId || userDoc.data.activeCompanyId || null;
-        }
-      }
+      // CompanyId'yi al (async version with validation) — spoof → null, fail-closed
+      const companyId = await getCompanyIdFromRequest(req);
 
       if (!companyId) {
-        logger.warn('requirePermission: Company ID not found', {
+        logger.warn('requirePermission: Company ID not found or spoofed', {
           userId,
           permKey,
           path: req.path
@@ -110,19 +102,11 @@ export function requireAnyPermission(permKeys: string[]) {
         );
       }
 
-      // CompanyId'yi al (async version with validation)
-      let companyId = await getCompanyIdFromRequest(req);
-
-      // Eğer request'te yoksa, user doc'tan al (fallback) - cache ile
-      if (!companyId) {
-        const userDoc = await getCachedUserDoc(userId, req);
-        if (userDoc.exists && userDoc.data) {
-          companyId = userDoc.data.companyId || userDoc.data.activeCompanyId || null;
-        }
-      }
+      // CompanyId'yi al (async version with validation) — spoof → null, fail-closed
+      const companyId = await getCompanyIdFromRequest(req);
 
       if (!companyId) {
-        logger.warn('requireAnyPermission: Company ID not found', {
+        logger.warn('requireAnyPermission: Company ID not found or spoofed', {
           userId,
           permKeys,
           path: req.path

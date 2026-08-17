@@ -254,6 +254,7 @@
     import { toast } from './src/shared/ui/toast.js';
     // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
     import { MESSAGES } from './src/shared/constants/messages.js';
+    import { initAuthGuard } from './assets/js/auth-guard.js';
     
     import { db, auth, requireAuth } from "./firebase.js";
     import { setupHeader } from "./src/common-company.js";
@@ -262,6 +263,7 @@
     } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
 
     // Setup common header functionality (logout and company name)
+    await initAuthGuard();
     await setupHeader();
 
     const user = await requireAuth();
@@ -348,6 +350,16 @@
       emptyState.style.display = "block";
     }
 
+    /** Teklifbul Rule v1.0 — XSS escape */
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
     // ====================
     // Render Revisions
     // ====================
@@ -399,23 +411,33 @@
         }
 
         const tr = document.createElement("tr");
+        const safeRevisionId = escapeHtml(revision.id);
+        const safeDemandId = escapeHtml(revision.demandId);
+        const safeStatus = escapeHtml(revision.status || "");
         tr.innerHTML = `
-          <td><strong>${demandTitle}</strong></td>
-          <td>${requesterName}</td>
-          <td>${revision.notes || "-"}</td>
-          <td><span class="badge ${revision.status}">${getStatusLabel(revision.status)}</span></td>
-          <td>${createdAt}</td>
+          <td><strong>${escapeHtml(demandTitle)}</strong></td>
+          <td>${escapeHtml(requesterName)}</td>
+          <td>${escapeHtml(revision.notes || "-")}</td>
+          <td><span class="badge ${safeStatus}">${escapeHtml(getStatusLabel(revision.status))}</span></td>
+          <td>${escapeHtml(createdAt)}</td>
           <td class="action-buttons">
             ${revision.status === "pending" ? `
-              <button class="btn btn-approve" onclick="approveRevision('${revision.id}')">Onayla</button>
-              <button class="btn btn-reject" onclick="rejectRevision('${revision.id}')">Reddet</button>
-              <a href="./demand-detail.html?id=${revision.demandId}" class="link-button">Yeniden Teklif Ver</a>
+              <button class="btn btn-approve" data-revision-id="${safeRevisionId}" data-action="approve">Onayla</button>
+              <button class="btn btn-reject" data-revision-id="${safeRevisionId}" data-action="reject">Reddet</button>
+              <a href="./demand-detail.html?id=${encodeURIComponent(revision.demandId)}" class="link-button">Yeniden Teklif Ver</a>
             ` : `
-              <a href="./demand-detail.html?id=${revision.demandId}" class="link-button">Talep Detayı</a>
+              <a href="./demand-detail.html?id=${encodeURIComponent(revision.demandId)}" class="link-button">Talep Detayı</a>
             `}
           </td>
         `;
         revisionsBody.appendChild(tr);
+        tr.querySelectorAll("[data-action]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const id = btn.getAttribute("data-revision-id");
+            if (btn.getAttribute("data-action") === "approve") approveRevision(id);
+            else rejectRevision(id);
+          });
+        });
       }
 
       loading.style.display = "none";

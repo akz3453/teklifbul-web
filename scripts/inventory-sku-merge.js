@@ -6,9 +6,8 @@
  */
 
 import { db } from '/firebase.js';
-import { collection, query, where, getDocs, updateDoc, doc, writeBatch, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+import { collection, getDocs, query, where, limit } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
 import { getStockBalance, getStockBalancesBySku } from '/scripts/inventory-balances.js';
-import { weightedAvgCost } from '/scripts/inventory-cost.js';
 
 // Teklifbul Rule v1.0 - Frontend'de console.log kullanılabilir
 const logger = {
@@ -135,15 +134,8 @@ export async function getSkuMergePreview(companyId, sourceSku, targetSku) {
 }
 
 /**
- * Merge SKUs
+ * Merge SKUs via API (Admin SDK)
  * Teklifbul Rule v1.0 - SKU birleştirme
- * 
- * @param {Object} params
- * @param {string} params.companyId - Company ID
- * @param {string} params.sourceSku - Kaynak SKU
- * @param {string} params.targetSku - Hedef SKU
- * @param {string} params.userId - User ID (for audit)
- * @returns {Promise<Object>} Merge result
  */
 export async function mergeSkus({ companyId, sourceSku, targetSku, userId }) {
   try {
@@ -155,158 +147,42 @@ export async function mergeSkus({ companyId, sourceSku, targetSku, userId }) {
       throw new Error('Kaynak ve hedef SKU aynı olamaz');
     }
 
-    logger.info('SKU merge başlatıldı', { companyId, sourceSku, targetSku, userId });
-
-    // Preview al
-    const preview = await getSkuMergePreview(companyId, sourceSku, targetSku);
-
-    // Batch işlemleri
-    const batch = writeBatch(db);
-
-    // 1. Stock balances'ları birleştir
-    for (const sourceBalance of preview.sourceBalances) {
-      const locationId = sourceBalance.locationId;
-      const sourceQty = sourceBalance.quantity || 0;
-      const sourceAvgCost = sourceBalance.avgCost || 0;
-
-      if (sourceQty <= 0) {
-        continue; // Miktar yoksa atla
+    const { authFetch } = await import('../assets/js/utils/api-helpers.js');
+    const response = await authFetch('/api/stock-movements/sku-merge', {
+      method: 'POST',
+      body: JSON.stringify({ sourceSku, targetSku }),
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || result.ok === false) {
+      const code = result.error || '';
+      if (response.status === 402 || code === 'premium_required') {
+        throw new Error(
+          result.message ||
+            'Premium plan gereklidir. Ayarlar > Premium Hesap üzerinden yükseltebilirsiniz.'
+        );
       }
-
-      // Hedef balance'ı bul veya oluştur
-      const targetBalance = preview.targetBalances.find(b => b.locationId === locationId);
-      
-      if (targetBalance) {
-        // Mevcut balance'ı güncelle
-        const targetQty = targetBalance.quantity || 0;
-        const targetAvgCost = targetBalance.avgCost || 0;
-        
-        // Ağırlıklı ortalama maliyet hesapla
-        const newQty = sourceQty + targetQty;
-        const newAvgCost = weightedAvgCost(targetQty, targetAvgCost, sourceQty, sourceAvgCost);
-
-        const balanceDocId = `${companyId}_${targetSku}_${locationId}`;
-        const balanceRef = doc(db, 'stock_balances', balanceDocId);
-        
-        batch.update(balanceRef, {
-          quantity: newQty,
-          avgCost: newAvgCost,
-          lastUpdated: serverTimestamp()
-        });
-      } else {
-        // Yeni balance oluştur
-        const balanceDocId = `${companyId}_${targetSku}_${locationId}`;
-        const balanceRef = doc(db, 'stock_balances', balanceDocId);
-        
-        batch.set(balanceRef, {
-          companyId,
-          sku: targetSku,
-          locationId,
-          stockId: preview.targetStock.id,
-          quantity: sourceQty,
-          avgCost: sourceAvgCost,
-          lastUpdated: serverTimestamp(),
-          lastMovementId: null
-        });
+      if (code === 'subscription_expired') {
+        throw new Error(
+          result.message ||
+            'Premium aboneliğinizin süresi dolmuş. Lütfen planınızı yenileyin.'
+        );
       }
-
-      // Kaynak balance'ı sil
-      const sourceBalanceDocId = `${companyId}_${sourceSku}_${locationId}`;
-      const sourceBalanceRef = doc(db, 'stock_balances', sourceBalanceDocId);
-      batch.delete(sourceBalanceRef);
+      throw new Error(result.message || result.error || 'SKU birleştirme başarısız');
     }
-
-    // 2. Stock movements'leri güncelle (SKU değiştir)
-    const sourceMovementsQuery = query(
-      collection(db, 'stock_movements'),
-      where('companyId', '==', companyId),
-      where('sku', '==', sourceSku)
-    );
-    const sourceMovementsSnap = await getDocs(sourceMovementsQuery);
-
-    sourceMovementsSnap.forEach(docSnap => {
-      const movementRef = doc(db, 'stock_movements', docSnap.id);
-      batch.update(movementRef, {
-        sku: targetSku,
-        stockId: preview.targetStock.id,
-        stockName: preview.targetStock.name,
-        mergedFrom: sourceSku, // Audit için
-        mergedAt: serverTimestamp()
-      });
-    });
-
-    // 3. Target stock'u güncelle (avgCost, lastPurchasePrice, salePrice)
-    const targetStockRef = doc(db, 'stocks', preview.targetStock.id);
-    
-    // En yüksek lastPurchasePrice'ı al
-    const newLastPurchasePrice = Math.max(
-      preview.sourceStock.lastPurchasePrice || 0,
-      preview.targetStock.lastPurchasePrice || 0
-    );
-
-    // En yüksek salePrice'ı al
-    const newSalePrice = Math.max(
-      preview.sourceStock.salePrice || 0,
-      preview.targetStock.salePrice || 0
-    );
-
-    // Ortalama maliyet: tüm lokasyonların ağırlıklı ortalaması
-    let totalQty = 0;
-    let totalCost = 0;
-    
-    for (const balance of [...preview.sourceBalances, ...preview.targetBalances]) {
-      const qty = balance.quantity || 0;
-      const avgCost = balance.avgCost || 0;
-      totalQty += qty;
-      totalCost += qty * avgCost;
-    }
-    
-    const newAvgCost = totalQty > 0 ? totalCost / totalQty : preview.targetStock.avgCost || 0;
-
-    batch.update(targetStockRef, {
-      avgCost: newAvgCost,
-      lastPurchasePrice: newLastPurchasePrice,
-      salePrice: newSalePrice,
-      updatedAt: serverTimestamp()
-    });
-
-    // 4. Source stock'u arşivle (silme, sadece merged flag ekle)
-    const sourceStockRef = doc(db, 'stocks', preview.sourceStock.id);
-    batch.update(sourceStockRef, {
-      merged: true,
-      mergedTo: targetSku,
-      mergedAt: serverTimestamp(),
-      mergedBy: userId,
-      archived: true // Arşivle
-    });
-
-    // Batch'i commit et
-    await batch.commit();
-
-    logger.info('SKU merge tamamlandı', {
-      companyId,
-      sourceSku,
-      targetSku,
-      movementsUpdated: sourceMovementsSnap.size,
-      balancesMerged: preview.sourceBalances.length
-    });
 
     return {
       success: true,
-      sourceSku,
-      targetSku,
-      movementsUpdated: sourceMovementsSnap.size,
-      balancesMerged: preview.sourceBalances.length,
-      newAvgCost,
-      newLastPurchasePrice,
-      newSalePrice
+      sourceSku: result.sourceSku || sourceSku,
+      targetSku: result.targetSku || targetSku,
+      movementsUpdated: result.movementsUpdated || 0,
+      balancesMerged: result.balancesMerged || 0,
     };
   } catch (error) {
     logger.error('SKU merge hatası', {
       error: error.message || String(error),
       companyId,
       sourceSku,
-      targetSku
+      targetSku,
     });
     throw error;
   }

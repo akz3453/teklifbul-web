@@ -10,7 +10,10 @@ export default defineConfig({
       'dist',
       'teklifbul-compare-app',
       // Rules tests are intended to run via "npm run test:rules" (Firestore emulator exec)
-      'tests/rules.test.js'
+      'tests/rules.test.js',
+      'tests/mobile-rules.test.js',
+      'tests/permission_fix.test.js',
+      'tests/tenant-isolation.rules.test.js'
     ],
     coverage: {
       provider: 'v8',

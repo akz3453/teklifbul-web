@@ -37,7 +37,7 @@ function createModalHTML() {
       <div style="background:white; border-radius:12px; padding:24px; max-width:500px; width:90%; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
         <h3 id="tb-modal-title" style="margin:0 0 16px 0; font-size:20px; font-weight:700; color:#1f2937;">Token Bakiyeniz Yetersiz</h3>
         <p id="tb-modal-message" style="margin:0 0 24px 0; font-size:14px; color:#6b7280; line-height:1.6;">
-          Ücretli yapay zeka modeli için token gerekiyor. Paket satın alabilir veya ücretsiz modele geçebilirsiniz.
+          Ücretli yapay zeka modeli için token gerekiyor. Paket satın alarak daha yüksek performanslı modellere geçebilir veya ücretsiz modele devam edebilirsiniz.
         </p>
         <div style="display:flex; gap:12px; flex-wrap:wrap;">
           <button id="tb-modal-token-packages" class="btn btn-primary" style="flex:1; min-width:140px; padding:12px 20px; font-size:14px; font-weight:600;">
@@ -99,8 +99,8 @@ async function handleSwitchToFree() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        provider: 'free_local',
-        model: 'basic',
+        provider: 'groq',
+        model: 'llama-3.3-70b-versatile',
         profile: 'fast',
         dictionaryLearning: true,
       }),

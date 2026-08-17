@@ -1,7 +1,7 @@
 // Teklifbul Rule v1.0 - Supplier Quotes API Routes
 // Handles both public (token-based) and authenticated endpoints
 
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { logger } from '../../src/shared/log/logger.js';
 import { verifyToken, AuthenticatedRequest } from '../middleware/auth.js';
@@ -21,6 +21,7 @@ import {
     updateQuoteStatus,
     getTokensForRequest
 } from '../services/supplierQuoteService.js';
+import { getCompanyIdFromRequest } from '../src/services/permissionService.js';
 import { getAdminDb } from '../utils/firestore.js';
 
 const router = Router();
@@ -63,13 +64,13 @@ const submitQuoteSchema = z.object({
 // ============================================
 // HELPER: Get user ID and company ID from request
 // ============================================
-function getAuthInfo(req: AuthenticatedRequest): { userId: string | null; companyId: string | null } {
+async function getAuthInfo(req: AuthenticatedRequest): Promise<{ userId: string | null; companyId: string | null }> {
     const user = req.user;
-    if (!user) return { userId: null, companyId: null };
-
+    if (!user?.uid) return { userId: null, companyId: null };
+    const companyId = await getCompanyIdFromRequest(req);
     return {
-        userId: user.uid || null,
-        companyId: user.activeCompanyId || null
+        userId: user.uid,
+        companyId
     };
 }
 
@@ -200,7 +201,7 @@ router.post('/submit/:token', async (req: Request, res: Response): Promise<void>
  */
 router.post('/send-email', verifyToken, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-        const { userId, companyId } = getAuthInfo(req);
+        const { userId, companyId } = await getAuthInfo(req);
 
         if (!userId || !companyId) {
             res.status(400).json({ success: false, error: 'Kullanıcı veya firma bilgisi bulunamadı' });
@@ -317,7 +318,7 @@ router.post('/send-email', verifyToken, async (req: AuthenticatedRequest, res: R
  */
 router.get('/quota', verifyToken, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-        const { userId, companyId } = getAuthInfo(req);
+        const { userId, companyId } = await getAuthInfo(req);
 
         if (!userId || !companyId) {
             res.status(400).json({ success: false, error: 'Kullanıcı veya firma bilgisi bulunamadı' });
@@ -339,7 +340,7 @@ router.get('/quota', verifyToken, async (req: AuthenticatedRequest, res: Respons
  */
 router.get('/list/:requestId', verifyToken, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-        const { companyId } = getAuthInfo(req);
+        const { companyId } = await getAuthInfo(req);
         const requestId = req.params.requestId;
 
         if (!companyId) {
@@ -367,7 +368,7 @@ router.get('/list/:requestId', verifyToken, async (req: AuthenticatedRequest, re
  */
 router.get('/tokens/:requestId', verifyToken, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-        const { companyId } = getAuthInfo(req);
+        const { companyId } = await getAuthInfo(req);
         const requestId = req.params.requestId;
 
         if (!companyId) {
@@ -401,7 +402,7 @@ router.get('/tokens/:requestId', verifyToken, async (req: AuthenticatedRequest, 
  */
 router.patch('/:quoteId/status', verifyToken, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-        const { companyId } = getAuthInfo(req);
+        const { companyId } = await getAuthInfo(req);
         const quoteId = req.params.quoteId;
         const { status } = req.body as { status?: string };
 

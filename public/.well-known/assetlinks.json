@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.nefisoft.app",
+      "sha256_cert_fingerprints": [
+        "BE:73:86:1A:1D:CD:10:69:ED:64:3D:2F:7E:BC:4A:11:9D:78:3E:95:A4:FD:C8:3E:3F:D0:C5:1E:24:28:B0:3C"
+      ]
+    }
+  }
+]

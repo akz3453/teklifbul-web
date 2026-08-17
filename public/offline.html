@@ -2,158 +2,122 @@
 <html lang="tr">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Çevrimdışı — NEFISOFT</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Bağlantı yok — NEFISOFT</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
+    :root {
+      --primary: #2563EB;
+      --text: #111827;
+      --muted: #6B7280;
+      --bg: #F8FAFC;
     }
-    
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: Roboto, system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      background: linear-gradient(135deg, #2563EB 0%, #1d4ed8 100%);
-      color: #ffffff;
-      min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 1rem;
+      padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom));
     }
-    
-    .offline-container {
+    .card {
+      width: 100%;
+      max-width: 380px;
       text-align: center;
-      max-width: 500px;
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(10px);
-      border-radius: 1rem;
-      padding: 3rem 2rem;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
     }
-    
-    .offline-icon {
-      font-size: 4rem;
-      margin-bottom: 1.5rem;
-      animation: pulse 2s ease-in-out infinite;
+    .brand {
+      margin: 0 0 28px;
     }
-    
-    @keyframes pulse {
-      0%, 100% {
-        transform: scale(1);
-        opacity: 1;
-      }
-      50% {
-        transform: scale(1.1);
-        opacity: 0.8;
-      }
+    .brand img {
+      display: block;
+      width: min(180px, 55vw);
+      height: auto;
+      margin: 0 auto;
+      object-fit: contain;
     }
-    
-    h1 {
+    .icon {
+      width: 72px;
+      height: 72px;
+      margin: 0 auto 20px;
+      border-radius: 50%;
+      background: #DBEAFE;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       font-size: 2rem;
-      margin-bottom: 1rem;
-      font-weight: 600;
     }
-    
-    p {
-      font-size: 1.125rem;
-      margin-bottom: 2rem;
-      opacity: 0.9;
-      line-height: 1.6;
-    }
-    
-    .retry-btn {
-      display: inline-block;
-      padding: 0.875rem 2rem;
-      background: #ffffff;
-      color: #2563EB;
-      border: none;
-      border-radius: 0.5rem;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-      text-decoration: none;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-    
-    .retry-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
-    }
-    
-    .retry-btn:active {
-      transform: translateY(0);
-    }
-    
-    .tips {
-      margin-top: 2rem;
-      padding-top: 2rem;
-      border-top: 1px solid rgba(255, 255, 255, 0.2);
-      text-align: left;
-    }
-    
-    .tips h2 {
+    h1 {
       font-size: 1.25rem;
-      margin-bottom: 1rem;
-      text-align: center;
+      margin: 0 0 10px;
+      font-weight: 700;
     }
-    
-    .tips ul {
-      list-style: none;
-      padding: 0;
+    p {
+      margin: 0 0 28px;
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 0.95rem;
     }
-    
-    .tips li {
-      padding: 0.5rem 0;
-      padding-left: 1.5rem;
-      position: relative;
+    button {
+      appearance: none;
+      border: 0;
+      border-radius: 10px;
+      background: var(--primary);
+      color: #fff;
+      font: inherit;
+      font-weight: 600;
+      font-size: 1rem;
+      padding: 14px 24px;
+      width: 100%;
+      cursor: pointer;
     }
-    
-    .tips li:before {
-      content: "✓";
-      position: absolute;
-      left: 0;
-      color: #ffffff;
-      font-weight: bold;
+    button:active { opacity: 0.9; }
+    .hint {
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: var(--muted);
     }
   </style>
 </head>
 <body>
-  <div class="offline-container">
-    <div class="offline-icon">📡</div>
-    <h1>İnternet Bağlantısı Yok</h1>
-    <p>
-      Şu anda çevrimdışısınız. İnternet bağlantınızı kontrol edin ve tekrar deneyin.
+  <div class="card" role="alert" aria-live="polite">
+    <p class="brand">
+      <img src="./assets/images/brand/nefisoft-web-stacked.png" alt="NEFISOFT" width="180" height="180" onerror="this.style.display='none'" />
     </p>
-    <button class="retry-btn" onclick="window.location.reload()">
-      Tekrar Dene
-    </button>
-    
-    <div class="tips">
-      <h2>İpuçları</h2>
-      <ul>
-        <li>Wi-Fi veya mobil veri bağlantınızı kontrol edin</li>
-        <li>Uçak modunun kapalı olduğundan emin olun</li>
-        <li>Tarayıcıyı yeniden başlatmayı deneyin</li>
-        <li>Daha önce ziyaret ettiğiniz sayfalar çevrimdışı erişilebilir olabilir</li>
-      </ul>
-    </div>
+    <div class="icon" aria-hidden="true">📡</div>
+    <h1>İnternet bağlantısı yok</h1>
+    <p>Uygulama çalışmak için internet gerektirir. Bağlantınızı kontrol edip tekrar deneyin.</p>
+    <button type="button" id="retryBtn" aria-label="Tekrar dene">Tekrar Dene</button>
+    <p class="hint" id="statusHint"></p>
   </div>
-  
   <script>
-    // Online olduğunda otomatik yenile
-    window.addEventListener('online', () => {
-      window.location.reload();
-    });
-    
-    // Periyodik olarak bağlantıyı kontrol et
-    setInterval(() => {
-      if (navigator.onLine) {
-        window.location.reload();
+    (function () {
+      var LIVE = 'https://teklifbul.web.app/login.html';
+      var btn = document.getElementById('retryBtn');
+      var hint = document.getElementById('statusHint');
+
+      function goLive() {
+        hint.textContent = 'Bağlanıyor...';
+        btn.disabled = true;
+        window.location.replace(LIVE);
       }
-    }, 5000);
+
+      btn.addEventListener('click', goLive);
+
+      window.addEventListener('online', function () {
+        hint.textContent = 'Bağlantı geldi. Tekrar deneyebilirsiniz.';
+        btn.disabled = false;
+      });
+
+      window.addEventListener('offline', function () {
+        hint.textContent = '';
+        btn.disabled = false;
+      });
+    })();
   </script>
 </body>
 </html>
-

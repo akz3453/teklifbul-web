@@ -1,0 +1,8 @@
+# Teklifbul Rule v1.0 — Native/web giriş duman testi (Maestro)
+appId: com.nefisoft.app
+---
+- launchApp
+- assertVisible: "NEFISOFT"
+- tapOn:
+    id: "retryBtn"
+    optional: true

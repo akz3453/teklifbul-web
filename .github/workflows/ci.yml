@@ -7,43 +7,38 @@ on:
     branches: [ main, develop ]
 
 jobs:
-  lint:
-    name: Lint & Type Check
+  verify:
+    name: Typecheck, Test, Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '22'
           cache: 'npm'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
       - run: npm ci
-      - run: npm run lint -- --max-warnings=1000 || echo "Lint warnings exceeded threshold, but continuing..."
+      - run: npm install -g firebase-tools
       - run: npm run type-check
-
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    needs: lint
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-      - run: npm ci
+      - run: npm run lint:ci
+      - run: npm run test:run
+      - run: npm run test:rules
       - run: npm run build:api
       - run: npm run build
 
   health-check:
     name: Health Check
     runs-on: ubuntu-latest
-    needs: build
+    needs: verify
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '22'
           cache: 'npm'
       - run: npm ci
       - name: Start API server
@@ -61,6 +56,11 @@ jobs:
             echo "❌ Health check failed: HTTP $response"
             exit 1
           fi
+          api_response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5174/api/health || echo "000")
+          if [ "$api_response" != "200" ]; then
+            echo "❌ /api/health failed: HTTP $api_response"
+            exit 1
+          fi
           echo "✅ Health check passed"
         env:
           HEALTH_CHECK_URL: http://localhost:5174/health
@@ -68,13 +68,13 @@ jobs:
   smoke-test:
     name: Smoke Test
     runs-on: ubuntu-latest
-    needs: build
+    needs: verify
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '22'
           cache: 'npm'
       - run: npm ci
       - name: Run Smoke Test

@@ -8,9 +8,10 @@
   <script src="/assets/js/theme-init.js"></script>
   <link rel="stylesheet" href="/utils.css" />
   <link rel="stylesheet" href="/assets/css/layout.css" />
+  <link rel="stylesheet" href="/assets/css/mobile.css" />
   <style>
-    body{font-family:system-ui, Arial; background:#f8fafc; color:#111827; margin:0}
-    .container{max-width:1400px;margin:0 auto;padding:20px}
+    body{font-family:system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; background:#f8fafc; color:#111827; margin:0}
+    .container{max-width:min(1800px, calc(100% - 24px));width:100%;margin:0 auto;padding:16px 20px 28px;box-sizing:border-box}
     h1{margin:0 0 8px 0}
     .card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:20px;margin:16px 0}
     .search-box{position:relative;margin-bottom:16px}
@@ -30,11 +31,12 @@
     .badge-archived{background:#fee2e2;color:#991b1b}
     .badge-active{background:#dcfce7;color:#065f46}
     .muted{color:#6b7280;font-size:12px}
-    .btn{padding:10px 20px;border:0;border-radius:6px;cursor:pointer;font-weight:600;font-size:14px;margin-right:8px}
+    .btn{padding:10px 20px;border:0;border-radius:6px;cursor:pointer;font-weight:600;font-size:14px;margin-right:8px;width:auto !important}
     .btn-primary{background:#2563eb;color:#fff}
     .btn-primary:hover{background:#1d4ed8}
     .btn-secondary{background:#6b7280;color:#fff}
     .btn-secondary:hover{background:#4b5563}
+    #stocksTable .btn{padding:4px 10px;font-size:12px;margin:0;min-height:auto;height:auto;display:inline-flex}
     .stats{display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap}
     .stat-card{background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:12px;min-width:150px}
     .stat-label{font-size:12px;color:#0369a1;font-weight:600}
@@ -197,8 +199,13 @@
       </span>
     </div>
     
-    <h1>📋 Stok Listesi</h1>
-    <p class="muted">Tüm stokları görüntüleyin, arayın ve filtreleyin.</p>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:8px">
+      <div>
+        <h1 style="margin:0 0 4px 0">📋 Stok Listesi</h1>
+        <p class="muted" style="margin:0">Tüm stokları görüntüleyin, arayın ve filtreleyin.</p>
+      </div>
+      <a class="btn btn-primary" href="/pages/stock-new.html" title="Yeni stok kartı oluştur" aria-label="Yeni stok kartı oluştur" style="text-decoration:none;display:inline-flex;align-items:center">➕ Yeni Stok Kartı Oluştur</a>
+    </div>
 
     <div class="card">
       <div class="search-box">
@@ -254,15 +261,15 @@
         </div>
       </div>
 
-      <div style="margin-top:16px">
-        <button class="btn btn-primary" id="btnExport">📥 Excel'e Aktar</button>
-        <button class="btn btn-secondary" id="btnRefresh">🔄 Yenile</button>
+      <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <button type="button" class="btn btn-primary" id="btnExport" title="Excel'e aktar" aria-label="Stok listesini Excel'e aktar">📥 Excel'e Aktar</button>
+        <button type="button" class="btn btn-secondary" id="btnRefresh" title="Listeyi yenile" aria-label="Stok listesini yenile">🔄 Yenile</button>
       </div>
     </div>
 
     <div class="card">
-      <div id="tableContainer" style="overflow-x:auto">
-        <table id="stocksTable">
+      <div id="tableContainer" class="table-responsive" style="overflow-x:auto">
+        <table id="stocksTable" style="min-width:720px">
           <thead>
             <tr>
               <th>SKU</th>
@@ -278,6 +285,7 @@
               <th>Ort. Maliyet</th>
               <th>Satış Fiyatı</th>
               <th>Durum</th>
+              <th style="width:100px">İşlem</th>
             </tr>
           </thead>
           <tbody id="stocksTableBody">
@@ -300,7 +308,10 @@
   <script type="module" src="/firebase.js"></script>
   <!-- Header -->
   <script type="module">
+    import { initAuthGuard } from '/assets/js/auth-guard.js';
     import { initGlobalHeader } from '../assets/js/ui/header.js';
+    initAuthGuard().catch((err) => { console.error('Auth guard init failed', err); });
+
     initGlobalHeader({ mount: '#app-header', activeRoute: 'inventory' });
   </script>
   <!-- Main -->

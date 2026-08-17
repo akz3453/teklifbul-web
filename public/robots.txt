@@ -1,29 +1,46 @@
 User-agent: *
 Allow: /
 
-# Disallow admin pages
-Disallow: /admin/
-Disallow: /pages/admin/
-
-# Disallow test pages
+Disallow: /api/
 Disallow: /test/
 Disallow: /test-fixtures/
-
-# Disallow API endpoints
-Disallow: /api/
-
-# Disallow private pages
+Disallow: /pages/
+Disallow: /admin/
+Disallow: /dashboard.html
 Disallow: /settings.html
+Disallow: /demands.html
+Disallow: /demand-detail.html
+Disallow: /demand-new.html
+Disallow: /demand-new.desktop.html
+Disallow: /internal-demands.html
+Disallow: /internal-demand-new.html
+Disallow: /internal-demand-detail.html
+Disallow: /bids.html
+Disallow: /bids-incoming.html
+Disallow: /bids-outgoing.html
+Disallow: /bid-detail.html
+Disallow: /bid-upload.html
+Disallow: /bid-repair.html
+Disallow: /submit-bid.html
+Disallow: /contracts.html
+Disallow: /contract-edit.html
+Disallow: /contract-detail.html
+Disallow: /inventory-index.html
+Disallow: /company-join.html
 Disallow: /company-join-waiting.html
+Disallow: /company-invite.html
+Disallow: /company-profile.html
+Disallow: /role-select.html
+Disallow: /role-permissions-management.html
+Disallow: /revision-request.html
+Disallow: /main-demands.html
+Disallow: /add-satfk.html
+Disallow: /fefo-dashboard.html
+Disallow: /fefo-pos.html
+Disallow: /interim-payments.html
+Disallow: /interim-payment-edit.html
+Disallow: /interim-payment-suggestions.html
+Disallow: /payment-request.html
+Disallow: /admin-delete-all.html
 
-# Allow public pages
-Allow: /index.html
-Allow: /login.html
-Allow: /signup.html
-Allow: /register-buyer.html
-
-# Sitemap
-Sitemap: https://teklifbul.com/sitemap.xml
-
-# Crawl delay (optional)
-Crawl-delay: 1
+Sitemap: https://nefisoft.com/sitemap.xml

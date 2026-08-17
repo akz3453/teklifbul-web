@@ -417,7 +417,10 @@ async function performImport() {
         name: row.name,
         brand: row.brand || '',
         model: row.model || '',
-        unit: row.unit || 'ADT',
+        unit: (() => {
+          const u = String(row.unit || 'ADT').trim().toUpperCase();
+          return u === 'ADET' ? 'ADT' : (u || 'ADT');
+        })(),
         barcode: row.barcode ? row.barcode.toString().trim() : null, // Teklifbul Rule v1.0 - Barkod alanı
         vatRate: row.vatRate || 0,
         lastPurchasePrice: row.lastPurchasePrice || 0,
@@ -433,6 +436,7 @@ async function performImport() {
         maxCapacity: row.maxCapacity ? toNumber(row.maxCapacity) : null,
         minStockLevel: row.minStockLevel ? toNumber(row.minStockLevel) : null,
         name_norm: normalizeTRLower(row.name),
+        sku_norm: normalizeTRLower(row.sku),
         search_keywords: tokenizeForIndex(row.name),
         companyId: companyId || null, // Teklifbul Rule v1.0 - CompanyId ekleniyor
         updatedAt: serverTimestamp()
@@ -586,7 +590,7 @@ async function downloadTemplate() {
       '8690000000000',
       'ÖRNEK MARKA',
       'MODEL-001',
-      'ADET',
+      'ADT',
       20,
       100.00,
       120.00,
@@ -646,9 +650,10 @@ async function downloadTemplate() {
     link.click();
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
+    toast.success('Excel şablonu indirildi');
   } catch (error) {
-    console.error('Şablon oluşturma hatası:', error);
-    alert('Şablon oluşturulurken hata oluştu: ' + error.message);
+    logger.error('Şablon oluşturma hatası', error);
+    toast.error('Şablon oluşturulurken hata oluştu: ' + error.message);
   }
 }
 
@@ -712,12 +717,13 @@ async function downloadTemplateXLSX() {
     }
   }
 
-  const exampleRow = [1, 'STK-001', 'ÖRNEK ÜRÜN', '8690000000000', 'ÖRNEK MARKA', 'MODEL-001', 'ADET', 20, 100.00, 120.00, 'KOD1', 'KOD2', 'KOD3', warehouseCodes.length > 0 ? warehouseCodes[0] : 'DEPO-001', 1000, 50, '', ''];
+  const exampleRow = [1, 'STK-001', 'ÖRNEK ÜRÜN', '8690000000000', 'ÖRNEK MARKA', 'MODEL-001', 'ADT', 20, 100.00, 120.00, 'KOD1', 'KOD2', 'KOD3', warehouseCodes.length > 0 ? warehouseCodes[0] : 'DEPO-001', 1000, 50, '', ''];
   XLSX.utils.sheet_add_aoa(ws, [exampleRow], { origin: 'A2' });
 
   XLSX.utils.book_append_sheet(wb, ws, 'Stok Kartları');
   const fileName = `Stok_Karti_Sablonu_${new Date().toISOString().split('T')[0]}.xlsx`;
   XLSX.writeFile(wb, fileName);
+  toast.success('Excel şablonu indirildi');
 }
 
 // Event handlers

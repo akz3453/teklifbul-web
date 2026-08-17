@@ -240,11 +240,11 @@ class TemplateEditModal {
       }
 
       // API'ye gönder
-      const API_BASE = window.location.hostname === 'localhost' 
-        ? 'http://localhost:5174' 
-        : window.location.origin;
+      const { authFetch, resolveApiBaseUrl } = await import('../utils/api-helpers.js');
+      const { downloadBlobFile } = await import('../utils/download-file.js');
+      const API_BASE = resolveApiBaseUrl();
 
-      const response = await fetch(`${API_BASE}/api/template/demand/custom`, {
+      const response = await authFetch(`${API_BASE}/api/template/demand/custom`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -256,18 +256,22 @@ class TemplateEditModal {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        let detail = `HTTP ${response.status}`;
+        try {
+          const errJson = await response.clone().json();
+          detail = errJson?.message || errJson?.error || detail;
+        } catch (_e) { /* ignore */ }
+        throw new Error(detail);
       }
 
       const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Ozel_Satin_Alma_Talep_Formu_Sablonu_${new Date().toISOString().split('T')[0]}.xlsx`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
+      const filename = `Ozel_Satin_Alma_Talep_Formu_Sablonu_${new Date().toISOString().split('T')[0]}.xlsx`;
+      const result = await downloadBlobFile(blob, filename);
+      if (result?.cancelled) {
+        toast.info(MESSAGES.INFO_SHARE_CANCELLED);
+        logger.end();
+        return;
+      }
 
       logger.info('Özelleştirilmiş şablon oluşturuldu');
       logger.end();

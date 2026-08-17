@@ -41,18 +41,8 @@ router.post('/upgrade', verifyToken, async (req: AuthenticatedRequest, res) => {
       });
     }
 
-    // Get company ID (async version with validation)
-    let companyId = await getCompanyIdFromRequest(req);
-    if (!companyId) {
-      const db = await getAdminDb();
-      if (db) {
-        const userDoc = await db.collection('users').doc(userId).get();
-        if (userDoc.exists) {
-          const userData = userDoc.data();
-          companyId = userData?.companyId || userData?.activeCompanyId || null;
-        }
-      }
-    }
+    // Get company ID — trusted membership (pending / spoof yok)
+    const companyId = await getCompanyIdFromRequest(req);
 
     if (!companyId) {
       logger.warn('Company ID not found', { userId });

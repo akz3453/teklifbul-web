@@ -8,11 +8,12 @@
  * - Header does NOT call requireAuth() or perform any redirects (except logout handler)
  */
 
-import { auth, db } from '../../firebase.js';
+import { auth, db, logout } from '../../firebase.js';
 // Teklifbul Rule v1.0 - Structured Logging
 import { logger } from '../../../src/shared/log/logger.js';
 import { MESSAGES } from '../../../src/shared/constants/messages.js';
 import { hasPremiumPlusAccess, hasPremiumAccess } from '../auth/userHelpers.js';
+import { shouldSkipPreventDefault } from '../utils/link-handler.js';
 
 // Teklifbul Rule v1.0 - Firebase Module Caching (Performance optimization)
 const firebaseModuleCache = {
@@ -43,6 +44,46 @@ const NON_HIDEABLE_NAV_KEYS = new Set(['dashboard', 'settings']);
 let hiddenNavKeysState = new Set();
 /** Orta menü anahtarları için kullanıcı sırası; null = varsayılan kod sırası */
 let navOrderKeysState = null;
+
+function readPremiumNavCache(expectedUid = null) {
+  try {
+    const raw = localStorage.getItem(PREMIUM_NAV_CACHE_KEY);
+    if (!raw) return false;
+
+    // Legacy format desteği: "1" / "0"
+    if (raw === '1' || raw === '0') {
+      return raw === '1';
+    }
+
+    const parsed = JSON.parse(raw);
+    const updatedAt = Number(parsed?.updatedAt || 0);
+    if (!updatedAt || (Date.now() - updatedAt) > PREMIUM_NAV_CACHE_TTL_MS) {
+      localStorage.removeItem(PREMIUM_NAV_CACHE_KEY);
+      return false;
+    }
+
+    // Teklifbul Rule v1.0 — farklı kullanıcı cache'ini kullanma
+    if (expectedUid && parsed?.uid && parsed.uid !== expectedUid) {
+      return false;
+    }
+
+    return parsed?.visible === true;
+  } catch (_e) {
+    return false;
+  }
+}
+
+function writePremiumNavCache(visible, uid = null) {
+  try {
+    localStorage.setItem(PREMIUM_NAV_CACHE_KEY, JSON.stringify({
+      visible: !!visible,
+      uid: uid || null,
+      updatedAt: Date.now()
+    }));
+  } catch (_e) {
+    // localStorage erişimi yoksa sessizce geç
+  }
+}
 
 function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
@@ -80,6 +121,7 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
     // Sessizce return et - gereksiz log kirliliği yaratma
     return;
   }
+  import('../analytics.js').then((mod) => mod.initAnalytics()).catch(() => {});
 
   const el = (typeof mount === 'string') ? document.querySelector(mount) : mount;
   if (!el) {
@@ -90,8 +132,18 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
   // Mark as initialized
   headerInitialized = true;
 
+  // Teklifbul Rule v1.0 — Native (Capacitor) köprüyü app sayfalarında başlat
+  try {
+    const { initNativeBridge } = await import('../native-bridge.js');
+    await initNativeBridge();
+  } catch (_err) {
+    // Web ortamında veya eksik pakette sessiz geç
+  }
+
   // Teklifbul Rule v1.0 - Premium kilidi; hash/modal erken acilirsa TDZ olmamasi icin burada baslatilmali
   let menuCustomizePremiumUnlocked = false;
+  // Admin menü görünürlüğü — renderNavList sonrası kaybolmasın
+  let headerAdminVisible = false;
 
   el.classList.add('global-header');
 
@@ -135,11 +187,13 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
     // Stok Takip ayarların soluna
     {
       key: 'inventory', icon: '📦', label: 'Stok Takip', href: '/inventory-index.html', premiumOnly: true, dropdown: [
+        { icon: '📦', label: 'Stok Takip Ana Sayfa', href: '/inventory-index.html' },
         { icon: '➕', label: 'Yeni Stok Kartı Oluştur', href: '/pages/stock-new.html' },
         { icon: '🛠️', label: 'Stok Listesi', href: '/pages/stock-list.html' },
         { icon: '🏷️', label: 'Özel Kod Yönetimi', href: '/pages/stock-groups.html' },
         { icon: '📥', label: 'Stok Kartı İçe Aktar', href: '/pages/stock-import.html' },
         { icon: '🔄', label: 'Stok Hareketleri', href: '/pages/stock-movements.html' },
+        { icon: '🧮', label: 'Stok Sayım', href: '/pages/stock-count.html' },
         { icon: '📊', label: 'Stok Raporları', href: '/pages/reports.html' },
       ]
     },
@@ -238,32 +292,14 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
     return orderedKeys.map((k) => keyToItem.get(k)).filter(Boolean);
   };
 
-  const hasCachedPremiumAccess = (() => {
-    try {
-      const raw = localStorage.getItem(PREMIUM_NAV_CACHE_KEY);
-      if (!raw) return false;
-
-      // Legacy format desteği: "1" / "0"
-      if (raw === '1' || raw === '0') {
-        return raw === '1';
-      }
-
-      const parsed = JSON.parse(raw);
-      const updatedAt = Number(parsed?.updatedAt || 0);
-      if (!updatedAt || (Date.now() - updatedAt) > PREMIUM_NAV_CACHE_TTL_MS) {
-        localStorage.removeItem(PREMIUM_NAV_CACHE_KEY);
-        return false;
-      }
-
-      return parsed?.visible === true;
-    } catch (_e) {
-      return false;
-    }
-  })();
+  // Teklifbul Rule v1.0 — plan hazır olana kadar menü flash'ını önle (uid bilinmiyorsa optimistic cache)
+  const hasCachedPremiumAccess = () => readPremiumNavCache(auth.currentUser?.uid || null);
 
   const buildNav = () => getNavItemsInUserOrder()
     .filter((item) => {
       if (NON_HIDEABLE_NAV_KEYS.has(item.key)) return true;
+      // Admin paneli her zaman DOM'da; görünürlük CSS/JS ile kontrol edilir
+      if (item.key === 'admin-dashboard') return true;
       return !hiddenNavKeysState.has(item.key);
     })
     .map(item => {
@@ -272,12 +308,15 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
     const restrictedAttr = item.restricted ? `data-restricted="${item.restricted}" id="${item.restricted}"` : '';
     // Teklifbul Rule v1.0 - Admin menüsü başlangıçta gizli, admin kontrolü sonrası gösterilecek
     const restrictedStyle = item.restricted === 'admin-menu' ? 'style="display:none !important;"' : '';
-    const premiumClass = item.premiumOnly ? `premium-only-nav ${hasCachedPremiumAccess ? 'show-premium' : ''}` : '';
+    // Teklifbul Rule v1.0 — premium menüler herkese görünür; tıklanınca interceptor yönlendirir
+    const premiumClass = item.premiumOnly ? 'premium-only-nav show-premium' : '';
     return `
       <li class="nav-item ${premiumClass} ${hasDropdown ? 'has-dropdown' : ''} ${isActive ? 'is-active' : ''}" ${restrictedAttr} ${restrictedStyle} id="nav-${item.key}">
-        <a href="${item.href}" class="nav-link ${isActive ? 'is-active' : ''}" ${hasDropdown ? 'aria-haspopup="true"' : ''}>
-          ${item.icon ? `<span class="nav-link-icon">${item.icon}</span>` : ''}${item.label}
-          ${hasDropdown ? '<span class="nav-toggle">▾</span>' : ''}
+        <a href="${item.href}" class="nav-link ${isActive ? 'is-active' : ''}" ${hasDropdown ? 'aria-haspopup="true" aria-expanded="false"' : ''}>
+          <span class="nav-link-main">
+            ${item.icon ? `<span class="nav-link-icon">${item.icon}</span>` : ''}<span class="nav-link-label">${item.label}</span>
+          </span>
+          ${hasDropdown ? '<span class="nav-toggle" aria-hidden="true">▾</span>' : ''}
         </a>
         ${hasDropdown ? `
           <div class="nav-dropdown">
@@ -286,7 +325,7 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
       const label = sub.label || '';
       const customId = sub.id ? `id="${sub.id}"` : '';
       const premiumCustomizeClass = sub.id === 'headerCustomizeLink'
-        ? `tb-premium-menu-customize ${hasCachedPremiumAccess ? 'show-premium' : ''}`
+        ? `tb-premium-menu-customize ${hasCachedPremiumAccess() ? 'show-premium' : ''}`
         : '';
       return `<a class="nav-dropdown-link ${premiumCustomizeClass}" ${customId} href="${sub.href}" aria-label="${label}">${icon}${label}</a>`;
     }).join('')}
@@ -299,10 +338,13 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
   el.innerHTML = `
     <div class="topbar">
       <div class="topbar-left">
-        <button id="mobileMenuToggle" class="mobile-menu-btn" aria-label="Menüyü Aç/Kapat">
-          <span class="hamburger-icon"></span>
+        <a href="/dashboard.html" class="brand-inline" aria-label="NEFISOFT ana sayfa" title="NEFISOFT">
+          <img class="brand-inline-logo" src="/assets/images/brand/nefisoft-app-mark.png" alt="NEFISOFT" width="36" height="36" decoding="async" />
+        </a>
+        <button id="mobileMenuToggle" class="mobile-menu-btn" aria-label="Menüyü aç" aria-expanded="false" aria-controls="mainNavList" title="Menüyü aç">
+          <span class="hamburger-icon" aria-hidden="true"></span>
         </button>
-        <ul class="nav-list" id="mainNavList">
+        <ul class="nav-list tb-nav-plan-pending" id="mainNavList" role="navigation" aria-label="Ana menü">
           ${buildNav()}
         </ul>
       </div>
@@ -318,6 +360,7 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
         <button id="logoutBtn" class="btn btn-danger btn-sm">Çıkış</button>
       </div>
     </div>
+    <div id="mobileNavBackdrop" class="mobile-nav-backdrop" hidden aria-hidden="true"></div>
     <div id="notificationDropdown" class="notif-dropdown" style="display:none;">
       <div class="notif-header" id="notifHeaderLink" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
         <span>Bildirimler</span>
@@ -361,10 +404,15 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
         --dropdown-shadow: rgba(15,23,42,0.18);
         --dropdown-hover: #eff6ff;
       }
-      .premium-only-nav { display: none !important; }
+      .premium-only-nav { display: block !important; }
       .premium-only-nav.show-premium { display: block !important; }
       .nav-dropdown-link.tb-premium-menu-customize { display: none !important; }
       .nav-dropdown-link.tb-premium-menu-customize.show-premium { display: flex !important; }
+      /* Plan yüklenirken menü flash'ı olmasın diye kısa bekletme (artık menüler sabit) */
+      .nav-list.tb-nav-plan-pending {
+        opacity: 1;
+        pointer-events: auto;
+      }
       [data-theme="dark"] {
         --background: #111827;
         --text: #ffffff;
@@ -378,6 +426,11 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
         --dropdown-hover: rgba(255,255,255,0.1);
       }
       body { background: var(--background); color: var(--text); }
+      /* Teklifbul Rule v1.0 — Nav fontu sayfa CSS'inden bağımsız, tüm sayfalarda aynı */
+      #app-header,
+      .topbar {
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      }
       .topbar {
         min-height: 68px;
         background: var(--background);
@@ -398,7 +451,23 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
         flex: 1;
         min-width: 0;
       }
-      .brand-inline { font-weight:700; color: var(--text); text-decoration:none; margin-right:6px; flex-shrink: 0; }
+      .brand-inline {
+        font-weight:700;
+        color: var(--text);
+        text-decoration:none;
+        margin-right:8px;
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .brand-inline-logo {
+        width: 36px;
+        height: 36px;
+        object-fit: contain;
+        display: block;
+        border-radius: 8px;
+      }
       .nav-list {
         list-style:none;
         display:flex;
@@ -432,6 +501,12 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
         white-space: nowrap;
       }
       .nav-link-icon { font-size: 16px; }
+      .nav-link-main {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-width: 0;
+      }
       .nav-toggle { margin-left: 4px; font-size: 12px; color: #6b7280; }
       .nav-link:hover { background: var(--nav-hover); color: var(--text); }
       .nav-link.is-active { background: #2563eb; color: #fff; }
@@ -451,12 +526,14 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
         transition: all .15s ease;
         z-index: 100;
       }
-      .nav-item.has-dropdown:hover > .nav-dropdown,
-      .nav-item.has-dropdown.is-open > .nav-dropdown {
-        opacity: 1;
-        visibility: visible;
-        pointer-events: auto;
-        transform: translateY(0);
+      @media (min-width: 901px) {
+        .nav-item.has-dropdown:hover > .nav-dropdown,
+        .nav-item.has-dropdown.is-open > .nav-dropdown {
+          opacity: 1;
+          visibility: visible;
+          pointer-events: auto;
+          transform: translateY(0);
+        }
       }
       .nav-dropdown-link {
         padding: 6px 14px;
@@ -576,6 +653,49 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
       .is-mobile-open .hamburger-icon::before { transform: translateY(6px) rotate(45deg); }
       .is-mobile-open .hamburger-icon::after { transform: translateY(-6px) rotate(-45deg); }
 
+      /* Teklifbul Rule v1.0 — Mobil menü arka planı (topbar altında kalmalı) */
+      .mobile-nav-backdrop {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.45);
+        z-index: 40;
+        pointer-events: auto;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .is-mobile-open .mobile-nav-backdrop { display: block; }
+      /* Açık menü: topbar + sekmeler backdrop'un ÜSTÜNDE olsun */
+      .is-mobile-open .topbar {
+        z-index: 60;
+      }
+      body.tb-mobile-nav-open { overflow: hidden; }
+
+      /* Hamburger açıkken alt menü viewport'tan bağımsız alta dizilsin */
+      .is-mobile-open .nav-item.has-dropdown .nav-dropdown {
+        position: static !important;
+        top: auto !important;
+        left: auto !important;
+        right: auto !important;
+        min-width: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        transform: none !important;
+        box-shadow: none !important;
+      }
+      .is-mobile-open .nav-item.has-dropdown.is-open .nav-dropdown {
+        display: flex !important;
+        flex-direction: column !important;
+        flex-wrap: nowrap !important;
+        align-items: stretch !important;
+      }
+      .is-mobile-open .nav-dropdown-link {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        white-space: normal !important;
+        box-sizing: border-box !important;
+      }
+
       /* Responsive Adjustments */
       @media (max-width: 1400px) {
         .nav-link { font-size: 13px; padding: 4px 8px; }
@@ -586,42 +706,282 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
         .nav-link-icon { font-size: 13px; }
         .nav-toggle { font-size: 10px; margin-left: 2px; }
       }
-      @media (max-width: 900px) {
+      /* Native uygulama: WebView geniş olsa da hamburger + alta açılan menü */
+      html.is-native-app .mobile-menu-btn { display: block !important; }
+      html.is-native-app .nav-list {
+        display: none !important;
+        position: fixed !important;
+        top: max(68px, calc(56px + env(safe-area-inset-top)));
+        left: 0;
+        right: 0;
+        width: 100%;
+        max-width: 100%;
+        background: var(--background);
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 10px;
+        padding: 14px 14px calc(18px + env(safe-area-inset-bottom));
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.14);
+        border-bottom: 1px solid var(--border);
+        z-index: 61;
+        max-height: calc(100dvh - 68px - env(safe-area-inset-top));
+        overflow-x: hidden;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        box-sizing: border-box;
+      }
+      html.is-native-app #app-header.is-mobile-open .nav-list {
+        display: flex !important;
+      }
+      html.is-native-app .nav-item {
+        width: 100% !important;
+        flex-shrink: 1 !important;
+        padding-bottom: 0 !important;
+        margin-bottom: 0 !important;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--card-bg, var(--surface, #fff));
+      }
+      html.is-native-app .nav-link {
+        width: 100% !important;
+        min-width: 0 !important;
+        min-height: 48px;
+        justify-content: flex-start;
+        border-radius: 0;
+        padding: 14px 16px;
+        font-size: 15px;
+        font-weight: 600;
+      }
+      html.is-native-app .nav-item.has-dropdown .nav-dropdown {
+        position: static !important;
+        top: auto !important;
+        left: auto !important;
+        right: auto !important;
+        min-width: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        display: none;
+        transform: none !important;
+        box-shadow: none !important;
+      }
+      html.is-native-app .nav-item.has-dropdown.is-open .nav-dropdown {
+        display: flex !important;
+        flex-direction: column !important;
+        flex-wrap: nowrap !important;
+        align-items: stretch !important;
+      }
+      html.is-native-app .nav-dropdown-link {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        white-space: normal !important;
+        box-sizing: border-box !important;
+      }
+      html.is-native-app .nav-toggle {
+        margin-left: auto;
+        padding: 8px 4px 8px 16px;
+        font-size: 16px;
+        flex-shrink: 0;
+      }
+      html.is-native-app .topbar-text { display: none !important; }
+
+      @media (max-width: 900px), (hover: none) and (pointer: coarse) {
         .mobile-menu-btn { display: block; }
+        .topbar-right {
+          flex-wrap: nowrap;
+          gap: 6px;
+          justify-content: flex-end;
+        }
+        .topbar-right .btn,
+        .topbar-right button {
+          width: auto !important;
+          margin: 0 !important;
+          flex-shrink: 0;
+        }
+        .topbar-right #themeToggle {
+          padding: 6px 10px;
+          font-size: 12px;
+        }
+        .topbar-right #logoutBtn {
+          padding: 6px 12px;
+          font-size: 12px;
+        }
+        .topbar-right #notificationBtn {
+          width: 36px !important;
+          height: 36px !important;
+          font-size: 16px !important;
+        }
         .nav-list {
           display: none;
-          position: absolute;
-          top: 68px;
+          position: fixed;
+          top: max(68px, calc(56px + env(safe-area-inset-top)));
           left: 0;
+          right: 0;
           width: 100%;
+          max-width: 100%;
           background: var(--background);
           flex-direction: column;
-          align-items: flex-start;
-          padding: 16px;
-          box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+          align-items: stretch;
+          gap: 10px;
+          padding: 14px 14px calc(18px + env(safe-area-inset-bottom));
+          box-shadow: 0 12px 28px rgba(15, 23, 42, 0.14);
           border-bottom: 1px solid var(--border);
-          z-index: 55;
-          max-height: calc(100vh - 68px);
+          z-index: 61;
+          max-height: calc(100dvh - 68px - env(safe-area-inset-top));
+          overflow-x: hidden;
           overflow-y: auto;
+          -webkit-overflow-scrolling: touch;
+          pointer-events: auto;
+          touch-action: manipulation;
+          box-sizing: border-box;
         }
         .is-mobile-open .nav-list { display: flex; }
-        .nav-item { width: 100%; }
-        .nav-link { width: 100%; border-radius: 8px; justify-content: space-between; padding: 12px 16px; }
+        .nav-item {
+          width: 100%;
+          position: relative;
+          z-index: 1;
+          padding-bottom: 0;
+          margin-bottom: 0;
+          border: 1px solid var(--border);
+          border-radius: 12px;
+          background: var(--card-bg, var(--surface, #fff));
+          box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+          overflow: hidden;
+        }
+        .nav-link,
+        .nav-dropdown-link {
+          pointer-events: auto;
+          position: relative;
+          z-index: 2;
+          -webkit-tap-highlight-color: transparent;
+        }
+        .nav-link {
+          width: 100%;
+          min-width: 0;
+          min-height: 48px;
+          border-radius: 0;
+          justify-content: flex-start;
+          padding: 14px 16px;
+          font-size: 15px;
+          font-weight: 600;
+          color: var(--text);
+          background: transparent;
+          box-sizing: border-box;
+        }
+        .nav-link:hover,
+        .nav-link:active {
+          background: var(--nav-hover);
+          color: var(--text);
+        }
+        .nav-link.is-active {
+          background: #eff6ff;
+          color: #1d4ed8;
+        }
+        .nav-toggle {
+          margin-left: auto;
+          padding: 8px 4px 8px 16px;
+          font-size: 16px;
+          line-height: 1;
+          color: var(--text-muted);
+          flex-shrink: 0;
+        }
+        .nav-item.has-dropdown.is-open {
+          border-color: #93c5fd;
+          box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.15);
+        }
+        .nav-item.has-dropdown.is-open > .nav-link {
+          background: #eff6ff;
+          color: #1d4ed8;
+          border-bottom: 1px solid var(--border);
+        }
         .nav-item.has-dropdown .nav-dropdown {
-          position: static;
+          position: static !important;
+          top: auto !important;
+          left: auto !important;
+          right: auto !important;
           opacity: 1;
           visibility: visible;
           pointer-events: auto;
           display: none;
-          transform: none;
+          transform: none !important;
           box-shadow: none;
-          padding: 8px 16px;
-          background: var(--nav-hover);
-          margin-top: 4px;
-          width: 100%;
+          min-width: 0 !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          margin: 0;
+          padding: 10px;
+          background: #f8fafc;
+          border-radius: 0;
+          gap: 8px;
         }
-        .nav-item.has-dropdown.is-open .nav-dropdown { display: block; pointer-events: auto; }
+        .nav-item.has-dropdown.is-open .nav-dropdown {
+          display: flex !important;
+          flex-direction: column !important;
+          flex-wrap: nowrap !important;
+          align-items: stretch !important;
+          pointer-events: auto;
+        }
+        .nav-dropdown-link {
+          display: flex !important;
+          align-items: center;
+          gap: 8px;
+          min-height: 44px;
+          padding: 10px 14px;
+          border: 1px solid var(--border);
+          border-radius: 10px;
+          background: var(--card-bg, #fff);
+          color: var(--text);
+          font-size: 14px;
+          font-weight: 500;
+          white-space: normal !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          min-width: 0 !important;
+          box-sizing: border-box !important;
+          box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+        }
+        .nav-dropdown-link:hover,
+        .nav-dropdown-link:active {
+          background: #eff6ff;
+          border-color: #93c5fd;
+          color: #1d4ed8;
+        }
+        #admin-menu {
+          border-color: rgba(255, 152, 0, 0.45);
+        }
+        #admin-menu .nav-link {
+          color: #c2410c;
+          border-bottom: none;
+        }
+        [data-theme="dark"] .nav-item {
+          background: var(--card-bg, #111827);
+        }
+        [data-theme="dark"] .nav-item.has-dropdown .nav-dropdown {
+          background: rgba(255, 255, 255, 0.04);
+        }
+        [data-theme="dark"] .nav-dropdown-link {
+          background: var(--card-bg, #111827);
+        }
+        [data-theme="dark"] .nav-link.is-active,
+        [data-theme="dark"] .nav-item.has-dropdown.is-open > .nav-link {
+          background: rgba(37, 99, 235, 0.22);
+          color: #93c5fd;
+        }
         .topbar-text { display: none; }
+      }
+      @media (max-width: 480px) {
+        .topbar-right #themeToggle {
+          padding: 6px 8px;
+          font-size: 11px;
+          max-width: 72px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .topbar-right #logoutBtn {
+          padding: 6px 8px;
+          font-size: 11px;
+        }
       }
     </style>
   `;
@@ -629,111 +989,89 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
   // Apply current theme
   applyTheme(currentTheme);
 
-  // Dropdown click/hover behaviour
-  // Middle click için auxclick event'ini de dinle
-  const handleNavClick = async (event) => {
+  // Dropdown: preventDefault senkron olmalı (async await varsayılan gezinmeyi kaçırır)
+  const isMobileNavContext = () =>
+    el.classList.contains('is-mobile-open')
+    || window.innerWidth <= 900
+    || document.documentElement.classList.contains('is-native-app')
+    || window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+
+  const setDropdownOpen = (parent, open) => {
+    if (!parent) return;
+    parent.classList.toggle('is-open', open);
+    const parentLink = parent.querySelector(':scope > .nav-link');
+    if (parentLink) parentLink.setAttribute('aria-expanded', open ? 'true' : 'false');
+  };
+
+  const handleNavClick = (event) => {
     const dropdownItems = document.querySelectorAll('.nav-item.has-dropdown');
 
-    // Teklifbul Rule v1.0 - Middle click / new tab intent kontrolü (sync import)
-    let shouldSkipPreventDefault = null;
-    try {
-      // Try absolute path first (Vite root-based)
-      let linkHandler;
-      try {
-        linkHandler = await import('/assets/js/utils/link-handler.js');
-      } catch (err1) {
-        // Fallback to relative path
-        try {
-          linkHandler = await import('../utils/link-handler.js');
-        } catch (err2) {
-          // Last fallback: try without .js extension
-          linkHandler = await import('../utils/link-handler');
-        }
-      }
-      shouldSkipPreventDefault = linkHandler.shouldSkipPreventDefault;
-    } catch (err) {
-      // Link handler yüklenemezse devam et - sessizce ignore et
-    }
-
-    // Teklifbul Rule v1.0 - Dropdown link'lerine tıklandığında event propagation'ı durdur
-    // Bu sayede dropdown link'ine tıklandığında sadece o link çalışır, ana link çalışmaz
     const dropdownLink = event.target.closest('.nav-dropdown-link');
     if (dropdownLink) {
-      // Teklifbul Rule v1.0 - Middle click / new tab intent kontrolü
-      if (shouldSkipPreventDefault && shouldSkipPreventDefault(event, dropdownLink)) {
-        // Yeni sekme niyeti var, tarayıcıya bırak
-        return;
-      }
-
-      // Dropdown link'ine tıklandığında dropdown'ı kapat ve normal link davranışına izin ver
-      dropdownItems.forEach(i => i.classList.remove('is-open'));
-      // Event propagation'ı durdurma - normal link davranışı çalışsın
+      if (shouldSkipPreventDefault(event, dropdownLink)) return;
+      dropdownItems.forEach((item) => setDropdownOpen(item, false));
       return;
     }
 
     const toggle = event.target.closest('.nav-toggle');
-    if (toggle) {
+    const parentLink = event.target.closest('.nav-item.has-dropdown > .nav-link');
+    const parentItem = (toggle || parentLink)?.closest('.nav-item.has-dropdown');
+    const shouldToggle = !!(parentItem && (toggle || (parentLink && isMobileNavContext())));
+
+    if (shouldToggle) {
+      if (shouldSkipPreventDefault(event, parentLink || parentItem.querySelector('.nav-link'))) {
+        return;
+      }
       event.preventDefault();
-      const parent = toggle.closest('.nav-item');
-      const isOpen = parent?.classList.contains('is-open');
-      dropdownItems.forEach(i => i.classList.remove('is-open'));
-      if (parent && !isOpen) parent.classList.add('is-open');
+      event.stopPropagation();
+      const willOpen = !parentItem.classList.contains('is-open');
+      dropdownItems.forEach((item) => setDropdownOpen(item, false));
+      if (willOpen) setDropdownOpen(parentItem, true);
       return;
     }
 
-    const link = event.target.closest('.nav-item.has-dropdown > .nav-link');
-    if (link) {
-      // Teklifbul Rule v1.0 - Middle click / new tab intent kontrolü
-      // Önce direkt middle click kontrolü (import başarısız olsa bile çalışmalı)
-      const isMiddleClickDirect = event.type === 'auxclick' ||
-        event.button === 1 ||
-        event.which === 2 ||
-        (event.buttons !== undefined && (event.buttons & 4) === 4);
-      const isNewTabIntent = isMiddleClickDirect || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey;
-
-      if (isNewTabIntent) {
-        // Yeni sekme niyeti var, tarayıcıya bırak - hiçbir şey yapma
-        return;
-      }
-
-      // shouldSkipPreventDefault fonksiyonu varsa onu da kontrol et
-      if (shouldSkipPreventDefault && shouldSkipPreventDefault(event, link)) {
-        // Yeni sekme niyeti var, tarayıcıya bırak
-        return;
-      }
-
-      // Teklifbul Rule v1.0 - Ana link'e tıklandığında dropdown davranışı
-      // Sadece normal click için (middle click değil)
-      const isMobile = window.innerWidth <= 900;
-      if (isMobile) {
-        // Mobilde: Ana link'e tıklandığında dropdown'ı aç/kapat
-        event.preventDefault();
-        const parent = link.parentElement;
-        const isOpen = parent?.classList.contains('is-open');
-        dropdownItems.forEach(i => i.classList.remove('is-open'));
-        if (parent && !isOpen) parent.classList.add('is-open');
-      } else {
-        // Desktop'ta: Ana link'e tıklandığında her zaman href'e git
-        // Dropdown'ları kapat ve normal link davranışına izin ver
-        dropdownItems.forEach(i => i.classList.remove('is-open'));
-        // Normal link davranışı çalışsın (href'e git) - preventDefault yapma
-      }
+    if (parentLink) {
+      dropdownItems.forEach((item) => setDropdownOpen(item, false));
       return;
     }
 
     if (!event.target.closest('.nav-item.has-dropdown')) {
-      dropdownItems.forEach(i => i.classList.remove('is-open'));
+      dropdownItems.forEach((item) => setDropdownOpen(item, false));
     }
   };
 
-  // Click ve auxclick (middle click) event'lerini dinle
-  document.addEventListener('click', handleNavClick);
-  document.addEventListener('auxclick', handleNavClick);
+  document.addEventListener('click', handleNavClick, true);
+  document.addEventListener('auxclick', handleNavClick, true);
+
+  const setNavPlanPending = (pending) => {
+    const navListEl = el.querySelector('#mainNavList');
+    if (!navListEl) return;
+    navListEl.classList.toggle('tb-nav-plan-pending', !!pending);
+  };
+
+  const applyAdminMenuVisibility = (isAdmin = headerAdminVisible) => {
+    headerAdminVisible = !!isAdmin;
+    const adminMenuEl = document.getElementById('admin-menu');
+    if (adminMenuEl) {
+      adminMenuEl.style.setProperty('display', headerAdminVisible ? 'block' : 'none', 'important');
+    }
+    document.querySelectorAll('[data-restricted="admin-only"]').forEach((elm) => {
+      elm.style.setProperty('display', headerAdminVisible ? 'block' : 'none', 'important');
+    });
+    const premiumCard = document.getElementById('nav-premium-control');
+    if (premiumCard) {
+      premiumCard.style.setProperty('display', headerAdminVisible ? 'block' : 'none', 'important');
+    }
+  };
 
   const renderNavList = () => {
     const navListEl = el.querySelector('#mainNavList');
     if (!navListEl) return;
+    const wasPending = navListEl.classList.contains('tb-nav-plan-pending');
     navListEl.innerHTML = buildNav();
+    if (wasPending) navListEl.classList.add('tb-nav-plan-pending');
+    // Teklifbul Rule v1.0 — rebuild admin menüsünü gizlemesin
+    applyAdminMenuVisibility(headerAdminVisible);
   };
 
   const openHeaderCustomizationModal = () => {
@@ -1117,11 +1455,46 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
     themeToggle.addEventListener('click', toggleTheme);
   }
 
-  // Mobile menu toggle logic
+  // Teklifbul Rule v1.0 — Mobil menü: backdrop, Escape, aria, scroll lock
   const mobileMenuToggle = el.querySelector('#mobileMenuToggle');
+  const mobileNavBackdrop = el.querySelector('#mobileNavBackdrop');
+
+  const setMobileNavOpen = (open) => {
+    el.classList.toggle('is-mobile-open', open);
+    document.body.classList.toggle('tb-mobile-nav-open', open);
+    if (mobileMenuToggle) {
+      mobileMenuToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      mobileMenuToggle.setAttribute('aria-label', open ? 'Menüyü kapat' : 'Menüyü aç');
+      mobileMenuToggle.title = open ? 'Menüyü kapat' : 'Menüyü aç';
+    }
+    if (mobileNavBackdrop) {
+      mobileNavBackdrop.hidden = !open;
+      mobileNavBackdrop.setAttribute('aria-hidden', open ? 'false' : 'true');
+    }
+  };
+
   if (mobileMenuToggle) {
     mobileMenuToggle.addEventListener('click', () => {
-      el.classList.toggle('is-mobile-open');
+      setMobileNavOpen(!el.classList.contains('is-mobile-open'));
+    });
+  }
+  if (mobileNavBackdrop) {
+    mobileNavBackdrop.addEventListener('click', () => setMobileNavOpen(false));
+  }
+  document.addEventListener('keydown', (evt) => {
+    if (evt.key === 'Escape' && el.classList.contains('is-mobile-open')) {
+      setMobileNavOpen(false);
+    }
+  });
+  const mainNavList = el.querySelector('#mainNavList');
+  if (mainNavList) {
+    mainNavList.addEventListener('click', (evt) => {
+      const link = evt.target.closest('a.nav-link, a.nav-dropdown-link');
+      if (!link || !el.classList.contains('is-mobile-open')) return;
+      if (link.closest('.nav-item.has-dropdown') && link.classList.contains('nav-link') && link.querySelector('.nav-toggle')) {
+        return;
+      }
+      setMobileNavOpen(false);
     });
   }
 
@@ -1310,12 +1683,16 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
 
               // Bildirim tipine göre yönlendir
               const notif = limitedNotifications.find(n => n.id === notifId);
-              if (notif?.data?.demandId) {
+              if (notif?.type === 'contact_message' || notif?.link?.includes('contact-messages')) {
+                window.location.href = notif.link || '/pages/admin/dashboard.html#contact-messages';
+              } else if (notif?.data?.demandId) {
                 window.location.href = `/demand-detail.html?id=${notif.data.demandId}`;
               } else if (notif?.data?.bidId) {
                 window.location.href = `/bids.html?tab=incoming`;
               } else if (notif?.data?.rfqId) {
                 window.location.href = `/bids.html?tab=incoming`;
+              } else if (notif?.link && typeof notif.link === 'string' && notif.link.startsWith('/')) {
+                window.location.href = notif.link;
               }
             });
           });
@@ -1488,20 +1865,13 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
       // Teklifbul Rule v1.0 - Logout akışı (toast + logger ile)
       const { logger } = await import('../../../src/shared/log/logger.js');
       const { toast } = await import('../../../src/shared/ui/toast.js');
-      const { signOut } = await import('https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js');
 
       logger.group("Logout");
       try {
-        try {
-          localStorage.removeItem(PREMIUM_NAV_CACHE_KEY);
-        } catch (_e) {
-          // localStorage erişim hatası sessizce geç
-        }
-        await signOut(auth);
+        await logout();
         toast.info(MESSAGES.INFO_SESSION_CLOSED);
         logger.info("Oturum kapatıldı");
-        // Logout sonrası redirect yapılabilir (tek istisna - logout handler)
-        location.href = "./index.html";
+        location.replace("/login.html");
       } catch (err) {
         logger.error("Çıkış hatası", err);
         toast.error(MESSAGES.ERROR_LOGOUT);
@@ -1563,7 +1933,6 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
       if (!user) {
         menuCustomizePremiumUnlocked = false;
         document.querySelectorAll('.tb-premium-menu-customize').forEach((elem) => elem.classList.remove('show-premium'));
-        document.getElementById('interim-payments-menu')?.setAttribute('style', 'display:none;');
         // Teklifbul Rule v1.0 - Admin menüsü kullanıcı yoksa gizli kalmalı
         const adminMenuEl = document.getElementById('admin-menu');
         if (adminMenuEl) {
@@ -1577,45 +1946,44 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
       if (!token) {
         menuCustomizePremiumUnlocked = false;
         document.querySelectorAll('.tb-premium-menu-customize').forEach((elem) => elem.classList.remove('show-premium'));
-        document.getElementById('interim-payments-menu')?.setAttribute('style', 'display:none;');
         document.getElementById('admin-menu')?.setAttribute('style', 'display:none;');
         document.querySelectorAll('[data-restricted="admin-only"]').forEach(elm => elm.setAttribute('style', 'display:none;'));
         return;
       }
 
       const adminEmailList = `${window.ADMIN_EMAILS || ''}`.split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
-      if (!adminEmailList.length) adminEmailList.push('akyildizfaruk@gmail.com');
+      // Hardcoded default e-posta yok — ADMIN_EMAILS / custom claim ile admin olunur
 
-      // Teklifbul Rule v1.0 - Admin kontrolü subscription kontrolünden BAĞIMSIZ olmalı
-      // Admin kontrolü - claim + email allowlist (API çağrısı yok, 403 spam engellendi)
+      // Teklifbul Rule v1.0 - Admin: yalnız token claims + ADMIN_EMAILS + /api/admin/check
       try {
         const tokenResult = await user.getIdTokenResult(true);
         const claimAdmin = tokenResult?.claims?.admin === true
           || tokenResult?.claims?.isAdmin === true
           || tokenResult?.claims?.role === 'admin'
-          || tokenResult?.claims?.ops === true;
+          || tokenResult?.claims?.superAdmin === true;
         isAdmin = claimAdmin || (user.email && adminEmailList.includes(user.email.toLowerCase()));
       } catch (_adminError) {
-        // Hata durumunda yalnızca admin-email listesi fallback
-        isAdmin = user.email ? adminEmailList.includes(user.email.toLowerCase()) : false;
+        isAdmin = !!(user.email && adminEmailList.includes(user.email.toLowerCase()));
+      }
+
+      // Sunucu doğrulaması (claims/Firestore client tutarsızsa)
+      if (!isAdmin) {
+        try {
+          const { authFetch } = await import('../utils/api-helpers.js');
+          const checkRes = await authFetch('/api/admin/check');
+          if (checkRes.ok) {
+            const checkData = await checkRes.json().catch(() => ({}));
+            if (checkData?.isAdmin === true) {
+              isAdmin = true;
+            }
+          }
+        } catch (checkErr) {
+          logger.warn('Admin check API başarısız', checkErr);
+        }
       }
 
       // Admin görünürlüğünü uygula (subscription kontrolünden önce ve bağımsız)
-      const adminMenuEl = document.getElementById('admin-menu');
-      if (adminMenuEl) {
-        // Teklifbul Rule v1.0 - Admin kontrolü başarılı olunca göster, değilse gizli kal
-        if (isAdmin) {
-          // CSS'deki !important'ı override etmek için setProperty kullan
-          adminMenuEl.style.setProperty('display', 'block', 'important');
-        } else {
-          adminMenuEl.style.setProperty('display', 'none', 'important');
-        }
-      }
-      document.querySelectorAll('[data-restricted="admin-only"]').forEach(elm => {
-        elm.setAttribute('style', isAdmin ? 'display:block;' : 'display:none;');
-      });
-      const premiumCard = document.getElementById('nav-premium-control');
-      if (premiumCard) premiumCard.setAttribute('style', isAdmin ? 'display:block;' : 'display:none;');
+      applyAdminMenuVisibility(isAdmin);
 
       // Teklifbul Rule v1.0 - Şirket bazlı premium kontrolü
       let companyPlan = null;
@@ -1663,7 +2031,9 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
         const { authFetch } = await import('../utils/api-helpers.js');
         const response = await authFetch('/api/account/subscription');
 
-        if (response.ok) {
+        if (response.status === 401) {
+          logger.debug('[HEADER] Subscription API: oturum henüz hazır değil (401), şirket planı kullanılıyor');
+        } else if (response.ok) {
           const summary = await response.json();
           let planId = summary?.plan?.planId || summary?.planId || 'free';
 
@@ -1681,67 +2051,48 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
             email: user.email
           };
           premiumNavVisible = premiumNavVisible || hasPremiumAccess(userShape);
-
-          const isPremiumPlus = hasPremiumPlusAccess(userShape);
+          // Hakediş herkese görünür; erişim interceptor / sayfa guard ile kontrol edilir
           const menuEl = document.getElementById('interim-payments-menu');
-          if (menuEl) menuEl.setAttribute('style', isPremiumPlus ? 'display:block;' : 'display:none;');
+          if (menuEl) menuEl.setAttribute('style', 'display:block;');
         } else {
           // Hata durumunda şirket bazlı premium varsa onu kullan
           if (companyPlan && (companyPlan.isPremium === true || (companyPlan.planId && companyPlan.planId !== 'free'))) {
             const planId = companyPlan.planId || 'free';
             premiumNavVisible = premiumNavVisible || hasPremiumAccess({ plan: planId, planId, isAdmin, email: user.email });
-            const isPremiumPlus = planId === 'premium_plus' ||
-              planId === 'premium_plus_monthly' ||
-              planId === 'premium_plus_yearly' ||
-              planId?.includes('premium_plus');
-            const menuEl = document.getElementById('interim-payments-menu');
-            if (menuEl) menuEl.setAttribute('style', (isPremiumPlus || isAdmin) ? 'display:block;' : 'display:none;');
-          } else {
-            // Hata durumunda admin için yine de göster
-            const menuEl = document.getElementById('interim-payments-menu');
-            if (menuEl) menuEl.setAttribute('style', isAdmin ? 'display:block;' : 'display:none;');
           }
+          const menuEl = document.getElementById('interim-payments-menu');
+          if (menuEl) menuEl.setAttribute('style', 'display:block;');
         }
       } catch (subscriptionError) {
         // Teklifbul Rule v1.0 - Subscription API hatası admin menüsünü etkilememeli
         logger.warn('Subscription kontrolü başarısız (admin menüsü etkilenmedi)', subscriptionError);
-        // Hata durumunda admin için yine de premium menüyü göster
         const menuEl = document.getElementById('interim-payments-menu');
-        if (menuEl) menuEl.setAttribute('style', isAdmin ? 'display:block;' : 'display:none;');
+        if (menuEl) menuEl.setAttribute('style', 'display:block;');
       }
 
-      // Teklifbul Rule v1.0 - Premium nav öğeleri (Satışlar/Müşteriler/Stok Takip) görünürlüğünü kesinleştir
+      // Teklifbul Rule v1.0 — Satış/Müşteri/Stok menüleri herkese sabit görünür
       document.querySelectorAll('.premium-only-nav').forEach((elem) => {
-        elem.classList.toggle('show-premium', !!premiumNavVisible);
+        elem.classList.add('show-premium');
       });
       menuCustomizePremiumUnlocked = !!premiumNavVisible;
       document.querySelectorAll('.tb-premium-menu-customize').forEach((elem) => {
         elem.classList.toggle('show-premium', !!premiumNavVisible);
       });
       try {
-        localStorage.setItem(PREMIUM_NAV_CACHE_KEY, JSON.stringify({
-          visible: !!premiumNavVisible,
-          uid: user.uid || null,
-          updatedAt: Date.now()
-        }));
+        writePremiumNavCache(!!premiumNavVisible, user.uid || null);
       } catch (_e) {
         // localStorage erişimi yoksa sessizce geç
       }
     } catch (error) {
       // Teklifbul Rule v1.0 - Genel hata durumunda admin kontrolü yapılmışsa menüyü göster
       logger.warn('Premium Plus kontrolü başarısız', error);
-      document.getElementById('interim-payments-menu')?.setAttribute('style', 'display:none;');
+      document.getElementById('interim-payments-menu')?.setAttribute('style', 'display:block;');
+      document.querySelectorAll('.premium-only-nav').forEach((elem) => {
+        elem.classList.add('show-premium');
+      });
       // Admin kontrolü zaten yukarıda yapıldı, admin ise menüyü göster
       // Admin menüsü subscription hatasından etkilenmemeli
-      if (isAdmin) {
-        const adminMenuEl = document.getElementById('admin-menu');
-        if (adminMenuEl) {
-          adminMenuEl.style.setProperty('display', 'block', 'important');
-        }
-        document.querySelectorAll('[data-restricted="admin-only"]').forEach(elm => {
-          elm.setAttribute('style', 'display:block;');
-        });
-      }
+      applyAdminMenuVisibility(isAdmin);
       menuCustomizePremiumUnlocked = !!isAdmin;
       document.querySelectorAll('.tb-premium-menu-customize').forEach((elem) => {
         elem.classList.toggle('show-premium', !!isAdmin);
@@ -1751,8 +2102,9 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
 
   // Kullanıcı giriş yaptığında kontrol et - Teklifbul Rule v1.0 - Memory Leak Prevention
   // Teklifbul Rule v1.0 - Middle click ile açılan sayfalarda auth state henüz yüklenmemiş olabilir
-  // waitAuthReady() ile auth state'in yüklenmesini bekle
+  // waitAuthReady() ile auth state'in yüklenmesini bekle; plan hazır olmadan menüyü gösterme
   (async () => {
+    setNavPlanPending(true);
     try {
       const { waitAuthReady } = await import('../../firebase.js');
       await waitAuthReady();
@@ -1761,10 +2113,21 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
       logger.warn("Header premium check: waitAuthReady hatası, devam ediliyor", err);
     }
 
-    // Auth state yüklendikten sonra premium kontrolü yap
-    if (auth.currentUser) {
-      checkPremiumPlusAndShowMenu();
-      renderNavList();
+    const revealNav = async (user) => {
+      try {
+        // Cache varsa hemen doğru menüyü göster, arka planda doğrula
+        if (user && readPremiumNavCache(user.uid)) {
+          renderNavList();
+          setNavPlanPending(false);
+          await checkPremiumPlusAndShowMenu();
+          renderNavList();
+        } else {
+          await checkPremiumPlusAndShowMenu();
+          renderNavList();
+        }
+      } finally {
+        setNavPlanPending(false);
+      }
 
       // Teklifbul Rule v1.7 - Setup premium link interceptors
       try {
@@ -1773,15 +2136,24 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
       } catch (err) {
         logger.warn('Failed to setup premium link interceptors', err);
       }
+    };
+
+    // Auth state yüklendikten sonra premium kontrolü yap
+    if (auth.currentUser) {
+      await revealNav(auth.currentUser);
     } else {
-      const unsub = auth.onAuthStateChanged((user) => {
+      const unsub = auth.onAuthStateChanged(async (user) => {
         if (user) {
-          checkPremiumPlusAndShowMenu();
-          renderNavList();
+          await revealNav(user);
           // Cleanup after first check
           unsub();
         } else {
-          document.getElementById('interim-payments-menu')?.setAttribute('style', 'display:none;');
+          // Oturum yokken de menü sabit kalsın; sayfa guard login'e yönlendirir
+          document.getElementById('interim-payments-menu')?.setAttribute('style', 'display:block;');
+          document.querySelectorAll('.premium-only-nav').forEach((elem) => {
+            elem.classList.add('show-premium');
+          });
+          setNavPlanPending(false);
         }
       });
 
@@ -1789,6 +2161,7 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
       setTimeout(() => {
         try {
           unsub();
+          setNavPlanPending(false);
         } catch (_e) {
           // Ignore - might already be unsubscribed
         }

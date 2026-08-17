@@ -25,6 +25,8 @@
 
     .items-table {
       width: 100%;
+      max-width: 100%;
+      min-width: 0;
       border-collapse: collapse;
       margin: 16px 0;
       font-size: 13px;
@@ -276,6 +278,145 @@
       color: #ffffff !important;
       transition: background-color 9999s ease-in-out 0s !important;
     }
+
+    .items-table-wrap {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+    }
+
+    @media (max-width: 768px) {
+      .container--wide {
+        max-width: 100%;
+        min-width: 0;
+        overflow-x: hidden;
+        box-sizing: border-box;
+      }
+
+      .row {
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .items-table-wrap {
+        overflow-x: hidden;
+        max-width: 100%;
+      }
+
+      .items-table,
+      .items-table thead,
+      .items-table tbody,
+      .items-table tr,
+      .items-table th,
+      .items-table td {
+        display: block !important;
+        float: none !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+      }
+
+      .items-table {
+        table-layout: auto !important;
+        margin: 0 0 12px !important;
+        border: none !important;
+        overflow: visible !important;
+      }
+
+      .items-table thead {
+        display: none !important;
+      }
+
+      .items-table tbody {
+        display: flex !important;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .items-table tr {
+        display: flex !important;
+        flex-direction: column;
+        background: var(--card-bg, #fff);
+        border: 1px solid var(--border, #e5e7eb) !important;
+        border-radius: 12px;
+        padding: 12px !important;
+        margin: 0 !important;
+      }
+
+      html[data-theme="dark"] .items-table tr {
+        background: #111827;
+        border-color: rgba(255, 255, 255, 0.25) !important;
+      }
+
+      .items-table td {
+        display: flex !important;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+        border: none !important;
+        padding: 8px 0 !important;
+      }
+
+      .items-table td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        font-size: 13px;
+        color: var(--text-muted, #6b7280);
+      }
+
+      .items-table td[data-label="Sıra"] {
+        padding-bottom: 10px !important;
+        margin-bottom: 4px;
+        border-bottom: 1px solid var(--border, #e5e7eb) !important;
+      }
+
+      .items-table td[data-label="Sıra"]::before {
+        content: "Kalem";
+      }
+
+      .items-table td[data-label="Sil"] {
+        padding-top: 12px !important;
+      }
+
+      .items-table td[data-label="Sil"]::before {
+        display: none;
+      }
+
+      .items-table td > *,
+      .items-table input,
+      .items-table select,
+      .items-table textarea,
+      .items-table .image-upload,
+      .items-table button {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+      }
+
+      .items-table input,
+      .items-table select,
+      .items-table textarea {
+        font-size: 16px !important;
+        min-height: 44px;
+        height: 44px !important;
+      }
+
+      .items-table textarea.stockQtyInfo {
+        height: auto !important;
+        min-height: 64px;
+      }
+
+      .items-table .image-upload,
+      .items-table button {
+        height: 44px !important;
+      }
+
+      .items-table td[data-label="Sil"] .delete-btn {
+        width: 100% !important;
+      }
+    }
   </style>
 </head>
 
@@ -283,7 +424,7 @@
   <!-- Common Header -->
   <header id="app-header"></header>
 
-  <div class="container--wide" style="padding:20px 0">
+  <div class="container--wide" style="padding:20px 16px">
     <div class="page-heading">
       <div class="page-title-chip" role="presentation">
         <span class="page-title-icon" aria-hidden="true">🏢</span>
@@ -337,9 +478,9 @@
       <div class="row">
         <div style="flex:1;">
           <label for="satfk">Satın Alma Talep Formu Kodu (SATFK)</label>
-          <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
             <input id="satfk" type="text" readonly
-              style="background:#f9fafb; color:#6b7280; flex: 1; min-width: 300px; padding: 10px 12px; font-size: 14px;"
+              style="background:#f9fafb; color:#6b7280; flex: 1; min-width: 0; width: 100%; padding: 10px 12px; font-size: 14px;"
               placeholder="Kod oluşturuluyor..." />
             <button type="button" id="copySatfkBtn" class="btn-sm"
               style="padding: 6px 10px; font-size: 12px; display: none; white-space: nowrap;">📋 Kopyala</button>
@@ -364,14 +505,23 @@
         <div style="flex:1;">
           <label for="siteSelect">Şantiye *</label>
           <input type="text" id="siteSelect" list="siteNameList" required
-            placeholder="Şantiye başlığı yazın veya seçin..." autocomplete="off"
-            style="width:100%; padding:8px; border:1px solid #d1d5db; border-radius:6px;" />
+            placeholder="Kayıtlı şantiye/adres seçin veya yeni şantiye adı yazın..." autocomplete="off"
+            style="width:100%; padding:8px; border:1px solid #d1d5db; border-radius:6px;"
+            aria-label="Şantiye başlığı" title="Şantiye başlığı yazın veya seçin" />
           <datalist id="siteNameList"></datalist>
+          <p id="siteHint" style="margin:6px 0 0; font-size:12px; color:#6b7280;">
+            Kayıtlı şantiye/depo/fatura adresi seçebilir veya yeni isim yazıp aşağıya teslimat adresi girebilirsiniz.
+          </p>
           <div id="siteAddress"
             style="margin-top:8px; padding:12px; background:#f0f9ff; border:1px solid #3b82f6; border-radius:6px; font-size:13px; color:#1e40af; display:none;">
-            <strong>📍 Teslimat Adresi:</strong>
+            <strong>📍 Kayıtlı Adres:</strong>
             <div id="siteAddressText" style="margin-top:4px; white-space:pre-wrap;">-</div>
           </div>
+          <label for="deliveryAddressInput" style="display:block; margin-top:12px;">Teslimat Adresi *</label>
+          <textarea id="deliveryAddressInput" required rows="3"
+            placeholder="Teslimat adresini yazın (yeni şantiye için zorunlu)"
+            style="width:100%; padding:8px; border:1px solid #d1d5db; border-radius:6px; resize:vertical;"
+            aria-label="Teslimat adresi" title="Bu alan zorunludur."></textarea>
         </div>
       </div>
 
@@ -460,6 +610,7 @@
       </div>
 
       <h3>Talep Kalemleri</h3>
+      <div class="items-table-wrap">
       <table class="items-table">
         <thead>
           <tr>
@@ -484,6 +635,7 @@
           <!-- Items will be added here -->
         </tbody>
       </table>
+      </div>
       <button type="button" id="addLineBtn" class="btn btn-secondary">+ Satır Ekle</button>
 
       <div style="margin-top: 24px;">
@@ -1071,17 +1223,19 @@
       const row = document.createElement('tr');
       const rowId = `item-row-${itemCounter}`;
       row.id = rowId;
+      const headerTermin = document.getElementById('terminDate')?.value || '';
+      const safeTermin = String(headerTermin).replace(/"/g, '&quot;');
       row.innerHTML = `
-        <td style="text-align:center; font-weight:600; font-size:12px;">${itemCounter}</td>
-        <td>
+        <td data-label="Sıra" style="text-align:center; font-weight:600; font-size:12px;">${itemCounter}</td>
+        <td data-label="Stok Kodu">
           <input type="text" class="sku" placeholder="Stok Kodu" />
         </td>
-        <td>
+        <td data-label="Malzeme Tanımı">
           <input type="text" class="itemName" required placeholder="Malzeme tanımı *" />
         </td>
-        <td><input type="text" placeholder="Marka/Model" /></td>
-        <td><input type="number" class="qty" required min="0.01" step="0.01" placeholder="0" /></td>
-        <td>
+        <td data-label="Marka/Model"><input type="text" placeholder="Marka/Model" /></td>
+        <td data-label="Miktar"><input type="number" class="qty" required min="0.01" step="0.01" placeholder="0" /></td>
+        <td data-label="Birim">
           <select class="unit" required>
             <option value="">Seçiniz</option>
             <optgroup label="Standart Birimler">
@@ -1137,21 +1291,21 @@
             </optgroup>
           </select>
         </td>
-        <td>
+        <td data-label="Depo Miktarı">
           <div style="display:flex; flex-direction:column; gap:4px;">
             <input type="number" class="stockQty" min="0" step="0.01" placeholder="Depo miktarı" style="background:#fff; color:#1f2937; width:100%;" />
             <textarea class="stockQtyInfo" placeholder="Depo miktarı hakkında bilgi..." rows="2" style="width:100%; padding:4px; border:1px solid #d1d5db; border-radius:4px; font-size:11px; resize:vertical; min-height:40px; display:none;"></textarea>
             <button type="button" class="toggle-info-btn" style="background:#f3f4f6; border:1px solid #d1d5db; border-radius:4px; padding:2px 6px; font-size:10px; cursor:pointer; color:#6b7280; align-self:flex-start;" onclick="toggleStockQtyInfo(this)">ℹ️ Bilgi Ekle</button>
           </div>
         </td>
-        <td><input type="date" class="itemDueDate" /></td>
-        <td>
+        <td data-label="Teslim Tarihi"><input type="date" class="itemDueDate" value="${safeTermin}" aria-label="Kalem termin tarihi" title="Kalem termin tarihi" /></td>
+        <td data-label="Görsel">
           <div class="image-upload" onclick="document.getElementById('imageInput_${itemCounter}').click();">
             <input type="file" id="imageInput_${itemCounter}" accept="image/*" style="display:none;" onchange="handleImageUpload(${itemCounter}, this)" />
             <span id="imagePreview_${itemCounter}" style="font-size:11px; color:#6b7280;">📷 Görsel</span>
           </div>
         </td>
-        <td style="text-align:center;">
+        <td data-label="Sil" style="text-align:center;">
           <button type="button" class="btn btn-sm delete-btn" style="padding:4px 8px; font-size:11px;">🗑️</button>
         </td>
       `;
@@ -1257,31 +1411,17 @@
         const demandTitle = document.getElementById('demandTitle').value.trim();
         const demandDescription = document.getElementById('demandDescription').value.trim();
         const satfk = document.getElementById('satfk').value.trim();
-        // Teklifbul Rule v1.0 - Şantiye input'undan siteId'yi bul
-        const siteSelectInput = document.getElementById('siteSelect');
-        const siteNameValue = siteSelectInput?.value?.trim() || '';
+        // Teklifbul Rule v1.0 - Şantiye input'undan site bul veya yeni oluştur
+        const siteSelectInputEl = document.getElementById('siteSelect');
+        const siteNameValue = siteSelectInputEl?.value?.trim() || '';
+        const deliveryAddressValue = document.getElementById('deliveryAddressInput')?.value?.trim() || '';
         let siteId = null;
         let selectedSite = null;
 
         if (siteNameValue) {
-          // Site name'e göre site bul
-          selectedSite = sites.find(s => {
-            const siteName = (s.siteName || s.title || '').trim();
-            return siteName === siteNameValue;
-          });
-
-          if (selectedSite) {
+          selectedSite = findSiteByInputValue(siteNameValue);
+          if (selectedSite && !selectedSite.virtual) {
             siteId = selectedSite.id;
-          } else {
-            // Datalist'ten siteId'yi bul
-            const siteNameList = document.getElementById('siteNameList');
-            if (siteNameList) {
-              const matchingOption = Array.from(siteNameList.options).find(opt => opt.value === siteNameValue);
-              if (matchingOption) {
-                siteId = matchingOption.getAttribute('data-site-id');
-                selectedSite = sites.find(s => s.id === siteId);
-              }
-            }
           }
         }
         const terminDate = document.getElementById('terminDate').value;
@@ -1294,8 +1434,15 @@
           return;
         }
 
-        if (!siteId) {
-          toast.error('Şantiye seçimi zorunludur');
+        if (!siteNameValue) {
+          toast.error('Şantiye adı zorunludur');
+          document.getElementById('siteSelect')?.focus();
+          return;
+        }
+
+        if (!deliveryAddressValue) {
+          toast.error('Teslimat adresi zorunludur');
+          document.getElementById('deliveryAddressInput')?.focus();
           return;
         }
 
@@ -1309,53 +1456,42 @@
           return;
         }
 
-        // Teklifbul Rule v1.0 - Seçili şantiye bilgilerini al (selectedSite zaten yukarıda bulundu)
-        if (!selectedSite) {
-          selectedSite = sites.find(s => s.id === siteId);
+        const siteName = siteNameValue;
+        const siteAddress = deliveryAddressValue;
+
+        // Yeni şantiye: sistemde yoksa companies/{id}/sites altına kaydet
+        // Virtual (fatura/ilave adres) seçiminde yeni şirket şantiyesi oluşturma
+        if (!siteId && !selectedSite?.virtual) {
+          try {
+            toast.info('Yükleniyor...');
+            const newSiteRef = await addDoc(collection(db, 'companies', companyId, 'sites'), {
+              siteName,
+              title: siteName,
+              name: siteName,
+              type: 'site',
+              isActive: true,
+              fullAddress: siteAddress,
+              content: siteAddress,
+              companyId,
+              createdBy: user.uid,
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+              source: 'internal_demand',
+            });
+            siteId = newSiteRef.id;
+            selectedSite = { id: siteId, siteName, title: siteName, content: siteAddress, fullAddress: siteAddress };
+            sites.push(selectedSite);
+            logger.info('Yeni şantiye oluşturuldu', { siteId, siteName });
+            toast.success('Yeni şantiye kaydedildi');
+          } catch (createSiteErr) {
+            logger.error('Yeni şantiye oluşturulamadı', createSiteErr);
+            toast.error('Hata: Şantiye oluşturulamadı. ' + (createSiteErr.message || ''));
+            logger.end();
+            return;
+          }
         }
-
-        const siteName = selectedSite?.siteName || selectedSite?.title || 'Şantiye';
-
-        // Teklifbul Rule v1.0 - Adres formatla (ilave adreslerdeki structured data'yı kullan)
-        let siteAddress = '';
-
-        if (selectedSite) {
-          // Öncelik: content alanı (tam formatlanmış adres)
-          if (selectedSite.content && selectedSite.content.trim()) {
-            siteAddress = selectedSite.content.trim();
-          }
-          // İkinci öncelik: fullAddress
-          else if (selectedSite.fullAddress && selectedSite.fullAddress.trim()) {
-            siteAddress = selectedSite.fullAddress.trim();
-          }
-          // Üçüncü öncelik: structured data'dan oluştur
-          else {
-            const addressParts = [];
-            if (selectedSite.mahalle) addressParts.push(`${selectedSite.mahalle}${selectedSite.mahalle.includes('Mahalle') ? '' : ' Mahalle'}`);
-            if (selectedSite.cadde) addressParts.push(`${selectedSite.cadde}${selectedSite.cadde.includes('Cadde') ? '' : ' Cadde'}`);
-            if (selectedSite.street) addressParts.push(`${selectedSite.street}${selectedSite.street.includes('Sokak') || selectedSite.street.includes('Cadde') ? '' : ' Sokak'}`);
-            if (selectedSite.building || selectedSite.kapi) addressParts.push(`Kapı No: ${selectedSite.building || selectedSite.kapi}`);
-            if (selectedSite.daire) addressParts.push(`Daire: ${selectedSite.daire}`);
-            if (selectedSite.district || selectedSite.districtName || selectedSite.ilce) {
-              addressParts.push(`İlçe: ${selectedSite.district || selectedSite.districtName || selectedSite.ilce}`);
-            }
-            if (selectedSite.city || selectedSite.provinceName || selectedSite.il) {
-              addressParts.push(`İl: ${selectedSite.city || selectedSite.provinceName || selectedSite.il}`);
-            }
-            if (selectedSite.postakodu || selectedSite.postalCode) {
-              addressParts.push(`Posta Kodu: ${selectedSite.postakodu || selectedSite.postalCode}`);
-            }
-            if (addressParts.length > 0) {
-              addressParts.push('Türkiye');
-              siteAddress = addressParts.filter(Boolean).join(' - ');
-            }
-          }
-
-          // Fallback
-          if (!siteAddress || siteAddress.trim() === '') {
-            siteAddress = selectedSite.fullAddress ||
-              (selectedSite.street ? `${selectedSite.street} - ${selectedSite.districtName || ''} - ${selectedSite.provinceName || ''}`.replace(/^\s*-\s*|\s*-\s*$/g, '') : '');
-          }
+        if (selectedSite?.virtual) {
+          siteId = null;
         }
 
         // Kalemleri topla
@@ -1375,7 +1511,7 @@
           const unit = row.querySelector('.unit')?.value || '';
           const stockQty = row.querySelector('.stockQty')?.value ? parseFloat(row.querySelector('.stockQty').value) : null;
           const stockQtyInfo = row.querySelector('.stockQtyInfo')?.value.trim() || null;
-          const dueDate = row.querySelector('.itemDueDate')?.value || null;
+          const dueDate = row.querySelector('.itemDueDate')?.value || terminDate || null;
           const imageData = row.dataset.imageData || null;
 
           if (!itemName || !quantity || !unit) {
@@ -1404,6 +1540,7 @@
           siteId: siteId,
           siteName: siteName,
           siteAddress: siteAddress,
+          deliveryAddress: siteAddress,
           terminDate: terminDate,
           requestedBy: requestedBy,
           requestedById: user.uid,
@@ -1476,7 +1613,52 @@
       updateSATFKPreview();
     });
 
-    // Şantiyeleri yükle
+    function formatSiteAddress(site) {
+      if (!site) return '';
+      if (site.content && String(site.content).trim()) return String(site.content).trim();
+      if (site.fullAddress && String(site.fullAddress).trim()) return String(site.fullAddress).trim();
+      if (site.invoiceAddress && String(site.invoiceAddress).trim()) return String(site.invoiceAddress).trim();
+      const addressParts = [];
+      if (site.mahalle) addressParts.push(`${site.mahalle}${String(site.mahalle).includes('Mahalle') ? '' : ' Mahalle'}`);
+      if (site.cadde) addressParts.push(`${site.cadde}${String(site.cadde).includes('Cadde') ? '' : ' Cadde'}`);
+      if (site.street) addressParts.push(`${site.street}${String(site.street).includes('Sokak') || String(site.street).includes('Cadde') ? '' : ' Sokak'}`);
+      if (site.building || site.kapi) addressParts.push(`Kapı No: ${site.building || site.kapi}`);
+      if (site.daire) addressParts.push(`Daire: ${site.daire}`);
+      if (site.district || site.districtName || site.ilce) {
+        addressParts.push(`İlçe: ${site.district || site.districtName || site.ilce}`);
+      }
+      if (site.city || site.provinceName || site.il) {
+        addressParts.push(`İl: ${site.city || site.provinceName || site.il}`);
+      }
+      if (site.postakodu || site.postalCode) {
+        addressParts.push(`Posta Kodu: ${site.postakodu || site.postalCode}`);
+      }
+      if (addressParts.length > 0) {
+        addressParts.push('Türkiye');
+        return addressParts.filter(Boolean).join(' - ');
+      }
+      return '';
+    }
+
+    function findSiteByInputValue(inputValue) {
+      if (!inputValue) return null;
+      let selectedSite = sites.find((s) => {
+        const siteName = (s.siteName || s.title || s.label || '').trim();
+        return siteName === inputValue;
+      });
+      if (selectedSite) return selectedSite;
+      const siteNameList = document.getElementById('siteNameList');
+      if (siteNameList) {
+        const matchingOption = Array.from(siteNameList.options).find((opt) => opt.value === inputValue);
+        if (matchingOption) {
+          const sid = matchingOption.getAttribute('data-site-id');
+          selectedSite = sites.find((s) => s.id === sid);
+        }
+      }
+      return selectedSite || null;
+    }
+
+    // Şantiyeleri yükle (şirket sites + kullanıcı adres başlıkları)
     async function loadSites() {
       try {
         logger.group('Şantiyeler yükleniyor');
@@ -1486,43 +1668,75 @@
           return;
         }
 
-        // Teklifbul Rule v1.0 - Index hatasını önlemek için orderBy kaldırıldı, client-side sıralama yapılacak
-        const sitesQuery = query(
-          collection(db, 'companies', companyId, 'sites'),
-          where('isActive', '==', true)
-        );
-        const sitesSnapshot = await getDocs(sitesQuery);
-        sites = sitesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        sites = [];
 
-        // Client-side sıralama
+        try {
+          const sitesRef = collection(db, 'companies', companyId, 'sites');
+          const sitesSnapshot = await getDocs(sitesRef);
+          sitesSnapshot.docs.forEach((d) => {
+            const data = d.data() || {};
+            if (data.isActive === false) return;
+            const label = data.siteName || data.title || data.name || `Şantiye ${d.id}`;
+            sites.push({
+              id: d.id,
+              ...data,
+              siteName: label,
+              title: label,
+              source: 'company_site',
+            });
+          });
+        } catch (companySitesErr) {
+          logger.warn('Şirket şantiyeleri yüklenemedi', companySitesErr);
+        }
+
+        try {
+          const userSnap = await getDoc(doc(db, 'users', user.uid));
+          const userData = userSnap.exists() ? userSnap.data() : {};
+          if (userData.invoiceAddress) {
+            sites.push({
+              id: `invoice-${user.uid}`,
+              siteName: 'Fatura Adresi',
+              title: 'Fatura Adresi',
+              content: userData.invoiceAddress,
+              source: 'invoice',
+              virtual: true,
+            });
+          }
+          const additional = Array.isArray(userData.additionalAddresses) ? userData.additionalAddresses : [];
+          additional.forEach((a, idx) => {
+            if (!a?.title) return;
+            sites.push({
+              id: `addr-${idx}`,
+              siteName: a.title,
+              title: a.title,
+              ...a,
+              source: 'additional_address',
+              virtual: true,
+            });
+          });
+        } catch (addrErr) {
+          logger.warn('Kullanıcı adres başlıkları yüklenemedi', addrErr);
+        }
+
         sites.sort((a, b) => {
           const an = (a.siteName || a.title || '').toString().toLowerCase();
           const bn = (b.siteName || b.title || '').toString().toLowerCase();
           return an.localeCompare(bn, 'tr');
         });
 
-        const siteSelect = document.getElementById('siteSelect');
         const siteNameList = document.getElementById('siteNameList');
-
-        // Datalist'i temizle
         if (siteNameList) {
           siteNameList.innerHTML = '';
+          sites.forEach((site) => {
+            const siteName = site.siteName || site.title || 'Şantiye';
+            const option = document.createElement('option');
+            option.value = siteName;
+            option.setAttribute('data-site-id', site.id);
+            siteNameList.appendChild(option);
+          });
         }
 
-        // Teklifbul Rule v1.0 - İlave adreslerdeki başlıkları datalist'e ekle
-        sites.forEach(site => {
-          const siteName = site.siteName || site.title || 'Şantiye';
-          const option = document.createElement('option');
-          option.value = siteName;
-          option.setAttribute('data-site-id', site.id);
-          if (siteNameList) {
-            siteNameList.appendChild(option);
-          }
-        });
-
-        logger.info('Şantiye başlıkları datalist\'e eklendi', { count: sites.length });
-
-        logger.info('Şantiyeler yüklendi', { count: sites.length });
+        logger.info('Şantiye/adres başlıkları yüklendi', { count: sites.length });
         logger.end();
       } catch (error) {
         logger.error('Şantiyeler yükleme hatası', error);
@@ -1533,8 +1747,8 @@
 
     // Teklifbul Rule v1.0 - Şantiye başlığı yazıldığında/seçildiğinde adres göster
     const siteSelectInput = document.getElementById('siteSelect');
+    const deliveryAddressInput = document.getElementById('deliveryAddressInput');
     if (siteSelectInput) {
-      // Input değiştiğinde (yazıldığında veya seçildiğinde)
       siteSelectInput.addEventListener('input', (e) => {
         const inputValue = e.target.value.trim();
         const siteAddressDiv = document.getElementById('siteAddress');
@@ -1545,79 +1759,14 @@
           return;
         }
 
-        // Datalist'ten seçilen başlığa göre site bul
-        const siteNameList = document.getElementById('siteNameList');
-        let selectedSite = null;
-
-        // Önce tam eşleşme ara
-        selectedSite = sites.find(s => {
-          const siteName = (s.siteName || s.title || '').trim();
-          return siteName === inputValue;
-        });
-
-        // Eğer bulunamazsa, datalist option'ından siteId'yi al
-        if (!selectedSite && siteNameList) {
-          const matchingOption = Array.from(siteNameList.options).find(opt => opt.value === inputValue);
-          if (matchingOption) {
-            const siteId = matchingOption.getAttribute('data-site-id');
-            selectedSite = sites.find(s => s.id === siteId);
-          }
-        }
+        const selectedSite = findSiteByInputValue(inputValue);
         if (selectedSite) {
-          // Teklifbul Rule v1.0 - Adres formatla (ilave adreslerdeki structured data'yı kullan)
-          let addressText = '';
-
-          // Öncelik: content alanı (tam formatlanmış adres)
-          if (selectedSite.content && selectedSite.content.trim()) {
-            addressText = selectedSite.content.trim();
-          }
-          // İkinci öncelik: fullAddress
-          else if (selectedSite.fullAddress && selectedSite.fullAddress.trim()) {
-            addressText = selectedSite.fullAddress.trim();
-          }
-          // Üçüncü öncelik: structured data'dan oluştur
-          else {
-            const addressParts = [];
-            if (selectedSite.mahalle) addressParts.push(`${selectedSite.mahalle}${selectedSite.mahalle.includes('Mahalle') ? '' : ' Mahalle'}`);
-            if (selectedSite.cadde) addressParts.push(`${selectedSite.cadde}${selectedSite.cadde.includes('Cadde') ? '' : ' Cadde'}`);
-            if (selectedSite.street) addressParts.push(`${selectedSite.street}${selectedSite.street.includes('Sokak') || selectedSite.street.includes('Cadde') ? '' : ' Sokak'}`);
-            if (selectedSite.building || selectedSite.kapi) addressParts.push(`Kapı No: ${selectedSite.building || selectedSite.kapi}`);
-            if (selectedSite.daire) addressParts.push(`Daire: ${selectedSite.daire}`);
-            if (selectedSite.district || selectedSite.districtName || selectedSite.ilce) {
-              addressParts.push(`İlçe: ${selectedSite.district || selectedSite.districtName || selectedSite.ilce}`);
-            }
-            if (selectedSite.city || selectedSite.provinceName || selectedSite.il) {
-              addressParts.push(`İl: ${selectedSite.city || selectedSite.provinceName || selectedSite.il}`);
-            }
-            if (selectedSite.postakodu || selectedSite.postalCode) {
-              addressParts.push(`Posta Kodu: ${selectedSite.postakodu || selectedSite.postalCode}`);
-            }
-            if (addressParts.length > 0) {
-              addressParts.push('Türkiye');
-              addressText = addressParts.filter(Boolean).join(' - ');
-            }
-          }
-
-          // Eğer hala adres yoksa, eski formatı dene
-          if (!addressText || addressText.trim() === '') {
-            const fallbackParts = [];
-            if (selectedSite.street) fallbackParts.push(selectedSite.street);
-            if (selectedSite.districtName) fallbackParts.push(selectedSite.districtName);
-            if (selectedSite.provinceName) fallbackParts.push(selectedSite.provinceName);
-            if (selectedSite.postalCode) fallbackParts.push(`Posta Kodu: ${selectedSite.postalCode}`);
-            addressText = fallbackParts.length > 0
-              ? fallbackParts.join(' - ')
-              : 'Adres bilgisi yok';
-          }
-
+          const addressText = formatSiteAddress(selectedSite) || 'Adres bilgisi yok';
           siteAddressText.textContent = addressText;
           siteAddressDiv.style.display = 'block';
-
-          logger.info('Şantiye adresi gösterildi', {
-            siteId: selectedSite.id,
-            siteName: selectedSite.siteName || selectedSite.title,
-            addressLength: addressText.length
-          });
+          if (deliveryAddressInput && addressText && addressText !== 'Adres bilgisi yok') {
+            deliveryAddressInput.value = addressText;
+          }
         } else {
           siteAddressDiv.style.display = 'none';
         }
@@ -1677,16 +1826,15 @@
         // Teklifbul Rule v1.0 - Termin tarihi değiştiğinde tüm kalemlerdeki teslim tarihlerini otomatik doldur
         terminDateInput.addEventListener('change', function () {
           const selectedDate = this.value;
-          if (selectedDate) {
-            const allDueDateInputs = document.querySelectorAll('.itemDueDate');
-            allDueDateInputs.forEach(input => {
-              if (!input.value) { // Sadece boş olanları doldur, kullanıcı değiştirmişse dokunma
-                input.value = selectedDate;
-              }
-            });
-            logger.info('Termin tarihi tüm kalemlerdeki teslim tarihlerine uygulandı', { date: selectedDate, count: allDueDateInputs.length });
-            toast.info(`Termin tarihi (${selectedDate}) tüm kalemlerdeki teslim tarihlerine uygulandı`);
-          }
+          if (!selectedDate) return;
+          const allDueDateInputs = document.querySelectorAll('.itemDueDate');
+          allDueDateInputs.forEach((input) => {
+            input.value = selectedDate;
+          });
+          logger.info('Termin tarihi kalem satırlarına uygulandı', {
+            date: selectedDate,
+            count: allDueDateInputs.length,
+          });
         });
 
         logger.info('Termin tarihi alanı iyileştirildi - tıklanınca otomatik açılıyor');

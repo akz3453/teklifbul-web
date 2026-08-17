@@ -41,6 +41,7 @@ import { computeAvailableModels, getCompanyPlanFlags, loadAiModelCatalog } from 
 import { computeRestorePaidStatus } from './restorePaidStatusHelper.js';
 import { AI_RESOLVE_BY, AI_RESOLVE_REASON, AI_META_KEYS, type AiResolveBy, type AiResolveReason } from '../constants/aiMeta.js';
 import { getProviderKey } from './aiEntitlementService.js'; // Teklifbul Rule v3.15 + v3.17
+import { DEFAULT_FREE_AI, pickPreferredFreeModel } from '../constants/aiFreeDefaults.js';
 
 export type ResolvedAiModel = {
   provider: string;
@@ -69,11 +70,11 @@ export async function resolveCompanyAiModelForRequest(args: {
   try {
     const db = await getAdminDb();
     if (!db) {
-      logger.warn('[AI] Resolver: DB unavailable, fallback to free_local/basic');
+      logger.warn('[AI] Resolver: DB unavailable, fallback to default free Groq');
       logger.end();
       return {
-        provider: 'free_local',
-        model: 'basic',
+        provider: DEFAULT_FREE_AI.provider,
+        model: DEFAULT_FREE_AI.model,
         isFreeEligible: true,
         resolvedBy: AI_RESOLVE_BY.FALLBACK_FREE,
         reason: AI_RESOLVE_REASON.DB_UNAVAILABLE,
@@ -84,13 +85,13 @@ export async function resolveCompanyAiModelForRequest(args: {
 
     const forcedFreeMode = settings.forcedFreeMode === true;
     
-    // Priority 1: Forced free mode
+    // Priority 1: Forced free mode → gerçek ücretsiz Groq (stub free_local değil)
     if (forcedFreeMode) {
-      logger.info('[AI] Resolver: FORCED_FREE_MODE active');
+      logger.info('[AI] Resolver: FORCED_FREE_MODE active → default free Groq');
       logger.end();
       return {
-        provider: 'free_local',
-        model: 'basic',
+        provider: DEFAULT_FREE_AI.provider,
+        model: DEFAULT_FREE_AI.model,
         isFreeEligible: true,
         resolvedBy: AI_RESOLVE_BY.FORCED_FREE,
         reason: AI_RESOLVE_REASON.FORCED_FREE_MODE,
@@ -106,36 +107,103 @@ export async function resolveCompanyAiModelForRequest(args: {
       isPremiumPlus: planFlags.isPremiumPlus,
     });
 
-    // Determine current settings selection
-    const selectedProvider = settings.provider || 'free_local';
-    const selectedModel = settings.model || 'basic';
+    // Determine current settings selection (yoksa ücretsiz Groq)
+    const selectedProvider = settings.provider || DEFAULT_FREE_AI.provider;
+    const selectedModel = settings.model || DEFAULT_FREE_AI.model;
 
     // Check if selected model exists in availableModels
     const selectedModelObj = availableModels.find(
       m => m.provider === selectedProvider && m.model === selectedModel
     );
 
+    // Teklifbul Rule v1.0 — Ücretsiz model her zaman hemen kullanılır; ücretli EXACT için cüzdan şart
+    let paidExactUnusable: {
+      provider: string;
+      model: string;
+      providerKey: string;
+      reason: typeof AI_RESOLVE_REASON.NO_FUNDS_FOR_PAID | typeof AI_RESOLVE_REASON.NOT_ENTITLED;
+    } | null = null;
+
     if (selectedModelObj) {
-      // Selected model is available
       const isFreeEligible = selectedModelObj.freeEligible === true;
-      logger.info('[AI] Resolver: EXACT match', { provider: selectedProvider, model: selectedModel, isFreeEligible });
-      logger.end();
-      return {
+
+      if (isFreeEligible) {
+        logger.info('[AI] Resolver: EXACT match (free)', {
+          provider: selectedProvider,
+          model: selectedModel,
+        });
+        logger.end();
+        return {
+          provider: selectedProvider,
+          model: selectedModel,
+          isFreeEligible: true,
+          resolvedBy: AI_RESOLVE_BY.EXACT,
+          reason: AI_RESOLVE_REASON.NORMAL,
+          modelAutoResolved: false,
+          suggestedPaid: null,
+        };
+      }
+
+      // Paid model selected — only use if wallet + entitlement allow; else free Groq
+      const { getCompanyAiWallet } = await import('./companyAiWalletService.js');
+      const { getAiMinTokens } = await import('./aiMinTokens.js');
+      const { getProviderEntitlements, isModelAllowed } = await import('./aiEntitlementService.js');
+      const MIN_TOKENS = getAiMinTokens();
+      const providerKey = getProviderKey(selectedProvider);
+      const providerWallet = await getCompanyAiWallet(companyId, providerKey);
+      const walletBalance = providerWallet?.balanceTokens || 0;
+
+      const entitlements = await getProviderEntitlements(companyId, providerKey);
+      let isEntitled = true;
+      if (entitlements && !entitlements.isProviderWide) {
+        const catalog = await loadAiModelCatalog(db);
+        const catalogModel = catalog.find(
+          (m) => m.provider === selectedProvider && m.model === selectedModel
+        );
+        const modelTier = (catalogModel as any)?.tier || undefined;
+        isEntitled = isModelAllowed(entitlements, selectedProvider, selectedModel, modelTier);
+      }
+
+      if (isEntitled && walletBalance >= MIN_TOKENS) {
+        logger.info('[AI] Resolver: EXACT match (paid)', {
+          provider: selectedProvider,
+          model: selectedModel,
+          providerKey,
+          walletBalance,
+        });
+        logger.end();
+        return {
+          provider: selectedProvider,
+          model: selectedModel,
+          isFreeEligible: false,
+          resolvedBy: AI_RESOLVE_BY.EXACT,
+          reason: AI_RESOLVE_REASON.NORMAL,
+          modelAutoResolved: false,
+          suggestedPaid: null,
+        };
+      }
+
+      paidExactUnusable = {
         provider: selectedProvider,
         model: selectedModel,
-        isFreeEligible,
-        resolvedBy: AI_RESOLVE_BY.EXACT,
-        reason: AI_RESOLVE_REASON.NORMAL,
-        modelAutoResolved: false,
-        suggestedPaid: null,
+        providerKey,
+        reason: !isEntitled ? AI_RESOLVE_REASON.NOT_ENTITLED : AI_RESOLVE_REASON.NO_FUNDS_FOR_PAID,
       };
+      logger.warn('[AI] Resolver: EXACT paid unusable → will use free Groq', {
+        companyId,
+        selected: { provider: selectedProvider, model: selectedModel },
+        providerKey,
+        walletBalance,
+        min: MIN_TOKENS,
+        reason: paidExactUnusable.reason,
+      });
+    } else {
+      // Selected model NOT in availableModels - need to resolve fallback
+      logger.warn('[AI] Resolver: Selected model not available', {
+        companyId,
+        selected: { provider: selectedProvider, model: selectedModel },
+      });
     }
-
-    // Selected model NOT in availableModels - need to resolve fallback
-    logger.warn('[AI] Resolver: Selected model not available', {
-      companyId,
-      selected: { provider: selectedProvider, model: selectedModel },
-    });
 
     // Compute suggested paid model (reuse restore paid helper logic)
     const restorePaidStatus = await computeRestorePaidStatus({
@@ -151,7 +219,8 @@ export async function resolveCompanyAiModelForRequest(args: {
     const freeCandidates = availableModels.filter(m => m.freeEligible === true);
 
     // Priority 2: If PremiumPlus and paid candidate exists, use it (if wallet has balance)
-    if (planFlags.isPremiumPlus && hasPaidCandidate && restorePaidStatus.suggestedPaid) {
+    // Skip when user already has a paid selection that's just short on funds (prefer free over swap)
+    if (!paidExactUnusable && planFlags.isPremiumPlus && hasPaidCandidate && restorePaidStatus.suggestedPaid) {
       const suggested = restorePaidStatus.suggestedPaid;
       // Verify suggested is still in availableModels
       const verified = availableModels.find(
@@ -220,9 +289,8 @@ export async function resolveCompanyAiModelForRequest(args: {
       }
     }
 
-    // Priority 3: Fallback to best free eligible model
+    // Priority 3: Fallback to best free eligible model (Groq tercih, free_local stub değil)
     if (freeCandidates.length > 0) {
-      // Sort free candidates: sort asc, provider asc, model asc
       const catalog = await loadAiModelCatalog(db);
       const catalogMap = new Map<string, { sort?: number }>();
       catalog.forEach(m => {
@@ -230,17 +298,11 @@ export async function resolveCompanyAiModelForRequest(args: {
         catalogMap.set(key, { sort: m.sort });
       });
 
-      freeCandidates.sort((a, b) => {
-        const keyA = `${a.provider}::${a.model}`;
-        const keyB = `${b.provider}::${b.model}`;
-        const sortA = catalogMap.get(keyA)?.sort ?? 9999;
-        const sortB = catalogMap.get(keyB)?.sort ?? 9999;
-        if (sortA !== sortB) return sortA - sortB;
-        if (a.provider !== b.provider) return a.provider.localeCompare(b.provider, 'en');
-        return a.model.localeCompare(b.model, 'en');
-      });
-
-      const bestFree = freeCandidates[0];
+      const enriched = freeCandidates.map((m) => ({
+        ...m,
+        sort: catalogMap.get(`${m.provider}::${m.model}`)?.sort ?? 9999,
+      }));
+      const bestFree = pickPreferredFreeModel(enriched) || enriched[0];
       
       // Teklifbul Rule v3.17 - Include requiredProviderKey if falling back due to NO_FUNDS_FOR_PAID or NOT_ENTITLED
       let requiredProviderKey: string | undefined = undefined;
@@ -273,10 +335,30 @@ export async function resolveCompanyAiModelForRequest(args: {
         }
       }
       
+      const freeReason = paidExactUnusable
+        ? paidExactUnusable.reason
+        : hasPaidCandidate
+          ? AI_RESOLVE_REASON.SELECTED_MODEL_NOT_AVAILABLE
+          : AI_RESOLVE_REASON.NO_PAID_MODEL_AVAILABLE;
+
+      const suggestedPaid =
+        paidExactUnusable
+          ? {
+              provider: paidExactUnusable.provider,
+              model: paidExactUnusable.model,
+              providerKey: paidExactUnusable.providerKey,
+            }
+          : restorePaidStatus.suggestedPaid;
+
+      if (paidExactUnusable && !requiredProviderKey) {
+        requiredProviderKey = paidExactUnusable.providerKey;
+      }
+
       logger.info('[AI] Resolver: FALLBACK_FREE', {
         from: { provider: selectedProvider, model: selectedModel },
         to: { provider: bestFree.provider, model: bestFree.model },
         requiredProviderKey,
+        reason: freeReason,
       });
       logger.end();
       return {
@@ -284,32 +366,39 @@ export async function resolveCompanyAiModelForRequest(args: {
         model: bestFree.model,
         isFreeEligible: true,
         resolvedBy: AI_RESOLVE_BY.FALLBACK_FREE,
-        reason: hasPaidCandidate ? AI_RESOLVE_REASON.SELECTED_MODEL_NOT_AVAILABLE : AI_RESOLVE_REASON.NO_PAID_MODEL_AVAILABLE,
+        reason: freeReason,
         modelAutoResolved: true,
-        suggestedPaid: restorePaidStatus.suggestedPaid,
+        suggestedPaid,
         requiredProviderKey, // Teklifbul Rule v3.17
       };
     }
 
-    // Last resort: free_local/basic (should always exist in catalog)
-    logger.warn('[AI] Resolver: Last resort fallback to free_local/basic');
+    // Last resort: default free Groq
+    logger.warn('[AI] Resolver: Last resort fallback to default free Groq');
     logger.end();
     return {
-      provider: 'free_local',
-      model: 'basic',
+      provider: DEFAULT_FREE_AI.provider,
+      model: DEFAULT_FREE_AI.model,
       isFreeEligible: true,
       resolvedBy: AI_RESOLVE_BY.FALLBACK_FREE,
-      reason: AI_RESOLVE_REASON.NO_AVAILABLE_MODELS,
+      reason: paidExactUnusable?.reason || AI_RESOLVE_REASON.NO_AVAILABLE_MODELS,
       modelAutoResolved: true,
-      suggestedPaid: restorePaidStatus.suggestedPaid,
+      suggestedPaid: paidExactUnusable
+        ? {
+            provider: paidExactUnusable.provider,
+            model: paidExactUnusable.model,
+            providerKey: paidExactUnusable.providerKey,
+          }
+        : restorePaidStatus.suggestedPaid,
+      requiredProviderKey: paidExactUnusable?.providerKey,
     };
   } catch (error: any) {
     logger.error('[AI] Resolver: Error', error);
     logger.end();
     // Safe fallback
     return {
-      provider: 'free_local',
-      model: 'basic',
+      provider: DEFAULT_FREE_AI.provider,
+      model: DEFAULT_FREE_AI.model,
       isFreeEligible: true,
       resolvedBy: AI_RESOLVE_BY.FALLBACK_FREE,
       reason: AI_RESOLVE_REASON.RESOLVER_ERROR,

@@ -236,12 +236,19 @@
         import { db, auth } from './firebase.js';
         // Teklifbul Rule v1.0 - Structured Logging
         import { logger } from './src/shared/log/logger.js';
+        import { initAuthGuard } from './assets/js/auth-guard.js';
         import { doc, getDoc, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
 
         // Global variables
         let demandData = null;
         let selectedFiles = [];
         let user = null;
+        // Teklifbul Rule v1.0 - Şablon servisi yalnızca açıkça yapılandırıldığında çağrılır.
+        const bidTemplateApiBaseUrl = String(
+            window.BID_TEMPLATE_API_URL ||
+            (typeof import.meta !== 'undefined' && import.meta.env?.VITE_BID_TEMPLATE_API_URL) ||
+            ''
+        ).trim().replace(/\/$/, '');
 
         // DOM elements
         const uploadArea = document.getElementById('uploadArea');
@@ -258,6 +265,7 @@
         // Initialize page
         async function init() {
             try {
+                await initAuthGuard();
                 // Check authentication
                 user = auth.currentUser;
                 if (!user) {
@@ -483,11 +491,10 @@
                 };
 
                 const bidRef = await addDoc(collection(db, 'bids'), bidData);
-                
-                // TODO: Upload file to Firebase Storage
-                // TODO: Process Excel file with Python service
-                
                 logger.info('Bid created', { bidId: bidRef.id });
+                import('/assets/js/analytics.js').then(({ track, ANALYTICS_EVENTS }) => {
+                  track(ANALYTICS_EVENTS.BID_CREATED, { status: 'submitted' });
+                }).catch(() => {});
                 
             } catch (error) {
                 logger.error('Error processing bid file', error);
@@ -502,9 +509,12 @@
                     showStatus('error', 'Talep bilgileri yüklenmedi.');
                     return;
                 }
+                if (!bidTemplateApiBaseUrl) {
+                    showStatus('error', 'Şablon servisi yapılandırılmamış.');
+                    return;
+                }
 
-                // Call Python service to generate template
-                const response = await fetch('http://localhost:5000/generate-bid-template', {
+                const response = await fetch(`${bidTemplateApiBaseUrl}/api/bids/generate-template`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -545,9 +555,12 @@
                     showStatus('error', 'Talep bilgileri yüklenmedi.');
                     return;
                 }
+                if (!bidTemplateApiBaseUrl) {
+                    showStatus('error', 'Şablon servisi yapılandırılmamış.');
+                    return;
+                }
 
-                // Call Python service to generate comparison template
-                const response = await fetch('http://localhost:5000/generate-comparison-table', {
+                const response = await fetch(`${bidTemplateApiBaseUrl}/api/bids/generate-comparison-table`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

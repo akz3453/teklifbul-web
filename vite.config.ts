@@ -1,11 +1,73 @@
 // Teklifbul Rule v1.0
 import { defineConfig } from 'vite'
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { nefisoftSeoPlugin } from './src/seo/vite-plugin-seo'
+
+const projectRoot = path.dirname(fileURLToPath(import.meta.url))
+
+const THEME_INIT_CACHE_BUST = 'v20260815'
+
+/** HTML'de doğrudan <script src="/assets/js/..."> ile referans verilen, bundle dışı dosyalar */
+function copyRawAssetsJs() {
+  return {
+    name: 'copy-raw-assets-js',
+    transformIndexHtml(html) {
+      return html.replaceAll(
+        '/assets/js/theme-init.js',
+        `/assets/js/theme-init.${THEME_INIT_CACHE_BUST}.js`
+      )
+    },
+    closeBundle() {
+      const distRoot = path.join(projectRoot, 'dist')
+      const copies = [
+        ['assets/js/theme-init.js', 'assets/js/theme-init.js'],
+        ['assets/js/theme-init.js', `assets/js/theme-init.${THEME_INIT_CACHE_BUST}.js`],
+        ['assets/css/main.css', 'assets/css/main.css'],
+        ['assets/css/layout.css', 'assets/css/layout.css'],
+        ['utils.css', 'utils.css'],
+        ['utils.css', 'assets/css/utils.css'],
+        ['css/ui-standard.css', 'css/ui-standard.css'],
+        ['public/css/ui-standard.css', 'css/ui-standard.css'],
+      ]
+      const cssDir = path.join(projectRoot, 'assets/css')
+      if (fs.existsSync(cssDir)) {
+        for (const name of fs.readdirSync(cssDir)) {
+          if (!name.endsWith('.css')) continue
+          copies.push([`assets/css/${name}`, `assets/css/${name}`])
+        }
+      }
+      const seen = new Set()
+      for (const [srcRel, destRel] of copies) {
+        if (seen.has(destRel)) continue
+        seen.add(destRel)
+        const src = path.join(projectRoot, srcRel)
+        if (!fs.existsSync(src)) continue
+        const dest = path.join(distRoot, destRel)
+        fs.mkdirSync(path.dirname(dest), { recursive: true })
+        fs.copyFileSync(src, dest)
+      }
+    }
+  }
+}
 
 // https://vite.dev/config/
+function collectLegalHtmlInputs(): Record<string, string> {
+  const legalDir = path.join(projectRoot, 'legal')
+  if (!fs.existsSync(legalDir)) return {}
+  const input: Record<string, string> = {}
+  for (const fileName of fs.readdirSync(legalDir)) {
+    if (!fileName.endsWith('.html')) continue
+    input[`legal-${fileName.replace(/\.html$/, '')}`] = path.join('legal', fileName)
+  }
+  return input
+}
+
 export default defineConfig({
+  plugins: [copyRawAssetsJs(), nefisoftSeoPlugin(projectRoot)],
   // No React plugin - this is a vanilla HTML/JS project
   // Vite has built-in HTML support, no plugin needed
-  plugins: [],
   build: {
     target: 'esnext',
     outDir: 'dist',
@@ -22,28 +84,18 @@ export default defineConfig({
         return false;
       },
       output: {
-        // Optimized manual chunks - only include actually used libraries
+        // Optimized manual chunks — yalnızca kök firebase.js; 'firebase' substring TDZ döngüsü yaratır
         manualChunks: (id) => {
-          // Firebase chunking
-          if (id.includes('firebase')) {
-            return 'vendor-firebase';
+          const normalized = String(id).replace(/\\/g, '/');
+          if (normalized.endsWith('/firebase.js')) {
+            return 'app-firebase';
           }
-          // UI libraries
-          if (id.includes('dompurify')) {
-            return 'vendor-ui';
+          if (id.includes('node_modules')) {
+            if (id.includes('dompurify')) return 'vendor-ui';
+            if (id.includes('date-fns') || id.includes('dayjs')) return 'vendor-utils';
           }
-          // Date utilities
-          if (id.includes('date-fns') || id.includes('dayjs')) {
-            return 'vendor-utils';
-          }
-          // Shared core modules
-          if (id.includes('/src/shared/')) {
-            return 'shared-core';
-          }
-          // Category modules
-          if (id.includes('category') || id.includes('categories')) {
-            return 'shared-categories';
-          }
+          if (id.includes('/src/shared/')) return 'shared-core';
+          if (id.includes('category') || id.includes('categories')) return 'shared-categories';
         }
       },
       input: {
@@ -73,12 +125,12 @@ export default defineConfig({
         'company-join-waiting': 'company-join-waiting.html',
         'role-permissions-management': 'role-permissions-management.html',
         'inventory-index': 'inventory-index.html',
-        'add-satfk': 'add-satfk.html',
         'interim-payments': 'interim-payments.html',
         'interim-payment-edit': 'interim-payment-edit.html',
         'interim-payment-suggestions': 'interim-payment-suggestions.html',
         'forum': 'forum.html',
         'contact': 'contact.html',
+        ...collectLegalHtmlInputs(),
         // Inventory pages
         'purchase-form': 'pages/purchase-form.html',
         'stock-movements': 'pages/stock-movements.html',
@@ -90,15 +142,27 @@ export default defineConfig({
         'reports': 'pages/reports.html',
         'request-detail': 'pages/request-detail.html',
         'stock-list': 'pages/stock-list.html',
+        'stock-new': 'pages/stock-new.html',
+        'stock-count': 'pages/stock-count.html',
+        'stock-count-detail': 'pages/stock-count-detail.html',
+        'stock-groups': 'pages/stock-groups.html',
         'sku-merge': 'pages/sku-merge.html',
+        'sales-reports': 'pages/sales-reports.html',
+        'contracts': 'contracts.html',
+        'contract-edit': 'contract-edit.html',
+        'contract-detail': 'contract-detail.html',
         // Sales module pages
         'sales': 'pages/sales.html',
         'sale-new': 'pages/sale-new.html',
         'sale-detail': 'pages/sale-detail.html',
         'customers': 'pages/customers.html',
+        'customer-detail': 'pages/customer-detail.html',
         'invoice-new': 'pages/invoice-new.html',
         'invoice-detail': 'pages/invoice-detail.html',
+        invoices: 'pages/invoices.html',
         'delivery-note-new': 'pages/delivery-note-new.html',
+        notifications: 'pages/notifications.html',
+        'submit-bid': 'submit-bid.html',
         'request-list': 'pages/request-list.html',
         // Admin pages
         'admin-dashboard': 'pages/admin/dashboard.html',
@@ -120,7 +184,7 @@ export default defineConfig({
       // Teklifbul Rule v1.0 - CSP: Firebase Auth ve Google API'leri için gerekli domain'ler
       // script-src-elem: Dynamic script loading için (Google API'leri)
       // Not: Google login için auth domain (teklifbul.firebaseapp.com) iframe içinde açılabildiğinden frame-src listesine eklendi.
-      'Content-Security-Policy': "default-src 'self'; font-src 'self' https://fonts.gstatic.com data:; script-src 'self' 'unsafe-eval' https://www.gstatic.com https://apis.google.com https://www.google.com https://www.recaptcha.net https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com; script-src-elem 'self' 'unsafe-inline' https://www.gstatic.com https://apis.google.com https://www.google.com https://www.recaptcha.net https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com 'sha256-+3oPYgb41B6T9DDxTV5+BxwuBt0kH4MCB0ubkutEst8='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com https://cdn.jsdelivr.net; style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com https://cdn.jsdelivr.net; frame-src 'self' https://accounts.google.com https://www.google.com https://www.recaptcha.net https://teklifbul.firebaseapp.com https://*.firebaseapp.com; connect-src 'self' wss://localhost:5173 ws://localhost:5173 http://localhost:5174 https://apis.google.com https://www.googleapis.com https://*.googleapis.com https://*.google.com https://*.firebaseio.com https://*.firebaseapp.com https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://nominatim.openstreetmap.org https://us-central1-teklifbul.cloudfunctions.net https://*.cloudfunctions.net; img-src 'self' data: blob: https:; object-src 'none'; base-uri 'self'; form-action 'self';",
+      'Content-Security-Policy': "default-src 'self'; font-src 'self' https://fonts.gstatic.com data:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://apis.google.com https://www.google.com https://www.recaptcha.net https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://www.googletagmanager.com https://www.google-analytics.com; script-src-elem 'self' 'unsafe-inline' https://www.gstatic.com https://apis.google.com https://www.google.com https://www.recaptcha.net https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com https://cdn.jsdelivr.net; style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com https://cdn.jsdelivr.net; frame-src 'self' https://accounts.google.com https://www.google.com https://www.recaptcha.net https://teklifbul.firebaseapp.com https://*.firebaseapp.com; connect-src 'self' wss://localhost:5173 ws://localhost:5173 http://localhost:5174 https://apis.google.com https://www.googleapis.com https://*.googleapis.com https://*.google.com https://*.firebaseio.com https://*.firebaseapp.com https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://nominatim.openstreetmap.org https://us-central1-teklifbul.cloudfunctions.net https://*.cloudfunctions.net https://www.googletagmanager.com https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com; img-src 'self' data: blob: https:; object-src 'none'; base-uri 'self'; form-action 'self';",
       // Teklifbul Rule v1.0 - COOP header kaldırıldı: Firebase popup'ı window.closed kontrolü yapamıyordu
       // COOP header'ı popup'ın çalışmasını engelliyor, bu yüzden kaldırıldı
       // 'Cross-Origin-Opener-Policy': 'same-origin-allow-popups'
@@ -206,7 +270,10 @@ export default defineConfig({
   // Vite'ın HTML içindeki JS'leri parse ederken hata vermemesi için
   define: {
     'import.meta.env.DEV': JSON.stringify(process.env.NODE_ENV !== 'production'),
-    'import.meta.env.VITE_API_URL': JSON.stringify(process.env.VITE_API_URL || 'http://localhost:5174')
+    // Teklifbul Rule v1.0 - Production build'de bos = same-origin; client resolveApiBaseUrl localhost'u yok sayar
+    'import.meta.env.VITE_API_URL': JSON.stringify(
+      process.env.VITE_API_URL || (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:5174')
+    )
   },
   // Teklifbul Rule v1.0 - JS parse hatalarını daha iyi yönet
   logLevel: 'info',

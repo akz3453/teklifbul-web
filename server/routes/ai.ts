@@ -14,6 +14,8 @@ import { requirePremium } from '../middleware/requirePremium.js';
 import { logger } from '../../src/shared/log/logger.js';
 import { validateRequest } from '../utils/input-validation.js';
 import { z } from 'zod';
+import { getCachedUserDoc } from '../src/utils/userDocCache.js';
+import { resolveTrustedCompanyIdAsync } from '../utils/companyAccess.js';
 
 const router = Router();
 
@@ -58,12 +60,34 @@ router.post('/satin-alma', verifyToken, requirePremium, validateRequest({ body: 
     });
 
     const { prompt, filters } = req.body;
+    const userId = req.user?.uid;
+    if (!userId) {
+      return res.status(401).json({ ok: false, error: 'auth_required', message: 'Giriş gerekli' });
+    }
+
+    const userDoc = await getCachedUserDoc(userId, req);
+    const userData = userDoc.exists ? userDoc.data : null;
+    const headerCompanyId = req.headers['x-company-id'] as string | undefined;
+    const trustedCompanyId = await resolveTrustedCompanyIdAsync(userData, headerCompanyId, {
+      userId,
+      path: req.path,
+    });
+    if (!trustedCompanyId) {
+      return res.status(403).json({
+        ok: false,
+        error: 'company_required',
+        message: 'Geçerli şirket bilgisi bulunamadı',
+      });
+    }
+
+    // Client filters.companyId yok sayılır — trusted company zorunlu
+    const scopedFilters = { ...(filters || {}), companyId: trustedCompanyId };
 
     // Teklif ve stok verilerini topla
-    logger.info('Fetching bid and stock data');
+    logger.info('Fetching bid and stock data', { companyId: trustedCompanyId });
     const [bids, stocks] = await Promise.all([
-      fetchBidData(filters),
-      fetchStockData(filters)
+      fetchBidData(scopedFilters),
+      fetchStockData(scopedFilters)
     ]);
 
     logger.info(`Data fetched: ${bids.length} bids, ${stocks.length} stocks`);

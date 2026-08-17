@@ -52,17 +52,73 @@ router.get('/companies/subscriptions',
         const companyData: any = doc.data();
         const companyId = doc.id;
         
-        // Şirketteki kullanıcı sayısını al
-        const usersSnap = await db.collection('users')
-          .where('companyId', '==', companyId)
-          .get();
-        
-        const userCount = usersSnap.size;
-        const users = usersSnap.docs.map(u => ({
-          uid: u.id,
-          email: u.data()?.email || u.data()?.contactEmails?.[0],
-          displayName: u.data()?.displayName || u.data()?.name
-        }));
+        // Şirketteki kullanıcı sayısını al (companyId veya activeCompanyId)
+        const [usersByCompanyId, usersByActiveCompanyId] = await Promise.all([
+          db.collection('users').where('companyId', '==', companyId).get(),
+          db.collection('users').where('activeCompanyId', '==', companyId).get(),
+        ]);
+
+        const userMap = new Map<string, { uid: string; email?: string; displayName?: string }>();
+        for (const snap of [usersByCompanyId, usersByActiveCompanyId]) {
+          for (const u of snap.docs) {
+            if (userMap.has(u.id)) continue;
+            const ud = u.data() || {};
+            userMap.set(u.id, {
+              uid: u.id,
+              email: ud.email || ud.contactEmails?.[0] || undefined,
+              displayName: ud.displayName || ud.name || undefined,
+            });
+          }
+        }
+
+        const users = Array.from(userMap.values());
+        const userCount = users.length;
+
+        // Teklifbul Rule v1.0 - Vergi no: taxNumber (asıl alan) + legacy + tax-{vkn} id
+        const rawTax =
+          companyData.taxNumber ||
+          companyData.taxId ||
+          companyData.taxNo ||
+          companyData.vkn ||
+          '';
+        let taxId = String(rawTax || '').trim();
+        if (!taxId && typeof companyId === 'string' && companyId.startsWith('tax-')) {
+          taxId = companyId.slice(4).trim();
+        }
+        if (!taxId) taxId = '-';
+
+        // Teklifbul Rule v1.0 - Kurucu mail: ownerId / ownerUid / createdBy
+        const ownerUid =
+          companyData.ownerId ||
+          companyData.ownerUid ||
+          companyData.createdBy ||
+          companyData.createdByUid ||
+          null;
+        let founderEmail =
+          companyData.ownerEmail ||
+          companyData.founderEmail ||
+          companyData.createdByEmail ||
+          '';
+        if (!founderEmail && ownerUid) {
+          const fromList = userMap.get(String(ownerUid));
+          if (fromList?.email) {
+            founderEmail = fromList.email;
+          } else {
+            try {
+              const ownerDoc = await db.collection('users').doc(String(ownerUid)).get();
+              if (ownerDoc.exists) {
+                const od = ownerDoc.data() || {};
+                founderEmail = od.email || od.contactEmails?.[0] || '';
+              }
+            } catch {
+              // ignore
+            }
+          }
+        }
+        if (!founderEmail && users.length) {
+          founderEmail = users[0].email || '';
+        }
+        founderEmail = String(founderEmail || '').trim() || '-';
         
         // Plan bilgilerini normalize et
         // Teklifbul Rule v1.0 - Plan normalizasyonu: Tüm olası field'ları kontrol et
@@ -148,7 +204,10 @@ router.get('/companies/subscriptions',
         return {
           companyId,
           companyName: companyData.name || companyData.companyName || '-',
-          taxId: companyData.taxId || companyData.taxNo || '-',
+          taxId,
+          taxNumber: taxId === '-' ? null : taxId,
+          founderEmail,
+          ownerUid: ownerUid || null,
           planId: finalPlanId, // String olarak garanti edilmiş planId
           isPremium,
           expiresAt: expiresAtDate ? expiresAtDate.toISOString() : null,

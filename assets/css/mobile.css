@@ -1,0 +1,464 @@
+/**
+ * Teklifbul Rule v1.0 — Global Mobile Responsive Fixes
+ * Telefon ve dar ekranlarda taşma, kayık görüntü ve hizalama sorunlarını giderir.
+ */
+
+/* ---------- Temel: taşmayı önle ---------- */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  overflow-x: hidden;
+  min-width: 0;
+}
+
+img,
+picture,
+video,
+canvas,
+svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* position:absolute img'lerde yükseklik kuralını ezme */
+img[style*="position: absolute"],
+img[style*="position:absolute"] {
+  height: 100%;
+}
+
+/* ---------- utils.css button width:100% düzeltmesi ---------- */
+@media (max-width: 768px) {
+  .topbar .btn,
+  .topbar button,
+  .page-header .btn,
+  .page-heading-actions .btn,
+  .page-heading-actions a.btn,
+  .toolbar .btn,
+  .toolbar button,
+  .header-actions .btn,
+  .row .btn,
+  .flex-row .btn,
+  .fx-row .btn,
+  .filters .btn,
+  .action-buttons .btn,
+  .action-buttons-cell .btn,
+  .btn-group .btn,
+  table .btn,
+  td .btn,
+  a.btn.btn-sm,
+  a.btn.btn-outline,
+  a.btn.btn-danger,
+  a.btn.btn-secondary,
+  a.btn.btn-primary,
+  button.btn-sm,
+  button.btn-outline,
+  button.btn-danger,
+  button.btn-secondary,
+  .tab,
+  .tab-btn {
+    width: auto !important;
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+
+  /* Teklifbul Rule v1.0 — iOS Safari zoom önleme (native değil, tarayıcı dahil) */
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  /* Filtre / araç çubukları alta taşmasın */
+  .filters,
+  .filter-bar,
+  .customers-toolbar,
+  .action-buttons,
+  .page-toolbar {
+    flex-wrap: wrap !important;
+  }
+
+  .action-buttons-cell,
+  .btn-group {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  /* Tablolar: yatay kaydırılabilir sarmalayıcı */
+  .table-wrap,
+  .table-container,
+  .table-responsive,
+  .items-table-scroll {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+
+  /* Kart içinde tablo kesilmesin */
+  .card .table-responsive,
+  .card .items-table-scroll {
+    display: block;
+  }
+
+  .table-responsive {
+    margin-left: 0;
+    margin-right: 0;
+    max-width: 100%;
+  }
+
+  .container .table-responsive,
+  .container--wide .table-responsive,
+  .container--fluid .table-responsive {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  /* Kalem tabloları 700px min-width ile sağdan kesilmesin */
+  .items-table,
+  .items-table-wrap table {
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  /* Form 2 kolon → 1 kolon */
+  .form-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Sekme şeritleri yatay kaydırılabilir */
+  .tabs,
+  [role="tablist"],
+  .customers-tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 8px;
+    padding-bottom: 4px;
+  }
+
+  .tab,
+  .tab-btn {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+}
+
+/* ---------- Sayfa başlığı (layout.css) ---------- */
+@media (max-width: 768px) {
+  .page-heading {
+    gap: 12px;
+  }
+
+  .page-title-chip {
+    flex: 1 1 100%;
+    min-height: auto;
+    padding: 12px 16px;
+    gap: 12px;
+  }
+
+  .page-title-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 24px;
+    border-radius: 10px;
+    flex-shrink: 0;
+  }
+
+  .page-title-text h1 {
+    font-size: 1.35rem;
+    line-height: 1.25;
+  }
+
+  .page-title-caption {
+    font-size: 13px;
+  }
+
+  .page-heading-actions {
+    flex: 1 1 100%;
+    justify-content: flex-start;
+  }
+}
+
+/* ---------- Dashboard nav kartları ---------- */
+@media (max-width: 480px) {
+  .nav-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .nav-card {
+    min-height: auto;
+    padding: 16px;
+  }
+
+  .nav-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 24px;
+    flex-shrink: 0;
+  }
+}
+
+/* ---------- Kart grid ---------- */
+@media (max-width: 480px) {
+  .cards {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ---------- Genel padding daraltma ---------- */
+@media (max-width: 480px) {
+  .container,
+  .container--wide,
+  .container--fluid,
+  main.container--wide {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+}
+
+/* ---------- Bids / tab satırları ---------- */
+@media (max-width: 600px) {
+  .tabs[role="tablist"] {
+    flex-wrap: wrap !important;
+  }
+
+  .row[style*="flex-wrap:nowrap"] {
+    flex-wrap: wrap !important;
+  }
+}
+
+/* ---------- Form ve arama ---------- */
+@media (max-width: 768px) {
+  .search-form {
+    max-width: none;
+    width: 100%;
+  }
+
+  .category-search {
+    flex: 1 1 100%;
+  }
+
+  /* Satışlar: işlem kolonu telefonda daralsın */
+  .sales-actions-col {
+    width: auto !important;
+    min-width: 132px !important;
+  }
+
+  #salesTable td:last-child .btn,
+  #salesTable td:last-child button {
+    width: auto !important;
+  }
+
+  .quick-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+}
+
+/* ---------- Tarayıcı + native: safe area (çentik) ---------- */
+.topbar,
+.site-header,
+.global-header,
+#app-header .topbar {
+  padding-left: max(12px, env(safe-area-inset-left));
+  padding-right: max(12px, env(safe-area-inset-right));
+}
+
+/* ---------- Native app (Capacitor) safe areas ---------- */
+html.is-native-app {
+  /* no padding on html */
+}
+
+body.is-native-app {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Teklifbul Rule v1.0 — Native yazı tipi: Roboto */
+html.is-native-app {
+  --font-family: system-ui, -apple-system, 'Roboto', sans-serif;
+}
+
+html.is-native-app body,
+body.is-native-app {
+  font-family: system-ui, -apple-system, 'Roboto', sans-serif !important;
+}
+
+body.is-native-app .site-header,
+body.is-native-app .global-header,
+body.is-native-app .topbar {
+  padding-top: max(8px, env(safe-area-inset-top));
+}
+
+/* Teklifbul Rule v1.0 — Offline overlay (oturum içi bağlantı kopması) */
+.tb-native-offline {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: max(24px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom));
+  background: rgba(248, 250, 252, 0.98);
+}
+
+.tb-native-offline__card {
+  width: 100%;
+  max-width: 380px;
+  text-align: center;
+}
+
+.tb-native-offline__brand {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #2563EB;
+  margin-bottom: 24px;
+}
+
+.tb-native-offline__logo {
+  display: block;
+  width: min(180px, 55vw);
+  height: auto;
+  margin: 0 auto 20px;
+  object-fit: contain;
+}
+
+.tb-native-offline__icon {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  background: #DBEAFE;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+}
+
+.tb-native-offline__title {
+  margin: 0 0 8px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.tb-native-offline__text {
+  margin: 0 0 24px;
+  color: #6B7280;
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+
+.tb-native-offline__btn {
+  appearance: none;
+  border: 0;
+  border-radius: 10px;
+  background: #2563EB;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  font-size: 1rem;
+  padding: 14px 24px;
+  width: 100%;
+  cursor: pointer;
+}
+
+/* Teklifbul Rule v1.0 — Klavye açıkken alt sabitleri yukarı kaçır */
+html.is-native-app.is-keyboard-open .ai-assistant-widget,
+html.is-native-app.is-keyboard-open .ai-assistant-toggle {
+  bottom: max(12px, env(safe-area-inset-bottom));
+}
+
+html.is-native-app .ai-assistant-panel.open {
+  max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 24px);
+}
+
+/* Dashboard native dokunuş */
+html.is-native-app .cards,
+body.is-native-app .cards {
+  gap: 12px;
+}
+
+@media (max-width: 768px) {
+  html.is-native-app .card,
+  body.is-native-app .card {
+    min-width: 0;
+  }
+
+  html.is-native-app .cards,
+  html.is-native-app .nav-grid,
+  html.is-native-app .groups-grid,
+  html.is-native-app .chart-container,
+  .cards,
+  .nav-grid,
+  .groups-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .tb-breadcrumb {
+    flex-wrap: wrap;
+    row-gap: 4px;
+  }
+
+  .search-form {
+    flex-wrap: wrap !important;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .search-input {
+    min-width: 0 !important;
+    width: 100%;
+    flex: 1 1 100%;
+  }
+
+  .toolbar,
+  .toolbar-content,
+  .toolbar-left,
+  .row {
+    flex-wrap: wrap !important;
+    min-width: 0;
+    max-width: 100%;
+    grid-template-columns: 1fr !important;
+  }
+
+  .page-title-chip {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+  }
+}
+
+/* Native: AI butonu çentiğe/home indicator'a binmesin */
+html.is-native-app .ai-assistant-widget {
+  bottom: max(16px, calc(12px + env(safe-area-inset-bottom)));
+  right: max(12px, env(safe-area-inset-right));
+}
+
+html.is-native-app .ai-assistant-toggle {
+  width: 52px;
+  height: 52px;
+}
+
+html.is-native-app .ai-assistant-label {
+  display: none;
+}
+
+html.is-native-app .login-container,
+html.is-native-app body.login-page {
+  max-width: 100%;
+}
+
+@media (max-width: 768px) {
+  html.is-native-app body {
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
+}

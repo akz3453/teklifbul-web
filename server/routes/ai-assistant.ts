@@ -15,7 +15,6 @@ import { requireAiAccess } from '../middleware/requireAiAccess.js';
 import { getUserAIProvider } from '../services/userService.js';
 import { getUserPlan } from '../services/userService.js';
 import {
-  assertUserHasTokensOrThrow,
   consumeTokensTransactional,
 } from '../services/aiTokenPackService.js';
 import {
@@ -40,6 +39,8 @@ import {
   type AutofillRequestFieldsInput,
   type ValidateRequestForErrorsInput,
 } from '../ai/purchaseAssistantService.js';
+import { resolveTrustedCompanyIdAsync } from '../utils/companyAccess.js';
+import { DEFAULT_FREE_AI } from '../constants/aiFreeDefaults.js';
 import { z } from 'zod';
 
 const router = Router();
@@ -47,13 +48,25 @@ const router = Router();
 // Teklifbul Rule v1.2 - Token pre-check (hard limit) via env (AI_MIN_TOKENS, default 200)
 const MIN_TOKENS = getAiMinTokens();
 
-function resolveSharedCompanyId(userData: any): string | null {
-  const cid = userData?.companyId;
-  const aid = userData?.activeCompanyId;
-  const arr0 = Array.isArray(userData?.companies) && userData.companies.length ? userData.companies[0] : null;
-  if (cid && typeof cid === 'string' && !cid.startsWith('solo-') && !cid.startsWith('tax-')) return cid;
-  if (aid && typeof aid === 'string' && aid.startsWith('solo-') && cid) return cid;
-  return aid || cid || arr0;
+/** Teklifbul Rule v1.0 — Ücretsiz Groq token cüzdanı istemez */
+function shouldSkipWalletPrecheck(provider: string, isFreeEligible?: boolean): boolean {
+  return isFreeEligible === true || provider === 'groq' || provider === 'free_local';
+}
+
+function forceFreeResolved(resolved: any) {
+  return {
+    ...resolved,
+    provider: DEFAULT_FREE_AI.provider,
+    model: DEFAULT_FREE_AI.model,
+    isFreeEligible: true,
+    modelAutoResolved: true,
+    resolvedBy: 'FALLBACK_FREE',
+    reason: 'NO_FUNDS_FOR_PAID',
+    suggestedPaid: resolved?.suggestedPaid || {
+      provider: resolved?.provider,
+      model: resolved?.model,
+    },
+  };
 }
 
 async function tryGetCompanyPurchaseAssistantSettings(params: { userId: string; headerCompanyId?: string }) {
@@ -62,19 +75,20 @@ async function tryGetCompanyPurchaseAssistantSettings(params: { userId: string; 
   if (!db) return null;
   const userDoc = await db.collection('users').doc(userId).get();
   const userData = userDoc.exists ? (userDoc.data() || {}) : {};
-  const companyId = headerCompanyId || resolveSharedCompanyId(userData);
+  const companyId = await resolveTrustedCompanyIdAsync(userData, headerCompanyId, {
+    userId,
+    path: 'ai-assistant',
+  });
   if (!companyId) return null;
   const settingsRef = db.collection('companies').doc(companyId).collection('settings').doc('purchaseAssistant');
   const snap = await settingsRef.get();
-  if (!snap.exists) return null;
-  const data = snap.data() || {};
-  if (!data.provider || !data.model) return null;
+  const data = snap.exists ? (snap.data() || {}) : {};
   return {
     companyId,
-    provider: String(data.provider),
-    model: String(data.model),
+    provider: String(data.provider || DEFAULT_FREE_AI.provider),
+    model: String(data.model || DEFAULT_FREE_AI.model),
     enabled: data.enabled !== false,
-    forcedFreeMode: data.forcedFreeMode === true, // Teklifbul Rule v2.7.1
+    forcedFreeMode: data.forcedFreeMode === true,
   };
 }
 
@@ -186,8 +200,9 @@ router.post('/generate-purchase-request', verifyToken, requireAiAccess, async (r
       });
     }
 
-    const companyWallet = companySettings?.companyId ? await getCompanyAiWallet(companySettings.companyId) : null;
-    const useCompanyFlow = !!companySettings?.companyId && companySettings.enabled !== false && companyWallet !== null;
+    const companyWallet = companySettings?.companyId ? await getCompanyAiWallet(companySettings.companyId) : { balanceTokens: 0 };
+    // Ücretsiz Groq cüzdan istemez
+    const useCompanyFlow = !!companySettings?.companyId && companySettings.enabled !== false;
 
     let provider = useCompanyFlow ? (companySettings!.provider as any) : await getUserAIProvider(userId);
     let modelAutoDowngraded = false;
@@ -216,60 +231,55 @@ router.post('/generate-purchase-request', verifyToken, requireAiAccess, async (r
       provider = resolved.provider as any;
       modelAutoDowngraded = resolved.modelAutoResolved ?? false;
 
-      // Teklifbul Rule v3.12 - Check provider-specific wallet
+      // Teklifbul Rule v3.12 - Ücretli cüzdan yetersizse ücretsiz Groq (402 engeli yok)
       const providerKey = provider === 'openai' || provider.startsWith('openai') ? 'openai' : 
                           provider === 'gemini' || provider.startsWith('gemini') ? 'gemini' : 
                           provider.toLowerCase();
+      if (!shouldSkipWalletPrecheck(provider, resolved?.isFreeEligible)) {
       const providerWallet = await getCompanyAiWallet(companySettings!.companyId, providerKey);
       if ((providerWallet?.balanceTokens || 0) < MIN_TOKENS) {
-        logger.warn('Company provider wallet has insufficient tokens (min check)', { 
+        logger.warn('Company provider wallet low → free Groq', { 
           companyId: companySettings!.companyId, 
           providerKey,
           balanceTokens: providerWallet?.balanceTokens, 
           min: MIN_TOKENS,
           route: '/api/ai/generate-purchase-request',
         });
-        logger.end();
-        const errorMap = mapAiError(AI_ERROR_CODES.INSUFFICIENT_TOKENS, {
-          providerKey,
-          resolvedProvider: provider,
-          resolvedModel: resolved.model,
-          requiredProviderKey: providerKey, // Teklifbul Rule v3.17
-        });
-        return res.status(errorMap.status).json({
-          code: errorMap.code,
-          message: errorMap.userMessage,
-          provider,
-          meta: errorMap.meta, // Teklifbul Rule v3.17 - Includes requiredProviderKey
-        });
+        resolved = forceFreeResolved(resolved);
+        provider = resolved.provider as any;
+        modelAutoDowngraded = true;
+      }
       }
     } else {
-      logger.info('[AI] legacy fallback used', { route: '/api/ai/generate-purchase-request' });
-      try {
-        await assertUserHasTokensOrThrow(userId, provider);
-      } catch (tokenError: any) {
-        logger.warn('Token pack check failed', { userId, provider, error: tokenError.message });
-        logger.end();
-        const errorMap = mapAiError(AI_ERROR_CODES.TOKEN_PACK_REQUIRED);
-        return res.status(errorMap.status).json({
-          error: errorMap.code,
-          message: tokenError.message || errorMap.userMessage,
-          provider
-        });
-      }
+      // Legacy: varsayılan ücretsiz Groq
+      logger.info('[AI] legacy free Groq', { route: '/api/ai/generate-purchase-request' });
+      provider = DEFAULT_FREE_AI.provider as any;
+      resolved = {
+        provider: DEFAULT_FREE_AI.provider,
+        model: DEFAULT_FREE_AI.model,
+        isFreeEligible: true,
+        modelAutoResolved: true,
+        resolvedBy: 'FALLBACK_FREE',
+      };
     }
 
     logger.info('Generating purchase request text', { userId, itemsCount: input.items.length });
 
-    const result = await generatePurchaseRequestText(input, userId, useCompanyFlow && resolved ? { provider, model: resolved.model } : undefined);
+    const result = await generatePurchaseRequestText(input, userId, {
+      provider,
+      model: resolved?.model || DEFAULT_FREE_AI.model,
+    });
 
     // Teklifbul Rule v1.0 - Token tüketimi - purchaseAssistantService'den gerçek token bilgisini kullan
     const actualTokens = result.tokenUsage?.totalTokens || 500; // Fallback tahmini
     const promptTokens = result.tokenUsage?.promptTokens || Math.floor(actualTokens * 0.7);
     const completionTokens = result.tokenUsage?.completionTokens || Math.floor(actualTokens * 0.3);
+    const isFreeRun = shouldSkipWalletPrecheck(provider, resolved?.isFreeEligible);
     
     try {
-      if (useCompanyFlow && resolved) {
+      if (isFreeRun) {
+        logger.info('Free Groq usage (zero consume)', { userId, provider, usedTokens: actualTokens });
+      } else if (useCompanyFlow && resolved) {
         const model = resolved.model;
         
         const after = await consumeCompanyTokensTransactional({
@@ -437,8 +447,9 @@ router.post('/analyze-offers', verifyToken, requireAiAccess, async (req: Authent
       });
     }
 
-    const companyWallet = companySettings?.companyId ? await getCompanyAiWallet(companySettings.companyId) : null;
-    const useCompanyFlow = !!companySettings?.companyId && companySettings.enabled !== false && companyWallet !== null;
+    const companyWallet = companySettings?.companyId ? await getCompanyAiWallet(companySettings.companyId) : { balanceTokens: 0 };
+    // Ücretsiz Groq cüzdan istemez
+    const useCompanyFlow = !!companySettings?.companyId && companySettings.enabled !== false;
 
     let provider = useCompanyFlow ? (companySettings!.provider as any) : await getUserAIProvider(userId);
     let modelAutoDowngraded = false;
@@ -467,57 +478,50 @@ router.post('/analyze-offers', verifyToken, requireAiAccess, async (req: Authent
       provider = resolved.provider as any;
       modelAutoDowngraded = resolved.modelAutoResolved ?? false;
 
-      // Teklifbul Rule v3.12 - Check provider-specific wallet
+      // Teklifbul Rule v3.12 - Check provider-specific wallet (ücretsiz Groq atlanır)
       const providerKey = provider === 'openai' || provider.startsWith('openai') ? 'openai' : 
                           provider === 'gemini' || provider.startsWith('gemini') ? 'gemini' : 
                           provider.toLowerCase();
+      if (!shouldSkipWalletPrecheck(provider, resolved?.isFreeEligible)) {
       const providerWallet = await getCompanyAiWallet(companySettings!.companyId, providerKey);
       if ((providerWallet?.balanceTokens || 0) < MIN_TOKENS) {
-        logger.warn('Company provider wallet has insufficient tokens (min check)', { 
+        logger.warn('Company provider wallet low → free Groq', { 
           companyId: companySettings!.companyId, 
           providerKey,
           balanceTokens: providerWallet?.balanceTokens, 
           min: MIN_TOKENS,
-          route: '/api/ai/generate-purchase-request',
         });
-        logger.end();
-        const errorMap = mapAiError(AI_ERROR_CODES.INSUFFICIENT_TOKENS, {
-          providerKey,
-          resolvedProvider: provider,
-          resolvedModel: resolved.model,
-          requiredProviderKey: providerKey, // Teklifbul Rule v3.17
-        });
-        return res.status(errorMap.status).json({
-          code: errorMap.code,
-          message: errorMap.userMessage,
-          provider,
-          meta: errorMap.meta, // Teklifbul Rule v3.17 - Includes requiredProviderKey
-        });
+        resolved = forceFreeResolved(resolved);
+        provider = resolved.provider as any;
+        modelAutoDowngraded = true;
+      }
       }
     } else {
-      logger.info('[AI] legacy fallback used', { route: '/api/ai/analyze-offers' });
-      try {
-        await assertUserHasTokensOrThrow(userId, provider);
-      } catch (tokenError: any) {
-        logger.warn('Token pack check failed', { userId, provider, error: tokenError.message });
-        logger.end();
-        const errorMap = mapAiError(AI_ERROR_CODES.TOKEN_PACK_REQUIRED);
-        return res.status(errorMap.status).json({
-          error: errorMap.code,
-          message: tokenError.message || errorMap.userMessage,
-          provider
-        });
-      }
+      logger.info('[AI] legacy free Groq');
+      provider = DEFAULT_FREE_AI.provider as any;
+      resolved = {
+        provider: DEFAULT_FREE_AI.provider,
+        model: DEFAULT_FREE_AI.model,
+        isFreeEligible: true,
+        modelAutoResolved: true,
+        resolvedBy: 'FALLBACK_FREE',
+      };
     }
 
     logger.info('Analyzing offer comparison', { userId, itemsCount: input.items.length });
 
-    const result = await analyzeOfferComparison(input, userId, useCompanyFlow && resolved ? { provider, model: resolved.model } : undefined);
+    const result = await analyzeOfferComparison(input, userId, {
+      provider,
+      model: resolved?.model || DEFAULT_FREE_AI.model,
+    });
 
     // Token tüketimi
     const estimatedTokens = 800; // Tahmini token miktarı
+    const isFreeRun = shouldSkipWalletPrecheck(provider, resolved?.isFreeEligible);
     try {
-      if (useCompanyFlow && resolved) {
+      if (isFreeRun) {
+        logger.info('Free Groq usage (zero consume)', { userId, provider, usedTokens: estimatedTokens });
+      } else if (useCompanyFlow && resolved) {
         const model = resolved.model;
         
         const after = await consumeCompanyTokensTransactional({
@@ -653,8 +657,9 @@ router.post('/autofill-request-fields', verifyToken, requireAiAccess, async (req
       });
     }
 
-    const companyWallet = companySettings?.companyId ? await getCompanyAiWallet(companySettings.companyId) : null;
-    const useCompanyFlow = !!companySettings?.companyId && companySettings.enabled !== false && companyWallet !== null;
+    const companyWallet = companySettings?.companyId ? await getCompanyAiWallet(companySettings.companyId) : { balanceTokens: 0 };
+    // Ücretsiz Groq cüzdan istemez
+    const useCompanyFlow = !!companySettings?.companyId && companySettings.enabled !== false;
 
     let provider = useCompanyFlow ? (companySettings!.provider as any) : await getUserAIProvider(userId);
     let modelAutoDowngraded = false;
@@ -683,57 +688,50 @@ router.post('/autofill-request-fields', verifyToken, requireAiAccess, async (req
       provider = resolved.provider as any;
       modelAutoDowngraded = resolved.modelAutoResolved ?? false;
 
-      // Teklifbul Rule v3.12 - Check provider-specific wallet
+      // Teklifbul Rule v3.12 - Check provider-specific wallet (ücretsiz Groq atlanır)
       const providerKey = provider === 'openai' || provider.startsWith('openai') ? 'openai' : 
                           provider === 'gemini' || provider.startsWith('gemini') ? 'gemini' : 
                           provider.toLowerCase();
+      if (!shouldSkipWalletPrecheck(provider, resolved?.isFreeEligible)) {
       const providerWallet = await getCompanyAiWallet(companySettings!.companyId, providerKey);
       if ((providerWallet?.balanceTokens || 0) < MIN_TOKENS) {
-        logger.warn('Company provider wallet has insufficient tokens (min check)', { 
+        logger.warn('Company provider wallet low → free Groq', { 
           companyId: companySettings!.companyId, 
           providerKey,
           balanceTokens: providerWallet?.balanceTokens, 
           min: MIN_TOKENS,
-          route: '/api/ai/generate-purchase-request',
         });
-        logger.end();
-        const errorMap = mapAiError(AI_ERROR_CODES.INSUFFICIENT_TOKENS, {
-          providerKey,
-          resolvedProvider: provider,
-          resolvedModel: resolved.model,
-          requiredProviderKey: providerKey, // Teklifbul Rule v3.17
-        });
-        return res.status(errorMap.status).json({
-          code: errorMap.code,
-          message: errorMap.userMessage,
-          provider,
-          meta: errorMap.meta, // Teklifbul Rule v3.17 - Includes requiredProviderKey
-        });
+        resolved = forceFreeResolved(resolved);
+        provider = resolved.provider as any;
+        modelAutoDowngraded = true;
+      }
       }
     } else {
-      logger.info('[AI] legacy fallback used', { route: '/api/ai/autofill-request-fields' });
-      try {
-        await assertUserHasTokensOrThrow(userId, provider);
-      } catch (tokenError: any) {
-        logger.warn('Token pack check failed', { userId, provider, error: tokenError.message });
-        logger.end();
-        const errorMap = mapAiError(AI_ERROR_CODES.TOKEN_PACK_REQUIRED);
-        return res.status(errorMap.status).json({
-          error: errorMap.code,
-          message: tokenError.message || errorMap.userMessage,
-          provider
-        });
-      }
+      logger.info('[AI] legacy free Groq');
+      provider = DEFAULT_FREE_AI.provider as any;
+      resolved = {
+        provider: DEFAULT_FREE_AI.provider,
+        model: DEFAULT_FREE_AI.model,
+        isFreeEligible: true,
+        modelAutoResolved: true,
+        resolvedBy: 'FALLBACK_FREE',
+      };
     }
 
     logger.info('Autofilling request fields', { userId });
 
-    const result = await autofillRequestFields(input, userId, useCompanyFlow && resolved ? { provider, model: resolved.model } : undefined);
+    const result = await autofillRequestFields(input, userId, {
+      provider,
+      model: resolved?.model || DEFAULT_FREE_AI.model,
+    });
 
     // Token tüketimi
     const estimatedTokens = 400; // Tahmini token miktarı
+    const isFreeRun = shouldSkipWalletPrecheck(provider, resolved?.isFreeEligible);
     try {
-      if (useCompanyFlow && resolved) {
+      if (isFreeRun) {
+        logger.info('Free Groq usage (zero consume)', { userId, provider, usedTokens: estimatedTokens });
+      } else if (useCompanyFlow && resolved) {
         const model = resolved.model;
         
         const after = await consumeCompanyTokensTransactional({
@@ -869,8 +867,9 @@ router.post('/validate-request', verifyToken, requireAiAccess, async (req: Authe
       });
     }
 
-    const companyWallet = companySettings?.companyId ? await getCompanyAiWallet(companySettings.companyId) : null;
-    const useCompanyFlow = !!companySettings?.companyId && companySettings.enabled !== false && companyWallet !== null;
+    const companyWallet = companySettings?.companyId ? await getCompanyAiWallet(companySettings.companyId) : { balanceTokens: 0 };
+    // Ücretsiz Groq cüzdan istemez
+    const useCompanyFlow = !!companySettings?.companyId && companySettings.enabled !== false;
 
     let provider = useCompanyFlow ? (companySettings!.provider as any) : await getUserAIProvider(userId);
     let modelAutoDowngraded = false;
@@ -899,57 +898,50 @@ router.post('/validate-request', verifyToken, requireAiAccess, async (req: Authe
       provider = resolved.provider as any;
       modelAutoDowngraded = resolved.modelAutoResolved ?? false;
 
-      // Teklifbul Rule v3.12 - Check provider-specific wallet
+      // Teklifbul Rule v3.12 - Check provider-specific wallet (ücretsiz Groq atlanır)
       const providerKey = provider === 'openai' || provider.startsWith('openai') ? 'openai' : 
                           provider === 'gemini' || provider.startsWith('gemini') ? 'gemini' : 
                           provider.toLowerCase();
+      if (!shouldSkipWalletPrecheck(provider, resolved?.isFreeEligible)) {
       const providerWallet = await getCompanyAiWallet(companySettings!.companyId, providerKey);
       if ((providerWallet?.balanceTokens || 0) < MIN_TOKENS) {
-        logger.warn('Company provider wallet has insufficient tokens (min check)', { 
+        logger.warn('Company provider wallet low → free Groq', { 
           companyId: companySettings!.companyId, 
           providerKey,
           balanceTokens: providerWallet?.balanceTokens, 
           min: MIN_TOKENS,
-          route: '/api/ai/generate-purchase-request',
         });
-        logger.end();
-        const errorMap = mapAiError(AI_ERROR_CODES.INSUFFICIENT_TOKENS, {
-          providerKey,
-          resolvedProvider: provider,
-          resolvedModel: resolved.model,
-          requiredProviderKey: providerKey, // Teklifbul Rule v3.17
-        });
-        return res.status(errorMap.status).json({
-          code: errorMap.code,
-          message: errorMap.userMessage,
-          provider,
-          meta: errorMap.meta, // Teklifbul Rule v3.17 - Includes requiredProviderKey
-        });
+        resolved = forceFreeResolved(resolved);
+        provider = resolved.provider as any;
+        modelAutoDowngraded = true;
+      }
       }
     } else {
-      logger.info('[AI] legacy fallback used', { route: '/api/ai/validate-request' });
-      try {
-        await assertUserHasTokensOrThrow(userId, provider);
-      } catch (tokenError: any) {
-        logger.warn('Token pack check failed', { userId, provider, error: tokenError.message });
-        logger.end();
-        const errorMap = mapAiError(AI_ERROR_CODES.TOKEN_PACK_REQUIRED);
-        return res.status(errorMap.status).json({
-          error: errorMap.code,
-          message: tokenError.message || errorMap.userMessage,
-          provider
-        });
-      }
+      logger.info('[AI] legacy free Groq');
+      provider = DEFAULT_FREE_AI.provider as any;
+      resolved = {
+        provider: DEFAULT_FREE_AI.provider,
+        model: DEFAULT_FREE_AI.model,
+        isFreeEligible: true,
+        modelAutoResolved: true,
+        resolvedBy: 'FALLBACK_FREE',
+      };
     }
 
     logger.info('Validating request', { userId, itemsCount: input.items.length });
 
-    const result = await validateRequestForErrors(input, userId, useCompanyFlow && resolved ? { provider, model: resolved.model } : undefined);
+    const result = await validateRequestForErrors(input, userId, {
+      provider,
+      model: resolved?.model || DEFAULT_FREE_AI.model,
+    });
 
     // Token tüketimi
     const estimatedTokens = 300; // Tahmini token miktarı
+    const isFreeRun = shouldSkipWalletPrecheck(provider, resolved?.isFreeEligible);
     try {
-      if (useCompanyFlow && resolved) {
+      if (isFreeRun) {
+        logger.info('Free Groq usage (zero consume)', { userId, provider, usedTokens: estimatedTokens });
+      } else if (useCompanyFlow && resolved) {
         const model = resolved.model;
         
         const after = await consumeCompanyTokensTransactional({

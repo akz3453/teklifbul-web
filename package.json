@@ -1,6 +1,6 @@
 {
   "name": "teklifbul-web",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "description": "Teklifbul - tedarik / teklif yonetim sistemi (web istemci, API ve Firebase Functions)",
   "main": "migrate.js",
@@ -21,20 +21,35 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:ui": "vitest --ui",
-    "test:rules": "firebase emulators:exec --only firestore 'vitest run tests/rules.test.js'",
+    "test:rules": "firebase emulators:exec --only firestore \"npx vitest run --config vitest.rules.config.ts\"",
     "test:functions": "vitest run tests/functions.test.ts",
     "test:stocks": "npm run test:rules && npm run test:functions",
     "seed:categoryRules": "node scripts/import-category-rules.js",
     "cleanup:evidenceTokens": "node scripts/cleanup-evidence-tokens.js",
+    "backfill:security": "node scripts/backfill-security-projections.js",
+    "backfill:security:apply": "node scripts/backfill-security-projections.js --apply",
     "lint": "eslint .",
+    "lint:ci": "eslint \"server/**/*.ts\" --quiet",
     "type-check": "tsc --noEmit",
-    "build:api": "tsc -p server/tsconfig.build.json",
+    "build:api": "tsc -p server/tsconfig.build.json && node scripts/fix-functions-dist-imports.mjs && node scripts/copy-role-permissions-template.mjs",
     "smoke": "node scripts/smoke-test.mjs",
+    "seo:smoke": "node scripts/seo-smoke.mjs",
+    "scan:assets": "node scripts/asset-scan.mjs",
     "preflight": "node scripts/preflight.mjs",
     "preflight:quick": "node scripts/preflight.mjs --skip-smoke",
     "predeploy": "npm run build:api && npm run build",
     "deploy": "npm run predeploy && firebase deploy",
-    "prepare": "husky || true"
+    "prepare": "husky || true",
+    "cap:sync": "npm run build && npx cap sync",
+    "cap:android": "npm run cap:sync && npx cap open android",
+    "cap:ios": "npm run cap:sync && npx cap open ios",
+    "cap:assets": "npx capacitor-assets generate --android --ios --assetPath resources --iconBackgroundColor \"#2563EB\" --iconBackgroundColorDark \"#1E40AF\" --splashBackgroundColor \"#2563EB\" --splashBackgroundColorDark \"#1E40AF\"",
+    "cap:build:android": "npm run cap:sync && cd android && .\\gradlew.bat assembleRelease",
+    "cap:bundle:android": "npm run cap:sync && cd android && .\\gradlew.bat bundleRelease",
+    "cap:check": "powershell -ExecutionPolicy Bypass -File ./scripts/check-mobile-prereqs.ps1",
+    "cap:keystore": "powershell -ExecutionPolicy Bypass -File ./scripts/generate-android-keystore.ps1",
+    "cap:keystore:auto": "powershell -ExecutionPolicy Bypass -File ./scripts/generate-android-keystore.ps1 -NonInteractive",
+    "cap:push:setup": "powershell -ExecutionPolicy Bypass -File ./scripts/setup-google-services.ps1"
   },
   "lint-staged": {
     "*.{js,ts,tsx}": [
@@ -50,8 +65,22 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@capacitor/android": "^8.4.2",
+    "@capacitor/app": "^8.1.1",
+    "@capacitor/browser": "^8.0.4",
+    "@capacitor/cli": "^8.4.2",
+    "@capacitor/core": "^8.4.2",
+    "@capacitor/filesystem": "^8.1.2",
+    "@capacitor/ios": "^8.4.2",
+    "@capacitor/keyboard": "^8.0.5",
+    "@capacitor/network": "^8.0.1",
+    "@capacitor/push-notifications": "^8.1.2",
+    "@capacitor/share": "^8.0.1",
+    "@capacitor/splash-screen": "^8.0.2",
+    "@capacitor/status-bar": "^8.0.3",
     "@google-cloud/recaptcha-enterprise": "^4.1.0",
     "@google/genai": "^1.30.0",
+    "@sentry/browser": "^10.27.0",
     "@sentry/node": "^10.27.0",
     "@types/compression": "^1.8.1",
     "@types/pdfkit": "^0.17.4",
@@ -83,10 +112,11 @@
     "pg": "^8.16.3",
     "resend": "^6.7.0",
     "winston": "^3.18.3",
-    "xlsx": "^0.18.5",
+    "xlsx": "npm:@keep-lts/xlsx@0.18.6",
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
     "@eslint/js": "^9.0.0",
     "@firebase/rules-unit-testing": "^4.0.1",
     "@types/cors": "^2.8.19",
@@ -112,6 +142,7 @@
     "vitest": "^4.0.14"
   },
   "overrides": {
-    "@types/node": "^24.10.1"
+    "@types/node": "^24.10.1",
+    "xlsx": "npm:@keep-lts/xlsx@0.18.6"
   }
 }

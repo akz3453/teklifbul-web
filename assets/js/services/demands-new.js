@@ -98,6 +98,9 @@ export async function createDemand(demandData, userId, companyId, itemsData = []
   });
   
   const demandId = newDemandRef.id;
+  import('../analytics.js').then(({ track, ANALYTICS_EVENTS }) => {
+    track(ANALYTICS_EVENTS.DEMAND_CREATED, { status: 'created' });
+  }).catch(() => {});
   
   // Add items
   for (const item of itemsData) {

@@ -29,7 +29,11 @@
 
     <script type="module">
         import { db, auth } from './firebase.js';
+        import { logger } from './src/shared/log/logger.js';
+        import { initAuthGuard } from './assets/js/auth-guard.js';
         import { collection, getDocs, getDoc, doc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+        await initAuthGuard();
 
         const logEl = document.getElementById('log');
         const statusEl = document.getElementById('status');
@@ -50,8 +54,8 @@
             const aid = uData.activeCompanyId;
             const arr0 = Array.isArray(uData.companies) && uData.companies.length ? uData.companies[0] : null;
             
-            // Profesyonel şirket ID'leri (solo- veya tax- ile başlamayanlar) önceliklidir
-            if (cid && typeof cid === "string" && !cid.startsWith("solo-") && !cid.startsWith("tax-")) return cid;
+            // Profesyonel şirket ID'leri (solo- ile başlamayanlar, tax- dahil) önceliklidir
+            if (cid && typeof cid === "string" && !cid.startsWith("solo-")) return cid;
             // Solo ise ama CID varsa (backward support)
             if (aid && typeof aid === "string" && aid.startsWith("solo-") && cid) return cid;
             

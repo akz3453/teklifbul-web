@@ -8,6 +8,16 @@ import { toast } from '../src/shared/ui/toast.js';
 import { logger } from '../src/shared/log/logger.js';
 import { MESSAGES } from '../src/shared/constants/messages.js';
 
+/** Teklifbul Rule v1.0 — XSS escape */
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 export function renderBidTable(demand) {
   const tbody = document.querySelector("#bidTable tbody");
   if (!tbody) {
@@ -23,12 +33,12 @@ export function renderBidTable(demand) {
     const tr = document.createElement("tr");
     tr.dataset.qty = it.qty ?? 0;
     tr.innerHTML = `
-      <td>${it.no ?? idx+1}</td>
-      <td>${it.sku ?? ""}</td>
-      <td>${it.name ?? ""}</td>
-      <td>${it.brand ?? ""}</td>
-      <td>${it.qty ?? 0}</td>
-      <td>${it.unit ?? ""}</td>
+      <td>${escapeHtml(it.no ?? idx+1)}</td>
+      <td>${escapeHtml(it.sku ?? "")}</td>
+      <td>${escapeHtml(it.name ?? "")}</td>
+      <td>${escapeHtml(it.brand ?? "")}</td>
+      <td>${escapeHtml(it.qty ?? 0)}</td>
+      <td>${escapeHtml(it.unit ?? "")}</td>
       <td><input type="number" step="0.0001" min="0" class="unitPrice" placeholder="0"></td>
       <td><input type="number" step="0.1" min="0" class="vatRate" value="20"></td>
       <td class="lineNet">0</td>

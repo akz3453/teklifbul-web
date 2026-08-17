@@ -41,7 +41,7 @@ export async function setupHeader() {
       try { 
         await logout(); 
         // Logout sonrası redirect yapılabilir (tek istisna)
-        location.href = "./index.html"; 
+        location.replace("/login.html"); 
       }
       catch(e){ toast.error("Çıkış hatası: " + (e.message || e)); }
     };

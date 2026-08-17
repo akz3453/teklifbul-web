@@ -1,6 +1,10 @@
 /**
  * Admin Logs Route
  * Teklifbul Rule v1.0 - Güvenlik & Sistem Logları
+ *
+ * Kaynaklar:
+ * - security_logs (authFailure, rateLimitHit, adminAction, serverError)
+ * - error_logs (uygulama hataları → serverError / clientError)
  */
 
 import { Router } from 'express';
@@ -9,25 +13,69 @@ import { requireAdmin } from '../middleware/requireAdmin.js';
 import { logger } from '../../src/shared/log/logger.js';
 import { validateRequest } from '../utils/input-validation.js';
 import { z } from 'zod';
-import fs from 'fs';
-import path from 'path';
-import { Timestamp } from 'firebase-admin/firestore';
+import { Timestamp, type Query } from 'firebase-admin/firestore';
 
 const router = Router();
 
 router.use(verifyToken, requireAdmin);
 
+type AdminLogRow = {
+  id: string;
+  timestamp: string;
+  eventType: string;
+  userId: string | null;
+  email: string | null;
+  method: string | null;
+  path: string | null;
+  ip: string | null;
+  message: string;
+  level: string;
+  source: string;
+};
+
+function periodToMs(period?: string): number {
+  if (period === '7d') return 7 * 24 * 60 * 60 * 1000;
+  if (period === '30d') return 30 * 24 * 60 * 60 * 1000;
+  return 24 * 60 * 60 * 1000;
+}
+
+function toIso(value: any): string | null {
+  if (!value) return null;
+  if (typeof value === 'string') {
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? null : d.toISOString();
+  }
+  if (value?.toDate) {
+    try {
+      return value.toDate().toISOString();
+    } catch {
+      return null;
+    }
+  }
+  if (value instanceof Timestamp) {
+    return value.toDate().toISOString();
+  }
+  if (typeof value === 'number') {
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? null : d.toISOString();
+  }
+  return null;
+}
+
 /**
  * GET /api/admin/logs
- * Güvenlik ve sistem loglarını döndürür
  */
-router.get('/logs',
+router.get(
+  '/logs',
   validateRequest({
     query: z.object({
       limit: z.coerce.number().int().min(1).max(1000).optional().default(200),
-      eventType: z.enum(['all', 'authFailure', 'rateLimitHit', 'adminAction', 'serverError']).optional().default('all'),
-      period: z.enum(['24h', '7d', '30d']).optional().default('24h')
-    })
+      eventType: z
+        .enum(['all', 'authFailure', 'rateLimitHit', 'adminAction', 'serverError', 'clientError'])
+        .optional()
+        .default('all'),
+      period: z.enum(['24h', '7d', '30d']).optional().default('24h'),
+    }),
   }),
   async (req: AuthenticatedRequest, res) => {
     logger.group('Admin logs fetch');
@@ -38,159 +86,158 @@ router.get('/logs',
         period?: string;
       };
 
-      // PERFORMANS: Hem dosya sisteminden hem Firestore'dan log oku
       const { getAdminDb } = await import('../utils/firestore.js');
       const db = await getAdminDb();
-      
-      let logs: any[] = [];
+      if (!db) {
+        logger.end();
+        return res.status(500).json({ error: 'db_unavailable', message: 'Veritabanı bağlantısı yok' });
+      }
 
-      // 1. Firestore'dan logları oku (error_logs collection)
-      if (db) {
-        try {
-          const now = new Date();
-          const periodMs = period === '24h' ? 24 * 60 * 60 * 1000 : period === '7d' ? 7 * 24 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000;
-          const startTime = new Date(now.getTime() - periodMs);
-          const startTimestamp = Timestamp.fromDate(startTime);
-          
-          // error_logs collection'dan oku
-          // PERFORMANS: Sadece son 30 gün içindeki logları getir
-          const errorLogsQuery = db.collection('error_logs')
+      const maxLimit = Math.min(Number(limit) || 200, 500);
+      const startTime = new Date(Date.now() - periodToMs(period));
+      const startTimestamp = Timestamp.fromDate(startTime);
+      const logs: AdminLogRow[] = [];
+
+      // 1) security_logs
+      try {
+        let securityQuery: Query = db
+          .collection('security_logs')
+          .where('timestamp', '>=', startTimestamp)
+          .orderBy('timestamp', 'desc')
+          .limit(maxLimit);
+
+        if (eventType && eventType !== 'all' && eventType !== 'clientError') {
+          securityQuery = db
+            .collection('security_logs')
+            .where('eventType', '==', eventType)
             .where('timestamp', '>=', startTimestamp)
             .orderBy('timestamp', 'desc')
-            .limit(Math.min(limit || 200, 500)); // Max 500
-          
-          const errorLogsSnapshot = await errorLogsQuery.get();
-          
-          errorLogsSnapshot.docs.forEach(doc => {
-            const data = doc.data();
-            const timestamp = data.timestamp?.toDate?.()?.toISOString() || 
-                             (data.timestamp instanceof Timestamp ? data.timestamp.toDate().toISOString() : null) ||
-                             (data.lastOccurred?.toDate?.()?.toISOString()) ||
-                             new Date().toISOString();
-            
-            // Event type mapping
-            let eventType = 'unknown';
-            if (data.type === 'backend') {
-              eventType = 'serverError';
-            } else if (data.type === 'frontend') {
-              eventType = 'clientError';
-            } else if (data.severity === 'critical' || data.severity === 'high') {
-              eventType = 'serverError';
-            }
-            
+            .limit(maxLimit);
+        }
+
+        if (eventType !== 'clientError') {
+          const snap = await securityQuery.get();
+          snap.docs.forEach((doc) => {
+            const data = doc.data() || {};
+            const ts =
+              toIso(data.timestamp) ||
+              toIso(data.createdAt) ||
+              new Date().toISOString();
             logs.push({
               id: doc.id,
-              timestamp,
-              eventType,
-              userId: data.userId || data.userEmail || null,
+              timestamp: ts,
+              eventType: String(data.eventType || 'unknown'),
+              userId: data.userId || null,
+              email: data.email || null,
+              method: data.method || null,
+              path: data.path || null,
+              ip: data.ip || null,
+              message: String(data.message || data.reason || data.action || 'Security event'),
+              level: String(data.level || 'info'),
+              source: 'security_logs',
+            });
+          });
+        }
+      } catch (securityErr: any) {
+        logger.warn('security_logs query failed, fallback', securityErr?.message || securityErr);
+        try {
+          const fallback = await db.collection('security_logs').orderBy('timestamp', 'desc').limit(maxLimit).get();
+          fallback.docs.forEach((doc) => {
+            const data = doc.data() || {};
+            const ts = toIso(data.timestamp) || toIso(data.createdAt);
+            if (!ts || new Date(ts).getTime() < startTime.getTime()) return;
+            const rowType = String(data.eventType || 'unknown');
+            if (eventType && eventType !== 'all' && rowType !== eventType) return;
+            logs.push({
+              id: doc.id,
+              timestamp: ts,
+              eventType: rowType,
+              userId: data.userId || null,
+              email: data.email || null,
+              method: data.method || null,
+              path: data.path || null,
+              ip: data.ip || null,
+              message: String(data.message || data.reason || data.action || 'Security event'),
+              level: String(data.level || 'info'),
+              source: 'security_logs',
+            });
+          });
+        } catch (fallbackErr: any) {
+          logger.warn('security_logs fallback failed', fallbackErr?.message || fallbackErr);
+        }
+      }
+
+      // 2) error_logs (panel Hatalar sekmesinden ayrı; log özetine de ekle)
+      if (!eventType || eventType === 'all' || eventType === 'serverError' || eventType === 'clientError') {
+        try {
+          const errorSnap = await db
+            .collection('error_logs')
+            .where('timestamp', '>=', startTimestamp)
+            .orderBy('timestamp', 'desc')
+            .limit(maxLimit)
+            .get();
+
+          errorSnap.docs.forEach((doc) => {
+            const data = doc.data() || {};
+            const mappedType =
+              data.type === 'frontend' ? 'clientError' : 'serverError';
+            if (eventType && eventType !== 'all' && mappedType !== eventType) return;
+
+            const ts =
+              toIso(data.timestamp) ||
+              toIso(data.lastOccurred) ||
+              toIso(data.createdAt) ||
+              new Date().toISOString();
+
+            logs.push({
+              id: `err_${doc.id}`,
+              timestamp: ts,
+              eventType: mappedType,
+              userId: data.userId || null,
               email: data.userEmail || null,
               method: data.method || null,
               path: data.path || data.url || null,
               ip: data.ip || null,
-              message: data.message || data.error || 'No message',
-              level: data.severity || 'info',
-              type: data.type || 'unknown',
-              severity: data.severity || 'low'
+              message: String(data.message || data.error || 'Error log'),
+              level: String(data.severity || 'info'),
+              source: 'error_logs',
             });
           });
-          
-          logger.info('Firestore logs fetched', { count: errorLogsSnapshot.size });
-        } catch (firestoreError: any) {
-          // Index hatası olabilir, sessizce devam et
-          if (firestoreError.message?.includes('index')) {
-            logger.warn('Firestore index required for logs', { error: firestoreError.message });
-          } else {
-            logger.warn('Firestore log read failed', { error: firestoreError.message });
-          }
+        } catch (errorLogsErr: any) {
+          logger.warn('error_logs for admin logs failed', errorLogsErr?.message || errorLogsErr);
         }
       }
 
-      // 2. Dosya sisteminden logları oku (fallback)
-      const logFilePath = process.env.LOG_FILE_PATH || path.join(process.cwd(), 'logs', 'security.log');
-      const errorLogFilePath = process.env.LOG_FILE_PATH?.replace('.log', '-error.log') || path.join(process.cwd(), 'logs', 'security-error.log');
+      logs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      const limited = logs.slice(0, maxLimit);
 
-      const readLogFile = (filePath: string): string[] => {
-        try {
-          if (fs.existsSync(filePath)) {
-            return fs.readFileSync(filePath, 'utf-8').split('\n').filter(line => line.trim());
-          }
-        } catch (error) {
-          logger.warn('Log file read failed', { filePath, error });
-        }
-        return [];
-      };
-
-      const securityLogs = readLogFile(logFilePath);
-      const errorLogs = readLogFile(errorLogFilePath);
-
-      // JSON logları parse et
-      const parseLogs = (logLines: string[]): any[] => {
-        return logLines
-          .map(line => {
-            try {
-              return JSON.parse(line);
-            } catch {
-              return null;
-            }
-          })
-          .filter(log => log !== null);
-      };
-
-      const parsedSecurityLogs = parseLogs(securityLogs);
-      const parsedErrorLogs = parseLogs(errorLogs);
-
-      // Dosya sisteminden gelen logları da ekle
-      logs = [...logs, ...parsedSecurityLogs, ...parsedErrorLogs];
-
-      // Event type filtresi
-      if (eventType && eventType !== 'all') {
-        logs = logs.filter(log => {
-          const logEventType = log.eventType || log.level || 'unknown';
-          return logEventType.toLowerCase().includes(eventType.toLowerCase());
-        });
-      }
-
-      // Period filtresi
-      const now = new Date();
-      const periodMs = period === '24h' ? 24 * 60 * 60 * 1000 : period === '7d' ? 7 * 24 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000;
-      logs = logs.filter(log => {
-        const logTime = log.timestamp ? new Date(log.timestamp) : null;
-        if (!logTime) return false;
-        return (now.getTime() - logTime.getTime()) <= periodMs;
+      logger.info('Admin logs fetched', {
+        count: limited.length,
+        eventType,
+        period,
+        securityCount: limited.filter((l) => l.source === 'security_logs').length,
+        errorCount: limited.filter((l) => l.source === 'error_logs').length,
       });
-
-      // Sırala (en yeni önce)
-      logs.sort((a, b) => {
-        const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
-        const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
-        return timeB - timeA;
-      });
-
-      // Limit uygula
-      logs = logs.slice(0, limit || 200);
-
-      // Hassas bilgileri temizle
-      logs = logs.map(log => {
-        const cleanLog: any = { ...log };
-        delete cleanLog.password;
-        delete cleanLog.token;
-        delete cleanLog.secret;
-        delete cleanLog.apiKey;
-        delete cleanLog.authorization;
-        delete cleanLog.cookie;
-        return cleanLog;
-      });
-
-      logger.info('Admin logs fetched', { count: logs.length, eventType, period });
       logger.end();
-      return res.json({ logs });
+      return res.json({
+        ok: true,
+        logs: limited,
+        meta: {
+          count: limited.length,
+          period,
+          eventType,
+          note:
+            limited.length === 0
+              ? 'Bu dönemde kayıt yok. Yeni güvenlik olayları (auth, rate limit, admin aksiyon) otomatik kaydedilir.'
+              : null,
+        },
+      });
     } catch (error: any) {
       logger.error('Admin logs fetch error', error);
       logger.end();
-      return res.status(500).json({ error: 'LOGS_ERROR', message: error.message });
+      return res.status(500).json({ error: 'LOGS_ERROR', message: error.message || 'Loglar yüklenemedi' });
     }
   }
 );
 
 export default router;
-

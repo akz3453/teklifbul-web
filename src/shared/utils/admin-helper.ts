@@ -3,7 +3,6 @@
  * Teklifbul Rule v1.0 - Admin kimlik tespiti: Merkezi helper fonksiyonlar
  */
 
-import { auth } from '/firebase.js';
 import { logger } from '../log/logger.js';
 
 /**
@@ -20,27 +19,10 @@ export async function isAdmin(user: any): Promise<boolean> {
     // Custom claims'den admin kontrolü
     const tokenResult = await user.getIdTokenResult();
     const claims = tokenResult.claims || {};
-    
-    let isAdmin = claims.admin === true || claims.role === 'admin';
-    let isOps = claims.ops === true || claims.role === 'ops';
-    
-    if (isAdmin || isOps) {
-      return true;
-    }
-
-    // Eğer custom claims'de admin yoksa Firestore'dan kontrol et
-    const { db } = await import('/firebase.js');
-    const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js');
-    
-    const userDoc = await getDoc(doc(db, 'users', user.uid));
-    if (userDoc.exists()) {
-      const userData = userDoc.data();
-      isAdmin = userData?.isAdmin === true || userData?.role === 'admin';
-      isOps = userData?.isOps === true || userData?.role === 'ops';
-      return isAdmin || isOps;
-    }
-
-    return false;
+    return claims.superAdmin === true
+      || claims.admin === true
+      || claims.isAdmin === true
+      || claims.role === 'admin';
   } catch (error) {
     logger.warn('Admin check failed', error);
     return false;
@@ -52,6 +34,7 @@ export async function isAdmin(user: any): Promise<boolean> {
  * @returns Promise<boolean>
  */
 export async function isCurrentUserAdmin(): Promise<boolean> {
+  const { auth } = await import('/firebase.js');
   const user = auth.currentUser;
   if (!user) {
     return false;

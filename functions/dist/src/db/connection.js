@@ -1,0 +1,113 @@
+/**
+ * PostgreSQL Connection Pool
+ * Teklifbul Rule v1.0 - Structured Logging
+ */
+import pkg from 'pg';
+const { Pool } = pkg;
+import Redis from 'ioredis';
+import { logger } from '../shared/log/logger.js';
+let pgPool = null;
+let redisClient = null;
+// PostgreSQL connection config
+function createPgPool() {
+    const config = {
+        host: process.env.POSTGRES_HOST || 'localhost',
+        port: Number(process.env.POSTGRES_PORT) || 5432,
+        database: process.env.POSTGRES_DB || 'teklifbul',
+        user: process.env.POSTGRES_USER || 'postgres',
+        password: process.env.POSTGRES_PASSWORD || '',
+        max: Number(process.env.POSTGRES_MAX_CONNECTIONS) || 50, // Connection pool size (artırıldı)
+        min: Number(process.env.POSTGRES_MIN_CONNECTIONS) || 5, // Minimum bağlantı sayısı
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 2000,
+        allowExitOnIdle: false, // Pool'u idle durumda kapatma
+    };
+    return new Pool(config);
+}
+// Redis connection
+function createRedisClient() {
+    // REDIS_URL varsa onu kullan, yoksa host/port/password kombinasyonu
+    const redisUrl = process.env.REDIS_URL || process.env.REDIS_HOST
+        ? `redis://${process.env.REDIS_PASSWORD ? `:${process.env.REDIS_PASSWORD}@` : ''}${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || 6379}`
+        : 'redis://127.0.0.1:6379';
+    return new Redis(redisUrl, {
+        maxRetriesPerRequest: 3,
+        retryStrategy: (times) => Math.min(times * 200, 2000),
+        lazyConnect: true, // Otomatik bağlanma, manuel ping() ile test edelim
+    });
+}
+export function getPgPool() {
+    if (!pgPool) {
+        const pool = createPgPool();
+        pgPool = pool;
+        // Error handling
+        pool.on('error', (err) => {
+            // prefer unknown over any; log safely
+            logger.error('Unexpected PostgreSQL pool error:', err);
+        });
+        // Connection pool monitoring (her 1 dakikada bir)
+        if (process.env.NODE_ENV === 'production' || process.env.ENABLE_POOL_MONITORING === '1') {
+            setInterval(() => {
+                const stats = {
+                    total: pool.totalCount,
+                    idle: pool.idleCount,
+                    waiting: pool.waitingCount,
+                    active: (pool.totalCount || 0) - (pool.idleCount || 0)
+                };
+                logger.info('PostgreSQL Pool Stats', stats);
+                // Uyarı: Pool tükeniyorsa
+                if (stats.waiting > 5) {
+                    logger.warn('PostgreSQL pool tükeniyor!', stats);
+                }
+            }, 60000); // Her 1 dakikada bir
+        }
+    }
+    // pgPool is guaranteed to be set here
+    return pgPool;
+}
+export function getRedisClient() {
+    // Cache disabled kontrolü
+    if (process.env.CACHE_DISABLED === '1') {
+        return null;
+    }
+    if (!redisClient) {
+        redisClient = createRedisClient();
+        redisClient.on('error', (err) => {
+            // Geliştirme modunda sadece uyarı ver, uygulamayı durdurma
+            const msg = err instanceof Error ? err.message : String(err);
+            if (process.env.NODE_ENV !== 'production') {
+                logger.warn('⚠️  Redis client error (cache disabled):', msg);
+            }
+            else {
+                logger.error('Redis client error:', err);
+            }
+        });
+        redisClient.on('connect', () => {
+            logger.info('✅ Redis connected');
+        });
+    }
+    return redisClient;
+}
+// Graceful shutdown
+export async function closeConnections() {
+    if (pgPool) {
+        await pgPool.end();
+        pgPool = null;
+    }
+    if (redisClient) {
+        redisClient.disconnect();
+        redisClient = null;
+    }
+}
+// Test connection
+export async function testConnection() {
+    try {
+        const pool = getPgPool();
+        await pool.query('SELECT 1');
+        return true;
+    }
+    catch (e) {
+        logger.error('PostgreSQL connection test failed:', e);
+        return false;
+    }
+}

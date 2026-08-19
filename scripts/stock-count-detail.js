@@ -7,7 +7,6 @@
 import DOMPurify from 'https://cdn.jsdelivr.net/npm/dompurify@3.2.2/+esm';
 import { db, auth, requireAuth } from '/firebase.js';
 import { collection, getDocs, query, where, orderBy, addDoc, updateDoc, doc, getDoc, serverTimestamp, deleteDoc, limit } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
-import { updateStockBalance } from '/scripts/inventory-balances.js';
 import { searchStocks } from '/scripts/lib/stock-search.js';
 import { toast } from '../src/shared/ui/toast.js';
 // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
@@ -15,6 +14,7 @@ import { MESSAGES } from '../src/shared/constants/messages.js';
 import { logger } from '../src/shared/log/logger.js';
 import { requireCompanyContext } from '../assets/js/state/company-context.js';
 import { initPermissions, can, requirePerm, getStockPerms } from '../assets/js/state/permissions.js';
+import { authFetch } from '../assets/js/utils/api-helpers.js';
 
 // ExcelJS global (CDN'den yükleniyor)
 const ExcelJS = window.ExcelJS;
@@ -1137,41 +1137,32 @@ async function handleApproveCount() {
         const stockDoc = await getDoc(doc(db, 'stocks', item.stockId));
         if (!stockDoc.exists()) continue;
 
-        const stockData = stockDoc.data();
-
-        // Teklifbul Rule v1.0 - ADJUST hareketi: qty direkt yeni miktar olmalı (difference değil)
-        // ADJUST tipinde qty, stok bakiyesinin yeni değeridir (sayılan miktar)
         const newQuantity = item.countedQuantity;
+        const siteId = state.countData.locationId?.startsWith('site_')
+          ? state.countData.locationId.replace('site_', '')
+          : null;
 
-        // Create ADJUST movement
-        const movementRef = await addDoc(collection(db, 'stock_movements'), {
-          stockId: item.stockId,
-          sku: item.sku,
-          locationId: state.countData.locationId,
-          siteId: state.countData.locationId?.startsWith('site_') ? state.countData.locationId.replace('site_', '') : null,
-          type: 'ADJUST',
-          qty: newQuantity, // ADJUST tipinde qty yeni miktar (sayılan miktar)
-          unit: item.unit || 'ADT',
-          unitCost: 0,
-          totalCost: 0,
-          ref: { kind: 'STOCK_COUNT', id: state.countId },
-          stockName: item.stockName,
-          createdBy: user.uid,
-          createdAt: serverTimestamp()
+        const response = await authFetch('/api/stock-movements', {
+          method: 'POST',
+          body: JSON.stringify({
+            type: 'ADJUST',
+            stockId: item.stockId,
+            sku: item.sku,
+            stockName: item.stockName,
+            unit: item.unit || 'ADT',
+            locationId: state.countData.locationId,
+            siteId,
+            qty: newQuantity,
+            unitCost: 0,
+            ref: { kind: 'STOCK_COUNT', id: state.countId },
+            createdByName: user.displayName || user.email || null,
+          }),
         });
 
-        // Update stock balance
-        // ADJUST tipinde updateStockBalance fonksiyonu qty'yi direkt yeni miktar olarak kullanır
-        await updateStockBalance({
-          id: movementRef.id,
-          companyId: state.companyId,
-          stockId: item.stockId,
-          sku: item.sku,
-          locationId: state.countData.locationId,
-          type: 'ADJUST',
-          qty: newQuantity, // Yeni miktar (sayılan miktar)
-          unitCost: 0
-        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok || result.ok === false) {
+          throw new Error(result.error || result.message || 'ADJUST kaydı başarısız');
+        }
 
         createdMovements++;
       } catch (itemError) {
@@ -1459,7 +1450,11 @@ async function handleBarcodeScan(barcode) {
     if (!stock) {
       const resultDiv = qs('#barcodeResult');
       if (resultDiv) {
-        resultDiv.innerHTML = `<span style="color:#ef4444">❌ Barkod bulunamadı: ${barcode}</span>`;
+        resultDiv.textContent = '';
+        const span = document.createElement('span');
+        span.style.color = '#ef4444';
+        span.textContent = `❌ Barkod bulunamadı: ${barcode}`;
+        resultDiv.appendChild(span);
       }
       toast.error(`Barkod bulunamadı: ${barcode}`);
       // Input'u temizle ve tekrar focus ver

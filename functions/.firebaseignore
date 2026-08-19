@@ -1,0 +1,28 @@
+# Teklifbul Rule v1.0 — functions paketleme
+# Root .gitignore'daki functions/dist ignore'unu override et
+
+node_modules/
+excel-export/
+.git/
+*.local
+firebase-debug.log
+firebase-debug.*.log
+**/*.map
+**/__tests__/
+**/*.test.js
+**/*.test.ts
+
+# Explicit keep (Firebase: .firebaseignore + gitignore birlikte uygulanabilir)
+!dist/
+!dist/**
+!src/
+!src/**
+!package.json
+!package-lock.json
+!tsconfig.json
+!index.js
+!api-server.js
+!debug.js
+!get-url.js
+!scripts/
+!scripts/**

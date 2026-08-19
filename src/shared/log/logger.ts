@@ -24,20 +24,35 @@ let Sentry: any = null;
 let sentryInitialized = false;
 let sentryInitPromise: Promise<void> | null = null;
 
+function getBrowserSentryDsn(): string {
+  try {
+    if (typeof import.meta !== 'undefined' && 'env' in import.meta) {
+      const env = (import.meta as { env?: { VITE_SENTRY_DSN?: string } }).env;
+      if (env?.VITE_SENTRY_DSN) return String(env.VITE_SENTRY_DSN);
+    }
+  } catch {
+    // ignore
+  }
+  if (typeof window !== 'undefined') {
+    const fromWindow = (window as { VITE_SENTRY_DSN?: string }).VITE_SENTRY_DSN;
+    if (fromWindow) return String(fromWindow);
+  }
+  return '';
+}
+
 // Sentry initialization (async, lazy load)
 async function initializeSentry() {
   if (sentryInitialized) {
-    return; // Zaten initialize edilmişse
+    return;
   }
-  
-  // Eğer initialization devam ediyorsa, promise'i bekle
+
   if (sentryInitPromise) {
     return sentryInitPromise;
   }
-  
+
   // Server-side Sentry (Node.js)
-  if (typeof process !== 'undefined') {
-    if (process.env.NODE_ENV === 'production' && process.env.SENTRY_DSN) {
+  if (typeof process !== 'undefined' && process.env?.SENTRY_DSN) {
+    if (process.env.NODE_ENV === 'production') {
       sentryInitPromise = (async () => {
         try {
           const sentryModule = await import('@sentry/node');
@@ -45,14 +60,12 @@ async function initializeSentry() {
           Sentry.init({
             dsn: process.env.SENTRY_DSN,
             environment: process.env.NODE_ENV || 'production',
-            tracesSampleRate: Number(process.env.SENTRY_TRACES_SAMPLE_RATE) || 0.1, // %10 sample
+            tracesSampleRate: Number(process.env.SENTRY_TRACES_SAMPLE_RATE) || 0.1,
             beforeSend(event: any) {
-              // Teklifbul Rule v1.0 - Hassas bilgileri filtrele
               if (event.request?.headers) {
                 delete event.request.headers['authorization'];
                 delete event.request.headers['cookie'];
               }
-              // Request body'deki hassas bilgileri filtrele
               if (event.request?.data) {
                 const sensitiveFields = ['password', 'token', 'secret', 'apiKey'];
                 sensitiveFields.forEach(field => {
@@ -65,7 +78,6 @@ async function initializeSentry() {
             }
           });
           sentryInitialized = true;
-          console.info('✅ Sentry initialized (server-side)');
         } catch (error) {
           console.warn('⚠️  Sentry initialization failed', error);
           sentryInitPromise = null;
@@ -74,26 +86,43 @@ async function initializeSentry() {
       return sentryInitPromise;
     }
   }
-  
-  // Browser-side Sentry (Frontend)
+
+  // Teklifbul Rule v1.0 — Browser Sentry (VITE_SENTRY_DSN varsa)
   if (typeof window !== 'undefined' && isProd) {
-    // Frontend Sentry entegrasyonu için hazır
-    // Not: Frontend Sentry için ayrı bir init gerekebilir (@sentry/browser)
-    // Şimdilik server-side Sentry kullanılıyor
+    const dsn = getBrowserSentryDsn();
+    if (!dsn) return;
+    sentryInitPromise = (async () => {
+      try {
+        const sentryModule = await import('@sentry/browser');
+        Sentry = sentryModule;
+        Sentry.init({
+          dsn,
+          environment: 'production',
+          tracesSampleRate: 0.1,
+          beforeSend(event: any) {
+            if (event.request?.headers) {
+              delete event.request.headers['authorization'];
+              delete event.request.headers['cookie'];
+            }
+            return event;
+          }
+        });
+        sentryInitialized = true;
+      } catch (error) {
+        console.warn('⚠️  Browser Sentry initialization failed', error);
+        sentryInitPromise = null;
+      }
+    })();
+    return sentryInitPromise;
   }
 }
 
-// Lazy initialization (ilk error'da çağrılır)
 async function sendErrorToSentry(message: string, err?: unknown) {
-  // Server-side: Sentry'yi lazy initialize et
-  if (typeof process !== 'undefined' && !sentryInitialized) {
-    await initializeSentry().catch(() => {
-      // Silent fail
-    });
+  if (!sentryInitialized) {
+    await initializeSentry().catch(() => {});
   }
-  
-  // Sentry capture (server-side)
-  if (Sentry && typeof process !== 'undefined' && sentryInitialized) {
+
+  if (Sentry && sentryInitialized) {
     try {
       if (err instanceof Error) {
         Sentry.captureException(err, {
@@ -109,15 +138,8 @@ async function sendErrorToSentry(message: string, err?: unknown) {
         Sentry.captureMessage(message, { level: 'error' });
       }
     } catch (sentryError) {
-      // Sentry capture hatası kritik değil, sessizce devam et
       console.warn('Sentry capture failed', sentryError);
     }
-  }
-  
-  // Browser-side: Frontend Sentry kullanılabilir (gelecekte eklenebilir)
-  if (typeof window !== 'undefined' && isProd) {
-    // Frontend Sentry entegrasyonu için hazır
-    // Örnek: window.Sentry?.captureException(err, { extra: { message } });
   }
 }
 

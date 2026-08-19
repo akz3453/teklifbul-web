@@ -86,6 +86,9 @@ export async function acceptBid(bidId, userId) {
   try {
     // Update bid status to "accepted"
     await updateBidStatus(bidId, "accepted", userId, "Bid accepted by buyer");
+    import('./assets/js/analytics.js').then(({ track, ANALYTICS_EVENTS }) => {
+      track(ANALYTICS_EVENTS.BID_ACCEPTED, { method: 'standard' });
+    }).catch(() => {});
     
     // In a real implementation, you might also:
     // 1. Update the demand status

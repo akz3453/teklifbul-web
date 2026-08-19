@@ -151,9 +151,9 @@ router.post(
         pageUrl: body.pageUrl
       });
 
-      // Get companyId
-      let companyId: string | null = body.companyId || null;
-      if (!companyId && req.user) {
+      // Teklifbul Rule v1.0 — companyId yalnız üyelik doğrulanmış bağlam; anonim/spoof yok sayılır
+      let companyId: string | null = null;
+      if (req.user) {
         companyId = await getCompanyIdFromRequest(req);
       }
 
@@ -250,7 +250,15 @@ router.get(
         );
       }
 
-      const { companyId, limit, severity } = validationResult.data;
+      const { companyId: requestedCompanyId, limit, severity } = validationResult.data;
+      const companyId = await getCompanyIdFromRequest(req);
+      if (!companyId || companyId !== requestedCompanyId) {
+        logger.warn('Client error list: companyId spoof engellendi', {
+          userId: req.user?.uid,
+          requestedCompanyId
+        });
+        return respondError(res, Errors.forbidden('Yetkisiz erişim'));
+      }
 
       // Get Firestore
       const db = await getAdminDb();

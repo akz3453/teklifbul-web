@@ -273,6 +273,7 @@
   <script type="module">
     // Teklifbul Rule v1.0 - XSS Protection
     import DOMPurify from 'https://cdn.jsdelivr.net/npm/dompurify@3.2.2/+esm';
+    import { setTableEmpty, appendTextCell } from '../../assets/js/utils/safe-table.js';
     // Teklifbul Rule v1.0
     import { initGlobalHeader } from '../../assets/js/ui/header.js';
     import { requireAuth, db } from '../../firebase.js';
@@ -589,7 +590,8 @@
         const tbody = document.getElementById('users-table-body');
         
         if (!data.users || data.users.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px;">Kullanıcı bulunamadı</td></tr>';
+          // Teklifbul Rule v1.0 — DOMPurify <tr>/<td>'yi table dışında siler; createElement kullan
+          setTableEmpty(tbody, 9, 'Kullanıcı bulunamadı');
           document.getElementById('pagination-info').textContent = '0 kullanıcı';
           return;
         }
@@ -639,76 +641,91 @@
           `${startIdx + 1}-${Math.min(endIdx, filteredUsers.length)} / ${filteredUsers.length} kullanıcı`;
         
         if (paginatedUsers.length === 0) {
-          // Teklifbul Rule v1.0 - XSS Protection
-          tbody.innerHTML = DOMPurify.sanitize('<tr><td colspan="9" style="text-align: center; padding: 40px;">Filtre kriterlerine uygun kullanıcı bulunamadı</td></tr>');
+          // Teklifbul Rule v1.0 — DOMPurify <tr>/<td>'yi table dışında siler; createElement kullan
+          setTableEmpty(tbody, 9, 'Filtre kriterlerine uygun kullanıcı bulunamadı');
           return;
         }
         
-        // Teklifbul Rule v1.0 - XSS Protection: Sanitize helper
-        const sanitize = (str) => DOMPurify.sanitize(String(str || ''), { ALLOWED_TAGS: [] });
-        const sanitizeAttr = (str) => DOMPurify.sanitize(String(str || ''), { ALLOWED_TAGS: [] });
-        
-        const html = paginatedUsers.map(u => {
+        // Teklifbul Rule v1.0 — DOMPurify <tr>/<td>'yi table dışında siler; createElement kullan
+        tbody.textContent = '';
+        paginatedUsers.forEach((u) => {
           const email = u.email || u.contactEmails?.[0] || '-';
           const expiresDate = u.expiresAt ? (u.expiresAt instanceof Date ? u.expiresAt : new Date(u.expiresAt)) : null;
           const startDate = u.subscriptionStartedAt ? (u.subscriptionStartedAt instanceof Date ? u.subscriptionStartedAt : new Date(u.subscriptionStartedAt)) : null;
-          
-          // Kalan süre hesapla
-          let remainingDays = '-';
+          const planId = u.planId || 'free';
+          const aiProvider = u.ai_provider ? (u.ai_provider === 'gemini' ? '🤖 Gemini' : '🤖 OpenAI') : '-';
+
+          const tr = document.createElement('tr');
+
+          const emailTd = document.createElement('td');
+          const emailStrong = document.createElement('strong');
+          emailStrong.textContent = email;
+          emailTd.appendChild(emailStrong);
+          tr.appendChild(emailTd);
+
+          const uidTd = appendTextCell(tr, u.uid || '');
+          uidTd.style.cssText = 'font-size: 11px; font-family: monospace; max-width: 150px; overflow: hidden; text-overflow: ellipsis;';
+
+          const planTd = document.createElement('td');
+          planTd.innerHTML = DOMPurify.sanitize(getPlanBadge(planId), {
+            ALLOWED_TAGS: ['span'],
+            ALLOWED_ATTR: ['class', 'style']
+          });
+          tr.appendChild(planTd);
+
+          appendTextCell(tr, aiProvider);
+          appendTextCell(
+            tr,
+            startDate ? startDate.toLocaleDateString('tr-TR', { year: 'numeric', month: 'short', day: 'numeric' }) : '-'
+          );
+          appendTextCell(
+            tr,
+            expiresDate ? expiresDate.toLocaleDateString('tr-TR', { year: 'numeric', month: 'short', day: 'numeric' }) : '-'
+          );
+
+          const remainingTd = document.createElement('td');
           if (expiresDate) {
             const now = new Date();
-            const diffTime = expiresDate - now;
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            
+            const diffDays = Math.ceil((expiresDate - now) / (1000 * 60 * 60 * 24));
             if (diffDays < 0) {
-              remainingDays = `<span style="color: #ef4444;">Süresi dolmuş (${Math.abs(diffDays)} gün önce)</span>`;
+              const span = document.createElement('span');
+              span.style.color = '#ef4444';
+              span.textContent = `Süresi dolmuş (${Math.abs(diffDays)} gün önce)`;
+              remainingTd.appendChild(span);
             } else if (diffDays <= 7) {
-              remainingDays = `<span style="color: #f59e0b;">${diffDays} gün kaldı</span>`;
+              const span = document.createElement('span');
+              span.style.color = '#f59e0b';
+              span.textContent = `${diffDays} gün kaldı`;
+              remainingTd.appendChild(span);
             } else {
-              remainingDays = `${diffDays} gün`;
+              remainingTd.textContent = `${diffDays} gün`;
             }
+          } else {
+            remainingTd.textContent = '-';
           }
-          
-          // Sanitize user input - Teklifbul Rule v1.0 - XSS Protection
-          const safeEmail = sanitize(email);
-          const safeUid = sanitize(u.uid || '');
-          const safeCompanyId = sanitize(u.companyId || u.activeCompanyId || '-');
-          const safePlanBadge = getPlanBadge(u.planId || 'free'); // getPlanBadge zaten güvenli HTML döndürüyor
-          const aiProvider = u.ai_provider ? (u.ai_provider === 'gemini' ? '🤖 Gemini' : '🤖 OpenAI') : '-';
-          const safeStartDate = startDate ? sanitize(startDate.toLocaleDateString('tr-TR', { year: 'numeric', month: 'short', day: 'numeric' })) : '-';
-          const safeExpiresDate = expiresDate ? sanitize(expiresDate.toLocaleDateString('tr-TR', { year: 'numeric', month: 'short', day: 'numeric' })) : '-';
-          const safeRemainingDays = DOMPurify.sanitize(remainingDays, { ALLOWED_TAGS: ['span'], ALLOWED_ATTR: ['style'] });
-          
-          return `
-            <tr>
-              <td><strong>${safeEmail}</strong></td>
-              <td style="font-size: 11px; font-family: monospace; max-width: 150px; overflow: hidden; text-overflow: ellipsis;">${safeUid}</td>
-              <td>${safePlanBadge}</td>
-              <td>${sanitize(aiProvider)}</td>
-              <td>${safeStartDate}</td>
-              <td>${safeExpiresDate}</td>
-              <td>${safeRemainingDays}</td>
-              <td style="font-size: 11px; font-family: monospace; max-width: 150px; overflow: hidden; text-overflow: ellipsis;">${safeCompanyId}</td>
-              <td>
-                <button class="btn btn-primary" style="padding: 6px 12px; font-size: 12px;" 
-                        onclick="editUser('${sanitizeAttr(u.uid)}', '${sanitizeAttr(email)}')">Düzenle</button>
-              </td>
-            </tr>
-          `;
-        }).join('');
-        
-        // Sanitize final HTML - Teklifbul Rule v1.0 - XSS Protection
-        tbody.innerHTML = DOMPurify.sanitize(html, {
-          ALLOWED_TAGS: ['tr', 'td', 'strong', 'button', 'span'],
-          ALLOWED_ATTR: ['class', 'style', 'onclick', 'colspan']
+          tr.appendChild(remainingTd);
+
+          const companyTd = appendTextCell(tr, u.companyId || u.activeCompanyId || '-');
+          companyTd.style.cssText = 'font-size: 11px; font-family: monospace; max-width: 150px; overflow: hidden; text-overflow: ellipsis;';
+
+          const actionsTd = document.createElement('td');
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'btn btn-primary';
+          btn.style.cssText = 'padding: 6px 12px; font-size: 12px;';
+          btn.textContent = 'Düzenle';
+          btn.setAttribute('aria-label', 'Kullanıcıyı düzenle');
+          btn.addEventListener('click', () => window.editUser(String(u.uid || ''), String(email)));
+          actionsTd.appendChild(btn);
+          tr.appendChild(actionsTd);
+
+          tbody.appendChild(tr);
         });
       } catch (error) {
         logger.error('Kullanıcı listesi yükleme hatası', error);
-        // Teklifbul Rule v1.0 - XSS Protection: Sanitize error message
-        const errorMsg = DOMPurify.sanitize(error.message || 'Bilinmeyen hata', { ALLOWED_TAGS: [] });
-        document.getElementById('users-table-body').innerHTML = DOMPurify.sanitize(
-          '<tr><td colspan="9" style="text-align: center; padding: 40px; color: #ef4444;">Hata: ' + errorMsg + '</td></tr>'
-        );
+        // Teklifbul Rule v1.0 — DOMPurify <tr>/<td>'yi table dışında siler; createElement kullan
+        const errorMsg = String(error.message || 'Bilinmeyen hata');
+        setTableEmpty(document.getElementById('users-table-body'), 9, 'Hata: ' + errorMsg);
       }
     }
     

@@ -142,8 +142,7 @@
     import { db, auth, requireAuth } from './firebase.js';
     import { doc, getDoc, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
     import { toast } from './src/shared/ui/toast.js';
-    // Teklifbul Rule v1.0 - XSS Protection: Import DOMPurify
-    import DOMPurify from 'https://cdn.jsdelivr.net/npm/dompurify@3.2.2/+esm';
+    import { setTableEmpty, appendTextCell } from '/assets/js/utils/safe-table.js';
 
     // Initialize global header
     initGlobalHeader({ mount: '#app-header', activeRoute: 'internal-demand-detail' });
@@ -269,35 +268,32 @@
       itemsBody.innerHTML = '';
 
       if (!internalDemand.items || internalDemand.items.length === 0) {
-        // Teklifbul Rule v1.0 - XSS Protection: Sanitize empty state HTML
-        itemsBody.innerHTML = DOMPurify.sanitize('<tr><td colspan="7" style="text-align:center; padding:20px; color:#6b7280;">Kalem bulunamadı</td></tr>', {
-          ALLOWED_TAGS: ['tr', 'td'],
-          ALLOWED_ATTR: ['colspan', 'style']
-        });
+        // Teklifbul Rule v1.0 — DOMPurify <tr>/<td>'yi table dışında siler; createElement kullan
+        setTableEmpty(itemsBody, 7, 'Kalem bulunamadı');
       } else {
         internalDemand.items.forEach((item, index) => {
           const row = document.createElement('tr');
           const dueDate = item.dueDate ? new Date(item.dueDate).toLocaleDateString('tr-TR') : '-';
-          // Teklifbul Rule v1.0 - XSS Protection: Sanitize item data
-          const safeSku = DOMPurify.sanitize(item.sku || '-', { ALLOWED_TAGS: [] });
-          const safeName = DOMPurify.sanitize(item.itemName || '', { ALLOWED_TAGS: [] });
-          const safeBrandModel = DOMPurify.sanitize(item.brandModel || '-', { ALLOWED_TAGS: [] });
-          const safeUnit = DOMPurify.sanitize(item.unit || '', { ALLOWED_TAGS: [] });
-          row.innerHTML = DOMPurify.sanitize(`
-            <td>${index + 1}</td>
-            <td>${safeSku}</td>
-            <td>${safeName}</td>
-            <td>${safeBrandModel}</td>
-            <td>${item.quantity || 0}</td>
-            <td>${safeUnit}</td>
-            <td>${dueDate}</td>
-          `, {
-            ALLOWED_TAGS: ['td'],
-            ALLOWED_ATTR: []
-          });
+          // Teklifbul Rule v1.0 — DOMPurify <tr>/<td>'yi table dışında siler; createElement kullan
+          appendTextCell(row, index + 1);
+          appendTextCell(row, item.sku || '-');
+          appendTextCell(row, item.itemName || '');
+          appendTextCell(row, item.brandModel || '-');
+          appendTextCell(row, item.quantity || 0);
+          appendTextCell(row, item.unit || '');
+          appendTextCell(row, dueDate);
           itemsBody.appendChild(row);
         });
       }
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
     }
 
     function getStatusBadge(status) {
@@ -307,7 +303,7 @@
         completed: '<span class="status-badge status-completed">Tamamlandı</span>',
         cancelled: '<span class="status-badge status-cancelled">İptal</span>'
       };
-      return badges[status] || status;
+      return badges[status] || `<span class="status-badge">${escapeHtml(status)}</span>`;
     }
 
     function setupActions() {

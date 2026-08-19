@@ -91,9 +91,9 @@ const translations = {
     'footer.address': 'Çengeldere Mahallesi Çavuşbaşı Cumhuriyet Caddesi No:186, Beykoz / İstanbul',
     'footer.email': 'akyildizfaruk@gmail.com',
     'footer.phone': '0532 345 92 53',
-    'footer.downloadApp': 'Uygulamayı indir',
-    'footer.downloadGoogle': "Google Play'den indir",
-    'footer.downloadApple': "App Store'dan indir",
+    'footer.downloadApp': 'Mobil uygulama',
+    'footer.downloadGoogle': 'Google Play — Yakında',
+    'footer.downloadApple': 'App Store — Yakında',
     'footer.legal': 'Hukuki metinler',
 
     // Cookie Banner
@@ -127,9 +127,10 @@ const translations = {
     'login.password': 'Şifre',
     'login.remember': 'Beni hatırla',
     'login.forgot': 'Şifremi Unuttum',
+    'login.resendVerification': 'Mail gelmedi mi? Tekrar gönder',
     'login.google': 'Google ile Giriş',
     'login.noAccount': 'Hesabın yok mu?',
-    'login.signup': 'Kayıt ol',
+    'login.signup': 'Hesap oluştur',
 
     // Signup
     'signup.title': 'Ücretsiz Dene',
@@ -260,9 +261,9 @@ const translations = {
     'footer.address': 'Çengeldere Mahallesi Çavuşbaşı Cumhuriyet Caddesi No:186, Beykoz / İstanbul',
     'footer.email': 'akyildizfaruk@gmail.com',
     'footer.phone': '0532 345 92 53',
-    'footer.downloadApp': 'Download App',
-    'footer.downloadGoogle': 'Download from Google Play',
-    'footer.downloadApple': 'Download from App Store',
+    'footer.downloadApp': 'Mobile app',
+    'footer.downloadGoogle': 'Google Play — Coming soon',
+    'footer.downloadApple': 'App Store — Coming soon',
     'footer.legal': 'Legal Documents',
 
     // Cookie Banner
@@ -296,6 +297,7 @@ const translations = {
     'login.password': 'Password',
     'login.remember': 'Remember me',
     'login.forgot': 'Forgot Password',
+    'login.resendVerification': 'Didn’t get the email? Send again',
     'login.google': 'Login with Google',
     'login.noAccount': "Don't have an account?",
     'login.signup': 'Sign up',

@@ -35,6 +35,22 @@ const COUNT_PERMS = {
   view: STOCK_PERMS?.view || null
 };
 
+function clearCountLoading(message) {
+  const msg = message || 'Liste yüklenemedi.';
+  ['#activeCountsList', '#historyCountsList'].forEach((sel) => {
+    const el = qs(sel);
+    if (el) {
+      el.textContent = '';
+      const box = document.createElement('div');
+      box.style.textAlign = 'center';
+      box.style.padding = '40px';
+      box.style.color = '#991b1b';
+      box.textContent = msg;
+      el.appendChild(box);
+    }
+  });
+}
+
 // Initialize
 (async () => {
   try {
@@ -44,6 +60,7 @@ const COUNT_PERMS = {
     if (!companyContext || !companyContext.companyId) {
       logger.error('Stock count: company context alınamadı');
       toast.error(MESSAGES.ERROR_STOCK_COUNT_COMPANY_VERIFY);
+      clearCountLoading('Firma bilgisi doğrulanamadı.');
       return;
     }
 
@@ -52,6 +69,7 @@ const COUNT_PERMS = {
     // Permission check
     const permState = await initPermissions({ redirectOnPending: true });
     if (!permState) {
+      clearCountLoading('Yetki bilgisi yüklenemedi.');
       return;
     }
 

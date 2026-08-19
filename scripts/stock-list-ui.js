@@ -14,6 +14,8 @@ import { logger } from '../src/shared/log/logger.js';
 import { requireCompanyContext } from '../assets/js/state/company-context.js';
 import { initPermissions, can, getStockPerms } from '../assets/js/state/permissions.js';
 import { debounce } from '../assets/js/utils/debounce.js';
+import { setTableEmpty } from '../assets/js/utils/safe-table.js';
+import { STOCK_LIST_QUERY_LIMIT, STOCK_LIST_QUERY_LIMIT_NATIVE } from '../src/shared/constants/timing.js';
 
 const qs = s => document.querySelector(s);
 const qsa = s => document.querySelectorAll(s);
@@ -39,6 +41,25 @@ let companyContext = null;
 
 const STOCK_PERMS = getStockPerms();
 
+function isNativePlatform() {
+  try {
+    return typeof window !== 'undefined'
+      && window.Capacitor
+      && typeof window.Capacitor.isNativePlatform === 'function'
+      && window.Capacitor.isNativePlatform();
+  } catch {
+    return false;
+  }
+}
+
+function stockListQueryLimit() {
+  return isNativePlatform() ? STOCK_LIST_QUERY_LIMIT_NATIVE : STOCK_LIST_QUERY_LIMIT;
+}
+
+function warnIfStockQueryCapped(queryLimit) {
+  toast.warn(MESSAGES.WARN_STOCK_LIMIT_REACHED.replace('{count}', String(queryLimit)));
+}
+
 // Initialize
 (async () => {
   try {
@@ -49,6 +70,7 @@ const STOCK_PERMS = getStockPerms();
         (MESSAGES.ERROR_COMPANY_ID_REQUIRED || 'Şirket bilgisi doğrulanamadı') +
           '. Stok listesi yüklenemedi.'
       );
+      renderTableError('Firma bilgisi doğrulanamadı. Lütfen sayfayı yenileyin.');
       return;
     }
 
@@ -57,6 +79,7 @@ const STOCK_PERMS = getStockPerms();
     const permState = await initPermissions({ redirectOnPending: true });
     if (!permState) {
       logger.warn('Stock list: initPermissions sonuç vermedi, sayfa başlatılmıyor');
+      renderTableError('Yetki bilgisi yüklenemedi. Lütfen sayfayı yenileyin.');
       return;
     }
 
@@ -82,8 +105,19 @@ const STOCK_PERMS = getStockPerms();
   } catch (error) {
     logger.error('Initialization error', error);
     toast.error(`${MESSAGES.ERROR_STOCK_LIST_LOAD}: ${error.message}`);
+    renderTableError(`Stok listesi yüklenemedi: ${error.message}`);
   }
 })();
+
+/**
+ * Teklifbul Rule v1.0 - Tablo hata durumu
+ */
+function renderTableError(message) {
+  const tbody = qs('#stocksTableBody');
+  if (!tbody) return;
+  // Teklifbul Rule v1.0 — DOMPurify <tr>/<td>'yi table dışında siler; createElement kullan
+  setTableEmpty(tbody, 14, message || 'Bir hata oluştu');
+}
 
 async function loadStocks(context) {
   try {
@@ -104,12 +138,14 @@ async function loadStocks(context) {
     }
     
     // Teklifbul Rule v1.0 - Firestore limit() zorunlu + companyId filtresi
+    const queryLimit = stockListQueryLimit();
     const stocksQuery = query(
       collection(db, 'stocks'),
       where('companyId', '==', companyId),
-      limit(10000) // Stok listesi için makul limit
+      limit(queryLimit)
     );
     const snap = await getDocs(stocksQuery);
+    let queryCapped = snap.size >= queryLimit;
     state.allStocks = [];
     
     logger.info('Firestore\'dan stoklar yükleniyor');
@@ -130,9 +166,10 @@ async function loadStocks(context) {
       const balancesQuery = query(
         collection(db, 'stock_balances'),
         where('companyId', '==', companyId),
-        limit(10000) // Stok bakiyeleri için makul limit
+        limit(queryLimit)
       );
       const balancesSnap = await getDocs(balancesQuery);
+      if (balancesSnap.size >= queryLimit) queryCapped = true;
       state.balances = [];
       const balancesBySku = new Map(); // Tüm lokasyonların toplamı için
       
@@ -203,6 +240,8 @@ async function loadStocks(context) {
     
     if (state.allStocks.length === 0) {
       toast.warn(MESSAGES.WARN_STOCK_EMPTY);
+    } else if (queryCapped) {
+      warnIfStockQueryCapped(queryLimit);
     } else {
       toast.success(`${state.allStocks.length} stok yüklendi`);
     }
@@ -465,13 +504,15 @@ function renderTable() {
   }
   
   if (state.filteredStocks.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="10" style="text-align:center;padding:40px;color:#6b7280">
-          ${state.searchQuery || Object.values(state.filters).some(f => f) ? 'Sonuç bulunamadı' : 'Henüz stok yok'}
-        </td>
-      </tr>
-    `;
+    const hasActiveFilters = !!(
+      state.searchQuery ||
+      state.filters.locationId ||
+      state.filters.brand ||
+      state.filters.unit ||
+      state.filters.archived !== 'active'
+    );
+    // Teklifbul Rule v1.0 — DOMPurify <tr>/<td>'yi table dışında siler; createElement kullan
+    setTableEmpty(tbody, 14, hasActiveFilters ? 'Sonuç bulunamadı' : 'Henüz stok yok');
     if (pagination) {
       pagination.style.display = 'none';
     }
@@ -536,6 +577,12 @@ function renderTable() {
           <span class="badge ${isArchived ? 'badge-archived' : 'badge-active'}">
             ${isArchived ? 'Arşivlenmiş' : 'Aktif'}
           </span>
+        </td>
+        <td>
+          <a href="/pages/stock-new.html?id=${encodeURIComponent(stock.id || '')}"
+             class="btn btn-secondary"
+             aria-label="Stok kartını düzenle: ${escapeHtml(stock.sku || '')}"
+             title="Düzenle">Düzenle</a>
         </td>
       </tr>
     `;

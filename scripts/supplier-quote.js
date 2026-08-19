@@ -21,7 +21,28 @@ const formatCurrency = (val) => {
 // Get token from URL
 function getTokenFromUrl() {
     const params = new URLSearchParams(window.location.search);
-    return params.get('token');
+    const fromUrl = params.get('token');
+    const storageKey = 'tb_supplier_quote_token';
+    if (fromUrl) {
+        try {
+            sessionStorage.setItem(storageKey, fromUrl);
+        } catch {
+            /* ignore */
+        }
+        try {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('token');
+            window.history.replaceState({}, document.title, url.pathname + url.search + url.hash);
+        } catch {
+            /* ignore */
+        }
+        return fromUrl;
+    }
+    try {
+        return sessionStorage.getItem(storageKey);
+    } catch {
+        return null;
+    }
 }
 
 // Show/hide states

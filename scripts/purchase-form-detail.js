@@ -5,6 +5,16 @@ const qs = s => document.querySelector(s);
 const params = new URLSearchParams(location.search);
 const id = params.get('id');
 
+/** Teklifbul Rule v1.0 — XSS escape */
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 async function load(){
   if (!id){ qs('#summary').textContent = 'Geçersiz id'; return; }
   const ref = doc(db,'internal_requests', id);
@@ -13,10 +23,10 @@ async function load(){
   const d = snap.data();
   qs('#summary').innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <div><strong>Başlık:</strong> ${d.title || '-'}</div>
-      <div><strong>Tür:</strong> ${d.type}</div>
-      <div><strong>Durum:</strong> ${d.status}</div>
-      <div><strong>Adres:</strong> ${d.deliveryAddress || '-'}</div>
+      <div><strong>Başlık:</strong> ${escapeHtml(d.title || '-')}</div>
+      <div><strong>Tür:</strong> ${escapeHtml(d.type)}</div>
+      <div><strong>Durum:</strong> ${escapeHtml(d.status)}</div>
+      <div><strong>Adres:</strong> ${escapeHtml(d.deliveryAddress || '-')}</div>
     </div>
   `;
   const tbody = qs('#linesTable tbody');
@@ -25,7 +35,7 @@ async function load(){
   ls.forEach(x => {
     const r = x.data();
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${r.lineNo||''}</td><td>${r.sku||''}</td><td>${r.name||''}</td><td>${r.brandModel||''}</td><td>${r.qty||''}</td><td>${r.unit||''}</td><td>${r.matchStatus||''}</td>`;
+    tr.innerHTML = `<td>${escapeHtml(r.lineNo||'')}</td><td>${escapeHtml(r.sku||'')}</td><td>${escapeHtml(r.name||'')}</td><td>${escapeHtml(r.brandModel||'')}</td><td>${escapeHtml(r.qty||'')}</td><td>${escapeHtml(r.unit||'')}</td><td>${escapeHtml(r.matchStatus||'')}</td>`;
     tbody.appendChild(tr);
   });
 }

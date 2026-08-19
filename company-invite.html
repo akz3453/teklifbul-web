@@ -31,6 +31,7 @@
     import { toast } from './src/shared/ui/toast.js';
     // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
     import { MESSAGES } from './src/shared/constants/messages.js';
+    import { initAuthGuard } from './assets/js/auth-guard.js';
 
     function randToken(len=10) {
       const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -40,6 +41,7 @@
     }
 
     (async () => {
+      await initAuthGuard();
       await requireAuth();
       const me = auth.currentUser;
       const out = document.getElementById("out");

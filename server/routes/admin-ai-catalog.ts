@@ -35,11 +35,15 @@ const SUGGESTED_MODELS_CANDIDATES: SuggestedModel[] = [
   { provider: 'openai', model: 'gpt-4.1-mini', label: 'OpenAI - GPT 4.1 Mini', freeEligible: false, sort: 9 },
   { provider: 'openai', model: 'gpt-4o', label: 'OpenAI - GPT 4o', freeEligible: false, sort: 10 },
   { provider: 'openai', model: 'gpt-4o-mini', label: 'OpenAI - GPT 4o Mini', freeEligible: false, sort: 11 },
+  { provider: 'gemini', model: 'gemini-pro', label: 'Google Gemini Pro', freeEligible: false, sort: 17 },
   { provider: 'gemini', model: 'gemini-3.0-pro', label: 'Google Gemini 3.0 Pro', freeEligible: false, sort: 18 },
   { provider: 'gemini', model: 'gemini-3.0-flash', label: 'Google Gemini 3.0 Flash', freeEligible: false, sort: 19 },
-  { provider: 'gemini', model: 'gemini-2.5-pro', label: 'Google Gemini 2.5 Pro', freeEligible: false, sort: 20 },
-  { provider: 'gemini', model: 'gemini-2.5-flash', label: 'Google Gemini 2.5 Flash', freeEligible: false, sort: 21 },
-  { provider: 'gemini', model: 'gemini-2.0-flash', label: 'Google Gemini 2.0 Flash', freeEligible: false, sort: 22 },
+  { provider: 'gemini', model: 'gemini-3.5-flash', label: 'Google Gemini 3.5 Flash', freeEligible: false, sort: 20 },
+  { provider: 'gemini', model: 'gemini-3.5-flash-lite', label: 'Google Gemini 3.5 Flash Lite', freeEligible: false, sort: 21 },
+  { provider: 'gemini', model: 'gemini-2.5-pro', label: 'Google Gemini 2.5 Pro', freeEligible: false, sort: 22 },
+  { provider: 'gemini', model: 'gemini-2.5-flash', label: 'Google Gemini 2.5 Flash', freeEligible: false, sort: 23 },
+  { provider: 'gemini', model: 'gemini-3.6-flash', label: 'Google Gemini 3.6 Flash', freeEligible: false, sort: 24 },
+  { provider: 'gemini', model: 'gemini-2.0-flash', label: 'Google Gemini 2.0 Flash', freeEligible: false, sort: 25 },
 ];
 
 const aiModelSchema = z.object({

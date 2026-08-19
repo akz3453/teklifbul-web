@@ -1,11 +1,36 @@
 import functions = require('firebase-functions/v1');
 import { onRequest } from "firebase-functions/v2/https";
+import { onSchedule } from "firebase-functions/v2/scheduler";
+import { defineSecret } from "firebase-functions/params";
 // Use v1-style runtime through functions API but cast to any where types diverge
 import admin = require('firebase-admin');
 // Import pure helper functions (no side effects)
 import { buildSearchTokens, tokensChanged } from './lib/stockSearchTokens';
 // Full Excel bid form generator (matching frontend exportSatfkBtn exactly)
 import { generateFullBidFormExcel } from './lib/excelGenerator';
+import { GCF_CORS_ORIGINS, applyGcfCors } from './allowed-origins';
+import { uidBelongsToCompany } from './company-membership';
+import { buildPublicProfilePayload } from './sync-public-profile';
+
+// Cloud Run gen2: NODE_ENV çoğu zaman boş gelir — mock ödeme/e-fatura açılmasın
+if (process.env.K_SERVICE && process.env.NODE_ENV !== 'test') {
+  process.env.NODE_ENV = 'production';
+  if (!process.env.APP_VERSION) process.env.APP_VERSION = '1.0.1';
+}
+
+// Teklifbul Rule v1.0 — Ücretsiz AI (Groq) için Secret Manager
+const groqApiKey = defineSecret('GROQ_API_KEY');
+// Mevcut SM secret'ı bağla — değer oluşturma/değiştirme yok
+const paymentWebhookSecret = defineSecret('PAYMENT_WEBHOOK_SECRET');
+
+function getTransactionalFromAddress(): string | null {
+  const sender = String(process.env.SENDER_EMAIL || '').trim();
+  if (!sender || sender.toLowerCase().includes('onboarding@resend.dev')) {
+    if (process.env.NODE_ENV === 'production') return null;
+    return sender || null;
+  }
+  return sender.includes('<') ? sender : `Nefisoft <${sender}>`;
+}
 
 // Initialize Firebase Admin
 admin.initializeApp();
@@ -203,24 +228,47 @@ export const normalizeDemandCategories = (functions as any).firestore.document('
  */
 // Allow an explicit any cast at the runtime boundary for v1-style trigger
 export const normalizeSupplierCategories = (functions as any).firestore.document('users/{uid}').onWrite(async (change: { before: admin.firestore.DocumentSnapshot; after: admin.firestore.DocumentSnapshot; params?: Record<string, unknown> }) => {
-  const after = change.after.data();
-  if (!after || !after.isSupplier) return;
+  const uid = change.after.id || change.before.id;
+  const after = change.after.data() as Record<string, unknown> | undefined;
+  const db = admin.firestore();
+  const publicRef = db.collection('publicProfiles').doc(uid);
 
-  const supplierCategories = after.supplierCategories || [];
-  const normalizedCategories = supplierCategories.map(toSlug).filter(Boolean);
+  if (!change.after.exists || !after) {
+    try {
+      await publicRef.delete();
+    } catch (error) {
+      console.error(`publicProfiles delete failed for ${uid}:`, error);
+    }
+    return;
+  }
 
-  // Only update if categories have changed
+  const payload = buildPublicProfilePayload(after, admin.firestore.FieldValue.serverTimestamp());
+  try {
+    if (payload) {
+      await publicRef.set(payload);
+    } else {
+      await publicRef.delete();
+    }
+  } catch (error) {
+    console.error(`publicProfiles sync failed for ${uid}:`, error);
+  }
+
+  if (!after.isSupplier) return;
+
+  const supplierCategories = Array.isArray(after.supplierCategories) ? after.supplierCategories : [];
+  const normalizedCategories = supplierCategories.map((item) => toSlug(String(item || ''))).filter(Boolean);
+
   if (JSON.stringify(normalizedCategories) !== JSON.stringify(supplierCategories)) {
-    console.log(`Normalizing supplier categories for user ${change.after.id}:`, {
+    console.log(`Normalizing supplier categories for user ${uid}:`, {
       from: supplierCategories,
       to: normalizedCategories
     });
 
     try {
       await change.after.ref.update({ supplierCategories: normalizedCategories });
-      console.log(`Successfully normalized supplier categories for user ${change.after.id}`);
+      console.log(`Successfully normalized supplier categories for user ${uid}`);
     } catch (error) {
-      console.error(`Error normalizing supplier categories for user ${change.after.id}:`, error);
+      console.error(`Error normalizing supplier categories for user ${uid}:`, error);
     }
   }
 });
@@ -388,12 +436,10 @@ export const auditBidChanges = (functions as any).firestore.document('bids/{id}'
 /**
  * Search demands by SATFK (startsWith search)
  * GET /searchBySATFK?code=...
+ * Teklifbul Rule v1.0 — Auth zorunlu; tam doküman sızıntısı engellendi (minimal DTO)
  */
 export const searchBySATFK = functions.https.onRequest(async (req, res) => {
-  // Enable CORS
-  res.set('Access-Control-Allow-Origin', '*');
-  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.set('Access-Control-Allow-Headers', 'Content-Type');
+  applyGcfCors(req, res);
 
   if (req.method === 'OPTIONS') {
     res.status(204).send('');
@@ -405,12 +451,46 @@ export const searchBySATFK = functions.https.onRequest(async (req, res) => {
     return;
   }
 
+  // Teklifbul Rule v1.0 — Auth zorunlu
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    res.status(401).json({ error: 'Unauthenticated', message: 'Missing or invalid token' });
+    return;
+  }
+
+  let uid: string;
+  try {
+    const decoded = await admin.auth().verifyIdToken(authHeader.split('Bearer ')[1]);
+    uid = decoded.uid;
+  } catch (e) {
+    res.status(401).json({ error: 'Unauthenticated', message: 'Invalid token' });
+    return;
+  }
+
   const code = req.query.code as string;
 
   if (!code) {
     res.status(400).json({ error: 'Missing code parameter' });
     return;
   }
+
+  const toPublicDemandDto = (doc: FirebaseFirestore.QueryDocumentSnapshot) => {
+    const d = doc.data() || {};
+    return {
+      id: doc.id,
+      satfk: d.satfk || null,
+      title: d.title || null,
+      isPublished: d.isPublished === true,
+      status: d.status || null,
+      createdAt: d.createdAt || null,
+    };
+  };
+
+  const userMaySeeDemand = async (data: FirebaseFirestore.DocumentData): Promise<boolean> => {
+    if (data.isPublished === true) return true;
+    if (data.createdBy === uid) return true;
+    return uidBelongsToCompany(uid, data.creatorCompanyId);
+  };
 
   try {
     // Validate SATFK format
@@ -429,12 +509,14 @@ export const searchBySATFK = functions.https.onRequest(async (req, res) => {
 
     if (!exactSnap.empty) {
       const demand = exactSnap.docs[0];
+      const data = demand.data() || {};
+      if (!(await userMaySeeDemand(data))) {
+        res.status(404).json({ error: 'Not found', results: [] });
+        return;
+      }
       res.json({
         type: 'exact',
-        results: [{
-          id: demand.id,
-          ...demand.data()
-        }]
+        results: [toPublicDemandDto(demand)]
       });
       return;
     }
@@ -447,11 +529,13 @@ export const searchBySATFK = functions.https.onRequest(async (req, res) => {
       .limit(10);
 
     const prefixSnap = await prefixQuery.get();
-
-    const results = prefixSnap.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    const results: ReturnType<typeof toPublicDemandDto>[] = [];
+    for (const doc of prefixSnap.docs) {
+      const data = doc.data() || {};
+      if (await userMaySeeDemand(data)) {
+        results.push(toPublicDemandDto(doc));
+      }
+    }
 
     res.json({
       type: 'prefix',
@@ -527,6 +611,11 @@ export const sendDemandCreatedNotifications = (functions as any).firestore.docum
 
   if (!RESEND_API_KEY) {
     console.error("RESEND_API_KEY env eksik - email gonderimi atlandi");
+    return;
+  }
+  const fromAddress = getTransactionalFromAddress();
+  if (!fromAddress) {
+    console.error("SENDER_EMAIL production domain eksik - email gonderimi atlandi");
     return;
   }
 
@@ -606,7 +695,7 @@ export const sendDemandCreatedNotifications = (functions as any).firestore.docum
 
       // Build email payload
       const emailPayload: Record<string, unknown> = {
-        from: 'Nefisoft <onboarding@resend.dev>',
+        from: fromAddress,
         to: email,
         subject: `Yeni Satın Alma Talebi: ${title}`,
         html: `
@@ -689,10 +778,12 @@ export const sendDemandCreatedNotifications = (functions as any).firestore.docum
  * Triggered by demand owner from frontend via fetch
  * Uses built-in CORS support
  */
-export const shareDemandViaEmail = onRequest({ cors: true }, async (req, res) => {
+export const shareDemandViaEmail = onRequest({
+  cors: GCF_CORS_ORIGINS,
+}, async (req, res) => {
   // Only allow POST (or GET for health check / debugging)
   if (req.method === 'GET') {
-    res.json({ status: 'ok', cors: 'enabled (v2)', sender: 'onboarding@resend.dev' });
+    res.status(405).json({ error: 'Method Not Allowed' });
     return;
   }
 
@@ -744,6 +835,24 @@ export const shareDemandViaEmail = onRequest({ cors: true }, async (req, res) =>
       return;
     }
 
+    // Teklifbul Rule v1.0 — sahiplik / accepted şirket üyeliği zorunlu
+    const isOwner = demandData.createdBy === uid;
+    const isCompanyMember = isOwner
+      ? true
+      : await uidBelongsToCompany(uid, demandData.creatorCompanyId);
+    if (!isOwner && !isCompanyMember) {
+      res.status(403).json({ error: 'Forbidden', message: 'Bu talebi paylaşma yetkiniz yok' });
+      return;
+    }
+
+    const escapeHtml = (value: unknown): string =>
+      String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+
     // 5. Fetch demand items for Excel generation
     const itemsSnap = await admin.firestore().collection('demands').doc(demandId).collection('items').get();
     const items = itemsSnap.docs.map(doc => doc.data());
@@ -762,7 +871,12 @@ export const shareDemandViaEmail = onRequest({ cors: true }, async (req, res) =>
     const RESEND_API_KEY = process.env.RESEND_API_KEY;
     if (!RESEND_API_KEY) {
       console.error("RESEND_API_KEY env eksik");
-      res.status(500).json({ error: 'Internal', message: 'Email config missing' });
+      res.status(503).json({ error: 'email_unavailable', message: 'E-posta gönderimi yapılandırılmamış' });
+      return;
+    }
+    const fromAddress = getTransactionalFromAddress();
+    if (!fromAddress) {
+      res.status(503).json({ error: 'email_unavailable', message: 'E-posta gönderici adresi yapılandırılmamış' });
       return;
     }
 
@@ -790,16 +904,16 @@ export const shareDemandViaEmail = onRequest({ cors: true }, async (req, res) =>
 
         // Build email payload with optional attachment
         const emailPayload: Record<string, unknown> = {
-          from: 'Nefisoft <onboarding@resend.dev>',
+          from: fromAddress,
           to: email,
           subject: `Sizinle Bir Satın Alma Talebi Paylaşıldı: ${demandData.title || 'İsimsiz'}`,
           html: `
             <div style="font-family: sans-serif; padding: 20px;">
               <h2>Satın Alma Talebi Daveti</h2>
-              <p><strong>${demandData.requester || demandData.creatorCompanyName || 'Bir firma'}</strong> sizinle bir talep paylaştı.</p>
+              <p><strong>${escapeHtml(demandData.requester || demandData.creatorCompanyName || 'Bir firma')}</strong> sizinle bir talep paylaştı.</p>
               <div style="background: #f3f4f6; padding: 15px; margin: 20px 0; border-radius: 8px;">
-                <p><strong>Başlık:</strong> ${demandData.title}</p>
-                <p><strong>Kod:</strong> ${demandData.satfk}</p>
+                <p><strong>Başlık:</strong> ${escapeHtml(demandData.title)}</p>
+                <p><strong>Kod:</strong> ${escapeHtml(demandData.satfk)}</p>
                 <p><strong>Kalem Sayısı:</strong> ${items.length}</p>
               </div>
               <p>Teklif vermek için aşağıdaki adımları takip edin:</p>
@@ -868,14 +982,48 @@ export const shareDemandViaEmail = onRequest({ cors: true }, async (req, res) =>
 
 /**
  * Teklifbul API Export
- * Connects the compiled Express app to Cloud Functions
+ * Connects the compiled Express app to Cloud Functions (lazy load — deploy analizi hızlı kalsın)
  */
-// @ts-ignore - Valid at runtime after build
-const { app } = require('../dist/server/index.js');
+let cachedApiApp: import('express').Express | null = null;
 
+function getApiApp(): import('express').Express {
+  if (cachedApiApp) return cachedApiApp;
+  // @ts-ignore - Valid at runtime after build:api
+  const mod = require('../dist/server/index.js');
+  const app = mod.app ?? mod.default;
+  if (!app) throw new Error('API app export missing in dist/server/index.js');
+  cachedApiApp = app;
+  return app;
+}
+
+// Teklifbul Rule v1.0 - invoker public zorunlu:
+// Gen2/Cloud Run private iken Authorization: Bearer <Firebase ID token>
+// Google IAM token sanılır → 401 invalid_token (Express'e hiç ulaşmaz).
+// Uygulama kimliği Express verifyToken ile doğrulanır.
 export const api = onRequest({
   memory: "512MiB",
   timeoutSeconds: 60,
   minInstances: 0,
-  cors: true
-}, app);
+  cors: GCF_CORS_ORIGINS,
+  invoker: "public",
+  secrets: [groqApiKey, paymentWebhookSecret],
+}, (req, res) => getApiApp()(req, res));
+
+/**
+ * H-007A — Stuck paid AI hold recovery.
+ * No prior scheduler existed; this is the first Cloud Scheduler function.
+ * TTL (default 5m) avoids releasing in-flight /api/chat requests (API timeout 60s).
+ */
+export const recoverStuckAiTokenHolds = onSchedule({
+  schedule: 'every 5 minutes',
+  timeZone: 'Europe/Istanbul',
+  memory: '256MiB',
+  timeoutSeconds: 120,
+}, async () => {
+  // @ts-ignore - Valid at runtime after build:api
+  const mod = require('../dist/server/services/companyAiWalletHoldRecovery.js');
+  await mod.recoverStuckCompanyAiHolds({
+    pageSize: 50,
+    maxPages: 10,
+  });
+});

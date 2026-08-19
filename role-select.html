@@ -585,9 +585,8 @@
     <!-- Brand Header -->
     <header class="brand-header">
       <div class="brand-header-content">
-        <a href="./index.html" class="brand-logo">
-          <span>📋</span>
-          <span>NEFISOFT</span>
+        <a href="./index.html" class="brand-logo" aria-label="NEFISOFT">
+          <img src="/assets/images/brand/nefisoft-web-stacked.png" alt="NEFISOFT" width="160" height="160" decoding="async" style="height:52px;width:auto;object-fit:contain;" />
         </a>
         <div class="header-login">
           <span>Zaten hesabınız var mı?</span>
@@ -1014,9 +1013,7 @@
     import {
       getStorage, ref, uploadBytes
     } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-storage.js";
-    import {
-      sendEmailVerification
-    } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+    import { sendVerificationEmailBranded } from "./assets/js/utils/send-verification-email.js";
 
     const storage = getStorage(app);
     let selectedRole = null;
@@ -2526,33 +2523,54 @@
         
         // Şirket ID'sinin (vergi numarası) zaten kullanılıp kullanılmadığını kontrol et
         // Bu kontrol hem ID hem de taxNumber field'ını kontrol eder
-        const existingCompanyById = await getDoc(doc(db, "companies", proposedCompanyId));
-        
-        if (existingCompanyById.exists()) {
-          // Vergi numarası zaten ID olarak kullanılıyor
-          const existingCompanyData = existingCompanyById.data();
-          const existingCompanyName = existingCompanyData.name || "Bilinmeyen Şirket";
-          saveBtn.disabled = false;
-          saveBtn.textContent = "Kaydet ve Devam Et";
-          toast.error(MESSAGES.ERROR_TAXNUMBER_IN_USE + ': ' + taxNumberTrimmed + (existingCompanyName ? ' - ' + existingCompanyName : ''));
-          return;
+        try {
+          const existingCompanyById = await getDoc(doc(db, "companies", proposedCompanyId));
+          
+          if (existingCompanyById.exists()) {
+            // Vergi numarası zaten ID olarak kullanılıyor
+            const existingCompanyData = existingCompanyById.data();
+            const existingCompanyName = existingCompanyData.name || "Bilinmeyen Şirket";
+            saveBtn.disabled = false;
+            saveBtn.textContent = "Kaydet ve Devam Et";
+            toast.error(MESSAGES.ERROR_TAXNUMBER_IN_USE + ': ' + taxNumberTrimmed + (existingCompanyName ? ' - ' + existingCompanyName : ''));
+            return;
+          }
+        } catch (err) {
+          if (err.code === 'permission-denied' || err.message?.includes('permission') || err.message?.includes('denied')) {
+            // Yetki hatası: Şirket zaten var ve başkasına ait
+            saveBtn.disabled = false;
+            saveBtn.textContent = "Kaydet ve Devam Et";
+            toast.error(MESSAGES.ERROR_TAXNUMBER_IN_USE + ': ' + taxNumberTrimmed);
+            return;
+          } else {
+            throw err;
+          }
         }
         
         // Ek güvenlik: taxNumber field'ında da kontrol et (geriye dönük uyumluluk için)
-        const taxNumberQuery = query(
-          collection(db, "companies"),
-          where("taxNumber", "==", taxNumberTrimmed)
-        );
-        const taxNumberSnapshot = await getDocs(taxNumberQuery);
-        
-        if (!taxNumberSnapshot.empty) {
-          // Vergi numarası başka bir şirkette kullanılıyor (eski sistem)
-          const existingCompany = taxNumberSnapshot.docs[0].data();
-          const existingCompanyName = existingCompany.name || "Bilinmeyen Şirket";
-          saveBtn.disabled = false;
-          saveBtn.textContent = "Kaydet ve Devam Et";
-          toast.error(MESSAGES.ERROR_TAXNUMBER_IN_USE + ': ' + taxNumberTrimmed + (existingCompanyName ? ' - ' + existingCompanyName : ''));
-          return;
+        try {
+          const taxNumberQuery = query(
+            collection(db, "companies"),
+            where("taxNumber", "==", taxNumberTrimmed)
+          );
+          const taxNumberSnapshot = await getDocs(taxNumberQuery);
+          
+          if (!taxNumberSnapshot.empty) {
+            // Vergi numarası başka bir şirkette kullanılıyor (eski sistem)
+            const existingCompany = taxNumberSnapshot.docs[0].data();
+            const existingCompanyName = existingCompany.name || "Bilinmeyen Şirket";
+            saveBtn.disabled = false;
+            saveBtn.textContent = "Kaydet ve Devam Et";
+            toast.error(MESSAGES.ERROR_TAXNUMBER_IN_USE + ': ' + taxNumberTrimmed + (existingCompanyName ? ' - ' + existingCompanyName : ''));
+            return;
+          }
+        } catch (err) {
+          if (err.code === 'permission-denied' || err.message?.includes('permission') || err.message?.includes('denied')) {
+            // Yetki hatası: Query atlanabilir çünkü proposedCompanyId kontrolü yetersizlik durumunu zaten yukarıda yakaladı
+            logger.warn('Geriye dönük vergi numarası query kontrolü yetki yetersizliği nedeniyle atlandı', err);
+          } else {
+            throw err;
+          }
         }
         
         // Teklifbul Rule v1.0 - E-posta benzersizlik kontrolü
@@ -2568,23 +2586,31 @@
               continue; // Kendi email'imizi kontrol etme
             }
             
-            const emailQuery = query(
-              collection(db, "users"),
-              where("contactEmails", "array-contains", email)
-            );
-            const emailSnapshot = await getDocs(emailQuery);
-            
-            if (!emailSnapshot.empty) {
-              // E-posta zaten başka bir şirkette kullanılıyor
-              const existingUser = emailSnapshot.docs[0];
-              const existingUserData = existingUser.data();
-              const existingCompanyName = existingUserData.companyName || "Bilinmeyen Şirket";
-              // Kendi kendimizi kontrol etme
-              if (existingUser.id !== user.uid) {
-                saveBtn.disabled = false;
-                saveBtn.textContent = "Kaydet ve Devam Et";
-                toast.error(MESSAGES.ERROR_EMAIL_IN_USE + ': ' + email + (existingCompanyName ? ' - ' + existingCompanyName : ''));
-                return;
+            try {
+              const emailQuery = query(
+                collection(db, "users"),
+                where("contactEmails", "array-contains", email)
+              );
+              const emailSnapshot = await getDocs(emailQuery);
+              
+              if (!emailSnapshot.empty) {
+                // E-posta zaten başka bir şirkette kullanılıyor
+                const existingUser = emailSnapshot.docs[0];
+                const existingUserData = existingUser.data();
+                const existingCompanyName = existingUserData.companyName || "Bilinmeyen Şirket";
+                // Kendi kendimizi kontrol etme
+                if (existingUser.id !== user.uid) {
+                  saveBtn.disabled = false;
+                  saveBtn.textContent = "Kaydet ve Devam Et";
+                  toast.error(MESSAGES.ERROR_EMAIL_IN_USE + ': ' + email + (existingCompanyName ? ' - ' + existingCompanyName : ''));
+                  return;
+                }
+              }
+            } catch (err) {
+              if (err.code === 'permission-denied' || err.message?.includes('permission') || err.message?.includes('denied')) {
+                logger.warn('E-posta benzersizlik kontrolü yetki yetersizliği nedeniyle atlandı', err);
+              } else {
+                throw err;
               }
             }
           }
@@ -2596,20 +2622,28 @@
         if (phoneArray.length > 0) {
           for (const phone of phoneArray) {
             if (!phone) continue;
-            const phoneQuery = query(
-              collection(db, "users"),
-              where("contactPhones", "array-contains", phone)
-            );
-            const phoneSnapshot = await getDocs(phoneQuery);
-            
-            if (!phoneSnapshot.empty) {
-              // Telefon zaten kullanılıyor
-              const existingUser = phoneSnapshot.docs[0].data();
-              const existingCompanyName = existingUser.companyName || "Bilinmeyen Şirket";
-              saveBtn.disabled = false;
-              saveBtn.textContent = "Kaydet ve Devam Et";
-              toast.error(MESSAGES.ERROR_PHONE_IN_USE + ': ' + phone + (existingCompanyName ? ' - ' + existingCompanyName : ''));
-              return;
+            try {
+              const phoneQuery = query(
+                collection(db, "users"),
+                where("contactPhones", "array-contains", phone)
+              );
+              const phoneSnapshot = await getDocs(phoneQuery);
+              
+              if (!phoneSnapshot.empty) {
+                // Telefon zaten kullanılıyor
+                const existingUser = phoneSnapshot.docs[0].data();
+                const existingCompanyName = existingUser.companyName || "Bilinmeyen Şirket";
+                saveBtn.disabled = false;
+                saveBtn.textContent = "Kaydet ve Devam Et";
+                toast.error(MESSAGES.ERROR_PHONE_IN_USE + ': ' + phone + (existingCompanyName ? ' - ' + existingCompanyName : ''));
+                return;
+              }
+            } catch (err) {
+              if (err.code === 'permission-denied' || err.message?.includes('permission') || err.message?.includes('denied')) {
+                logger.warn('Telefon benzersizlik kontrolü yetki yetersizliği nedeniyle atlandı', err);
+              } else {
+                throw err;
+              }
             }
           }
         }
@@ -2618,19 +2652,28 @@
         
         // Teklifbul Rule v1.0 - Mevcut şirkete katılma durumu
         if (companyMode === 'join') {
-          // Şirket kodunu kontrol et
-          const companyQuery = query(
-            collection(db, "companies"),
-            where("code", "==", companyCodeInput)
-          );
-          const companySnapshot = await getDocs(companyQuery);
+          // Teklifbul Rule v1.0 - Sirket kodu lookup (companyCodes)
+          const joinCodeKey = String(companyCodeInput || '').trim().toUpperCase();
+          const joinCodeSnap = await getDoc(doc(db, 'companyCodes', joinCodeKey));
           
-          if (companySnapshot.empty) {
+          if (!joinCodeSnap.exists() || !joinCodeSnap.data()?.companyId) {
             saveBtn.disabled = false;
             saveBtn.textContent = "Kaydet ve Devam Et";
             toast.error(MESSAGES.ERROR_COMPANY_NOT_FOUND + (companyCodeInput ? ' ("' + companyCodeInput + '")' : ''));
             return;
           }
+          
+          const companySnapshot = {
+            empty: false,
+            docs: [{
+              id: joinCodeSnap.data().companyId,
+              data: () => ({
+                name: joinCodeSnap.data().name || '',
+                code: joinCodeKey,
+                autoApproveJoinRequests: joinCodeSnap.data().autoApproveJoinRequests === true
+              })
+            }]
+          };
           
           // Mevcut şirkete katılırken de e-posta ve telefon kontrolü yapılmalı
           // NOT: Kendi email'imizi kontrol etme (şirkete katılıyoruz, kendi email'imizi kullanabiliriz)
@@ -2644,22 +2687,30 @@
                 continue; // Kendi email'imizi kontrol etme
               }
               
-              const emailQuery = query(
-                collection(db, "users"),
-                where("contactEmails", "array-contains", email)
-              );
-              const emailSnapshot = await getDocs(emailQuery);
-              
-              if (!emailSnapshot.empty) {
-                const existingUser = emailSnapshot.docs[0];
-                const existingUserData = existingUser.data();
-                const existingCompanyName = existingUserData.companyName || "Bilinmeyen Şirket";
-                // Kendi kendimizi kontrol etme
-                if (existingUser.id !== user.uid) {
-                  saveBtn.disabled = false;
-                  saveBtn.textContent = "Kaydet ve Devam Et";
-                  toast.error(MESSAGES.ERROR_EMAIL_IN_USE + ': ' + email + (existingCompanyName ? ' - ' + existingCompanyName : ''));
-                  return;
+              try {
+                const emailQuery = query(
+                  collection(db, "users"),
+                  where("contactEmails", "array-contains", email)
+                );
+                const emailSnapshot = await getDocs(emailQuery);
+                
+                if (!emailSnapshot.empty) {
+                  const existingUser = emailSnapshot.docs[0];
+                  const existingUserData = existingUser.data();
+                  const existingCompanyName = existingUserData.companyName || "Bilinmeyen Şirket";
+                  // Kendi kendimizi kontrol etme
+                  if (existingUser.id !== user.uid) {
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = "Kaydet ve Devam Et";
+                    toast.error(MESSAGES.ERROR_EMAIL_IN_USE + ': ' + email + (existingCompanyName ? ' - ' + existingCompanyName : ''));
+                    return;
+                  }
+                }
+              } catch (err) {
+                if (err.code === 'permission-denied' || err.message?.includes('permission') || err.message?.includes('denied')) {
+                  logger.warn('E-posta benzersizlik kontrolü yetki yetersizliği nedeniyle atlandı', err);
+                } else {
+                  throw err;
                 }
               }
             }
@@ -2677,19 +2728,27 @@
           if (allPhoneNumbers.length > 0) {
             for (const phone of allPhoneNumbers) {
               if (!phone) continue;
-              const phoneQuery = query(
-                collection(db, "users"),
-                where("contactPhones", "array-contains", phone)
-              );
-              const phoneSnapshot = await getDocs(phoneQuery);
-              
-              if (!phoneSnapshot.empty) {
-                const existingUser = phoneSnapshot.docs[0].data();
-                const existingCompanyName = existingUser.companyName || "Bilinmeyen Şirket";
-                saveBtn.disabled = false;
-                saveBtn.textContent = "Kaydet ve Devam Et";
-                toast.error(MESSAGES.ERROR_PHONE_IN_USE + ': ' + phone + (existingCompanyName ? ' - ' + existingCompanyName : ''));
-                return;
+              try {
+                const phoneQuery = query(
+                  collection(db, "users"),
+                  where("contactPhones", "array-contains", phone)
+                );
+                const phoneSnapshot = await getDocs(phoneQuery);
+                
+                if (!phoneSnapshot.empty) {
+                  const existingUser = phoneSnapshot.docs[0].data();
+                  const existingCompanyName = existingUser.companyName || "Bilinmeyen Şirket";
+                  saveBtn.disabled = false;
+                  saveBtn.textContent = "Kaydet ve Devam Et";
+                  toast.error(MESSAGES.ERROR_PHONE_IN_USE + ': ' + phone + (existingCompanyName ? ' - ' + existingCompanyName : ''));
+                  return;
+                }
+              } catch (err) {
+                if (err.code === 'permission-denied' || err.message?.includes('permission') || err.message?.includes('denied')) {
+                  logger.warn('Telefon benzersizlik kontrolü yetki yetersizliği nedeniyle atlandı', err);
+                } else {
+                  throw err;
+                }
               }
             }
           }
@@ -2699,7 +2758,7 @@
           const companyData = existingCompany.data();
           
           // Onay bekleyen kullanıcılar koleksiyonuna ekle - Teklifbul Rule v1.0
-          const pendingRequestRef = doc(collection(db, "companies", companyId, "pendingMembers"));
+          const pendingRequestRef = doc(db, "companies", companyId, "pendingMembers", user.uid);
           await setDoc(pendingRequestRef, {
             userId: user.uid,
             userEmail: user.email || null,
@@ -2856,26 +2915,36 @@
         const companyId = `tax-${taxNumberTrimmed}`; // Vergi numarasını ID olarak kullan
         
         // Şirket ID'sinin zaten kullanılıp kullanılmadığını kontrol et
-        const existingCompanyCheck = await getDoc(doc(db, "companies", companyId));
-        if (existingCompanyCheck.exists()) {
-          saveBtn.disabled = false;
-          saveBtn.textContent = "Kaydet ve Devam Et";
-          toast.error(MESSAGES.ERROR_TAXNUMBER_IN_USE + ': ' + taxNumberTrimmed);
-          return;
+        try {
+          const existingCompanyCheck = await getDoc(doc(db, "companies", companyId));
+          if (existingCompanyCheck.exists()) {
+            saveBtn.disabled = false;
+            saveBtn.textContent = "Kaydet ve Devam Et";
+            toast.error(MESSAGES.ERROR_TAXNUMBER_IN_USE + ': ' + taxNumberTrimmed);
+            return;
+          }
+        } catch (err) {
+          if (err.code === 'permission-denied' || err.message?.includes('permission') || err.message?.includes('denied')) {
+            saveBtn.disabled = false;
+            saveBtn.textContent = "Kaydet ve Devam Et";
+            toast.error(MESSAGES.ERROR_TAXNUMBER_IN_USE + ': ' + taxNumberTrimmed);
+            return;
+          }
+          throw err;
         }
         
-        // Teklifbul Rule v1.0 - Benzersiz şirket kodu kontrolü
+        // Teklifbul Rule v1.0 - Benzersiz şirket kodu (companyCodes lookup)
         let finalCompanyCode = generatedCompanyCode;
         let attempts = 0;
         while (attempts < 10) {
-          const codeCheckQuery = query(
-            collection(db, "companies"),
-            where("code", "==", finalCompanyCode)
-          );
-          const codeCheckSnapshot = await getDocs(codeCheckQuery);
-          
-          if (codeCheckSnapshot.empty) {
-            break; // Kod benzersiz
+          try {
+            const codeSnap = await getDoc(doc(db, "companyCodes", finalCompanyCode));
+            if (!codeSnap.exists()) {
+              break; // Kod benzersiz
+            }
+          } catch (codeErr) {
+            logger.warn('Şirket kodu benzersizlik kontrolü atlandı', codeErr);
+            break;
           }
           
           // Kod kullanılıyor, yeni kod oluştur
@@ -2960,6 +3029,17 @@
         
         // Save company to Firestore
         await setDoc(doc(db, "companies", companyId), companyData);
+        import('/assets/js/analytics.js').then(({ track, ANALYTICS_EVENTS }) => {
+          track(ANALYTICS_EVENTS.COMPANY_CREATED, { method: 'create' });
+        }).catch(() => {});
+
+        // Teklifbul Rule v1.0 - Katilim/lookup icin sirket kodu indeksi
+        await setDoc(doc(db, "companyCodes", finalCompanyCode), {
+          companyId,
+          name: companyName,
+          ownerId: user.uid,
+          createdAt: serverTimestamp()
+        });
         
         // Collect all phone numbers - Teklifbul Rule v1.0
         const allPhones = [...phoneChips];
@@ -3104,10 +3184,11 @@
         // Email doğrulanmamış kullanıcı için (yeni kayıt akışı)
         if (!user.emailVerified) {
           try {
-            await sendEmailVerification(user);
+            await sendVerificationEmailBranded(user);
             logger.info("Email doğrulama mesajı gönderildi (şirket kaydı sonrası)", { email: user.email });
           } catch (verifyErr) {
             logger.warn("Email doğrulama mesajı gönderilemedi", verifyErr);
+            toast.error("Doğrulama e-postası gönderilemedi. Girişte tekrar denenecek.");
           }
           
           // Kullanıcıyı çıkış yaptır ve login sayfasına yönlendir
@@ -3140,19 +3221,23 @@
       if (!companyCode || companyCode.length < 6) return;
       
       try {
-        const companyQuery = query(
-          collection(db, "companies"),
-          where("code", "==", companyCode.toUpperCase())
-        );
-        const companySnapshot = await getDocs(companyQuery);
+        const codeKey = companyCode.toUpperCase();
+        const codeSnap = await getDoc(doc(db, "companyCodes", codeKey));
         
-        if (companySnapshot.empty) {
+        if (!codeSnap.exists() || !codeSnap.data()?.companyId) {
           logger.warn('Şirket kodu ile eşleşen şirket bulunamadı');
           return;
         }
         
-        const companyDoc = companySnapshot.docs[0];
-        const companyData = companyDoc.data();
+        const codeData = codeSnap.data();
+        const companyData = {
+          name: codeData.name || '',
+          taxNumber: codeData.taxNumber || null,
+          taxOffice: codeData.taxOffice || null,
+          mersisNo: codeData.mersisNo || null,
+          invoiceAddress: codeData.invoiceAddress || null,
+          googleBusinessUrl: codeData.googleBusinessUrl || null
+        };
         
         // Form alanlarını doldur (sadece boş alanlar)
         if (companyData.name && !document.getElementById("companyName")?.value) {

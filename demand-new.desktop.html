@@ -1519,12 +1519,16 @@
 
         const params = new URLSearchParams(window.location.search);
         const isEditMode = !!(params.get('id') || params.get('edit'));
+        const permsLoaded = Object.keys(permState.permissions || {}).length > 0;
 
-        // Sayfa görüntüleme izni yoksa hemen yönlendir
-        if (DEMAND_PERMS_INIT.purchase.view && !can(DEMAND_PERMS_INIT.purchase.view)) {
+        if (!permsLoaded) {
+          logger.warn('demand-new: yetki haritası boş, sayfa açık bırakıldı', {
+            companyId: permState.companyId,
+            roleKey: permState.roleKey
+          });
+        } else if (DEMAND_PERMS_INIT.purchase.view && !can(DEMAND_PERMS_INIT.purchase.view)) {
           const msg =
             MESSAGES.ERROR_PERMISSION_DEMAND_VIEW ||
-            MESSAGES.ERROR_PERMISSION_DENIED ||
             'Bu sayfayı görüntüleme yetkiniz yok.';
           toast.error(msg);
           logger.warn('demand-new: view yetkisi yok, yönlendiriliyor', {
@@ -2024,6 +2028,8 @@
     import { MESSAGES } from './src/shared/constants/messages.js';
     // Teklifbul Rule v1.0 - Yetki sistemi (createBtn.onclick için gerekli)
     import { requirePerm, getDemandPerms } from './assets/js/state/permissions.js';
+    import { requireCompanyContext } from './assets/js/state/company-context.js';
+    import { resolveSharedCompanyId } from './assets/js/utils/api-helpers.js';
     import { slugifyTr } from "./utils/slugify-tr.js";
     import { normalizeTRLower } from "./scripts/lib/tr-utils.js";
     // CRITICAL: Import new ID-based category system
@@ -5748,35 +5754,21 @@
             throw new Error("Özel (Özelleştir) için en az bir tedarikçi seçmelisiniz.");
           }
 
-          // Get companyId from profile with fallback strategy
+          // Teklifbul Rule v1.0 — tax- şirket id'sini solo- ile ezme
           let companyId = null;
           try {
-            // Try multiple collections in order of preference
-            const collections = ["publicProfiles", "profiles", "users"];
-            
-            for (const collection of collections) {
-              try {
-                const profileSnap = await getDoc(doc(db, collection, user.uid));
-                if (profileSnap.exists()) {
-                  const profile = profileSnap.data();
-                  companyId = profile.currentCompanyId || profile.companyId || profile.activeCompanyId || `solo-${user.uid}`;
-                  logger.info(`Found companyId from ${collection}`, { companyId });
-                  break;
-                }
-              } catch (collectionError) {
-                logger.warn(`Could not read from ${collection}`, collectionError.message);
-                continue;
-              }
-            }
-            
-            // Fallback if no collection worked
+            const ctx = await requireCompanyContext({
+              allowPending: false,
+              redirectOnPending: false
+            });
+            companyId = (ctx && ctx.companyId) || resolveSharedCompanyId(ctx?.userDocData);
             if (!companyId) {
-              companyId = `solo-${user.uid}`;
-              logger.info("Using fallback companyId", { companyId });
+              throw new Error('Şirket bilgisi bulunamadı. Lütfen şirket seçimi yaptığınızdan emin olun.');
             }
+            logger.info('Demand create companyId çözüldü', { companyId });
           } catch (e) {
-            logger.warn("Profile read error, using fallback", e);
-            companyId = `solo-${user.uid}`;
+            logger.error('Demand create companyId çözülemedi', e);
+            throw new Error(e?.message || 'Şirket bilgisi bulunamadı.');
           }
 
           // Prepare header data
@@ -6797,7 +6789,7 @@
             } else {
               // Şirket dokümanından kontrol et
               const companyId = userData.companyId || userData.activeCompanyId || (Array.isArray(userData.companies) && userData.companies.length > 0 ? userData.companies[0] : null);
-              if (companyId && !companyId.startsWith('solo-') && !companyId.startsWith('tax-')) {
+              if (companyId && !companyId.startsWith('solo-')) {
                 try {
                   const companyDoc = await getDoc(doc(db, "companies", companyId));
                   if (companyDoc.exists()) {
@@ -7347,7 +7339,11 @@
         z-index: 100;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       `;
-      notif.innerHTML = `✅ Önerilen kategori: <strong>${categoryName}</strong>`;
+      notif.textContent = '';
+      notif.appendChild(document.createTextNode('✅ Önerilen kategori: '));
+      const strong = document.createElement('strong');
+      strong.textContent = categoryName || '';
+      notif.appendChild(strong);
       
       const row = textarea.closest('.description-item');
       if (row) {

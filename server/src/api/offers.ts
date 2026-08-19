@@ -16,18 +16,15 @@ import { ZodError } from 'zod';
 import { getAdminDb } from '../../utils/firestore.js';
 import { logger } from '../../../src/shared/log/logger.js';
 import type { AuthenticatedRequest } from '../../middleware/auth.js';
+import { getCompanyIdFromRequest } from '../services/permissionService.js';
 
 const router = express.Router();
 
-// Teklifbul Rule v1.0 - Ortak yardimci: kullanici/sirket dogrulamasi
-function getActorCompany(req: AuthenticatedRequest): { uid: string; companyId: string | null } | null {
+// Teklifbul Rule v1.0 - Header/body companyId membership ile doğrulanır
+async function getActorCompany(req: AuthenticatedRequest): Promise<{ uid: string; companyId: string | null } | null> {
   const user = req.user;
   if (!user?.uid) return null;
-  const companyId = (user as any).activeCompanyId
-    || (user as any).companyId
-    || (Array.isArray((user as any).companies) && (user as any).companies[0])
-    || (req.headers['x-company-id'] as string | undefined)
-    || null;
+  const companyId = await getCompanyIdFromRequest(req);
   return { uid: user.uid, companyId };
 }
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -43,7 +40,7 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 
  */
 router.post('/parse', upload.single('file'), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const actor = getActorCompany(req);
+    const actor = await getActorCompany(req);
     if (!actor) {
       return res.status(401).json({ ok: false, error: 'AUTH_REQUIRED' });
     }
@@ -91,7 +88,7 @@ router.post('/parse', upload.single('file'), async (req: AuthenticatedRequest, r
  */
 router.post('/validate', async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const actor = getActorCompany(req);
+    const actor = await getActorCompany(req);
     if (!actor) {
       return res.status(401).json({ ok: false, error: 'AUTH_REQUIRED' });
     }
@@ -213,9 +210,12 @@ function validateBusinessRules(offer: Offer): { valid: boolean; issues: string[]
  */
 router.post('/', async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const actor = getActorCompany(req);
+    const actor = await getActorCompany(req);
     if (!actor) {
       return res.status(401).json({ ok: false, error: 'AUTH_REQUIRED' });
+    }
+    if (!actor.companyId) {
+      return res.status(403).json({ ok: false, error: 'COMPANY_FORBIDDEN' });
     }
     const offerData = req.body.offer || req.body;
 
@@ -287,9 +287,12 @@ router.post('/', async (req: AuthenticatedRequest, res: Response) => {
  */
 router.post('/:id/submit', async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const actor = getActorCompany(req);
+    const actor = await getActorCompany(req);
     if (!actor) {
       return res.status(401).json({ ok: false, error: 'AUTH_REQUIRED' });
+    }
+    if (!actor.companyId) {
+      return res.status(403).json({ ok: false, error: 'COMPANY_FORBIDDEN' });
     }
     const offerId = req.params.id;
 
@@ -385,7 +388,7 @@ router.post('/:id/submit', async (req: AuthenticatedRequest, res: Response) => {
  */
 router.post('/export', async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const actor = getActorCompany(req);
+    const actor = await getActorCompany(req);
     if (!actor) {
       return res.status(401).json({ ok: false, error: 'AUTH_REQUIRED' });
     }

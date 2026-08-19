@@ -250,20 +250,23 @@ export async function askTeklifbulAssistant(
 export async function fetchBidData(filters?: AIPurchaseRequest['filters']): Promise<BidData[]> {
   try {
     logger.group('Fetching Bid Data');
+    const companyId = filters?.companyId;
+    if (!companyId || typeof companyId !== 'string') {
+      logger.warn('fetchBidData: companyId zorunlu — boş döndü');
+      logger.end();
+      return [];
+    }
+
     const db = await getAdminDb();
     if (!db) {
       logger.warn('Firestore unavailable, returning empty bid data');
       return [];
     }
 
-    const bidsRef = db.collection('bids');
-    const query = bidsRef.limit(100); // Teklifbul Rule v1.0 - Limit zorunlu
-
-    // Filtreleme
-    if (filters?.firmaAdi) {
-      // Firma adına göre filtreleme için supplierId'yi bulmak gerekir
-      // Şimdilik basit yaklaşım: tüm teklifleri al
-    }
+    // Teklifbul Rule v1.0 — şirket kapsamı zorunlu (çapraz kiracı engeli)
+    const query = db.collection('bids')
+      .where('buyerCompanyId', '==', companyId)
+      .limit(100);
 
     const snapshot = await query.get();
     const bids: BidData[] = [];
@@ -301,19 +304,23 @@ export async function fetchBidData(filters?: AIPurchaseRequest['filters']): Prom
 export async function fetchStockData(filters?: AIPurchaseRequest['filters']): Promise<StockData[]> {
   try {
     logger.group('Fetching Stock Data');
+    const companyId = filters?.companyId;
+    if (!companyId || typeof companyId !== 'string') {
+      logger.warn('fetchStockData: companyId zorunlu — boş döndü');
+      logger.end();
+      return [];
+    }
+
     const db = await getAdminDb();
     if (!db) {
       logger.warn('Firestore unavailable, returning empty stock data');
       return [];
     }
 
-    const stockBalancesRef = db.collection('stock_balances');
-    let query = stockBalancesRef.limit(100); // Teklifbul Rule v1.0 - Limit zorunlu
-
-    // Filtreleme
-    if (filters?.companyId) {
-      query = query.where('companyId', '==', filters.companyId);
-    }
+    // Teklifbul Rule v1.0 — şirket kapsamı zorunlu
+    const query = db.collection('stock_balances')
+      .where('companyId', '==', companyId)
+      .limit(100);
 
     const snapshot = await query.get();
     const stocks: StockData[] = [];

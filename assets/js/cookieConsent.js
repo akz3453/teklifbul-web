@@ -125,6 +125,7 @@ function createCookieBanner() {
   // Show banner with animation
   setTimeout(() => {
     banner.classList.add('show');
+    syncBannerOffset();
   }, 200);
 
   // Accept button
@@ -310,10 +311,21 @@ function hideBanner() {
   const banner = document.getElementById('cookie-banner');
   if (banner) {
     banner.classList.remove('show');
+    document.body.style.paddingBottom = '';
     setTimeout(() => {
       banner.remove();
+      syncBannerOffset();
     }, 300);
   }
+}
+
+function syncBannerOffset() {
+  const banner = document.getElementById('cookie-banner');
+  if (!banner || !banner.classList.contains('show')) {
+    document.body.style.paddingBottom = '';
+    return;
+  }
+  document.body.style.paddingBottom = `${banner.offsetHeight}px`;
 }
 
 /**
@@ -322,7 +334,9 @@ function hideBanner() {
 export function initCookieConsent() {
   if (shouldShowBanner()) {
     createCookieBanner();
+    window.addEventListener('resize', syncBannerOffset);
   }
+  import('./analytics.js').then(({ initAnalytics }) => initAnalytics()).catch(() => {});
 }
 
 /**

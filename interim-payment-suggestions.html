@@ -92,6 +92,10 @@
       
       <!-- Tablo -->
       <div class="card">
+        <div id="suggestions-progress" style="display:none; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; flex-wrap:wrap;">
+          <span id="suggestions-progress-text" style="font-size:14px; color:var(--text-muted,#6b7280);">Yükleniyor...</span>
+          <button type="button" class="btn btn-outline" id="btn-cancel-suggestions" aria-label="Öneri yüklemeyi iptal et" title="İptal">İptal</button>
+        </div>
         <div class="table-container">
           <table class="table">
             <thead>
@@ -119,13 +123,23 @@
 
   <script type="module">
     // Teklifbul Rule v1.0
+    import { initAuthGuard } from './assets/js/auth-guard.js';
     import { initGlobalHeader } from './assets/js/ui/header.js';
     import { auth, waitAuthReady } from './firebase.js';
     import { logger } from './src/shared/log/logger.js';
     import { toast } from './src/shared/ui/toast.js';
-    import { getActiveCompanyId, resolveActiveCompany, setActiveCompanyId } from './assets/js/state/company.js';
     import { requireCompanyContext } from './assets/js/state/company-context.js';
-    import { initPermissions, can as canPermission, requirePerm, getInterimPerms } from './assets/js/state/permissions.js';
+    import { initPermissions, can as canPermission, getInterimPerms } from './assets/js/state/permissions.js';
+    import { MESSAGES } from './src/shared/constants/messages.js';
+    import { setTableEmpty, appendTextCell } from './assets/js/utils/safe-table.js';
+
+    initAuthGuard().catch((err) => {
+      logger.error('Auth guard init failed', err);
+      toast.error('Hata: Oturum kontrolü başlatılamadı');
+    });
+
+    /** @type {AbortController|null} */
+    let suggestionsAbort = null;
     
     // getCurrentUser helper
     async function getCurrentUser() {
@@ -163,109 +177,144 @@
         return false;
       }
     }
+
+    function setSuggestionsProgress(visible, text) {
+      const bar = document.getElementById('suggestions-progress');
+      const label = document.getElementById('suggestions-progress-text');
+      if (bar) bar.style.display = visible ? 'flex' : 'none';
+      if (label && text) label.textContent = text;
+    }
     
     // Önerileri yükle
     async function loadSuggestions() {
       try {
         const user = await getCurrentUser();
         if (!user) return;
-        
-        // Teklifbul Rule v1.0 - Aktif şirket ID'sini çöz
-        let companyId = await getActiveCompanyId();
-        if (!companyId && user?.uid) {
-          logger.group('Hakediş Önerileri: Company Resolve');
-          logger.info('Active company missing, resolving from memberships', { uid: user.uid });
-          const resolved = await resolveActiveCompany(user.uid);
-          if (resolved) {
-            companyId = resolved;
-            setActiveCompanyId(resolved);
-            logger.info('Active company resolved', { companyId: resolved });
-          }
-          logger.end();
-        }
 
-        if (!companyId) {
-          logger.error('companyId bulunamadı (Hakediş Önerileri)');
-          toast.error('Şirket bulunamadı, lütfen firma seçin');
-          document.getElementById('suggestions-table-body').innerHTML = 
-            '<tr><td colspan="8" class="empty-state">Şirket bulunamadı, lütfen firma seçin.</td></tr>';
-          return;
+        if (suggestionsAbort) {
+          suggestionsAbort.abort();
         }
+        suggestionsAbort = new AbortController();
+        const { signal } = suggestionsAbort;
+
+        setSuggestionsProgress(true, 'Öneriler yükleniyor...');
+        toast.info('Lütfen bekleyin...');
 
         const token = await user.getIdToken();
-        const params = new URLSearchParams({ companyId });
-        const response = await fetch(`/api/interim-payments/suggestions?${params.toString()}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
+        // companyId query'de gönderilmez — sunucu kullanıcının şirketini kullanır
+        const response = await fetch('/api/interim-payments/suggestions', {
+          headers: { 'Authorization': `Bearer ${token}` },
+          signal
         });
         
-        const data = await response.json();
+        const data = await response.json().catch(() => ({}));
 
         if (!response.ok) {
+          if (response.status === 402) {
+            window.location.href = '/settings.html#billing-plan?reason=interim_payments';
+            return;
+          }
           logger.error('Öneriler API hatası', { status: response.status, body: data });
-          const message = data?.error || 'Öneriler yüklenemedi';
+          const message = data?.message || data?.error || 'Öneriler yüklenemedi';
           throw new Error(message);
         }
 
         const items = Array.isArray(data.items) ? data.items : (data.suggestions || []);
         const tbody = document.getElementById('suggestions-table-body');
-        
+
+        // Teklifbul Rule v1.0 — DOMPurify <tr>/<td>'yi table dışında siler; createElement kullan
         if (!items || items.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="8" class="empty-state">Henüz öneri bulunmuyor</td></tr>';
+          setTableEmpty(tbody, 8, 'Henüz öneri bulunmuyor');
+          toast.success('İşlem tamamlandı');
           return;
         }
-        
-        tbody.innerHTML = items.map(s => `
-          <tr>
-            <td>${s.siteName || '-'}</td>
-            <td>${s.contractName || '-'}</td>
-            <td>${s.lastPaymentDate ? new Date(s.lastPaymentDate).toLocaleDateString('tr-TR') : 'İlk hakediş'}</td>
-            <td>${new Date(s.suggestedPeriodStart).toLocaleDateString('tr-TR')}</td>
-            <td>${new Date(s.suggestedPeriodEnd).toLocaleDateString('tr-TR')}</td>
-            <td>${s.estimatedAmount ? s.estimatedAmount.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' }) : '-'}</td>
-            <td>${s.costAmount ? s.costAmount.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' }) : '-'}</td>
-            <td>
-              <button class="btn btn-primary" onclick="createDraft('${s.siteId}', '${s.contractId}', '${s.suggestedPeriodStart}', '${s.suggestedPeriodEnd}')">
-                Taslak Hakediş Oluştur
-              </button>
-            </td>
-          </tr>
-        `).join('');
+
+        tbody.textContent = '';
+        items.forEach((s) => {
+          const lastDate = s.lastPaymentDate
+            ? new Date(s.lastPaymentDate).toLocaleDateString('tr-TR')
+            : 'İlk hakediş';
+          const startDate = s.suggestedPeriodStart
+            ? new Date(s.suggestedPeriodStart).toLocaleDateString('tr-TR')
+            : '-';
+          const endDate = s.suggestedPeriodEnd
+            ? new Date(s.suggestedPeriodEnd).toLocaleDateString('tr-TR')
+            : '-';
+          const estimated = s.estimatedAmount
+            ? s.estimatedAmount.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })
+            : '-';
+          const cost = s.costAmount
+            ? s.costAmount.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })
+            : '-';
+          const siteId = String(s.siteId || '');
+          const contractId = String(s.contractId || '');
+          const periodStart = String(s.suggestedPeriodStart || '');
+          const periodEnd = String(s.suggestedPeriodEnd || '');
+
+          const tr = document.createElement('tr');
+          appendTextCell(tr, s.siteName || '-');
+          appendTextCell(tr, s.contractName || '-');
+          appendTextCell(tr, lastDate);
+          appendTextCell(tr, startDate);
+          appendTextCell(tr, endDate);
+          appendTextCell(tr, estimated);
+          appendTextCell(tr, cost);
+
+          const actionsTd = document.createElement('td');
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'btn btn-primary';
+          btn.textContent = 'Taslak Hakediş Oluştur';
+          btn.setAttribute('aria-label', 'Taslak hakediş oluştur');
+          btn.title = 'Taslak hakediş oluştur';
+          btn.addEventListener('click', () => createDraft(siteId, contractId, periodStart, periodEnd));
+          actionsTd.appendChild(btn);
+          tr.appendChild(actionsTd);
+          tbody.appendChild(tr);
+        });
+
+        toast.success('İşlem tamamlandı');
       } catch (error) {
+        if (error?.name === 'AbortError') {
+          toast.info('Öneri yükleme iptal edildi');
+          setTableEmpty(document.getElementById('suggestions-table-body'), 8, 'Yükleme iptal edildi');
+          return;
+        }
         logger.error('Öneriler yüklenirken hata', error);
         toast.error('Öneriler yüklenirken hata oluştu: ' + (error?.message || 'Bilinmeyen hata'));
-        document.getElementById('suggestions-table-body').innerHTML = 
-          '<tr><td colspan="8" class="empty-state">Hata: Öneriler yüklenemedi</td></tr>';
+        setTableEmpty(document.getElementById('suggestions-table-body'), 8, 'Hata: Öneriler yüklenemedi');
+      } finally {
+        setSuggestionsProgress(false);
+        suggestionsAbort = null;
       }
     }
     
     // Taslak hakediş oluştur
-    window.createDraft = function(siteId, contractId, periodStart, periodEnd) {
-      const interimPerms = getInterimPerms();
-      const manageKey = interimPerms.manage;
-      if (manageKey) {
-        // Not: requirePerm async olduğu için createDraft içinde sync kullanmıyoruz;
-        // hakediş taslağı oluşturma zaten edit sayfasındaki interim.manage guard'ına takılacak.
-        // Burada sadece ileride UI guard eklemek istersek hazır dursun.
-      }
+    function createDraft(siteId, contractId, periodStart, periodEnd) {
       const params = new URLSearchParams({
-        siteId,
-        contractId,
-        periodStart,
-        periodEnd
+        siteId: siteId || '',
+        contractId: contractId && contractId !== 'null' ? contractId : '',
+        periodStart: periodStart || '',
+        periodEnd: periodEnd || ''
       });
       window.location.href = `./interim-payment-edit.html?${params.toString()}`;
-    };
+    }
     
     // Sayfa yükleme
     async function init() {
+      document.getElementById('btn-cancel-suggestions')?.addEventListener('click', () => {
+        if (suggestionsAbort) {
+          suggestionsAbort.abort();
+        }
+      });
+
       // Header'ı başlat
       await initGlobalHeader({ mount: '#app-header', activeRoute: 'interim-payment-suggestions' });
       
       // Premium Plus kontrolü
       const hasAccess = await checkPremiumPlus();
       if (!hasAccess) {
-        document.getElementById('premium-required').style.display = 'block';
-        document.getElementById('main-content').style.display = 'none';
+        window.location.href = '/settings.html#billing-plan?reason=interim_payments';
         return;
       }
 

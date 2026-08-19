@@ -55,7 +55,7 @@ class AIAssistantWidget {
             <div class="ai-message-group assistant">
               <div class="ai-avatar assistant">🤖</div>
               <div class="ai-bubble">
-                Merhaba! Ben Nefisoft yapay zekâ asistanınızım. Talep oluşturma, teklif toplama (Teklifbul), satış yönetimi, fatura/irsaliye, stok takibi ve hakediş süreçlerinizle ilgili size nasıl yardımcı olabilirim?
+                Merhaba! Ben Nefisoft yapay zekâ asistanınızım. Günlük sorular için ücretsiz model (Groq) kullanılır. Çok karmaşık analiz veya büyük karşılaştırmalar için Ayarlar → Satın Alma Asistanı'ndan OpenAI / Gemini token paketi alabilirsiniz.
               </div>
             </div>
           </div>
@@ -243,8 +243,8 @@ class AIAssistantWidget {
       logger.info('Sending message to AI assistant', { message: message.substring(0, 50) });
       this.setInFlight(true);
 
-      // Şirket context'i ve yetki kontrolü
-      const ctx = await requireCompanyContext({ redirectOnPending: true });
+      // Şirket context'i ve yetki kontrolü (native'de sayfa kaçırmamak için redirect yok)
+      const ctx = await requireCompanyContext({ redirectOnPending: false });
       if (!ctx || !ctx.companyId) {
         throw new Error(
           (MESSAGES.ERROR_COMPANY_ID_REQUIRED || 'Şirket bilgisi doğrulanamadı') +
@@ -252,7 +252,7 @@ class AIAssistantWidget {
         );
       }
 
-      const permState = await initPermissions({ redirectOnPending: true });
+      const permState = await initPermissions({ redirectOnPending: false });
       if (!permState) {
         throw new Error(
           (MESSAGES.ERROR_PERMISSION || 'Yetki bilgileri yüklenemedi') +
@@ -322,11 +322,14 @@ class AIAssistantWidget {
         } else if (response.status === 402) {
           // Widget-specific handling: remove loading message and show assistant message
           const msg = errorData?.message || 'AI token paketi gerekli.';
+          const errorCode = String(errorData?.error || errorData?.code || '').toLowerCase();
+          const paymentRequired = ['insufficient_tokens', 'payment_required', 'token_package_required'].includes(errorCode) ||
+            /yetersiz\s*token|token\s*paket|payment[_\s-]?required|insufficient[_\s-]?tokens/i.test(msg);
+          const assistantMessage = paymentRequired
+            ? `${msg}\n\nToken paketi satın almak için: [Premium Hesap](/settings.html#premium)`
+            : msg;
           this.removeMessage(loadingId);
-          this.addMessage(
-            `${msg}\n\nToken paketi satın almak için: [Premium Hesap](/settings.html#premium)`,
-            'assistant'
-          );
+          this.addMessage(assistantMessage, 'assistant');
           logger.warn('AI assistant blocked by insufficient tokens', { status: 402, errorData });
           logger.end();
           return;
@@ -398,7 +401,15 @@ class AIAssistantWidget {
       // Input ve butonu tekrar aktif et
       if (input) {
         input.disabled = false;
-        input.focus();
+        const isNative =
+          typeof window !== 'undefined' &&
+          window.Capacitor &&
+          typeof window.Capacitor.isNativePlatform === 'function' &&
+          window.Capacitor.isNativePlatform();
+        // Teklifbul Rule v1.0 — Native'de otomatik focus klavye/geri tuşu ile sayfa kaçmasına yol açıyor
+        if (!isNative) {
+          input.focus();
+        }
       }
       if (sendBtn) {
         sendBtn.disabled = false;
@@ -491,13 +502,22 @@ class AIAssistantWidget {
 // Widget'ı başlat
 let aiAssistantWidget = null;
 
+function mountAiAssistantWidget() {
+  aiAssistantWidget = new AIAssistantWidget();
+  // Teklifbul Rule v1.0 — Native back handler overlay kapatabilsin
+  if (typeof window !== 'undefined') {
+    window.__TB_AI_ASSISTANT__ = aiAssistantWidget;
+  }
+  return aiAssistantWidget;
+}
+
 // DOM yüklendiğinde widget'ı başlat
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
-    aiAssistantWidget = new AIAssistantWidget();
+    mountAiAssistantWidget();
   });
 } else {
-  aiAssistantWidget = new AIAssistantWidget();
+  mountAiAssistantWidget();
 }
 
 export default AIAssistantWidget;

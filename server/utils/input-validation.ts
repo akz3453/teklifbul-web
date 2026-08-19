@@ -48,11 +48,11 @@ export function validateRequest(schema: {
 }) {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
-      // Validate body (Express 5: req.body read-only setter; merge into existing object)
+      // Validate body — strip unknown keys (mass-assignment engeli)
       if (schema.body) {
         const currentBody = (req.body && typeof req.body === 'object') ? req.body : {};
         const parsedBody = await schema.body.parseAsync(currentBody);
-        Object.assign(currentBody as Record<string, unknown>, parsedBody);
+        req.body = parsedBody;
       }
       
       // Validate query (Express 5: req.query getter read-only; mutate existing object)

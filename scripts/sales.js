@@ -38,6 +38,7 @@ function base64Decode(str) {
 }
 // Teklifbul Rule v1.0 - XSS Protection
 import DOMPurify from 'https://cdn.jsdelivr.net/npm/dompurify@3.2.2/+esm';
+import { setTableEmpty } from '../assets/js/utils/safe-table.js';
 import { searchStocks } from '/scripts/lib/stock-search.js';
 import { toast } from '../src/shared/ui/toast.js';
 import { logger } from '../src/shared/log/logger.js';
@@ -143,9 +144,9 @@ const SALES_PERMS = getSalesPerms();
             premiumDeniedMessage: 'Satış modülü için Premium plan gereklidir'
           });
         }
-        // Teklifbul Rule v1.7 - Redirect to billing-plan with reason
+        // Teklifbul Rule v1.7 - Redirect to premium with reason
         setTimeout(() => {
-          window.location.href = '/settings.html#billing-plan?reason=sales';
+          window.location.href = '/settings.html?reason=sales#premium';
         }, 2000);
       } else {
         // Diğer hatalar için de yönlendir
@@ -1019,17 +1020,8 @@ export function renderSaleItems(items) {
   if (!tbody) return;
 
   if (items.length === 0) {
-    // Teklifbul Rule v1.0 - XSS Protection
-    tbody.innerHTML = DOMPurify.sanitize(`
-      <tr>
-        <td colspan="9" style="text-align:center;padding:20px;color:#6b7280">
-          Kalem bulunamadı
-        </td>
-      </tr>
-    `, {
-      ALLOWED_TAGS: ['tr', 'td'],
-      ALLOWED_ATTR: ['colspan', 'style']
-    });
+    // Teklifbul Rule v1.0 — DOMPurify <tr>/<td>'yi table dışında siler; createElement kullan
+    setTableEmpty(tbody, 9, 'Kalem bulunamadı');
     return;
   }
 

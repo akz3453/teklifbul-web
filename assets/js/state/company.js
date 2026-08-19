@@ -13,35 +13,59 @@ const PROFILE_KEYS = ['companyName', 'company_name', 'company_title']; // robust
 let activeCompanyId = null;
 let userCompanies = [];
 
+function collectMembershipIds(userData) {
+  // Teklifbul Rule v1.0 — localStorage companyId yalnız üyelik listesindeyse geçerli
+  const ids = [];
+  if (!userData) return new Set();
+  if (typeof userData.companyId === 'string' && userData.companyId) ids.push(userData.companyId);
+  if (typeof userData.activeCompanyId === 'string' && userData.activeCompanyId) ids.push(userData.activeCompanyId);
+  if (typeof userData.defaultCompanyId === 'string' && userData.defaultCompanyId) ids.push(userData.defaultCompanyId);
+  if (Array.isArray(userData.companies)) {
+    for (const item of userData.companies) {
+      if (typeof item === 'string' && item) ids.push(item);
+      else if (item && typeof item.id === 'string' && item.id) ids.push(item.id);
+    }
+  }
+  return new Set(ids);
+}
+
 /**
  * Get active company ID with priority-based resolution
- * Priority: (1) localStorage, (2) user.defaultCompanyId, (3) first membership
+ * Priority: (1) localStorage if membership matches, (2) user.defaultCompanyId, (3) first membership
  * @returns {Promise<string|null>} Active company ID
  */
 export async function getActiveCompanyId() {
   try {
-    // Priority 1: localStorage
-    const saved = localStorage.getItem(LS_KEY);
-    if (saved) {
-      activeCompanyId = saved;
-      return saved;
-    }
-
     const user = auth.currentUser;
     if (!user) return null;
 
-    // Priority 2: users/{uid}.defaultCompanyId
     const profSnap = await getDoc(doc(db, 'users', user.uid)).catch(() => null);
-    if (profSnap?.exists()) {
-      const data = profSnap.data() || {};
-      if (data.defaultCompanyId) {
-        localStorage.setItem(LS_KEY, data.defaultCompanyId);
-        activeCompanyId = data.defaultCompanyId;
-        return data.defaultCompanyId;
-      }
+    const data = profSnap?.exists() ? (profSnap.data() || {}) : {};
+    const membershipIds = collectMembershipIds(data);
+
+    const saved = localStorage.getItem(LS_KEY);
+    if (saved && membershipIds.has(saved)) {
+      activeCompanyId = saved;
+      return saved;
+    }
+    if (saved) {
+      localStorage.removeItem(LS_KEY);
+      logger.warn('activeCompanyId üyelik dışı, temizlendi', { saved });
     }
 
-    // Priority 3: membership fallback
+    if (data.defaultCompanyId && membershipIds.has(data.defaultCompanyId)) {
+      localStorage.setItem(LS_KEY, data.defaultCompanyId);
+      activeCompanyId = data.defaultCompanyId;
+      return data.defaultCompanyId;
+    }
+
+    const firstMembership = membershipIds.values().next().value;
+    if (firstMembership) {
+      localStorage.setItem(LS_KEY, firstMembership);
+      activeCompanyId = firstMembership;
+      return firstMembership;
+    }
+
     try {
       const companiesQ = query(collection(db, 'companies'), where('members', 'array-contains', user.uid));
       const companies = await getDocs(companiesQ);
@@ -56,7 +80,6 @@ export async function getActiveCompanyId() {
     }
 
     return null;
-    
   } catch (error) {
     logger.error('Error getting active company ID', error);
     return null;

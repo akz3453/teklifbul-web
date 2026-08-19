@@ -1,0 +1,9 @@
+# Teklifbul Rule v1.0 — Android release imza ayarları
+# Bu dosyayı kopyalayın:  copy key.properties.example key.properties
+# Sonra scripts/generate-android-keystore.ps1 çalıştırın ve yolları doldurun.
+# key.properties ASLA git'e eklenmez.
+
+storePassword=CHANGE_ME
+keyPassword=CHANGE_ME
+keyAlias=nefisoft
+storeFile=../keystore/nefisoft-release.jks

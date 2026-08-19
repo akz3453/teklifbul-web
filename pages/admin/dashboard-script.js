@@ -7,11 +7,10 @@ import { toast } from '../../src/shared/ui/toast.js';
 import { MESSAGES } from '../../src/shared/constants/messages.js';
 import DOMPurify from 'dompurify';
 import { initGlobalHeader } from '../../assets/js/ui/header.js';
+import { resolveApiBaseUrl } from '../../assets/js/utils/api-helpers.js';
 
-// Teklifbul Rule v1.0 - Vite env değişkeni için fallback
-const API_BASE_URL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) 
-  ? import.meta.env.VITE_API_URL 
-  : 'http://localhost:5174';
+// Teklifbul Rule v1.0 - Production'da same-origin (/api -> Cloud Function rewrite)
+const API_BASE_URL = resolveApiBaseUrl();
 let currentUser = null;
 let currentToken = null;
 
@@ -32,10 +31,17 @@ async function checkAdminAccess() {
     if (!response.ok) {
       if (response.status === 403) {
         toast.error(MESSAGES.ERROR_ADMIN_PERMISSION);
-        window.location.href = '/index.html';
+        window.location.href = '/dashboard.html';
         return false;
       }
       throw new Error('Admin kontrolü başarısız');
+    }
+
+    const data = await response.json().catch(() => ({ isAdmin: false }));
+    if (!data?.isAdmin) {
+      toast.error(MESSAGES.ERROR_ADMIN_PERMISSION);
+      window.location.href = '/dashboard.html';
+      return false;
     }
 
     // Teklifbul Rule v1.0 - Admin kontrolü başarılı, sayfayı göster
@@ -49,7 +55,7 @@ async function checkAdminAccess() {
   } catch (error) {
     logger.error('Admin kontrolü hatası', error);
     toast.error(MESSAGES.ERROR_ADMIN_PERMISSION_CHECK);
-    window.location.href = '/index.html';
+    window.location.href = '/dashboard.html';
     return false;
   }
 }
@@ -72,7 +78,8 @@ function initTabs() {
       logs: 'Loglar',
       errors: 'Hatalar',
       settings: 'Sistem Ayarları',
-      'ai-catalog': 'AI Katalog Yönetimi'
+      'ai-catalog': 'AI Katalog Yönetimi',
+      'contact-messages': 'İletişim Mesajları'
     };
     document.getElementById('page-title').textContent = titles[tab] || 'Admin Panel';
     window.location.hash = tab;
@@ -489,6 +496,26 @@ async function loadTabData(tab) {
     case 'ai-catalog':
       // iframe içerik kendi sayfasında yönetilir
       break;
+    case 'contact-messages':
+      await loadContactMessages();
+      setTimeout(() => {
+        const searchEl = document.getElementById('contact-search');
+        const statusEl = document.getElementById('contact-filter-status');
+        const refreshEl = document.getElementById('btn-contact-refresh');
+        if (searchEl && !searchEl.dataset.listenerAdded) {
+          searchEl.dataset.listenerAdded = 'true';
+          searchEl.addEventListener('input', debounce(() => loadContactMessages(), 300));
+        }
+        if (statusEl && !statusEl.dataset.listenerAdded) {
+          statusEl.dataset.listenerAdded = 'true';
+          statusEl.addEventListener('change', () => loadContactMessages());
+        }
+        if (refreshEl && !refreshEl.dataset.listenerAdded) {
+          refreshEl.dataset.listenerAdded = 'true';
+          refreshEl.addEventListener('click', () => loadContactMessages());
+        }
+      }, 50);
+      break;
   }
 }
 
@@ -749,7 +776,7 @@ async function loadSubscriptions() {
     // Arama filtresi
     if (searchTerm) {
       companies = companies.filter(company => {
-        const haystack = `${company.companyName || ''} ${company.taxId || ''}`.toLowerCase();
+        const haystack = `${company.companyName || ''} ${company.taxId || ''} ${company.taxNumber || ''} ${company.founderEmail || ''}`.toLowerCase();
         return haystack.includes(searchTerm);
       });
     }
@@ -763,7 +790,7 @@ async function loadSubscriptions() {
     }
 
     let html = '<table class="admin-table"><thead><tr>';
-    html += '<th>Şirket Adı</th><th>Vergi No</th><th>Plan</th><th>Bitiş Tarihi</th><th>Durum</th><th>Kullanıcı Sayısı</th><th>İşlemler</th>';
+    html += '<th>Şirket Adı</th><th>Vergi No</th><th>Kurucu Mail</th><th>Plan</th><th>Bitiş Tarihi</th><th>Durum</th><th>Kullanıcı Sayısı</th><th>İşlemler</th>';
     html += '</tr></thead><tbody>';
 
     companies.forEach(company => {
@@ -792,10 +819,13 @@ async function loadSubscriptions() {
       planDisplay = planLabels[planDisplay] || planDisplay;
       
       const expiresAt = company.expiresAt ? new Date(company.expiresAt).toLocaleDateString('tr-TR') : '-';
+      const taxDisplay = company.taxId || company.taxNumber || '-';
+      const founderEmail = company.founderEmail || '-';
       
       html += `<tr data-company-id="${DOMPurify.sanitize(company.companyId)}">`;
       html += `<td>${DOMPurify.sanitize(company.companyName)}</td>`;
-      html += `<td>${DOMPurify.sanitize(company.taxId)}</td>`;
+      html += `<td>${DOMPurify.sanitize(taxDisplay)}</td>`;
+      html += `<td>${DOMPurify.sanitize(founderEmail)}</td>`;
       html += `<td><span class="badge badge-info">${DOMPurify.sanitize(planDisplay)}</span></td>`;
       html += `<td>${DOMPurify.sanitize(expiresAt)}</td>`;
       html += `<td><span class="badge ${statusBadge}">${DOMPurify.sanitize(statusText)}</span></td>`;
@@ -831,85 +861,119 @@ async function loadSubscriptions() {
 async function loadLogs() {
   const container = document.getElementById('logs-table-container');
   if (!container) return;
-  
-  // Teklifbul Rule v1.0 - XSS Protection
-  container.innerHTML = DOMPurify.sanitize('<div class="loading">Yükleniyor...</div>', {
-    ALLOWED_TAGS: ['div'],
-    ALLOWED_ATTR: ['class']
-  });
+
+  container.textContent = '';
+  const loading = document.createElement('div');
+  loading.className = 'loading';
+  loading.textContent = 'Loglar yükleniyor...';
+  container.appendChild(loading);
 
   try {
-    // Filtreleri al
     const eventType = document.getElementById('log-filter-type')?.value || 'all';
     const period = document.getElementById('log-filter-period')?.value || '24h';
-    
+
     const url = `${API_BASE_URL}/api/admin/logs?limit=200&eventType=${encodeURIComponent(eventType)}&period=${encodeURIComponent(period)}`;
-    logger.info('Loglar yükleniyor', { eventType, period, url });
-    
+    logger.info('Loglar yükleniyor', { eventType, period });
+
     const response = await fetch(url, {
-      headers: { 'Authorization': `Bearer ${currentToken}` }
+      headers: { Authorization: `Bearer ${currentToken}` }
     });
+    const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || 'Loglar yüklenemedi');
+      throw new Error(data.message || data.error || 'Loglar yüklenemedi');
     }
 
-    const data = await response.json();
-    const logs = data.logs || [];
-
+    const logs = Array.isArray(data.logs) ? data.logs : [];
     logger.info('Loglar alındı', { count: logs.length, eventType, period });
 
+    container.textContent = '';
     if (logs.length === 0) {
-      container.innerHTML = DOMPurify.sanitize('<div class="loading">Seçilen kriterlere uygun log bulunamadı</div>', {
-        ALLOWED_TAGS: ['div'],
-        ALLOWED_ATTR: ['class']
-      });
+      const empty = document.createElement('div');
+      empty.style.cssText = 'text-align:center; padding:40px; color:#6b7280;';
+      empty.textContent = data?.meta?.note || 'Seçilen kriterlere uygun log bulunamadı';
+      container.appendChild(empty);
       return;
     }
 
-    let html = '<table class="admin-table"><thead><tr>';
-    html += '<th>Tarih/Saat</th><th>Olay Tipi</th><th>Kullanıcı</th><th>Endpoint</th><th>IP</th><th>Mesaj</th>';
-    html += '</tr></thead><tbody>';
+    const wrap = document.createElement('div');
+    wrap.style.overflowX = 'auto';
+    const table = document.createElement('table');
+    table.className = 'admin-table';
+    table.setAttribute('aria-label', 'Güvenlik ve sistem logları');
 
-    logs.forEach(log => {
+    const thead = document.createElement('thead');
+    const headRow = document.createElement('tr');
+    ['Tarih/Saat', 'Olay Tipi', 'Kullanıcı', 'Endpoint', 'IP', 'Mesaj'].forEach((label) => {
+      const th = document.createElement('th');
+      th.textContent = label;
+      headRow.appendChild(th);
+    });
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    const eventLabels = {
+      authFailure: 'Auth Hatası',
+      rateLimitHit: 'Rate Limit',
+      adminAction: 'Admin Aksiyon',
+      serverError: 'Sunucu Hatası',
+      clientError: 'İstemci Hatası',
+    };
+
+    logs.forEach((log) => {
+      const tr = document.createElement('tr');
+      const eventTypeValue = String(log.eventType || log.level || log.type || 'unknown');
       const timestamp = log.timestamp ? new Date(log.timestamp).toLocaleString('tr-TR') : '-';
-      const eventType = log.eventType || log.level || log.type || 'unknown';
-      const userId = log.userId || log.user || log.email || log.actorEmail || '-';
+      const userId = log.email || log.userId || log.user || log.actorEmail || '-';
       const method = log.method || '';
       const path = log.path || log.endpoint || log.url || '-';
       const ip = log.ip || log.clientIp || log.remoteAddress || '-';
-      const message = log.message || log.msg || log.error || log.description || '-';
-      
-      // Event type'a göre badge rengi
+      const message = String(log.message || log.msg || log.error || log.description || '-');
+
       let badgeClass = 'badge-warning';
-      if (eventType.toLowerCase().includes('error') || eventType.toLowerCase().includes('failure')) {
-        badgeClass = 'badge-danger';
-      } else if (eventType.toLowerCase().includes('admin') || eventType.toLowerCase().includes('action')) {
-        badgeClass = 'badge-info';
-      } else if (eventType.toLowerCase().includes('rate') || eventType.toLowerCase().includes('limit')) {
-        badgeClass = 'badge-warning';
-      }
-      
-      html += `<tr>`;
-      html += `<td>${DOMPurify.sanitize(timestamp)}</td>`;
-      html += `<td><span class="badge ${badgeClass}">${DOMPurify.sanitize(eventType)}</span></td>`;
-      html += `<td>${DOMPurify.sanitize(userId)}</td>`;
-      html += `<td>${DOMPurify.sanitize(method)} ${DOMPurify.sanitize(path)}</td>`;
-      html += `<td>${DOMPurify.sanitize(ip)}</td>`;
-      html += `<td title="${DOMPurify.sanitize(message)}">${DOMPurify.sanitize(message.length > 100 ? message.substring(0, 100) + '...' : message)}</td>`;
-      html += `</tr>`;
+      const lower = eventTypeValue.toLowerCase();
+      if (lower.includes('error') || lower.includes('failure')) badgeClass = 'badge-danger';
+      else if (lower.includes('admin') || lower.includes('action')) badgeClass = 'badge-info';
+      else if (lower.includes('rate') || lower.includes('limit')) badgeClass = 'badge-warning';
+
+      const cells = [
+        timestamp,
+        null,
+        userId,
+        `${method} ${path}`.trim(),
+        ip,
+        message.length > 140 ? `${message.slice(0, 140)}...` : message,
+      ];
+
+      cells.forEach((value, idx) => {
+        const td = document.createElement('td');
+        if (idx === 1) {
+          const badge = document.createElement('span');
+          badge.className = `badge ${badgeClass}`;
+          badge.textContent = eventLabels[eventTypeValue] || eventTypeValue;
+          td.appendChild(badge);
+        } else {
+          td.textContent = value;
+          if (idx === 5) td.title = message;
+        }
+        tr.appendChild(td);
+      });
+
+      tbody.appendChild(tr);
     });
 
-    html += '</tbody></table>';
-    container.innerHTML = DOMPurify.sanitize(html);
+    table.appendChild(tbody);
+    wrap.appendChild(table);
+    container.appendChild(wrap);
   } catch (error) {
     logger.error('Loglar yüklenemedi', error);
-    const errorMessage = error?.message || error?.toString() || 'Bilinmeyen hata';
-    container.innerHTML = DOMPurify.sanitize(`<div class="error-message">Loglar yüklenemedi: ${DOMPurify.sanitize(errorMessage)}</div>`, {
-      ALLOWED_TAGS: ['div'],
-      ALLOWED_ATTR: ['class']
-    });
+    toast.error(error?.message || 'Loglar yüklenemedi');
+    container.textContent = '';
+    const errEl = document.createElement('div');
+    errEl.className = 'error-message';
+    errEl.textContent = `Loglar yüklenemedi: ${error?.message || 'Bilinmeyen hata'}`;
+    container.appendChild(errEl);
   }
 }
 
@@ -1108,7 +1172,8 @@ function renderErrorsTable(errors) {
     if (!error.resolved) {
       html += `<button class="btn btn-sm btn-success error-resolve-btn" data-error-id="${DOMPurify.sanitize(error.id)}">Çözüldü</button> `;
     }
-    html += `<button class="btn btn-sm btn-info error-analyze-btn" data-error-id="${DOMPurify.sanitize(error.id)}">AI Analiz</button>`;
+    html += `<button class="btn btn-sm btn-info error-analyze-btn" data-error-id="${DOMPurify.sanitize(error.id)}">AI Analiz</button> `;
+    html += `<button class="btn btn-sm btn-danger error-delete-btn" data-error-id="${DOMPurify.sanitize(error.id)}">Sil</button>`;
     html += `</td>`;
     html += `</tr>`;
   });
@@ -1311,10 +1376,31 @@ async function analyzeError(errorId) {
   }
 }
 
+async function deleteError(errorId) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/errors/${errorId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${currentToken}` }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Hata silinemedi');
+    }
+
+    toast.success('Hata silindi');
+    await loadErrors();
+  } catch (error) {
+    logger.error('Hata silinemedi', error);
+    toast.error(`Hata silinemedi: ${error?.message || 'Bilinmeyen hata'}`);
+  }
+}
+
 // Global functions (backward compatibility, artık kullanılmıyor - event delegation kullanılıyor)
 window.viewErrorDetail = viewErrorDetail;
 window.markErrorResolved = markErrorResolved;
 window.analyzeError = analyzeError;
+window.deleteError = deleteError;
 
 // Analyze selected errors - Teklifbul Rule v1.0 - Toplu AI analizi
 const btnAnalyzeSelected = document.getElementById('btn-analyze-selected');
@@ -1441,6 +1527,316 @@ document.getElementById('settings-form')?.addEventListener('submit', async (e) =
   }
 });
 
+// Load contact messages — Teklifbul Rule v1.0
+async function loadContactMessages() {
+  const container = document.getElementById('contact-messages-table-container');
+  if (!container) return;
+
+  container.innerHTML = DOMPurify.sanitize('<div class="loading">Mesajlar yükleniyor...</div>', {
+    ALLOWED_TAGS: ['div'],
+    ALLOWED_ATTR: ['class']
+  });
+
+  try {
+    const status = document.getElementById('contact-filter-status')?.value || 'all';
+    const search = document.getElementById('contact-search')?.value || '';
+    const params = new URLSearchParams({ limit: '100', status });
+    if (search.trim()) params.set('search', search.trim());
+
+    const response = await fetch(`${API_BASE_URL}/api/admin/contact-messages?${params}`, {
+      headers: { Authorization: `Bearer ${currentToken}` }
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data?.message || 'Mesajlar yüklenemedi');
+    }
+
+    const messages = Array.isArray(data.messages) ? data.messages : [];
+    updateContactUnreadBadge(Number(data.unreadCount || messages.filter((m) => m.status === 'new').length));
+
+    if (!messages.length) {
+      container.textContent = '';
+      const empty = document.createElement('div');
+      empty.style.cssText = 'text-align:center; padding:40px; color:#6b7280;';
+      empty.textContent = 'Mesaj bulunamadı';
+      container.appendChild(empty);
+      return;
+    }
+
+    renderContactMessagesTable(messages);
+  } catch (error) {
+    logger.error('İletişim mesajları yüklenemedi', error);
+    toast.error(error?.message || 'Mesajlar yüklenemedi');
+    container.textContent = '';
+    const errEl = document.createElement('div');
+    errEl.className = 'error-message';
+    errEl.textContent = error?.message || 'Mesajlar yüklenemedi';
+    container.appendChild(errEl);
+  }
+}
+
+function updateContactUnreadBadge(count) {
+  const badge = document.getElementById('contact-unread-badge');
+  if (!badge) return;
+  if (count > 0) {
+    badge.textContent = String(count);
+    badge.style.display = 'inline-flex';
+  } else {
+    badge.textContent = '';
+    badge.style.display = 'none';
+  }
+}
+
+function formatContactDate(value) {
+  if (!value) return '-';
+  try {
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return '-';
+    return d.toLocaleString('tr-TR');
+  } catch {
+    return '-';
+  }
+}
+
+function contactStatusLabel(status) {
+  const map = { new: 'Yeni', read: 'Okundu', replied: 'Yanıtlandı', archived: 'Arşiv' };
+  return map[status] || status || '-';
+}
+
+function truncateContactPreview(text, maxLen = 100) {
+  const value = String(text || '').replace(/\s+/g, ' ').trim();
+  if (value.length <= maxLen) return value;
+  return `${value.slice(0, maxLen - 1)}…`;
+}
+
+let currentContactMessages = [];
+let openContactMessageId = null;
+
+function getContactMessageModal() {
+  return document.getElementById('contact-message-modal');
+}
+
+function closeContactMessageModal() {
+  const modal = getContactMessageModal();
+  if (!modal) return;
+  modal.style.display = 'none';
+  openContactMessageId = null;
+}
+
+async function openContactMessageModal(messageOrId) {
+  const message = typeof messageOrId === 'string'
+    ? currentContactMessages.find((item) => item.id === messageOrId)
+    : messageOrId;
+  if (!message) {
+    toast.error('Mesaj bulunamadı');
+    return;
+  }
+
+  openContactMessageId = message.id;
+  const modal = getContactMessageModal();
+  if (!modal) return;
+
+  const nameEl = document.getElementById('contact-modal-name');
+  const companyEl = document.getElementById('contact-modal-company');
+  const dateEl = document.getElementById('contact-modal-date');
+  const emailEl = document.getElementById('contact-modal-email');
+  const phoneEl = document.getElementById('contact-modal-phone');
+  const statusEl = document.getElementById('contact-modal-status');
+  const messageEl = document.getElementById('contact-modal-message');
+  const mailtoEl = document.getElementById('contact-modal-mailto');
+
+  if (nameEl) nameEl.textContent = message.name || '-';
+  if (companyEl) companyEl.textContent = message.company || '-';
+  if (dateEl) dateEl.textContent = formatContactDate(message.createdAt);
+  if (phoneEl) phoneEl.textContent = message.phone || '-';
+  if (messageEl) messageEl.textContent = message.message || '';
+  if (statusEl) statusEl.value = message.status || 'new';
+
+  const email = String(message.email || '').trim();
+  if (emailEl) {
+    emailEl.textContent = email || '-';
+    emailEl.href = email ? `mailto:${email}` : '#';
+  }
+  if (mailtoEl) {
+    const subject = encodeURIComponent('NEFISOFT iletişim yanıtı');
+    const body = encodeURIComponent(`Merhaba ${message.name || ''},\n\n`);
+    mailtoEl.href = email ? `mailto:${email}?subject=${subject}&body=${body}` : '#';
+  }
+
+  modal.style.display = 'flex';
+
+  // Yeni mesaj açılınca otomatik okundu
+  if (message.status === 'new') {
+    await updateContactMessageStatus(message.id, 'read', { silent: true, keepOpen: true });
+  }
+}
+
+function bindContactMessageModal() {
+  const modal = getContactMessageModal();
+  if (!modal || modal.dataset.bound === 'true') return;
+  modal.dataset.bound = 'true';
+
+  document.getElementById('btn-contact-message-close')?.addEventListener('click', closeContactMessageModal);
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeContactMessageModal();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal.style.display === 'flex') closeContactMessageModal();
+  });
+
+  document.getElementById('contact-modal-status')?.addEventListener('change', async (e) => {
+    if (!openContactMessageId) return;
+    await updateContactMessageStatus(openContactMessageId, e.target.value, { keepOpen: true });
+  });
+
+  document.getElementById('btn-contact-modal-archive')?.addEventListener('click', async () => {
+    if (!openContactMessageId) return;
+    await updateContactMessageStatus(openContactMessageId, 'archived', { keepOpen: true });
+  });
+}
+
+function renderContactMessagesTable(messages) {
+  const container = document.getElementById('contact-messages-table-container');
+  if (!container) return;
+  currentContactMessages = Array.isArray(messages) ? messages : [];
+  container.textContent = '';
+  bindContactMessageModal();
+
+  const wrap = document.createElement('div');
+  wrap.style.overflowX = 'auto';
+
+  const table = document.createElement('table');
+  table.className = 'admin-table';
+  table.setAttribute('aria-label', 'İletişim mesajları tablosu');
+
+  const thead = document.createElement('thead');
+  const headRow = document.createElement('tr');
+  ['Tarih', 'Kişi / Şirket', 'İletişim', 'Mesaj', 'Durum', 'İşlem'].forEach((label) => {
+    const th = document.createElement('th');
+    th.textContent = label;
+    headRow.appendChild(th);
+  });
+  thead.appendChild(headRow);
+  table.appendChild(thead);
+
+  const tbody = document.createElement('tbody');
+
+  currentContactMessages.forEach((m) => {
+    const tr = document.createElement('tr');
+    if (m.status === 'new') tr.style.background = '#eff6ff';
+    tr.style.cursor = 'pointer';
+    tr.title = 'Detayı açmak için tıklayın';
+    tr.addEventListener('click', (e) => {
+      if (e.target.closest('a, button, select, input, textarea, label')) return;
+      openContactMessageModal(m);
+    });
+
+    const tdDate = document.createElement('td');
+    tdDate.style.whiteSpace = 'nowrap';
+    tdDate.textContent = formatContactDate(m.createdAt);
+
+    const tdPerson = document.createElement('td');
+    const nameEl = document.createElement('div');
+    nameEl.style.fontWeight = '600';
+    nameEl.textContent = m.name || '-';
+    const companyEl = document.createElement('div');
+    companyEl.style.cssText = 'font-size:12px; color:#6b7280;';
+    companyEl.textContent = m.company || '-';
+    tdPerson.appendChild(nameEl);
+    tdPerson.appendChild(companyEl);
+
+    const tdContact = document.createElement('td');
+    const mailEl = document.createElement('a');
+    mailEl.href = `mailto:${String(m.email || '')}`;
+    mailEl.textContent = m.email || '-';
+    const phoneEl = document.createElement('div');
+    phoneEl.style.cssText = 'font-size:12px; color:#6b7280;';
+    phoneEl.textContent = m.phone || '-';
+    tdContact.appendChild(mailEl);
+    tdContact.appendChild(phoneEl);
+
+    const tdMsg = document.createElement('td');
+    tdMsg.style.cssText = 'max-width:320px; color:#374151;';
+    tdMsg.textContent = truncateContactPreview(m.message, 110);
+
+    const tdStatus = document.createElement('td');
+    const badge = document.createElement('span');
+    const statusClass =
+      m.status === 'new' ? 'badge-danger' :
+      m.status === 'archived' ? 'badge-secondary' :
+      m.status === 'replied' ? 'badge-success' : 'badge-success';
+    badge.className = `badge ${statusClass}`;
+    badge.textContent = contactStatusLabel(m.status);
+    tdStatus.appendChild(badge);
+
+    const tdActions = document.createElement('td');
+    tdActions.style.whiteSpace = 'nowrap';
+    const openBtn = document.createElement('button');
+    openBtn.type = 'button';
+    openBtn.className = 'btn btn-sm btn-primary';
+    openBtn.textContent = 'Aç';
+    openBtn.setAttribute('aria-label', 'Mesaj detayını aç');
+    openBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openContactMessageModal(m);
+    });
+    tdActions.appendChild(openBtn);
+
+    tr.appendChild(tdDate);
+    tr.appendChild(tdPerson);
+    tr.appendChild(tdContact);
+    tr.appendChild(tdMsg);
+    tr.appendChild(tdStatus);
+    tr.appendChild(tdActions);
+    tbody.appendChild(tr);
+  });
+
+  table.appendChild(tbody);
+  wrap.appendChild(table);
+  container.appendChild(wrap);
+}
+
+async function updateContactMessageStatus(id, status, opts = {}) {
+  const { silent = false, keepOpen = false } = opts;
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/contact-messages/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${currentToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ status })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data?.message || 'Güncellenemedi');
+    if (!silent) toast.success(`Durum güncellendi: ${contactStatusLabel(status)}`);
+
+    const statusFilter = document.getElementById('contact-filter-status');
+    if (statusFilter && statusFilter.value === 'new' && status !== 'new') {
+      statusFilter.value = 'all';
+    }
+
+    const keepId = keepOpen ? (openContactMessageId || id) : null;
+    await loadContactMessages();
+    if (keepId) {
+      const refreshed = currentContactMessages.find((item) => item.id === keepId);
+      if (refreshed) {
+        openContactMessageId = refreshed.id;
+        const statusEl = document.getElementById('contact-modal-status');
+        if (statusEl) statusEl.value = refreshed.status || status;
+        const modal = getContactMessageModal();
+        if (modal) modal.style.display = 'flex';
+      }
+    } else if (!keepOpen) {
+      closeContactMessageModal();
+    }
+  } catch (error) {
+    logger.error('İletişim mesajı güncellenemedi', error);
+    toast.error(error?.message || 'Güncellenemedi');
+    await loadContactMessages();
+  }
+}
+
 // Logout
 document.getElementById('btn-logout')?.addEventListener('click', async () => {
   const { logout } = await import('../../firebase.js');
@@ -1467,6 +1863,7 @@ document.getElementById('btn-logout')?.addEventListener('click', async () => {
   initTabs();
   bindUserFilters();
   bindLogFilters(); // Log filtreleri için event listener'lar
+  loadContactMessages().catch(() => {});
   await loadUsers();
 })();
 

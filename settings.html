@@ -164,7 +164,8 @@
       font-size: 13px;
     }
 
-    .btn {
+    .btn,
+    button.btn {
       padding: 12px 24px;
       border: none;
       border-radius: 6px;
@@ -172,6 +173,11 @@
       cursor: pointer;
       font-size: 14px;
       transition: all 0.2s;
+      width: auto !important;
+    }
+
+    .settings-nav-btn {
+      width: 100% !important;
     }
 
     .btn-primary {
@@ -1000,7 +1006,7 @@
             </div>
           </div>
 
-          <div class="section">
+          <div id="rolePermissionsSection" class="section">
             <h3>🔐 Rol ve Yetki Yönetimi</h3>
             <p class="muted" style="margin-bottom:16px; font-size:13px;">
               Şirket içindeki rollerin hangi ekranlarda hangi işlemleri yapabileceğini buradan yönetebilirsiniz.
@@ -1055,12 +1061,17 @@
               <div style="font-size:12px; color:#4b5563;">
                 <span id="rolePermActiveGroupLabel">Talepler</span> için rol ve yetkileri düzenliyorsunuz.
               </div>
+              <div id="rolePermRoleFilter" style="display:none; gap:6px; align-items:center;">
+                <button type="button" data-role-filter="all" class="btn btn-secondary" style="padding:6px 10px; font-size:12px; background:#2563eb; color:#fff; border:1px solid #2563eb; border-radius:6px;" title="Tüm roller" aria-label="Tüm roller">Tümü</button>
+                <button type="button" data-role-filter="buyer" class="btn btn-secondary" style="padding:6px 10px; font-size:12px; background:#fff; color:#374151; border:1px solid #e5e7eb; border-radius:6px;" title="Alıcı roller" aria-label="Alıcı roller">Alıcı</button>
+                <button type="button" data-role-filter="supplier" class="btn btn-secondary" style="padding:6px 10px; font-size:12px; background:#fff; color:#374151; border:1px solid #e5e7eb; border-radius:6px;" title="Tedarikçi roller" aria-label="Tedarikçi roller">Tedarikçi</button>
+              </div>
               <div style="display:flex; gap:8px; flex-wrap:wrap;">
                 <button type="button" id="btnRolePermGroupAllOn" class="btn btn-secondary"
-                  style="padding:8px 16px; font-size:13px; background:#3b82f6; color:#ffffff; border:none; border-radius:6px; cursor:pointer; font-weight:500;">✓
+                  style="padding:8px 16px; font-size:13px; background:#3b82f6; color:#ffffff; border:none; border-radius:6px; cursor:pointer; font-weight:500;" title="Bu sekmede tüm yetkileri aç" aria-label="Bu sekmede hepsini aç">✓
                   Bu sekmede hepsini aç</button>
                 <button type="button" id="btnRolePermGroupAllOff" class="btn btn-secondary"
-                  style="padding:8px 16px; font-size:13px; background:#ef4444; color:#ffffff; border:none; border-radius:6px; cursor:pointer; font-weight:500;">✗
+                  style="padding:8px 16px; font-size:13px; background:#ef4444; color:#ffffff; border:none; border-radius:6px; cursor:pointer; font-weight:500;" title="Bu sekmede tüm yetkileri kapat" aria-label="Bu sekmede hepsini kapat">✗
                   Bu sekmede hepsini kapat</button>
               </div>
             </div>
@@ -1071,18 +1082,18 @@
               </table>
             </div>
             
-            <div style="margin-top:16px; display:flex; justify-content:flex-end; gap:12px; align-items:center;">
-              <span id="rolePermVerifiedStatus" style="font-size:13px; font-weight:600; color:#ef4444; display:none;">
-                ⚠️ Bu rol için yetki onayları henüz tamamlanmadı (Kilitli). Yeni atanan kullanıcılar sisteme giremez.
+            <div style="margin-top:16px; display:flex; justify-content:flex-end; gap:12px; align-items:center; flex-wrap:wrap;">
+              <span id="rolePermVerifiedStatus" style="font-size:13px; font-weight:600; color:#eab308; display:none;">
+                Bazı roller için sekme onayı henüz tamamlanmadı.
               </span>
-              <button type="button" id="btnRolePermTabVerified" class="btn btn-primary" style="padding:10px 24px; font-weight:600; font-size:14px; background:#10b981; border:none; box-shadow:0 4px 6px rgba(16, 185, 129, 0.2);">
+              <button type="button" id="btnRolePermTabVerified" class="btn btn-primary" style="padding:10px 24px; font-weight:600; font-size:14px; background:#10b981; border:none; box-shadow:0 4px 6px rgba(16, 185, 129, 0.2);" title="Aktif sekmedeki yetkileri kaydet ve onayla" aria-label="Bu sekmedeki yetkileri kaydet ve onayla">
                  💾 Bu Sekmedeki Yetkileri Kaydet ve Onayla
               </button>
             </div>
             
             <p class="muted" style="margin-top:8px; font-size:11px; color:#6b7280;">
-              Not: Doc yoksa Excel şablonundaki varsayılan izinler kullanılır; izin tanımı da yoksa ilgili yetki
-              varsayılan olarak <strong>EVET</strong> kabul edilir.
+              Not: Kayıt yoksa şablon varsayılanları kullanılır. “Sekme onayı” yalnızca
+              <strong>yetki onayı bekleyen</strong> yeni üye katılımını açar; mevcut kabul edilmiş kullanıcıları etkilemez.
             </p>
           </div>
         </div>
@@ -1137,11 +1148,11 @@
               <div
                 style="margin-bottom:16px; padding:16px; background:white; border-radius:6px; border:1px solid #e5e7eb;">
                 <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px;">
-                  <span style="font-size:32px; font-weight:700; color:#1f2937;">4.8</span>
+                  <span id="companyReviewsAvgScore" style="font-size:32px; font-weight:700; color:#1f2937;">-</span>
                   <div style="display:flex; gap:4px;">
-                    <span style="font-size:20px; color:#fbbf24;">★★★★★</span>
+                    <span id="companyReviewsStars" style="font-size:20px; color:#fbbf24;">☆☆☆☆☆</span>
                   </div>
-                  <span style="font-size:14px; color:#6b7280;">(24 değerlendirme)</span>
+                  <span id="companyReviewsCount" style="font-size:14px; color:#6b7280;">(0 değerlendirme)</span>
                 </div>
               </div>
 
@@ -1425,12 +1436,30 @@
 
                 <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
                   <input type="checkbox" id="security_allowPriceEditing"
-                    style="width:18px; height:18px; cursor:pointer;">
+                    style="width:18px; height:18px; cursor:pointer;" title="Satış birim fiyatını düzenlemeye izin ver" aria-label="Satış fiyatı değiştirilebilir mi">
                   <span style="font-weight:600; color:#1f2937;">Satış fiyatı değiştirilebilir mi?</span>
                 </label>
                 <p class="muted" style="margin:8px 0 0 0; font-size:12px;">
                   Açık olduğunda, satış ekranında birim fiyat alanı manuel olarak değiştirilebilir. Kapalı olduğunda,
                   fiyat sadece stok kartından otomatik gelir ve değiştirilemez.
+                </p>
+              </div>
+
+              <!-- Teklifbul Rule v1.0 — İndirim % düzenleme (satış fiyatı ile aynı güvenlik modeli) -->
+              <div style="padding:16px; background:#f9fafb; border-radius:8px; border:1px solid #e5e7eb;">
+                <h4 style="margin:0 0 12px 0; font-size:16px; color:#1f2937;">İndirim Düzenleme</h4>
+                <p class="muted" style="margin:0 0 12px 0; font-size:12px;">
+                  Satış ekranında satır indirim (%) alanının manuel olarak değiştirilip değiştirilemeyeceğini belirleyin.
+                </p>
+
+                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                  <input type="checkbox" id="security_allowDiscountEditing"
+                    style="width:18px; height:18px; cursor:pointer;" title="Satış indirimini düzenlemeye izin ver" aria-label="İndirim değiştirilebilir mi">
+                  <span style="font-weight:600; color:#1f2937;">İndirim değiştirilebilir mi?</span>
+                </label>
+                <p class="muted" style="margin:8px 0 0 0; font-size:12px;">
+                  Açık olduğunda, satış ekranında İndirim % alanı düzenlenebilir. Kapalı olduğunda indirim alanı kilitlenir
+                  (varsayılan %0 veya kayıtlı değer korunur, değiştirilemez).
                 </p>
               </div>
             </div>
@@ -1589,6 +1618,14 @@
               <strong>Premium’da</strong> üst menüde öğelerin sırasını ve görünürlüğünü kişiselleştirebilirsiniz (ücretsiz planda bu özellik kapalıdır).
             </p>
 
+            <!-- Teklifbul Rule v1.0 — kilitli özellikten yönlendirme uyarısı -->
+            <div id="premiumUpgradeReasonBanner"
+              style="display:none; padding:16px 18px; background:#fef3c7; border-left:4px solid #f59e0b; border-radius:8px; margin-bottom:20px;"
+              role="status" aria-live="polite">
+              <div style="font-weight:700; color:#92400e; margin-bottom:6px;">Premium özellik</div>
+              <p id="premiumUpgradeReasonText" style="margin:0; font-size:14px; color:#78350f; line-height:1.5;"></p>
+            </div>
+
             <!-- Premium Durum -->
             <div
               style="padding:20px; background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius:12px; color:white; margin-bottom:24px;">
@@ -1735,6 +1772,17 @@
                         ✓</td>
                     </tr>
                     <tr>
+                      <td style="padding:12px; border-bottom:1px solid #e5e7eb; font-size:13px;">Stok Takip</td>
+                      <td style="padding:12px; text-align:center; border-bottom:1px solid #e5e7eb; font-size:13px;">✗
+                      </td>
+                      <td
+                        style="padding:12px; text-align:center; border-bottom:1px solid #e5e7eb; font-size:13px; font-weight:600; color:#10b981;">
+                        ✓</td>
+                      <td
+                        style="padding:12px; text-align:center; border-bottom:1px solid #e5e7eb; font-size:13px; font-weight:600; color:#10b981;">
+                        ✓</td>
+                    </tr>
+                    <tr>
                       <td style="padding:12px; border-bottom:1px solid #e5e7eb; font-size:13px;">Satışlar Modülü</td>
                       <td style="padding:12px; text-align:center; border-bottom:1px solid #e5e7eb; font-size:13px;">✗
                       </td>
@@ -1749,9 +1797,8 @@
                       <td style="padding:12px; border-bottom:1px solid #e5e7eb; font-size:13px;">Hakediş Sistemi</td>
                       <td style="padding:12px; text-align:center; border-bottom:1px solid #e5e7eb; font-size:13px;">✗
                       </td>
-                      <td
-                        style="padding:12px; text-align:center; border-bottom:1px solid #e5e7eb; font-size:13px; font-weight:600; color:#10b981;">
-                        ✓</td>
+                      <td style="padding:12px; text-align:center; border-bottom:1px solid #e5e7eb; font-size:13px;">✗
+                      </td>
                       <td
                         style="padding:12px; text-align:center; border-bottom:1px solid #e5e7eb; font-size:13px; font-weight:600; color:#10b981;">
                         ✓</td>
@@ -1783,7 +1830,7 @@
                       <td style="padding:12px; text-align:center; font-size:13px; font-weight:600;">₺0</td>
                       <td style="padding:12px; text-align:center; font-size:13px; font-weight:700; color:#f59e0b;">₺359
                       </td>
-                      <td style="padding:12px; text-align:center; font-size:13px; font-weight:700; color:#f97316;">₺379
+                      <td style="padding:12px; text-align:center; font-size:13px; font-weight:700; color:#f97316;">₺600
                         + Token Paketi</td>
                     </tr>
                   </tbody>
@@ -1797,44 +1844,13 @@
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
                 <h4 style="margin:0; font-size:18px; color:#1f2937;">💳 Ödeme Yöntemleri</h4>
                 <button type="button" id="btnAddPaymentMethod" class="btn btn-primary"
-                  style="padding:8px 16px; font-size:13px;">
+                  style="padding:8px 16px; font-size:13px;" title="Ödeme yöntemi ekle" aria-label="Yeni ödeme yöntemi ekle">
                   ➕ Yeni Ödeme Yöntemi Ekle
                 </button>
               </div>
               <div id="paymentMethodsList" style="display:flex; flex-direction:column; gap:12px;">
-                <div style="padding:16px; background:white; border-radius:8px; border:1px solid #e5e7eb;">
-                  <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div>
-                      <div style="font-weight:600; color:#1f2937; margin-bottom:4px;">💳 Kredi Kartı</div>
-                      <div style="font-size:13px; color:#6b7280;">**** **** **** 1234</div>
-                      <div style="font-size:12px; color:#6b7280; margin-top:4px;">Son Kullanma: 12/25</div>
-                    </div>
-                    <div style="display:flex; gap:8px;">
-                      <button type="button" class="btn btn-secondary" style="padding:6px 12px; font-size:12px;">
-                        ✏️ Düzenle
-                      </button>
-                      <button type="button" class="btn btn-danger" style="padding:6px 12px; font-size:12px;">
-                        🗑️ Sil
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                <div style="padding:16px; background:white; border-radius:8px; border:1px solid #e5e7eb;">
-                  <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div>
-                      <div style="font-weight:600; color:#1f2937; margin-bottom:4px;">🏦 Banka Havalesi</div>
-                      <div style="font-size:13px; color:#6b7280;">TR12 3456 7890 1234 5678 9012 34</div>
-                      <div style="font-size:12px; color:#6b7280; margin-top:4px;">Ziraat Bankası</div>
-                    </div>
-                    <div style="display:flex; gap:8px;">
-                      <button type="button" class="btn btn-secondary" style="padding:6px 12px; font-size:12px;">
-                        ✏️ Düzenle
-                      </button>
-                      <button type="button" class="btn btn-danger" style="padding:6px 12px; font-size:12px;">
-                        🗑️ Sil
-                      </button>
-                    </div>
-                  </div>
+                <div style="padding:16px; background:white; border-radius:8px; border:1px dashed #d1d5db; text-align:center; color:#6b7280; font-size:13px;">
+                  Kayıtlı ödeme yöntemi yok. Plan yükseltirken ödeme adımında kart/havale seçenekleri sunulur.
                 </div>
               </div>
             </div>
@@ -1861,22 +1877,17 @@
                   <div style="font-weight:600; color:#1f2937;" id="monthlyFee">-</div>
                 </div>
               </div>
-              <div style="margin-top:16px; display:flex; gap:12px;">
-                <button type="button" id="btnUpgradePlan" class="btn btn-primary" style="padding:10px 20px;">
+              <div style="margin-top:16px; display:flex; gap:12px; flex-wrap:wrap;">
+                <button type="button" id="btnUpgradePlan" class="btn btn-primary" style="padding:10px 20px;" title="Planı yükselt" aria-label="Planı yükselt">
                   🚀 Planı Yükselt
                 </button>
-                <button type="button" id="btnCancelSubscription" class="btn btn-secondary" style="padding:10px 20px;">
+                <button type="button" id="btnCancelSubscription" class="btn btn-secondary" style="padding:10px 20px; display:none;" title="Aboneliği iptal et" aria-label="Aboneliği iptal et">
                   ❌ Aboneliği İptal Et
                 </button>
               </div>
             </div>
 
-            <!-- Kaydet Butonu - Premium ayarları için -->
-            <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:24px;">
-              <button type="button" id="btnSavePremiumSettings" class="btn btn-primary">
-                💾 Premium Ayarlarını Kaydet
-              </button>
-            </div>
+            <!-- Kaydet Butonu kaldırıldı: plan şirket aboneliğidir, bu sekmede kaydedilecek ayar yok -->
           </div>
         </div>
 
@@ -1900,8 +1911,8 @@
                 style="padding:16px; background:white; border-radius:6px; border:1px solid #e5e7eb;">
                 <p style="margin:0; color:#6b7280; font-size:14px;">Yükleniyor...</p>
               </div>
-              <button type="button" id="btnEditMainAddress"
-                style="margin-top:12px; padding:8px 16px; background:#3b82f6; color:white; border:none; border-radius:6px; cursor:pointer; font-size:13px; font-weight:600;">
+              <button type="button" id="btnEditMainAddress" class="btn"
+                style="margin-top:12px; padding:8px 16px; background:#3b82f6; color:white; border:none; border-radius:6px; cursor:pointer; font-size:13px; font-weight:600; width:auto !important;" title="Ana adresi düzenle" aria-label="Ana adresi düzenle">
                 ✏️ Düzenle
               </button>
             </div>
@@ -1915,8 +1926,8 @@
                     style="padding:8px 16px; font-size:13px; display:none;">
                     ✏️ Toplu Düzenle
                   </button>
-                  <button type="button" id="addAddressBtn"
-                    style="padding:10px 20px; background:#10b981; color:white; border:none; border-radius:6px; cursor:pointer; font-size:14px; font-weight:600;">
+                  <button type="button" id="addAddressBtn" class="btn"
+                    style="padding:10px 20px; background:#10b981; color:white; border:none; border-radius:6px; cursor:pointer; font-size:14px; font-weight:600; width:auto !important;" title="Yeni adres ekle" aria-label="Yeni adres ekle">
                     ➕ Yeni Adres Ekle
                   </button>
                 </div>
@@ -2035,6 +2046,9 @@
     import { initGlobalHeader } from './assets/js/ui/header.js';
     import { initAuthGuard } from './assets/js/auth-guard.js';
     import { db, auth, logout } from "./firebase.js";
+    // Teklifbul Rule v1.0 - settings sayfası window scope fonksiyonları için (firebase.js sadece DEV'de set eder)
+    window.__db = db;
+    window.__auth = auth;
     // signOut is imported dynamically from Firebase Auth modules when needed
     import { showToastNotification } from './assets/js/ui/errors.js';
     // Teklifbul Rule v1.0 - Structured Logging
@@ -2146,6 +2160,15 @@
       return adminProfitDetailModule;
     }
     window.loadAdminProfitDetailPage = async function () {
+      document.querySelectorAll('.settings-page').forEach((pEl) => {
+        pEl.classList.remove('active');
+        pEl.style.display = 'none';
+      });
+      const detailEl = document.getElementById('page-admin-profit-detail');
+      if (detailEl) {
+        detailEl.classList.add('active');
+        detailEl.style.display = 'block';
+      }
       const mod = await loadAdminProfitDetailModule();
       if (mod && mod.initAdminProfitDetailPage) {
         await mod.initAdminProfitDetailPage();
@@ -2413,14 +2436,14 @@
     // Global scope'a ekle (addApprovalLimitRow'dan erişilebilir olması için)
     window.getCompanyUserRoles = async function getCompanyUserRoles(companyId) {
       try {
-        const db = window.__db;
-        if (!db || !companyId) return { buyerRoles: [], supplierRoles: [], hasBuyer: false, hasSupplier: false };
+        const dbInst = window.__db || db;
+        if (!dbInst || !companyId) return { buyerRoles: [], supplierRoles: [], hasBuyer: false, hasSupplier: false };
 
         const getFirestoreModulesFn = window.getFirestoreModules || getFirestoreModules;
         const { collection, query, where, getDocs, doc, getDoc } = await getFirestoreModulesFn();
 
         // Şirket bilgilerini al
-        const companyDoc = await getDoc(doc(db, 'companies', companyId));
+        const companyDoc = await getDoc(doc(dbInst, 'companies', companyId));
         if (!companyDoc.exists()) return { buyerRoles: [], supplierRoles: [], hasBuyer: false, hasSupplier: false };
 
         const companyData = companyDoc.data();
@@ -2430,7 +2453,7 @@
 
         // Şirket kullanıcılarını al
         const usersQuery = query(
-          collection(db, 'users'),
+          collection(dbInst, 'users'),
           where('companyId', '==', companyId)
         );
         const usersSnapshot = await getDocs(usersQuery);
@@ -2583,7 +2606,7 @@
       row.style.cssText = 'padding:12px; background:white; border-radius:6px; border:1px solid #e5e7eb;';
 
       // Teklifbul Rule v1.0 - Dinamik rol listesi: Şirket kullanıcı rollerini al
-      const db = window.__db;
+      const dbInst = window.__db || db;
       const companyId = window.__currentCompanyId || null;
 
       // Sabit yönetim rolleri (her zaman gösterilir)
@@ -2599,7 +2622,7 @@
       let allRoles = [...fixedManagementRoles];
 
       // Şirket kullanıcı rollerini al
-      if (db && companyId && typeof window.getCompanyUserRoles === 'function') {
+      if (dbInst && companyId && typeof window.getCompanyUserRoles === 'function') {
         try {
           const companyRoles = await window.getCompanyUserRoles(companyId);
 
@@ -2730,6 +2753,25 @@
         }
       });
 
+      // Teklifbul Rule v1.0 — #premium vb. hash'i hemen uygula (root init bitmesini bekleme)
+      try {
+        const rawHash = (window.location.hash || '').replace(/^#/, '');
+        const pageFromHash = rawHash.split('?')[0];
+        if (pageFromHash) {
+          let mapped = pageFromHash;
+          if (pageFromHash === 'billing-plan') {
+            const qs = rawHash.includes('?') ? rawHash.split('?')[1] : '';
+            const reason = new URLSearchParams(qs).get('reason');
+            mapped = reason === 'token_packages' ? 'purchase-assistant-settings' : 'premium';
+          }
+          const hashBtn = document.querySelector(`.settings-nav-btn[data-page="${mapped}"]`);
+          if (hashBtn && !hashBtn.classList.contains('active')) {
+            // Listener'lar aşağıda bağlanacak; mikro görevde tıkla
+            queueMicrotask(() => hashBtn.click());
+          }
+        }
+      } catch (_) { /* ignore */ }
+
       navButtons.forEach(btn => {
         btn.addEventListener('click', async () => {
           const targetPage = btn.getAttribute('data-page');
@@ -2760,40 +2802,55 @@
             targetPageEl.classList.add('active');
             targetPageEl.style.display = 'block';
 
+            // Teklifbul Rule v1.0 - Sidebar tıklanınca URL hash senkronize et (refresh için)
+            try {
+              const desiredHash = '#' + targetPage;
+              if (window.location.hash !== desiredHash && !String(window.location.hash || '').startsWith(desiredHash + '?')) {
+                history.replaceState(null, '', desiredHash);
+              }
+            } catch (_) { /* ignore */ }
+
             // Approval settings sayfası gösterildiğinde verileri yükle
             if (targetPage === 'approval-settings') {
               // Teklifbul Rule v1.0 - Fonksiyonun tanımlanmasını bekle (retry mekanizması)
               const loadApprovalSettings = async (retryCount = 0, maxRetries = 10) => {
                 try {
-                  const auth = window.__auth;
-                  const db = window.__db;
+                  const authInst = window.__auth || auth;
+                  const dbInst = window.__db || db;
 
-                  if (!auth || !db) {
-                    logger.error('Auth veya DB bulunamadı');
+                  if (!authInst || !dbInst) {
+                    if (retryCount < maxRetries) {
+                      setTimeout(() => loadApprovalSettings(retryCount + 1, maxRetries), 300);
+                      return;
+                    }
+                    logger.warn('Auth veya DB hazır değil (approval settings)');
                     return;
                   }
 
                   const { getDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js");
 
-                  if (auth?.currentUser) {
-                    const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
-                    const userData = userDoc.exists() ? userDoc.data() : {};
-                    const myCompanyId = userData.companyId || userData.companies?.[0];
-
-                    // Fonksiyon tanımlı mı kontrol et
-                    if (myCompanyId && typeof window.loadAndSetupApprovalPolicyManagement === 'function') {
-                      await window.loadAndSetupApprovalPolicyManagement(myCompanyId, userData);
-                      if (typeof window.setupApprovalLimitButton === 'function') {
-                        window.setupApprovalLimitButton();
-                      }
-                    } else if (retryCount < maxRetries) {
-                      // Henüz tanımlı değilse, biraz bekleyip tekrar dene
-                      setTimeout(() => {
-                        loadApprovalSettings(retryCount + 1, maxRetries);
-                      }, 300);
-                    } else {
-                      logger.error('loadAndSetupApprovalPolicyManagement fonksiyonu yüklenemedi (maksimum deneme sayısına ulaşıldı)');
+                  if (!authInst.currentUser) {
+                    if (retryCount < maxRetries) {
+                      setTimeout(() => loadApprovalSettings(retryCount + 1, maxRetries), 300);
+                      return;
                     }
+                    logger.warn('Approval settings: kullanıcı oturumu henüz yok');
+                    return;
+                  }
+
+                  const userDoc = await getDoc(doc(dbInst, 'users', authInst.currentUser.uid));
+                  const userData = userDoc.exists() ? userDoc.data() : {};
+                  const myCompanyId = userData.companyId || userData.companies?.[0];
+
+                  if (myCompanyId && typeof window.loadAndSetupApprovalPolicyManagement === 'function') {
+                    await window.loadAndSetupApprovalPolicyManagement(myCompanyId, userData);
+                    if (typeof window.setupApprovalLimitButton === 'function') {
+                      window.setupApprovalLimitButton();
+                    }
+                  } else if (retryCount < maxRetries) {
+                    setTimeout(() => loadApprovalSettings(retryCount + 1, maxRetries), 300);
+                  } else {
+                    logger.error('loadAndSetupApprovalPolicyManagement fonksiyonu yüklenemedi (maksimum deneme sayısına ulaşıldı)');
                   }
                 } catch (e) {
                   logger.error('Approval settings yüklenirken hata', e);
@@ -2869,11 +2926,25 @@
         const user = await getCurrentUser();
         const { doc, getDoc } = await getFirestoreModules();
         const userDoc = await getDoc(doc(db, 'users', user.uid));
-        if (!userDoc.exists()) return;
+        if (!userDoc.exists()) {
+          toast.error('Kullanıcı bilgisi bulunamadı.');
+          const activeUsersList = document.getElementById('activeUsersList');
+          const requestsList = document.getElementById('companyJoinRequestsList');
+          if (activeUsersList) activeUsersList.innerHTML = '<div style="text-align:center; padding:20px; color:#991b1b;"><p>Kullanıcı bilgisi bulunamadı.</p></div>';
+          if (requestsList) requestsList.innerHTML = '<div style="text-align:center; padding:20px; color:#991b1b;"><p>Kullanıcı bilgisi bulunamadı.</p></div>';
+          return;
+        }
 
         const userData = userDoc.data();
         const companyId = userData.companyId || (userData.companies && userData.companies[0]);
-        if (!companyId) return;
+        if (!companyId) {
+          toast.error('Şirket bilgisi doğrulanamadı.');
+          const activeUsersList = document.getElementById('activeUsersList');
+          const requestsList = document.getElementById('companyJoinRequestsList');
+          if (activeUsersList) activeUsersList.innerHTML = '<div style="text-align:center; padding:20px; color:#991b1b;"><p>Şirket bilgisi doğrulanamadı.</p></div>';
+          if (requestsList) requestsList.innerHTML = '<div style="text-align:center; padding:20px; color:#991b1b;"><p>Şirket bilgisi doğrulanamadı.</p></div>';
+          return;
+        }
 
         const userMgmtPerms = window.__userMgmtPerms || getUserMgmtPerms();
         const invitesApproveKey = userMgmtPerms?.userInvites?.approve;
@@ -2964,6 +3035,11 @@
         }
       } catch (e) {
         logger.error('Şirket kullanıcıları sayfası yükleme hatası', e);
+        toast.error('Şirket kullanıcıları yüklenemedi: ' + (e?.message || e));
+        const activeUsersList = document.getElementById('activeUsersList');
+        const requestsList = document.getElementById('companyJoinRequestsList');
+        if (activeUsersList) activeUsersList.innerHTML = '<div style="text-align:center; padding:20px; color:#991b1b;"><p>Liste yüklenemedi.</p></div>';
+        if (requestsList) requestsList.innerHTML = '<div style="text-align:center; padding:20px; color:#991b1b;"><p>Liste yüklenemedi.</p></div>';
       }
     }
 
@@ -2978,12 +3054,17 @@
             (MESSAGES.ERROR_COMPANY_ID_REQUIRED || 'Şirket bilgisi doğrulanamadı') +
             '. Güvenlik ayarları yüklenemedi.'
           );
+          const mfaRoot = document.getElementById('securityMfaRoot');
+          if (mfaRoot) mfaRoot.innerHTML = '<div style="padding:12px; color:#991b1b;">Şirket bilgisi doğrulanamadı. Güvenlik ayarları yüklenemedi.</div>';
           return;
         }
 
         const companyId = ctx.companyId;
         if (!companyId) {
           logger.warn('Güvenlik ayarları için companyId çözülemedi');
+          toast.error('Şirket bilgisi doğrulanamadı. Güvenlik ayarları yüklenemedi.');
+          const mfaRoot = document.getElementById('securityMfaRoot');
+          if (mfaRoot) mfaRoot.innerHTML = '<div style="padding:12px; color:#991b1b;">Şirket bilgisi doğrulanamadı.</div>';
           return;
         }
 
@@ -2998,16 +3079,19 @@
         const companyDoc = await getDoc(companyRef);
         let allowNegativeStock = false;
         let allowPriceEditing = false;
+        let allowDiscountEditing = false;
         /** @type {{ ownerUid?: string, ownerId?: string }} */
         let companyDataFlat = {};
         if (companyDoc.exists()) {
           companyDataFlat = companyDoc.data() || {};
           allowNegativeStock = companyDataFlat.allowNegativeStock === true;
           allowPriceEditing = companyDataFlat.allowPriceEditing === true;
+          allowDiscountEditing = companyDataFlat.allowDiscountEditing === true;
         }
 
         const checkbox = document.getElementById('security_allowNegativeStock');
         const priceCheckbox = document.getElementById('security_allowPriceEditing');
+        const discountCheckbox = document.getElementById('security_allowDiscountEditing');
         const saveBtn = document.getElementById('btnSaveSecuritySettings');
 
         // Teklifbul Rule v1.0 — Sahiplik: canlı company dokümanı + ownerUid || ownerId (legacy)
@@ -3020,6 +3104,14 @@
         const canManageNegativeStock =
           !allowNegativeKey || !permState || can(allowNegativeKey);
 
+        const applyOwnerLockToSaleToggles = (disabled, title) => {
+          [priceCheckbox, discountCheckbox].forEach((el) => {
+            if (!el) return;
+            el.disabled = disabled;
+            el.title = title || '';
+          });
+        };
+
         if (checkbox) {
           checkbox.checked = allowNegativeStock;
 
@@ -3027,10 +3119,7 @@
             const msg = 'Bu ayarları sadece firmayı kuran kullanıcı (sahibi) değiştirebilir.';
             checkbox.disabled = true;
             checkbox.title = msg;
-            if (priceCheckbox) {
-              priceCheckbox.disabled = true;
-              priceCheckbox.title = msg;
-            }
+            applyOwnerLockToSaleToggles(true, msg);
             if (saveBtn) {
               saveBtn.disabled = true;
               saveBtn.title = msg;
@@ -3045,10 +3134,7 @@
               checkbox.disabled = false;
               checkbox.title = '';
             }
-            if (priceCheckbox) {
-              priceCheckbox.disabled = false;
-              priceCheckbox.title = '';
-            }
+            applyOwnerLockToSaleToggles(false, '');
             if (saveBtn) {
               saveBtn.disabled = false;
               saveBtn.title = '';
@@ -3058,6 +3144,9 @@
 
         if (priceCheckbox) {
           priceCheckbox.checked = allowPriceEditing;
+        }
+        if (discountCheckbox) {
+          discountCheckbox.checked = allowDiscountEditing;
         }
 
         // Kaydet — çift bağlama önlemi + stok izni yoksa önceki stok değeri korunur
@@ -3089,10 +3178,12 @@
               }
 
               const newPriceValue = priceCheckbox ? priceCheckbox.checked === true : allowPriceEditing;
+              const newDiscountValue = discountCheckbox ? discountCheckbox.checked === true : allowDiscountEditing;
 
               await updateDoc(companyRef, {
                 allowNegativeStock: newStockValue,
                 allowPriceEditing: newPriceValue,
+                allowDiscountEditing: newDiscountValue,
                 updatedAt: serverTimestamp(),
                 updatedBy: (ctx.userDocData && ctx.userDocData.id) || (auth.currentUser && auth.currentUser.uid) || null
               });
@@ -3101,7 +3192,8 @@
               logger.info('Güvenlik ayarları güncellendi', {
                 companyId,
                 allowNegativeStock: newStockValue,
-                allowPriceEditing: newPriceValue
+                allowPriceEditing: newPriceValue,
+                allowDiscountEditing: newDiscountValue
               });
             } catch (e) {
               logger.error('Güvenlik ayarları kaydetme hatası', e);
@@ -3125,12 +3217,50 @@
       } catch (e) {
         logger.error('Güvenlik ayarları sayfası yükleme hatası', e);
         toast.error(MESSAGES.ERROR_LOAD + ': ' + (e.message || e));
+        const mfaRoot = document.getElementById('securityMfaRoot');
+        if (mfaRoot) mfaRoot.innerHTML = '<div style="padding:12px; color:#991b1b;">Güvenlik ayarları yüklenemedi.</div>';
       }
     }
 
     // Premium Hesap Sayfası Yükleme
     async function loadPremiumPage() {
       try {
+        // Teklifbul Rule v1.0 — menüden gelen yükseltme sebebi
+        try {
+          const reasonFromQuery = new URLSearchParams(window.location.search).get('reason');
+          const hash = (window.location.hash || '').replace(/^#/, '');
+          const hashQuery = hash.includes('?') ? hash.split('?')[1] : '';
+          const reasonFromHash = new URLSearchParams(hashQuery).get('reason');
+          const reason = reasonFromQuery || reasonFromHash;
+          const banner = document.getElementById('premiumUpgradeReasonBanner');
+          const bannerText = document.getElementById('premiumUpgradeReasonText');
+          if (banner && bannerText) {
+            if (reason) {
+              const messages = {
+                sales: 'Satışlar sekmesini kullanabilmek için hesabınızı Premium veya Premium Plus’a yükseltmeniz gerekmektedir.',
+                customers: 'Müşteriler sekmesini kullanabilmek için hesabınızı Premium veya Premium Plus’a yükseltmeniz gerekmektedir.',
+                inventory: 'Stok Takip sekmesini kullanabilmek için hesabınızı Premium veya Premium Plus’a yükseltmeniz gerekmektedir.',
+                interim_payments: 'Hakedişler sekmesini kullanabilmek için hesabınızı Premium Plus’a yükseltmeniz gerekmektedir.',
+                token_packages: 'Token paketlerini kullanabilmek için hesabınızı Premium Plus’a yükseltmeniz gerekmektedir.',
+                ai_paid_models: 'Ücretli AI modellerini kullanabilmek için hesabınızı Premium Plus’a yükseltmeniz gerekmektedir.',
+                menu_customization: 'Üst menü özelleştirmesini kullanabilmek için hesabınızı Premium veya Premium Plus’a yükseltmeniz gerekmektedir.',
+              };
+              bannerText.textContent = messages[reason]
+                || 'Bu sekmeyi kullanabilmek için hesabınızı Premium veya Premium Plus’a yükseltmeniz gerekmektedir.';
+              banner.style.display = 'block';
+              try {
+                const { toast } = await import('./src/shared/ui/toast.js');
+                toast.warn(`Dikkat: ${bannerText.textContent}`);
+              } catch (_t) { /* toast opsiyonel */ }
+            } else {
+              banner.style.display = 'none';
+              bannerText.textContent = '';
+            }
+          }
+        } catch (reasonErr) {
+          logger.warn('Premium reason banner render failed', reasonErr);
+        }
+
         // Permission state (özellikle ödeme talep & e-fatura için)
         const permState = await initPermissions({ redirectOnPending: true });
         if (!permState) {
@@ -3212,20 +3342,9 @@
         const paymentsPerms = window.__paymentsPerms || getPaymentsPerms();
         const paymentsViewKey = paymentsPerms && paymentsPerms.view;
 
-        // View guard - ödeme geçmişi (fail-closed: key yoksa da kapalı)
+        // Teklifbul Rule v1.0 — soft-fail: yetki yoksa toast spam yok, sadece boş durum
         if (!paymentsViewKey || !can(paymentsViewKey)) {
           const isTemplateMissing = !paymentsViewKey;
-          const msg =
-            (isTemplateMissing
-              ? (MESSAGES.ERROR_PERMISSION_TEMPLATE_MISSING ||
-                'Yetki şablonu eksik (Excel export gerekli).')
-              : (MESSAGES.ERROR_PERMISSION_PAYMENTS_VIEW ||
-                MESSAGES.ERROR_PERMISSION_DENIED ||
-                MESSAGES.ERROR_PERMISSION)) ??
-            'Ödeme geçmişini görüntüleme yetkiniz yok.';
-
-          toast.error(msg);
-          // Teklifbul Rule v1.0 - XSS Protection
           const noPermissionMessage = DOMPurify.sanitize('<div style="text-align:center; padding:20px; color:#6b7280;"><p>Ödeme geçmişini görüntüleme yetkiniz yok.</p></div>', {
             ALLOWED_TAGS: ['div', 'p'],
             ALLOWED_ATTR: ['style']
@@ -3406,28 +3525,129 @@
       }
     }
 
+    // Teklifbul Rule v1.0 — plan katalog tutarları (server/services/planCatalog.ts ile uyumlu)
+    const PREMIUM_PLAN_FEES = Object.freeze({
+      free: 0,
+      premium_monthly: 359,
+      premium_yearly: 3949,
+      premium_plus_monthly: 600,
+      premium_plus_yearly: 6600,
+    });
+
+    function formatPlanFeeLabel(planId) {
+      const id = String(planId || 'free');
+      if (id === 'free' || !id) return '₺0 (Ücretsiz)';
+      if (id.includes('premium_plus') && id.includes('yearly')) return `₺${PREMIUM_PLAN_FEES.premium_plus_yearly} / yıl`;
+      if (id.includes('premium_plus')) return `₺${PREMIUM_PLAN_FEES.premium_plus_monthly} / ay`;
+      if (id.includes('yearly')) return `₺${PREMIUM_PLAN_FEES.premium_yearly} / yıl`;
+      if (id.includes('premium')) return `₺${PREMIUM_PLAN_FEES.premium_monthly} / ay`;
+      return '-';
+    }
+
+    function toDisplayDate(value) {
+      if (!value) return null;
+      try {
+        if (typeof value.toDate === 'function') return value.toDate();
+        if (value instanceof Date) return value;
+        const d = new Date(value);
+        return Number.isNaN(d.getTime()) ? null : d;
+      } catch (_) {
+        return null;
+      }
+    }
+
     // Abonelik Bilgilerini Yükle
     async function loadSubscriptionInfo(userId) {
       try {
-        const { doc, getDoc } = await getFirestoreModules();
-        const userDoc = await getDoc(doc(db, 'users', userId));
-        if (!userDoc.exists()) return;
-
-        const userData = userDoc.data();
-
-        // Abonelik bilgilerini göster (gelecekte eklenecek)
-        // Şimdilik placeholder
         const subscriptionStartDate = document.getElementById('subscriptionStartDate');
         const subscriptionEndDate = document.getElementById('subscriptionEndDate');
         const nextPaymentDate = document.getElementById('nextPaymentDate');
         const monthlyFee = document.getElementById('monthlyFee');
+        const cancelBtn = document.getElementById('btnCancelSubscription');
 
-        if (subscriptionStartDate) subscriptionStartDate.textContent = '-';
-        if (subscriptionEndDate) subscriptionEndDate.textContent = '-';
-        if (nextPaymentDate) nextPaymentDate.textContent = '-';
-        if (monthlyFee) monthlyFee.textContent = '-';
+        const { doc, getDoc } = await getFirestoreModules();
+        const userDoc = await getDoc(doc(db, 'users', userId));
+        const userData = userDoc.exists() ? (userDoc.data() || {}) : {};
+
+        let planId = 'free';
+        let companyData = {};
+        try {
+          const ctx = window.__settingsCompanyContext || await requireCompanyContext({ redirectOnPending: false });
+          if (ctx?.companyId) {
+            const plan = await getCompanyPlan(ctx.companyId);
+            planId = plan.planId || 'free';
+            const companySnap = await getDoc(doc(db, 'companies', ctx.companyId));
+            if (companySnap.exists()) companyData = companySnap.data() || {};
+          }
+        } catch (ctxErr) {
+          logger.warn('Abonelik: şirket planı okunamadı', ctxErr);
+        }
+
+        const start =
+          toDisplayDate(companyData.subscriptionStartedAt) ||
+          toDisplayDate(companyData.startedAt) ||
+          toDisplayDate(userData.subscriptionStartedAt) ||
+          toDisplayDate(userData.startedAt);
+        const end =
+          toDisplayDate(companyData.subscriptionEndsAt) ||
+          toDisplayDate(companyData.expiresAt) ||
+          toDisplayDate(companyData.currentPeriodEnd) ||
+          toDisplayDate(userData.expiresAt) ||
+          toDisplayDate(userData.subscriptionEndsAt);
+
+        const isPaidPlan = planId && planId !== 'free' && !String(planId).startsWith('free');
+        if (subscriptionStartDate) {
+          subscriptionStartDate.textContent = start ? start.toLocaleDateString('tr-TR') : (isPaidPlan ? 'Kayıtlı değil' : '-');
+        }
+        if (subscriptionEndDate) {
+          subscriptionEndDate.textContent = end ? end.toLocaleDateString('tr-TR') : (isPaidPlan ? 'Kayıtlı değil' : '-');
+        }
+        if (nextPaymentDate) {
+          nextPaymentDate.textContent = end && isPaidPlan ? end.toLocaleDateString('tr-TR') : '-';
+        }
+        if (monthlyFee) monthlyFee.textContent = formatPlanFeeLabel(planId);
+
+        if (cancelBtn) {
+          cancelBtn.style.display = isPaidPlan ? '' : 'none';
+        }
       } catch (e) {
         logger.error('Abonelik bilgileri yükleme hatası', e);
+      }
+    }
+
+    // Teklifbul Rule v1.0 — ödeme henüz canlı değil; bilgilendirme + lead
+    async function handlePremiumUpgradeAction(planTitle) {
+      try {
+        const title = String(planTitle || '');
+        if (title === 'Premium Plus') {
+          toast.info('Token paketleri Satın Alma Asistanı ayarlarından yönetilir.');
+          const tokenBtn = document.querySelector('.settings-nav-btn[data-page="purchase-assistant-settings"]');
+          if (tokenBtn) tokenBtn.click();
+          else window.location.hash = 'purchase-assistant-settings';
+          return;
+        }
+
+        toast.info('Ödeme altyapısı yakında. Bilgilendirme için destek kaydı oluşturabilirsiniz.');
+        const email = window.prompt('Ödeme açılınca haber verelim — e-posta adresiniz:');
+        if (!email || !String(email).trim()) return;
+
+        const { authFetch } = await import('./assets/js/utils/api-helpers.js');
+        const resp = await authFetch('/api/leads/upgrade', {
+          method: 'POST',
+          body: JSON.stringify({
+            contactEmail: String(email).trim(),
+            reason: (new URLSearchParams((window.location.hash || '').split('?')[1] || '')).get('reason') || null,
+            source: 'settings-premium',
+          }),
+        });
+        if (!resp.ok) {
+          const data = await resp.json().catch(() => ({}));
+          throw new Error(data?.message || data?.error || 'Kayıt başarısız');
+        }
+        toast.success('Kaydettik, ödeme açılınca haber vereceğiz.');
+      } catch (err) {
+        logger.error('Premium yükseltme aksiyonu hatası', err);
+        toast.error('Hata: ' + (err.message || 'İşlem tamamlanamadı'));
       }
     }
 
@@ -3678,67 +3898,96 @@
         const addrManageKey = settingsPerms?.addresses?.manage;
 
         const pageEl = document.getElementById('page-addresses');
-        const btnSaveAddressSettings = document.getElementById('btnSaveAddressSettings');
+        const denyMsg =
+          (MESSAGES.ERROR_PERMISSION_SETTINGS_ADDRESSES_VIEW ||
+            MESSAGES.ERROR_PERMISSION_DENIED ||
+            'Adresleri görüntüleme yetkiniz yok.') + '';
 
-        // View guard - adres yönetimi sayfası
+        // Teklifbul Rule v1.0 - View guard: DOM'u silme; overlay göster
+        let denyBanner = document.getElementById('addressesPermissionDenied');
         if (addrViewKey && !can(addrViewKey)) {
           if (pageEl) {
-            pageEl.innerHTML = `
-              <div class="section">
-                <h3>📍 Adres Yönetimi</h3>
-                <p class="muted" style="margin-top:8px; font-size:13px;">
-                  Adresleri görüntüleme yetkiniz yok. Şirket yöneticinizden yetki talep edebilirsiniz.
-                </p>
-              </div>
+            pageEl.querySelectorAll('.section').forEach((sec) => {
+              if (sec.id !== 'addressesPermissionDenied') sec.style.display = 'none';
+            });
+            if (!denyBanner) {
+              denyBanner = document.createElement('div');
+              denyBanner.id = 'addressesPermissionDenied';
+              denyBanner.className = 'section';
+              pageEl.insertBefore(denyBanner, pageEl.firstChild);
+            }
+            denyBanner.style.display = 'block';
+            denyBanner.innerHTML = `
+              <h3>📍 Adres Yönetimi</h3>
+              <p class="muted" style="margin-top:8px; font-size:13px;">${denyMsg} Şirket yöneticinizden yetki talep edebilirsiniz.</p>
             `;
           }
-          logger.warn('Adres Yönetimi: addresses.view izni yok, sayfa içerikleri yüklenmedi', {
-            permKey: addrViewKey
-          });
+          logger.warn('Adres Yönetimi: addresses.view izni yok', { permKey: addrViewKey });
           return;
+        }
+        if (denyBanner) denyBanner.style.display = 'none';
+        if (pageEl) {
+          pageEl.querySelectorAll('.section').forEach((sec) => {
+            if (sec.id !== 'addressesPermissionDenied') sec.style.display = '';
+          });
         }
 
         const user = await getCurrentUser();
         const { doc, getDoc } = await getFirestoreModules();
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
-        if (!userDoc.exists()) return;
+        const dbInst = window.__db || db;
+        const userDoc = await getDoc(doc(dbInst, 'users', user.uid));
+        if (!userDoc.exists()) {
+          toast.error('Kullanıcı bilgisi bulunamadı.');
+          const mainAddressDisplay = document.getElementById('mainAddressDisplay');
+          if (mainAddressDisplay) mainAddressDisplay.innerHTML = '<p style="margin:0; color:#991b1b; font-size:14px;">Kullanıcı bilgisi bulunamadı.</p>';
+          return;
+        }
 
         const userData = userDoc.data();
-
-        // Ana adresi göster
         await displayMainAddress(userData);
-
-        // İlave adresleri yükle
         await loadAdditionalAddressesForManagement(userData);
-
-        // Adres istatistiklerini güncelle
         updateAddressStatistics(userData);
 
-        // Manage guard - ekleme/düzenleme/silme
+        // Manage guard - tüm düzenleme kontrolleri
         if (addrManageKey && !can(addrManageKey)) {
+          const denyTitle =
+            (MESSAGES.ERROR_PERMISSION_SETTINGS_ADDRESSES_MANAGE ||
+              MESSAGES.ERROR_PERMISSION_DENIED ||
+              'Adres bilgilerini değiştirme yetkiniz yok.') + '';
           if (pageEl) {
-            pageEl
-              .querySelectorAll('input, textarea, select, button')
-              .forEach((el) => {
-                const element = /** @type {HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | HTMLButtonElement} */ (el);
-                const id = element.id || '';
-                // Liste filtresi gibi salt-okunur elementleri bırakmak isteyebiliriz;
-                // basit yaklaşım: ana kaydet/ekle butonlarını ve form alanlarını disable et
-                if (id.startsWith('btnSave') || id.startsWith('btnAdd') || id.includes('Address')) {
-                  if ('disabled' in element) {
-                    element.disabled = true;
-                  }
-                  element.title =
-                    (MESSAGES.ERROR_PERMISSION_SETTINGS_ADDRESSES_MANAGE ||
-                      MESSAGES.ERROR_PERMISSION_DENIED ||
-                      MESSAGES.ERROR_PERMISSION) ??
-                    'Adres bilgilerini değiştirme yetkiniz yok.';
-                }
-              });
+            pageEl.querySelectorAll('input, textarea, select, button').forEach((el) => {
+              const element = /** @type {HTMLElement} */ (el);
+              const id = element.id || '';
+              const cls = element.className || '';
+              const shouldDisable =
+                id.startsWith('btnSave') ||
+                id.startsWith('btnAdd') ||
+                id.startsWith('btnEdit') ||
+                id.startsWith('btnBulk') ||
+                id.startsWith('btnCancel') ||
+                id === 'addAddressBtn' ||
+                id.includes('Address') ||
+                cls.includes('addr-edit') ||
+                cls.includes('addr-remove') ||
+                cls.includes('address-checkbox');
+              if (shouldDisable && 'disabled' in element) {
+                /** @type {HTMLButtonElement} */ (element).disabled = true;
+                element.title = denyTitle;
+              }
+            });
           }
         }
       } catch (e) {
         logger.error('Adres yönetimi sayfası yükleme hatası', e);
+        toast.error('Adres yönetimi yüklenemedi: ' + (e?.message || e));
+        const mainAddressDisplay = document.getElementById('mainAddressDisplay');
+        if (mainAddressDisplay) {
+          mainAddressDisplay.innerHTML = '<p style="margin:0; color:#991b1b; font-size:14px;">Adresler yüklenemedi. Sayfayı yenileyin.</p>';
+        }
+        const additionalAddressesContainer = document.getElementById('additionalAddresses');
+        if (additionalAddressesContainer) {
+          additionalAddressesContainer.innerHTML = '<div style="text-align:center; padding:20px; color:#991b1b;"><p>Liste yüklenemedi.</p></div>';
+        }
       }
     }
 
@@ -4246,7 +4495,13 @@
           displayMainAddress(userData);
         });
 
-        if (editBtn) editBtn.textContent = '❌ İptal';
+        if (editBtn) {
+          editBtn.textContent = '❌ İptal';
+          editBtn.onclick = () => {
+            mainAddressEditMode = false;
+            displayMainAddress(userData);
+          };
+        }
         return;
       }
 
@@ -4295,11 +4550,10 @@
         editBtn.textContent = '✏️ Düzenle';
         editBtn.onclick = async () => {
           mainAddressEditMode = true;
-          // Teklifbul Rule v1.0 - Güncel userData ile yeniden yükle
           const currentUser = await getCurrentUser();
           if (currentUser) {
             const freshUserData = await getUserData(currentUser.uid);
-            await displayMainAddress(freshUserData);
+            await displayMainAddress(freshUserData || userData);
           } else {
             await displayMainAddress(userData);
           }
@@ -5213,28 +5467,24 @@
         const isDefaultDelivery = defaultDeliveryAddress === `addr_${index}`;
         // Teklifbul Rule v1.0 - Fatura adresi başlığı her zaman "Fatura Adresi", diğerleri title veya type label
         const displayTitle = (addr.type === 'invoice' || addr.type === 'Fatura') ? 'Fatura Adresi' : (addr.title || getAddressTypeLabel(addr.type) || 'Adres');
+        const safeTitle = DOMPurify.sanitize(String(displayTitle || 'Adres'), { ALLOWED_TAGS: [] });
+        const safeContent = DOMPurify.sanitize(String(addr.content || addr.street || 'Adres bilgisi bulunmuyor'), { ALLOWED_TAGS: [] });
         return `
-        <div style="padding:16px; background:white; border-radius:8px; border:1px solid #e5e7eb;">
+        <div class="address-mgmt-card" data-index="${index}" style="padding:16px; background:white; border-radius:8px; border:1px solid #e5e7eb;">
           <div style="display:flex; gap:12px; align-items:start;">
-            <input type="checkbox" class="address-checkbox" data-index="${index}" style="margin-top:4px; width:18px; height:18px; cursor:pointer;" />
+            <input type="checkbox" class="address-checkbox" data-index="${index}" style="margin-top:4px; width:18px; height:18px; cursor:pointer;" aria-label="Adres seç" />
             <div style="flex:1;">
               <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:8px;">
                 <div>
                   <div style="font-weight:600; color:#1f2937; margin-bottom:4px;">
-                    ${displayTitle}
+                    ${safeTitle}
                     ${isDefaultDelivery ? '<span style="padding:2px 8px; background:#3b82f6; color:white; border-radius:12px; font-size:10px; margin-left:8px;">Varsayılan Teslimat</span>' : ''}
                   </div>
-                  <div style="font-size:13px; color:#6b7280; line-height:1.6; white-space:pre-wrap;">
-                    ${addr.content || (addr.street && `${addr.street}${addr.street.includes('Sokak') || addr.street.includes('Cadde') ? '' : ' Sokak'}`) || 'Adres bilgisi bulunmuyor'}
-                  </div>
+                  <div style="font-size:13px; color:#6b7280; line-height:1.6; white-space:pre-wrap;">${safeContent}</div>
                 </div>
                 <div style="display:flex; gap:8px;">
-                  <button type="button" class="addr-edit" data-index="${index}" style="padding:6px 12px; background:#10b981; color:white; border:none; border-radius:6px; cursor:pointer; font-size:12px; font-weight:600;">
-                    ✏️ Düzenle
-                  </button>
-                  <button type="button" class="addr-remove" data-index="${index}" style="padding:6px 12px; background:#ef4444; color:white; border:none; border-radius:6px; cursor:pointer; font-size:12px; font-weight:600;">
-                    🗑️ Sil
-                  </button>
+                  <button type="button" class="btn addr-edit" data-index="${index}" style="padding:6px 12px; background:#10b981; color:white; border:none; border-radius:6px; cursor:pointer; font-size:12px; font-weight:600; width:auto !important;" title="Düzenle" aria-label="Adresi düzenle">✏️ Düzenle</button>
+                  <button type="button" class="btn addr-remove" data-index="${index}" style="padding:6px 12px; background:#ef4444; color:white; border:none; border-radius:6px; cursor:pointer; font-size:12px; font-weight:600; width:auto !important;" title="Sil" aria-label="Adresi sil">🗑️ Sil</button>
                 </div>
               </div>
             </div>
@@ -5269,12 +5519,13 @@
             if (addr) {
               addAddressRow({
                 title: addr.title || '',
-                originalTitle: addr.title || '', // Teklifbul Rule v1.0 - Düzenleme için orijinal başlığı sakla
+                originalTitle: addr.title || '',
                 content: addr.content || '',
                 type: addr.type || '',
                 isSaved: false
               });
-              btn.closest('.addr-row')?.remove();
+              // Teklifbul Rule v1.0 - Yönetim kartını kaldır (eski .addr-row değil)
+              btn.closest('.address-mgmt-card')?.remove();
             }
           }
         });
@@ -5338,65 +5589,59 @@
         });
       });
 
-      if (cancelBulkBtn) {
-        cancelBulkBtn.addEventListener('click', () => {
-          checkboxes.forEach(cb => cb.checked = false);
-          selectedAddresses.clear();
-          bulkActions.style.display = 'none';
-          if (bulkEditBtn) bulkEditBtn.style.display = 'block';
-        });
-      }
-
-      if (bulkDeleteBtn) {
-        bulkDeleteBtn.addEventListener('click', async () => {
-          if (selectedAddresses.size === 0) {
-            toast.error(MESSAGES.ERROR_ADDRESS_SELECT_REQUIRED);
-            return;
-          }
-
-          if (!confirm(`⚠️ ${selectedAddresses.size} adres silinecek. Emin misiniz?`)) {
-            return;
-          }
-
-          try {
-            const user = await getCurrentUser();
-            const { doc, getDoc, updateDoc, serverTimestamp } = await getFirestoreModules();
-            const userDoc = await getDoc(doc(db, 'users', user.uid));
-            if (!userDoc.exists()) return;
-
-            const userData = userDoc.data();
-            const additionalAddresses = userData.additionalAddresses || [];
-
-            // Seçilen adresleri kaldır
-            const newAddresses = additionalAddresses.filter((_, idx) => !selectedAddresses.has(idx));
-
-            await updateDoc(doc(db, 'users', user.uid), {
-              additionalAddresses: newAddresses,
-              updatedAt: serverTimestamp()
-            });
-
-            toast.success(MESSAGES.SUCCESS_ADDRESSES_DELETED.replace('{n}', String(selectedAddresses.size)));
+      // Teklifbul Rule v1.0 - Cancel/Delete listener'ları bir kez bağla (çift silme önleme)
+      if (bulkActions && bulkActions.dataset.handlersBound !== 'true') {
+        bulkActions.dataset.handlersBound = 'true';
+        if (cancelBulkBtn) {
+          cancelBulkBtn.addEventListener('click', () => {
+            document.querySelectorAll('.address-checkbox').forEach((cb) => { cb.checked = false; });
             selectedAddresses.clear();
-            await loadAddressesPage(); // Sayfayı yenile
-          } catch (err) {
-            logger.error('Toplu silme hatası', err);
-            toast.error(MESSAGES.ERROR_ADDRESS_DELETE + ': ' + err.message);
-          }
-        });
+            bulkActions.style.display = 'none';
+            if (bulkEditBtn) bulkEditBtn.style.display = 'block';
+          });
+        }
+        if (bulkDeleteBtn) {
+          bulkDeleteBtn.addEventListener('click', async () => {
+            if (selectedAddresses.size === 0) {
+              toast.error(MESSAGES.ERROR_ADDRESS_SELECT_REQUIRED);
+              return;
+            }
+            if (!confirm('⚠️ ' + selectedAddresses.size + ' adres silinecek. Emin misiniz?')) return;
+            try {
+              const user = await getCurrentUser();
+              const { doc, getDoc, updateDoc, serverTimestamp } = await getFirestoreModules();
+              const dbInst = window.__db || db;
+              const userDoc = await getDoc(doc(dbInst, 'users', user.uid));
+              if (!userDoc.exists()) return;
+              const userData = userDoc.data();
+              const additionalAddresses = userData.additionalAddresses || [];
+              const newAddresses = additionalAddresses.filter((_, idx) => !selectedAddresses.has(idx));
+              await updateDoc(doc(dbInst, 'users', user.uid), {
+                additionalAddresses: newAddresses,
+                updatedAt: serverTimestamp()
+              });
+              toast.success(MESSAGES.SUCCESS_ADDRESSES_DELETED.replace('{n}', String(selectedAddresses.size)));
+              selectedAddresses.clear();
+              await loadAddressesPage();
+            } catch (err) {
+              logger.error('Toplu silme hatası', err);
+              toast.error(MESSAGES.ERROR_ADDRESS_DELETE + ': ' + err.message);
+            }
+          });
+        }
       }
     }
 
     // Adres İstatistiklerini Güncelle
     function updateAddressStatistics(userData) {
       const additionalAddresses = userData.additionalAddresses || [];
-      const totalAddresses = 1 + additionalAddresses.length; // Ana adres + ilave adresler
 
       // Teklifbul Rule v1.0 - Ana adres (fatura adresi) varsa fatura sayısına dahil et
-      // Ana adres kontrolü: invoiceAddressParts veya eski format (inv_*) alanlarından herhangi biri varsa
       const hasMainAddress = !!(
         (userData.invoiceAddressParts && (userData.invoiceAddressParts.il || userData.invoiceAddressParts.ilce)) ||
         (userData.inv_city || userData.inv_district)
       );
+      const totalAddresses = (hasMainAddress ? 1 : 0) + additionalAddresses.length;
 
       const additionalInvoiceCount = additionalAddresses.filter(addr => addr.type === 'invoice' || addr.type === 'Fatura').length;
       const invoiceCount = (hasMainAddress ? 1 : 0) + additionalInvoiceCount; // Ana adres + ilave fatura adresleri
@@ -5533,8 +5778,9 @@
           addressParts.push(userData.inv_city);
         }
 
-        if (addressPartsData.postakodu) {
-          addressParts.push('PK: ' + addressPartsData.postakodu);
+        const pk = addressPartsData.postaKodu || addressPartsData.postakodu;
+        if (pk) {
+          addressParts.push('PK: ' + pk);
         } else if (userData.inv_postakodu) {
           addressParts.push('PK: ' + userData.inv_postakodu);
         }
@@ -5580,8 +5826,9 @@
       // OpenStreetMap (Leaflet.js) harita yükle - kaydedilen koordinatları geç
       loadAddressMap(addressString, mapContainer, savedCoordinates);
 
-      // Adres doğrulama butonu
-      if (verifyBtn) {
+      // Adres doğrulama butonu (bir kez bağla)
+      if (verifyBtn && verifyBtn.dataset.handlerAttached !== 'true') {
+        verifyBtn.dataset.handlerAttached = 'true';
         verifyBtn.addEventListener('click', async () => {
           try {
             // Teklifbul Rule v1.0 - Seçili adresi tekrar al (dropdown değişmiş olabilir)
@@ -5606,7 +5853,7 @@
               if (addressPartsData.mahalle) parts.push(addressPartsData.mahalle + (addressPartsData.mahalle.includes('Mahalle') ? '' : ' Mahalle'));
               if (addressPartsData.ilce) parts.push(addressPartsData.ilce);
               if (addressPartsData.il) parts.push(addressPartsData.il);
-              if (addressPartsData.postakodu) parts.push('PK: ' + addressPartsData.postakodu);
+              if (addressPartsData.postaKodu || addressPartsData.postakodu) parts.push('PK: ' + (addressPartsData.postaKodu || addressPartsData.postakodu));
               parts.push(addressPartsData.ulke || 'Türkiye');
               return parts.filter(Boolean).join(', ');
             })();
@@ -6167,11 +6414,29 @@
         const user = await getCurrentUser();
         const { doc, getDoc, collection, query, where, getDocs } = await getFirestoreModules();
         const userDoc = await getDoc(doc(db, 'users', user.uid));
-        if (!userDoc.exists()) return;
+        if (!userDoc.exists()) {
+          toast.error('Kullanıcı bilgisi bulunamadı.');
+          const partners = document.getElementById('successfulTradePartners');
+          const visibility = document.getElementById('profileVisibilitySettings');
+          const reviews = document.getElementById('companyReviewsList');
+          if (partners) partners.innerHTML = '<div style="text-align:center; padding:20px; color:#991b1b;"><p>Kullanıcı bilgisi bulunamadı.</p></div>';
+          if (visibility) visibility.innerHTML = '<div style="text-align:center; padding:20px; color:#991b1b;"><p>Kullanıcı bilgisi bulunamadı.</p></div>';
+          if (reviews) reviews.innerHTML = '<div style="text-align:center; padding:20px; color:#991b1b;"><p>Kullanıcı bilgisi bulunamadı.</p></div>';
+          return;
+        }
 
         const userData = userDoc.data();
         const companyId = userData.companyId || (userData.companies && userData.companies[0]);
-        if (!companyId) return;
+        if (!companyId) {
+          toast.error('Şirket bilgisi doğrulanamadı.');
+          const partners = document.getElementById('successfulTradePartners');
+          const visibility = document.getElementById('profileVisibilitySettings');
+          const reviews = document.getElementById('companyReviewsList');
+          if (partners) partners.innerHTML = '<div style="text-align:center; padding:20px; color:#991b1b;"><p>Şirket bilgisi doğrulanamadı.</p></div>';
+          if (visibility) visibility.innerHTML = '<div style="text-align:center; padding:20px; color:#991b1b;"><p>Şirket bilgisi doğrulanamadı.</p></div>';
+          if (reviews) reviews.innerHTML = '<div style="text-align:center; padding:20px; color:#991b1b;"><p>Şirket bilgisi doğrulanamadı.</p></div>';
+          return;
+        }
 
         // Şirket bilgilerini yükle
         const companyDoc = await getDoc(doc(db, 'companies', companyId));
@@ -6317,12 +6582,12 @@
 
                   // Firestore'a yanıt kaydet
                   const { doc, updateDoc, serverTimestamp, getDoc } = await getFirestoreModules();
-                  const db = window.__db;
-                  if (!db) {
+                  const dbInst = window.__db || db;
+                  if (!dbInst) {
                     throw new Error('DB bulunamadı');
                   }
 
-                  const reviewRef = doc(db, 'companies', companyId, 'reviews', capturedReviewId);
+                  const reviewRef = doc(dbInst, 'companies', companyId, 'reviews', capturedReviewId);
 
                   // Mevcut yorumu al
                   const reviewDoc = await getDoc(reviewRef);
@@ -6416,15 +6681,15 @@
         `;
 
         const { collection, query, getDocs, orderBy, limit, doc, getDoc } = await getFirestoreModules();
-        const db = window.__db;
-        if (!db) {
+        const dbInst = window.__db || db;
+        if (!dbInst) {
           logger.error('DB bulunamadı');
           reviewsList.innerHTML = '<div style="text-align:center; padding:20px; color:#ef4444;">Veritabanı bağlantısı kurulamadı.</div>';
           return;
         }
 
         const reviewsQuery = query(
-          collection(db, 'companies', companyId, 'reviews'),
+          collection(dbInst, 'companies', companyId, 'reviews'),
           orderBy('createdAt', 'desc'),
           limit(50)
         );
@@ -6435,7 +6700,34 @@
 
         if (reviewsSnapshot.empty) {
           reviewsList.innerHTML = '<div style="text-align:center; padding:20px; color:#6b7280;">Henüz değerlendirme yapılmamış.</div>';
+          const avgEl = document.getElementById('companyReviewsAvgScore');
+          const starsEl = document.getElementById('companyReviewsStars');
+          const countEl = document.getElementById('companyReviewsCount');
+          if (avgEl) avgEl.textContent = '-';
+          if (starsEl) starsEl.textContent = '☆☆☆☆☆';
+          if (countEl) countEl.textContent = '(0 değerlendirme)';
           return;
+        }
+
+        let ratingSum = 0;
+        let ratingCount = 0;
+        reviewsSnapshot.forEach(docSnap => {
+          const rd = docSnap.data() || {};
+          const r = Number(rd.rating);
+          if (!Number.isNaN(r) && r > 0) {
+            ratingSum += r;
+            ratingCount += 1;
+          }
+        });
+        {
+          const avg = ratingCount ? (ratingSum / ratingCount) : 0;
+          const filled = Math.round(avg);
+          const avgEl = document.getElementById('companyReviewsAvgScore');
+          const starsEl = document.getElementById('companyReviewsStars');
+          const countEl = document.getElementById('companyReviewsCount');
+          if (avgEl) avgEl.textContent = ratingCount ? avg.toFixed(1) : '-';
+          if (starsEl) starsEl.textContent = '★'.repeat(Math.max(0, Math.min(5, filled))) + '☆'.repeat(Math.max(0, 5 - Math.min(5, filled)));
+          if (countEl) countEl.textContent = '(' + ratingCount + ' değerlendirme)';
         }
 
         reviewsSnapshot.forEach(docSnap => {
@@ -6543,11 +6835,12 @@
 
         const settingsContainer = document.getElementById('profileVisibilitySettings');
         const saveBtn = document.getElementById('btnSaveProfileVisibility');
-        const db = window.__db;
+        const dbInst = window.__db || db;
 
         if (!settingsContainer) return;
-        if (!db) {
+        if (!dbInst) {
           logger.error('DB bulunamadı');
+          settingsContainer.innerHTML = '<div style="text-align:center; padding:20px; color:#991b1b;"><p>Veritabanı bağlantısı kurulamadı.</p></div>';
           return;
         }
 
@@ -6570,7 +6863,7 @@
         let isOwner = false;
         try {
           const { doc, getDoc } = await getFirestoreModules();
-          const companyDoc = await getDoc(doc(db, 'companies', companyId));
+          const companyDoc = await getDoc(doc(dbInst, 'companies', companyId));
           const companyData = companyDoc.exists() ? (companyDoc.data() || {}) : {};
           isOwner = !!(companyData.ownerUid && auth.currentUser && companyData.ownerUid === auth.currentUser.uid);
         } catch (ownerErr) {
@@ -6591,7 +6884,7 @@
 
         // Firestore'dan görünürlük ayarlarını yükle
         const { doc, getDoc, setDoc, serverTimestamp } = await getFirestoreModules();
-        const settingsRef = doc(db, 'companies', companyId, 'profileSettings', 'visibility');
+        const settingsRef = doc(dbInst, 'companies', companyId, 'profileSettings', 'visibility');
         const settingsDoc = await getDoc(settingsRef);
 
         const defaultSettings = {
@@ -6693,11 +6986,11 @@
         }
 
         const { doc, setDoc, serverTimestamp } = await getFirestoreModules();
-        const db = window.__db;
-        if (!db) {
+        const dbInst = window.__db || db;
+        if (!dbInst) {
           throw new Error('DB bulunamadı');
         }
-        const settingsRef = doc(db, 'companies', companyId, 'profileSettings', 'visibility');
+        const settingsRef = doc(dbInst, 'companies', companyId, 'profileSettings', 'visibility');
 
         // Teklifbul Rule v1.0 - Banka Hesapları ve Ekip Üyeleri KVKK uyumluluğu için kaldırıldı
         const visibilityFields = ['companyInfo', 'about', 'categories', 'gallery', 'contactInfo', 'googleBusiness'];
@@ -6749,116 +7042,123 @@
 
         partnersContainer.innerHTML = '<div style="text-align:center; padding:20px; color:#6b7280;"><p>Yükleniyor...</p></div>';
 
-        // Kullanıcıları sorgula (hem companies array hem de companyId field)
-        const { collection, query, where, getDocs, doc, getDoc } = await getFirestoreModules();
-        const usersRef = collection(db, 'users');
-        const usersQuery1 = query(usersRef, where('companies', 'array-contains', companyId));
-        const usersQuery2 = query(usersRef, where('companyId', '==', companyId));
+        const dbInst = window.__db || db;
+        if (!dbInst || !companyId) {
+          partnersContainer.innerHTML = '<div style="text-align:center; padding:20px; color:#991b1b;"><p>Firma bilgisi yüklenemedi.</p></div>';
+          return;
+        }
 
-        const [usersSnapshot1, usersSnapshot2] = await Promise.all([
-          getDocs(usersQuery1).catch(() => ({ docs: [] })),
-          getDocs(usersQuery2).catch(() => ({ docs: [] }))
-        ]);
-
-        const allUserIds = new Set();
-        [...usersSnapshot1.docs, ...usersSnapshot2.docs].forEach(doc => {
-          allUserIds.add(doc.id);
-        });
-
-        // Bu şirketin alıcı olduğu talepleri bul
-        const demandsRef = collection(db, 'demands');
-        const demandsQuery = query(
-          demandsRef,
-          where('companyId', '==', companyId),
-          where('status', 'in', ['completed', 'accepted'])
-        );
-        const demandsSnapshot = await getDocs(demandsQuery);
-
-        // Bu şirketin tedarikçi olduğu teklifleri bul
-        const bidsRef = collection(db, 'bids');
-        const bidsQuery = query(
-          bidsRef,
-          where('supplierCompanyId', '==', companyId),
-          where('status', 'in', ['accepted', 'approved'])
-        );
-        const bidsSnapshot = await getDocs(bidsQuery);
-        // Partner şirketleri topla
+        const { collection, query, where, getDocs, doc, getDoc, limit } = await getFirestoreModules();
         const partnerCompanyIds = new Set();
 
-        // Taleplerden tedarikçi şirketleri al
-        demandsSnapshot.docs.forEach(demandDoc => {
-          const demandData = demandDoc.data();
-          if (demandData.acceptedBidId) {
-            // Accepted bid'i bulup supplier company ID'sini al
-            bidsSnapshot.docs.forEach(bidDoc => {
-              if (bidDoc.id === demandData.acceptedBidId) {
-                const bidData = bidDoc.data();
-                if (bidData.supplierCompanyId && bidData.supplierCompanyId !== companyId) {
-                  partnerCompanyIds.add(bidData.supplierCompanyId);
-                }
+        // Teklifbul Rule v1.0 - demands kuralları creatorCompanyId kullanır (companyId değil)
+        try {
+          const demandsSnap = await getDocs(query(
+            collection(dbInst, 'demands'),
+            where('creatorCompanyId', '==', companyId),
+            limit(100)
+          ));
+          const acceptedBidIds = [];
+          demandsSnap.docs.forEach((demandDoc) => {
+            const demandData = demandDoc.data() || {};
+            const st = String(demandData.status || '').toLowerCase();
+            if (['completed', 'accepted', 'closed', 'awarded'].includes(st) && demandData.acceptedBidId) {
+              acceptedBidIds.push(demandData.acceptedBidId);
+            }
+          });
+          for (const bidId of acceptedBidIds.slice(0, 50)) {
+            try {
+              const bidDoc = await getDoc(doc(dbInst, 'bids', bidId));
+              if (!bidDoc.exists()) continue;
+              const bidData = bidDoc.data() || {};
+              if (bidData.supplierCompanyId && bidData.supplierCompanyId !== companyId) {
+                partnerCompanyIds.add(bidData.supplierCompanyId);
               }
-            });
+            } catch (bidErr) {
+              logger.warn('Partner bid okunamadı', { bidId, err: bidErr?.message });
+            }
           }
-        });
+        } catch (demandsErr) {
+          logger.warn('Ticaret ortakları: talepler sorgusu atlandı', demandsErr);
+        }
 
-        // Tekliflerden alıcı şirketleri al
-        for (const bidDoc of bidsSnapshot.docs) {
-          const bidData = bidDoc.data();
-          if (bidData.demandId) {
-            const demandDoc = await getDoc(doc(db, 'demands', bidData.demandId));
-            if (demandDoc.exists()) {
-              const demandData = demandDoc.data();
-              if (demandData.companyId && demandData.companyId !== companyId) {
-                partnerCompanyIds.add(demandData.companyId);
+        // Tedarikçi olarak kabul edilmiş teklifler → alıcı firmalar
+        try {
+          const bidsSnap = await getDocs(query(
+            collection(dbInst, 'bids'),
+            where('supplierCompanyId', '==', companyId),
+            limit(100)
+          ));
+          for (const bidDoc of bidsSnap.docs) {
+            const bidData = bidDoc.data() || {};
+            const st = String(bidData.status || '').toLowerCase();
+            if (!['accepted', 'approved', 'won'].includes(st)) continue;
+            const buyerCid = bidData.buyerCompanyId || null;
+            if (buyerCid && buyerCid !== companyId) {
+              partnerCompanyIds.add(buyerCid);
+              continue;
+            }
+            if (bidData.demandId) {
+              try {
+                const demandDoc = await getDoc(doc(dbInst, 'demands', bidData.demandId));
+                if (demandDoc.exists()) {
+                  const demandData = demandDoc.data() || {};
+                  const cid = demandData.creatorCompanyId || demandData.companyId;
+                  if (cid && cid !== companyId) partnerCompanyIds.add(cid);
+                }
+              } catch (dErr) {
+                logger.warn('Partner demand okunamadı', { demandId: bidData.demandId, err: dErr?.message });
               }
             }
           }
+        } catch (bidsErr) {
+          logger.warn('Ticaret ortakları: teklifler sorgusu atlandı', bidsErr);
         }
 
-        // Partner şirket bilgilerini yükle
         const partners = [];
         for (const partnerCompanyId of partnerCompanyIds) {
-          const partnerCompanyDoc = await getDoc(doc(db, 'companies', partnerCompanyId));
-          if (partnerCompanyDoc.exists()) {
-            partners.push({
-              id: partnerCompanyId,
-              name: partnerCompanyDoc.data().companyName || 'Bilinmeyen Şirket',
-              data: partnerCompanyDoc.data()
-            });
+          try {
+            const partnerCompanyDoc = await getDoc(doc(dbInst, 'companies', partnerCompanyId));
+            if (partnerCompanyDoc.exists()) {
+              const data = partnerCompanyDoc.data() || {};
+              partners.push({
+                id: partnerCompanyId,
+                name: data.companyName || data.name || 'Bilinmeyen Şirket',
+                data
+              });
+            }
+          } catch (cErr) {
+            logger.warn('Partner şirket okunamadı', { partnerCompanyId, err: cErr?.message });
           }
         }
 
-        // UI'ı güncelle
         if (partners.length === 0) {
           partnersContainer.innerHTML = '<div style="text-align:center; padding:20px; color:#6b7280;"><p>Henüz başarılı ticaret yapılan firma bulunmamaktadır.</p></div>';
         } else {
-          // Teklifbul Rule v1.0 - XSS Protection: Sanitize partner data
           partnersContainer.innerHTML = DOMPurify.sanitize(partners.map(partner => {
             const safeName = DOMPurify.sanitize(partner.name || '', { ALLOWED_TAGS: [] });
             const safeId = DOMPurify.sanitize(partner.id || '', { ALLOWED_TAGS: [] });
             return `
-            <div class="partner-card" data-company-id="${safeId}" style="padding:16px; background:white; border-radius:8px; border:1px solid #e5e7eb; cursor:pointer; transition:all 0.2s;">
+            <div class="partner-card" data-company-id="${safeId}" style="padding:16px; background:white; border-radius:8px; border:1px solid #e5e7eb; cursor:pointer; transition:all 0.2s;" title="Firma profiline git" aria-label="${safeName} firma profili">
               <div style="font-weight:600; color:#1f2937; margin-bottom:4px;">${safeName}</div>
               <div style="font-size:12px; color:#6b7280;">Firma profiline git →</div>
             </div>
           `;
           }).join(''), {
             ALLOWED_TAGS: ['div'],
-            ALLOWED_ATTR: ['class', 'style', 'data-company-id']
+            ALLOWED_ATTR: ['class', 'style', 'data-company-id', 'title', 'aria-label']
           });
 
-          // Event delegation for partner cards - Teklifbul Rule v1.0 - CSP uyumlu
           partnersContainer.querySelectorAll('.partner-card').forEach(card => {
             card.addEventListener('click', () => {
-              const companyId = card.getAttribute('data-company-id');
-              if (companyId) {
-                location.href = `./company-profile.html?companyId=${companyId}`;
-              }
+              const cid = card.getAttribute('data-company-id');
+              if (cid) location.href = `./company-profile.html?companyId=${cid}`;
             });
           });
         }
       } catch (e) {
         logger.error('Başarılı ticaret ortakları yükleme hatası', e);
+        toast.error('Ticaret ortakları yüklenemedi');
         const partnersContainer = document.getElementById('successfulTradePartners');
         if (partnersContainer) {
           partnersContainer.innerHTML = '<div style="text-align:center; padding:20px; color:#dc2626;"><p>Yükleme sırasında bir hata oluştu.</p></div>';
@@ -7222,12 +7522,34 @@
                 );
               };
             } else {
-              actionBtn.onclick = () => {
-                toast.info(
-                  'Ödeme sayfası yakında eklenecek. Şu an için destek ile iletişime geçebilirsiniz.'
-                );
-              };
+              actionBtn.onclick = () => handlePremiumUpgradeAction(planTitle);
             }
+          }
+
+          const upgradeBtn = document.getElementById('btnUpgradePlan');
+          if (upgradeBtn) {
+            if (planTitle === 'Premium Plus') {
+              upgradeBtn.style.display = 'none';
+            } else {
+              upgradeBtn.style.display = '';
+              upgradeBtn.onclick = () => handlePremiumUpgradeAction(planTitle);
+            }
+          }
+
+          const addPayMethodBtn = document.getElementById('btnAddPaymentMethod');
+          if (addPayMethodBtn && !addPayMethodBtn.dataset.bound) {
+            addPayMethodBtn.dataset.bound = '1';
+            addPayMethodBtn.addEventListener('click', () => {
+              toast.info('Kayıtlı kart yakında. Plan yükseltirken ödeme adımında kart/havale seçenekleri sunulacak.');
+            });
+          }
+
+          const cancelSubBtn = document.getElementById('btnCancelSubscription');
+          if (cancelSubBtn && !cancelSubBtn.dataset.bound) {
+            cancelSubBtn.dataset.bound = '1';
+            cancelSubBtn.addEventListener('click', () => {
+              toast.info('Abonelik iptali için lütfen destek ile iletişime geçin.');
+            });
           }
 
         } catch (e) {
@@ -7261,7 +7583,23 @@
               if (targetBtn) {
                 targetBtn.click();
               } else if (page === 'admin-profit-detail') {
-                // Detail page doesn't have nav button, load directly
+                // Detail page doesn't have nav button — show page then load
+                document.querySelectorAll('.settings-page').forEach((pEl) => {
+                  pEl.classList.remove('active');
+                  pEl.style.display = 'none';
+                });
+                const detailEl = document.getElementById('page-admin-profit-detail');
+                if (detailEl) {
+                  detailEl.classList.add('active');
+                  detailEl.style.display = 'block';
+                }
+                document.querySelectorAll('.settings-nav-btn').forEach((b) => {
+                  const isProfit = b.getAttribute('data-page') === 'admin-profit';
+                  b.classList.toggle('active', isProfit);
+                  b.style.color = isProfit ? '#1e40af' : '#6b7280';
+                  b.style.background = isProfit ? '#eff6ff' : 'none';
+                  b.style.borderLeft = isProfit ? '3px solid #3b82f6' : 'none';
+                });
                 if (window.loadAdminProfitDetailPage) {
                   window.loadAdminProfitDetailPage();
                 }
@@ -7325,16 +7663,82 @@
 
     const rolePermState = {
       roles: /** @type {Array<{roleKey:string; label:string}>} */ (rolePermissionsTemplate.roles || []),
+      visibleRoles: /** @type {Array<{roleKey:string; label:string}>} */ ([]),
       permissions: /** @type {Array<{key:string; label:string; group:string}>} */ (rolePermissionsTemplate.permissions || []),
       matrixDefaults: /** @type {Record<string, Record<string, boolean>>} */ (rolePermissionsTemplate.matrixDefaults || {}),
       values: /** @type {Record<string, Record<string, boolean>>} */ ({}),
+      verifiedStatus: /** @type {Record<string, {verifiedModules:string[]; isFullyVerified:boolean}>} */ ({}),
       activeGroup: /** @type {string} */ ('Talepler'),
+      roleFilter: /** @type {'all'|'buyer'|'supplier'} */ ('all'),
       canEdit: false,
       companyId: /** @type {string | null} */ (null),
       currentRoleKey: /** @type {string | null} */ (null)
     };
 
     const rolePermSaveTimers = new Map();
+
+    function escapeRolePermHtml(str) {
+      return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    // Teklifbul Rule v1.0 — Eski dotted field kayıtlarını da oku (setDoc bug legacy)
+    function extractRoleDocPermissions(data) {
+      const raw = data && typeof data === 'object' ? data : {};
+      const nested = raw.permissions;
+      const out = {};
+      if (nested && typeof nested === 'object' && !Array.isArray(nested)) {
+        Object.keys(nested).forEach((k) => {
+          if (typeof nested[k] === 'boolean') out[k] = nested[k];
+        });
+      }
+      Object.keys(raw).forEach((k) => {
+        if (k.startsWith('permissions.') && typeof raw[k] === 'boolean') {
+          const permKey = k.slice('permissions.'.length);
+          if (!(permKey in out)) out[permKey] = raw[k];
+        }
+      });
+      return out;
+    }
+
+    function resolveVisibleRoles(userData = {}) {
+      const allRoles = rolePermState.roles || [];
+      const rolesArr = Array.isArray(userData.roles) ? userData.roles : [];
+      const roleType = userData.companyRoleType || '';
+      const hasBuyer =
+        rolesArr.includes('buyer') ||
+        rolesArr.includes('both') ||
+        roleType === 'buyer' ||
+        String(userData.companyRoleKey || userData.companyRole || '').startsWith('buyer:');
+      const hasSupplier =
+        rolesArr.includes('supplier') ||
+        rolesArr.includes('both') ||
+        roleType === 'supplier' ||
+        String(userData.companyRoleKey || userData.companyRole || '').startsWith('supplier:');
+
+      if (hasBuyer && !hasSupplier) {
+        rolePermState.roleFilter = 'buyer';
+        return allRoles.filter((r) => String(r.roleKey || '').startsWith('buyer:'));
+      }
+      if (hasSupplier && !hasBuyer) {
+        rolePermState.roleFilter = 'supplier';
+        return allRoles.filter((r) => String(r.roleKey || '').startsWith('supplier:'));
+      }
+      rolePermState.roleFilter = 'all';
+      return allRoles.slice();
+    }
+
+    function getFilteredRolesForTable() {
+      const base = rolePermState.visibleRoles.length
+        ? rolePermState.visibleRoles
+        : (rolePermState.roles || []);
+      if (rolePermState.roleFilter === 'buyer') {
+        return base.filter((r) => String(r.roleKey || '').startsWith('buyer:'));
+      }
+      if (rolePermState.roleFilter === 'supplier') {
+        return base.filter((r) => String(r.roleKey || '').startsWith('supplier:'));
+      }
+      return base;
+    }
 
     async function initRolePermissionsPage(ctx) {
       const page = document.getElementById('page-approval-settings');
@@ -7347,17 +7751,18 @@
       const roleMatrixViewKey = roleMatrixPerms?.roleMatrix?.view;
       const roleMatrixEditKey = roleMatrixPerms?.roleMatrix?.edit;
 
-      // View guard - Rol & Yetki Yönetimi ekranı
+      // View guard - sadece rol matrisi bölümünü gate et (onay politikasını silme)
       if (roleMatrixViewKey && !can(roleMatrixViewKey)) {
-        page.innerHTML = `
-          <div class="section">
+        const roleSection = document.getElementById('rolePermissionsSection');
+        if (roleSection) {
+          roleSection.innerHTML = `
             <h3>🔐 Rol ve Yetki Yönetimi</h3>
             <p class="muted" style="margin-top:8px; font-size:13px;">
               Bu ekranı görüntüleme yetkiniz yok. Şirket yöneticinizden yetki talep edebilirsiniz.
             </p>
-          </div>
-        `;
-        logger.warn('Rol & Yetki Yönetimi: roleMatrix.view izni yok, sayfa içerikleri yüklenmedi', {
+          `;
+        }
+        logger.warn('Rol & Yetki Yönetimi: roleMatrix.view izni yok, sadece role section gizlendi', {
           permKey: roleMatrixViewKey
         });
         return;
@@ -7367,6 +7772,7 @@
       const userData = ctx.userDocData || {};
       const currentRoleKey = userData.companyRoleKey || userData.companyRole || null;
       rolePermState.currentRoleKey = currentRoleKey;
+      rolePermState.visibleRoles = resolveVisibleRoles(userData);
 
       // Edit izni: hem yönetim rolleri hem de roleMatrix.edit permission'ı gerekli
       const hasEditorRole = !!(currentRoleKey && ROLE_PERMISSIONS_EDITORS.has(currentRoleKey));
@@ -7378,9 +7784,32 @@
         warningEl.style.display = rolePermState.canEdit ? 'none' : 'block';
       }
 
+      // Alıcı / Tedarikçi filtre (şirket both ise)
+      const filterHost = document.getElementById('rolePermRoleFilter');
+      if (filterHost) {
+        const showBoth =
+          (rolePermState.visibleRoles || []).some((r) => String(r.roleKey).startsWith('buyer:')) &&
+          (rolePermState.visibleRoles || []).some((r) => String(r.roleKey).startsWith('supplier:'));
+        filterHost.style.display = showBoth ? 'flex' : 'none';
+        if (showBoth) {
+          filterHost.querySelectorAll('[data-role-filter]').forEach((btn) => {
+            btn.onclick = () => {
+              rolePermState.roleFilter = btn.getAttribute('data-role-filter') || 'all';
+              filterHost.querySelectorAll('[data-role-filter]').forEach((b) => {
+                const active = b === btn;
+                b.style.background = active ? '#2563eb' : '#fff';
+                b.style.color = active ? '#fff' : '#374151';
+              });
+              renderRolePermTable();
+            };
+          });
+        }
+      }
+
       // Tab eventleri
       const tabContainer = document.getElementById('rolePermTabs');
-      if (tabContainer) {
+      if (tabContainer && !tabContainer.dataset.bound) {
+        tabContainer.dataset.bound = '1';
         const tabs = Array.from(tabContainer.querySelectorAll('.role-perm-tab'));
         tabs.forEach((tab) => {
           tab.addEventListener('click', () => {
@@ -7415,22 +7844,54 @@
       const btnGroupAllOff = document.getElementById('btnRolePermGroupAllOff');
       const btnVerified = document.getElementById('btnRolePermTabVerified');
 
-      if (btnGroupAllOn) {
+      if (btnGroupAllOn && !btnGroupAllOn.dataset.bound) {
+        btnGroupAllOn.dataset.bound = '1';
         btnGroupAllOn.addEventListener('click', () => {
           if (!rolePermState.canEdit) return;
           applyGroupToggle(true);
         });
       }
-      if (btnGroupAllOff) {
+      if (btnGroupAllOff && !btnGroupAllOff.dataset.bound) {
+        btnGroupAllOff.dataset.bound = '1';
         btnGroupAllOff.addEventListener('click', () => {
           if (!rolePermState.canEdit) return;
           applyGroupToggle(false);
         });
       }
-      if (btnVerified) {
-        btnVerified.addEventListener('click', () => {
-          if (!rolePermState.canEdit || !rolePermState.activeRoleKey) return;
-          saveRolePermissions(rolePermState.activeRoleKey, false, true);
+      if (btnVerified && !btnVerified.dataset.bound) {
+        btnVerified.dataset.bound = '1';
+        btnVerified.addEventListener('click', async () => {
+          if (!rolePermState.canEdit) {
+            toast.error('Bu ekranda değişiklik yapma yetkiniz yok.');
+            return;
+          }
+          const roles = getFilteredRolesForTable();
+          if (!roles.length) {
+            toast.error('Onaylanacak rol bulunamadı.');
+            return;
+          }
+          const originalText = btnVerified.textContent;
+          btnVerified.disabled = true;
+          btnVerified.textContent = '⏳ Kaydediliyor...';
+          try {
+            for (const role of roles) {
+              await saveRolePermissions(role.roleKey, true, true);
+            }
+            toast.success('"' + (rolePermState.activeGroup || 'Sekme') + '" görünür roller için kaydedildi ve onaylandı.');
+            if (rolePermState.companyId) {
+              await loadRolePermissionsFromFirestore(rolePermState.companyId);
+            }
+            renderRolePermTable();
+          } catch (err) {
+            logger.error('Rol yetkileri sekme onayı hatası', err);
+            const msg = err?.code === 'permission-denied'
+              ? 'Kayıt izni yok. Yalnız şirket sahibi veya üst yönetim rolleri kaydedebilir.'
+              : ('Yetkiler kaydedilemedi: ' + (err?.message || err));
+            toast.error(msg);
+          } finally {
+            btnVerified.disabled = false;
+            btnVerified.textContent = originalText;
+          }
         });
       }
 
@@ -7462,7 +7923,7 @@
               logger.warn('Role permissions doc okunamadı', { roleKey, error: e });
             }
             const data = snap && snap.exists() ? snap.data() || {} : {};
-            const docPerms = data.permissions || {};
+            const docPerms = extractRoleDocPermissions(data);
             const roleDefaults = defaults[roleKey] || {};
             const rolePerms = {};
             allPermKeys.forEach((permKey) => {
@@ -7487,6 +7948,7 @@
         logger.info('Role permissions yüklendi', { companyId });
       } catch (e) {
         logger.error('Role permissions yüklenirken hata', e);
+        toast.error('Rol yetkileri yüklenemedi: ' + (e?.message || e));
       }
     }
 
@@ -7494,23 +7956,27 @@
       const table = document.getElementById('rolePermTable');
       if (!table) return;
 
-      const roleKey = rolePermState.activeRoleKey;
-      
-      // UI Durum Güncellemesi (Uyarı Bannerı)
+      const rolesForTable = getFilteredRolesForTable();
+
+      // Teklifbul Rule v1.0 — Onay durumu (yalnız görünür roller; korkutucu dil yumuşatıldı)
       const statusEl = document.getElementById('rolePermVerifiedStatus');
-      if (statusEl && roleKey && rolePermState.verifiedStatus && rolePermState.verifiedStatus[roleKey]) {
-        const status = rolePermState.verifiedStatus[roleKey];
-        if (!status.isFullyVerified) {
+      if (statusEl) {
+        const statuses = rolePermState.verifiedStatus || {};
+        const incomplete = rolesForTable.filter((r) => {
+          const st = statuses[r.roleKey];
+          return !st || !st.isFullyVerified;
+        });
+        if (!rolesForTable.length) {
+          statusEl.style.display = 'none';
+        } else if (incomplete.length === 0) {
           statusEl.style.display = 'block';
-          statusEl.innerHTML = `⚠️ Bu rol için yetki onayları henüz tamamlanmadı (${status.verifiedModules.length}/11 sekme). Yeni atanan kullanıcılar giriş yapamaz.`;
-          statusEl.style.color = '#eab308'; // yellow
+          statusEl.style.color = '#10b981';
+          statusEl.textContent = 'Tüm görünür roller için sekme onayları tamam.';
         } else {
           statusEl.style.display = 'block';
-          statusEl.innerHTML = `✅ Bu rolün tüm yetkileri onaylanmıştır. Kullanıcı erişimine açıktır.`;
-          statusEl.style.color = '#10b981'; // green
+          statusEl.style.color = '#eab308';
+          statusEl.textContent = `${incomplete.length}/${rolesForTable.length} rolde sekme onayı eksik. Bu yalnızca “yetki onayı bekleyen” yeni üyeleri etkiler.`;
         }
-      } else if (statusEl) {
-        statusEl.style.display = 'none';
       }
 
       const group = rolePermState.activeGroup || 'Talepler';
@@ -7518,40 +7984,40 @@
 
       const groupPerms = rolePermState.permissions.filter((p) => p.group === group);
       if (!groupPerms.length) {
-        table.innerHTML = '<tbody><tr><td style=\"padding:12px; font-size:12px; color:#6b7280;\">Bu sekme için tanımlı yetki bulunmuyor.</td></tr></tbody>';
+        table.innerHTML = '<tbody><tr><td style="padding:12px; font-size:12px; color:#6b7280;">Bu sekme için tanımlı yetki bulunmuyor.</td></tr></tbody>';
         return;
       }
 
       const stickyTop = 0;
       let thead = '<thead><tr style="background:#f9fafb;">';
-      thead += `<th style="position:sticky; top:${stickyTop}px; left:0; z-index:20; background:#f9fafb; padding:8px 10px; border-bottom:1px solid #e5e7eb; border-right:1px solid #e5e7eb; text-align:left; font-size:13px; min-width:180px; width:180px; max-width:220px; box-shadow:0 1px 0 #e5e7eb; vertical-align:middle;">Rol</th>`;
+      thead += `<th style="position:sticky; top:${stickyTop}px; left:0; z-index:20; background:#f9fafb; padding:8px 10px; border-bottom:1px solid #e5e7eb; border-right:1px solid #e5e7eb; text-align:left; font-size:13px; min-width:180px; width:180px; max-width:220px; box-shadow:0 1px 0 #e5e7eb; vertical-align:middle;">Rol (${rolesForTable.length})</th>`;
       groupPerms.forEach((perm) => {
-        thead += `<th title="${perm.label}" style="position:sticky; top:${stickyTop}px; z-index:19; background:#f9fafb; padding:7px 4px; border-bottom:1px solid #e5e7eb; border-right:1px solid #eef2f7; text-align:center; font-size:10.5px; vertical-align:middle; min-width:58px; max-width:92px; white-space:normal; word-wrap:break-word; line-height:1.2; box-shadow:0 1px 0 #e5e7eb;">${perm.label}</th>`;
+        thead += `<th title="${escapeRolePermHtml(perm.label)}" style="position:sticky; top:${stickyTop}px; z-index:19; background:#f9fafb; padding:7px 4px; border-bottom:1px solid #e5e7eb; border-right:1px solid #eef2f7; text-align:center; font-size:10.5px; vertical-align:middle; min-width:58px; max-width:92px; white-space:normal; word-wrap:break-word; line-height:1.2; box-shadow:0 1px 0 #e5e7eb;">${escapeRolePermHtml(perm.label)}</th>`;
       });
       thead += `<th style="position:sticky; top:${stickyTop}px; z-index:19; background:#f9fafb; padding:8px 6px; border-bottom:1px solid #e5e7eb; text-align:center; font-size:11px; white-space:nowrap; box-shadow:0 1px 0 #e5e7eb;">Satır İşlemi</th>`;
       thead += '</tr></thead>';
 
       let tbody = '<tbody>';
-      rolePermState.roles.forEach((role) => {
+      rolesForTable.forEach((role) => {
         const roleKey = role.roleKey;
         const roleLabel = role.label || roleKey;
         const rolePerms = rolePermState.values[roleKey] || {};
         tbody += '<tr>';
-        tbody += `<td style=\"position:sticky; left:0; z-index:1; background:white; padding:7px 10px; border-bottom:1px solid #f3f4f6; border-right:1px solid #e5e7eb; font-size:13px; font-weight:700; min-width:180px; width:180px; max-width:220px; white-space:normal; line-height:1.2;\">${roleLabel}<div style=\"font-size:10px; color:#6b7280; font-weight:500; margin-top:2px; word-break:break-word; overflow-wrap:anywhere;\">${roleKey}</div></td>`;
+        tbody += `<td style="position:sticky; left:0; z-index:1; background:white; padding:7px 10px; border-bottom:1px solid #f3f4f6; border-right:1px solid #e5e7eb; font-size:13px; font-weight:700; min-width:180px; width:180px; max-width:220px; white-space:normal; line-height:1.2;">${escapeRolePermHtml(roleLabel)}<div style="font-size:10px; color:#6b7280; font-weight:500; margin-top:2px; word-break:break-word; overflow-wrap:anywhere;">${escapeRolePermHtml(roleKey)}</div></td>`;
         groupPerms.forEach((perm) => {
           const value = !!rolePerms[perm.key];
           const disabledAttr = canEdit ? '' : 'disabled';
           const checkedAttr = value ? 'checked' : '';
           tbody += `
-            <td style=\"padding:5px 3px; border-bottom:1px solid #f3f4f6; border-right:1px solid #f1f5f9; text-align:center;\">
-              <input type=\"checkbox\" class=\"role-perm-checkbox\" data-role-key=\"${roleKey}\" data-perm-key=\"${perm.key}\" ${checkedAttr} ${disabledAttr} style=\"width:16px; height:16px; cursor:${canEdit ? 'pointer' : 'not-allowed'};\">
+            <td style="padding:5px 3px; border-bottom:1px solid #f3f4f6; border-right:1px solid #f1f5f9; text-align:center;">
+              <input type="checkbox" class="role-perm-checkbox" data-role-key="${escapeRolePermHtml(roleKey)}" data-perm-key="${escapeRolePermHtml(perm.key)}" ${checkedAttr} ${disabledAttr} style="width:16px; height:16px; cursor:${canEdit ? 'pointer' : 'not-allowed'};" aria-label="${escapeRolePermHtml(roleLabel)} — ${escapeRolePermHtml(perm.label)}">
             </td>
           `;
         });
         tbody += `
-          <td style=\"padding:6px 4px; border-bottom:1px solid #f3f4f6; text-align:center;\">
-            <button type=\"button\" class=\"btn btn-secondary btn-xs\" data-role-row-on=\"${roleKey}\" style=\"padding:4px 6px; font-size:10px; margin-right:4px; background:#3b82f6; color:#ffffff; border:none; border-radius:4px; cursor:pointer; font-weight:500;\">Tüm ✓</button>
-            <button type=\"button\" class=\"btn btn-secondary btn-xs\" data-role-row-off=\"${roleKey}\" style=\"padding:4px 6px; font-size:10px; background:#ef4444; color:#ffffff; border:none; border-radius:4px; cursor:pointer; font-weight:500;\">Tüm ✗</button>
+          <td style="padding:6px 4px; border-bottom:1px solid #f3f4f6; text-align:center;">
+            <button type="button" class="btn btn-secondary btn-xs" data-role-row-on="${escapeRolePermHtml(roleKey)}" ${canEdit ? '' : 'disabled'} style="padding:4px 6px; font-size:10px; margin-right:4px; background:#3b82f6; color:#ffffff; border:none; border-radius:4px; cursor:${canEdit ? 'pointer' : 'not-allowed'}; font-weight:500;" title="Bu satırdaki tüm yetkileri aç" aria-label="Satır tümünü aç">Tüm ✓</button>
+            <button type="button" class="btn btn-secondary btn-xs" data-role-row-off="${escapeRolePermHtml(roleKey)}" ${canEdit ? '' : 'disabled'} style="padding:4px 6px; font-size:10px; background:#ef4444; color:#ffffff; border:none; border-radius:4px; cursor:${canEdit ? 'pointer' : 'not-allowed'}; font-weight:500;" title="Bu satırdaki tüm yetkileri kapat" aria-label="Satır tümünü kapat">Tüm ✗</button>
           </td>
         `;
         tbody += '</tr>';
@@ -7605,7 +8071,8 @@
       const group = rolePermState.activeGroup || 'Talepler';
       const groupPerms = rolePermState.permissions.filter((p) => p.group === group);
       const permKeys = groupPerms.map((p) => p.key);
-      rolePermState.roles.forEach((role) => {
+      const roles = getFilteredRolesForTable();
+      roles.forEach((role) => {
         const roleKey = role.roleKey;
         if (!rolePermState.values[roleKey]) {
           rolePermState.values[roleKey] = {};
@@ -7616,7 +8083,7 @@
         scheduleRolePermSave(roleKey, true); // Silent save for batch
       });
       renderRolePermTable();
-      toast.success(value ? 'Tüm yetkiler açıldı' : 'Tüm yetkiler kapatıldı');
+      toast.success(value ? 'Görünür roller için yetkiler açıldı' : 'Görünür roller için yetkiler kapatıldı');
     }
 
     function applyRowToggle(roleKey, value) {
@@ -7639,7 +8106,10 @@
       const timer = setTimeout(() => {
         saveRolePermissions(roleKey, silent).catch((e) => {
           logger.error('Role permissions kaydedilirken hata', { roleKey, error: e });
-          toast.error(MESSAGES.ERROR_ROLE_PERMISSIONS_SAVE || 'Rol yetkileri kaydedilemedi');
+          const msg = e?.code === 'permission-denied'
+            ? 'Kayıt izni yok. Yalnız şirket sahibi veya üst yönetim rolleri kaydedebilir.'
+            : (MESSAGES.ERROR_ROLE_PERMISSIONS_SAVE || 'Rol yetkileri kaydedilemedi');
+          toast.error(msg);
         });
       }, 400);
       rolePermSaveTimers.set(roleKey, timer);
@@ -7657,11 +8127,14 @@
       let isFullyVerified = false;
       try {
         const snap = await getDoc(ref);
-        if (snap.exists() && snap.data().verifiedModules) {
-          verifiedModules = snap.data().verifiedModules || [];
-          isFullyVerified = snap.data().isFullyVerified === true;
+        if (snap.exists()) {
+          const existing = snap.data() || {};
+          verifiedModules = Array.isArray(existing.verifiedModules) ? existing.verifiedModules.slice() : [];
+          isFullyVerified = existing.isFullyVerified === true;
         }
-      } catch(e) {}
+      } catch (e) {
+        logger.warn('Role permissions mevcut doc okunamadı', e);
+      }
 
       // Onay butonuna basılmışsa sekmeyi kaydet
       if (markVerified) {
@@ -7680,38 +8153,41 @@
         isFullyVerified = allModules.every(mod => verifiedModules.includes(mod));
       }
 
+      // Teklifbul Rule v1.0 — nested permissions map (dotted setDoc alan adı bug'ı düzeltildi)
       const updates = {
+        permissions: rolePerms,
         updatedAt: serverTimestamp(),
         updatedBy: auth.currentUser?.uid || null,
         verifiedModules: verifiedModules,
         isFullyVerified: isFullyVerified
       };
 
-      Object.entries(rolePerms).forEach(([permKey, value]) => {
-        // @ts-ignore
-        updates[`permissions.${permKey}`] = !!value;
-      });
-
       await setDoc(ref, updates, { merge: true });
       
       // UI Durum Güncellemesi
+      if (!rolePermState.verifiedStatus) rolePermState.verifiedStatus = {};
+      rolePermState.verifiedStatus[roleKey] = {
+        verifiedModules,
+        isFullyVerified
+      };
+
       const statusEl = document.getElementById('rolePermVerifiedStatus');
-      if (statusEl) {
+      if (statusEl && markVerified) {
         if (!isFullyVerified) {
           statusEl.style.display = 'block';
-          statusEl.innerHTML = `⚠️ Bu rol için yetki onayları henüz tamamlanmadı (${verifiedModules.length}/11 sekme). Yeni atanan kullanıcılar giriş yapamaz.`;
-          statusEl.style.color = '#eab308'; // yellow
+          statusEl.style.color = '#eab308';
+          statusEl.textContent = `Bu rol: ${verifiedModules.length}/11 sekme onaylı. Yetki onayı bekleyen yeni üyeler için tüm sekmeleri tamamlayın.`;
         } else {
           statusEl.style.display = 'block';
-          statusEl.innerHTML = `✅ Bu rolün tüm yetkileri onaylanmıştır. Kullanıcı erişimine açıktır.`;
-          statusEl.style.color = '#10b981'; // green
+          statusEl.style.color = '#10b981';
+          statusEl.textContent = 'Bu rolün tüm sekmeleri onaylandı; bekleyen üyeler kabul edilebilir.';
         }
       }
 
       if (!silent) {
         if (markVerified) {
-          if (isFullyVerified) toast.success("Tüm yetki sekmeleri onaylandı! Bu roldeki kullanıcılar artık sistemi kullanabilir.");
-          else toast.success(`"${rolePermState.activeGroup}" sekmesi kaydedildi ve onaylandı. Lütfen diğer sekmeleri de inceleyin. (${verifiedModules.length}/11)`);
+          if (isFullyVerified) toast.success('Tüm yetki sekmeleri onaylandı. Bekleyen üyeler sisteme alınabilir.');
+          else toast.success(`"${rolePermState.activeGroup}" kaydedildi (${verifiedModules.length}/11). Diğer sekmeleri de onaylayın.`);
         } else {
           toast.success(MESSAGES.SUCCESS_ROLE_PERMISSIONS_UPDATED || 'Rol yetkileri güncellendi');
         }
@@ -7754,6 +8230,7 @@
 
     // Legacy import (for backward compatibility)
     import { CATEGORIES } from "./categories.js";
+    import { appendTextCell } from '/assets/js/utils/safe-table.js';
 
     // ====================
     // Kategori Kuralları (Mini UI)
@@ -7873,13 +8350,20 @@
             const tr = document.createElement('tr');
             const catId = r.categoryIds?.[0] || '';
             const catName = catId ? nameById(catId) : '—';
-            tr.innerHTML = DOMPurify.sanitize(`
-              <td><input type="checkbox" class="rule-active" data-id="${r.id}" ${r.isActive ? 'checked' : ''}></td>
-              <td>${DOMPurify.sanitize(r.pattern, { ALLOWED_TAGS: [] })}</td>
-              <td>${DOMPurify.sanitize(r.matchType, { ALLOWED_TAGS: [] })}</td>
-              <td>${DOMPurify.sanitize(catName, { ALLOWED_TAGS: [] })}</td>
-              <td>${DOMPurify.sanitize(String(r.priority), { ALLOWED_TAGS: [] })}</td>
-            `, { ALLOWED_TAGS: ['td', 'input'], ALLOWED_ATTR: ['type', 'class', 'data-id', 'checked'] });
+            // Teklifbul Rule v1.0 — DOMPurify <tr>/<td>'yi table dışında siler; createElement kullan
+            const activeTd = document.createElement('td');
+            const activeCb = document.createElement('input');
+            activeCb.type = 'checkbox';
+            activeCb.className = 'rule-active';
+            activeCb.dataset.id = r.id;
+            activeCb.checked = !!r.isActive;
+            activeCb.setAttribute('aria-label', 'Kural aktif');
+            activeTd.appendChild(activeCb);
+            tr.appendChild(activeTd);
+            appendTextCell(tr, r.pattern);
+            appendTextCell(tr, r.matchType);
+            appendTextCell(tr, catName);
+            appendTextCell(tr, String(r.priority));
             tbody.appendChild(tr);
           });
 
@@ -8815,26 +9299,11 @@
       composeInvoiceFromParts();
     }
     function loadAdditionalAddresses(list = []) {
-      // Loading additional addresses silently
-      const container = document.getElementById("additionalAddresses");
-      if (!container) {
-        logger.warn("additionalAddresses container bulunamadı");
-        return;
-      }
-
-      // Mevcut içeriği temizle
-      container.innerHTML = "";
-
-      // Her adres için satır oluştur
-      list.forEach((addr, index) => {
-        addAddressRow({
-          title: addr.title || "",
-          content: addr.content || "",
-          isSaved: true
-        });
+      // Teklifbul Rule v1.0 - Profil init, Adres Yönetimi listesini bozmasın.
+      // Liste yalnızca loadAdditionalAddressesForManagement ile doldurulur.
+      logger.info('loadAdditionalAddresses atlandı (Adres Yönetimi kendi yükleyicisini kullanır)', {
+        count: Array.isArray(list) ? list.length : 0
       });
-
-      // Addresses loaded silently
     }
 
     function addAddressRow({ title = "", originalTitle = "", content = "", type = "", isSaved = false } = {}) {
@@ -9191,10 +9660,12 @@
             
             // Teklifbul Rule v1.0 - Adres Başlığı Benzersizlik Kontrolü
             // Eğer düzenleme modundaysak (originalTitle varsa), kendi ismimiz hariç kontrol et
-            const isDuplicate = currentAddresses.some(a => 
-              a.title.toLowerCase() === titleValue.toLowerCase() && 
-              (!originalTitle || a.title.toLowerCase() !== originalTitle.toLowerCase())
-            );
+            const isDuplicate = currentAddresses.some((a) => {
+              const existingTitle = String(a?.title || '').toLowerCase();
+              if (!existingTitle) return false;
+              return existingTitle === titleValue.toLowerCase() &&
+                (!originalTitle || existingTitle !== String(originalTitle).toLowerCase());
+            });
 
             if (isDuplicate) {
               toast.error(`"${titleValue}" başlıklı bir adres zaten mevcut. Lütfen farklı bir isim verin.`);
@@ -10584,7 +11055,7 @@
           }
         }
 
-        const { doc, getDoc, updateDoc, serverTimestamp } = await getFirestoreModules();
+        const { doc, getDoc, updateDoc, setDoc, serverTimestamp } = await getFirestoreModules();
         const requestRef = doc(db, 'companyJoinRequests', requestId);
         const requestDoc = await getDoc(requestRef);
 
@@ -10616,6 +11087,17 @@
           approvedAt: serverTimestamp(),
           approvedBy: auth.currentUser?.uid || null
         });
+
+        // Teklifbul Rule v1.0 — pendingMembers + members SoT (kullanıcı self-onboard eder)
+        const membershipPayload = {
+          userId,
+          status: 'accepted',
+          approvedRole: role,
+          approvedAt: serverTimestamp(),
+          approvedBy: auth.currentUser?.uid || null
+        };
+        await setDoc(doc(db, 'companies', companyId, 'pendingMembers', userId), membershipPayload, { merge: true });
+        await setDoc(doc(db, 'companies', companyId, 'members', userId), membershipPayload, { merge: true });
         
         console.log("APPROVE DEBUG: Request status updated to accepted");
 
@@ -11847,6 +12329,13 @@
           logger.info("Firestore'a gönderilecek veri", updateData);
           const { updateDoc } = await getFirestoreModules();
           await updateDoc(ref, updateData);
+          try {
+            const { syncPublicProfile } = await import('./assets/js/utils/sync-public-profile.js');
+            const syncedUser = (await getDoc(ref)).data() || updateData;
+            await syncPublicProfile(uid, syncedUser);
+          } catch (syncErr) {
+            logger.warn('publicProfiles senkron atlandı', syncErr);
+          }
 
           // Teklifbul Rule v1.0 - Şirket dokümanını da güncelle (googleBusinessUrl için)
           try {
@@ -12099,19 +12588,7 @@
         });
       }
 
-      // Premium Ayarları Kaydet
-      const btnSavePremiumSettings = document.getElementById('btnSavePremiumSettings');
-      if (btnSavePremiumSettings) {
-        btnSavePremiumSettings.addEventListener('click', async () => {
-          try {
-            toast.info('Plan yönetimi şirket bazında yapılır.');
-            await loadPremiumPage();
-          } catch (err) {
-            logger.error('Premium ayarları kaydetme hatası', err);
-            toast.error(MESSAGES.ERROR_SAVE + ': ' + err.message);
-          }
-        });
-      }
+      // Premium Ayarları Kaydet (buton kaldırıldı; plan şirket bazlı)
 
       // E-Belge Ayarları Butonları
       const btnSaveEdocSettings = document.getElementById('btnSaveEdocSettings');
@@ -12534,15 +13011,15 @@
         ];
 
         // Şirket bilgilerini al (ownerUid kontrolü için)
-        const db = window.__db;
+        const dbInst = window.__db || db;
         let companyData = {};
         let currentUserUid = null;
 
-        if (db && companyId) {
+        if (dbInst && companyId) {
           try {
             const getFirestoreModulesFn = window.getFirestoreModules || getFirestoreModules;
             const { getDoc, doc } = await getFirestoreModulesFn();
-            const companyDoc = await getDoc(doc(db, 'companies', companyId));
+            const companyDoc = await getDoc(doc(dbInst, 'companies', companyId));
             if (companyDoc.exists()) {
               companyData = companyDoc.data();
             }
@@ -12567,49 +13044,59 @@
         }
 
         // Hem prefix'li hem prefix'siz kontrol et + şirket sahibi kontrolü
+        const ownerUidResolved = companyData?.ownerUid || companyData?.ownerId || null;
         const hasPermission = unlimitedApprovalRoles.includes(userRoleKey) ||
           unlimitedApprovalRoles.includes(userRoleSimple) ||
-          // Şirket sahibi kontrolü (ownerUid)
-          (currentUserUid && companyData?.ownerUid === currentUserUid);
+          // Şirket sahibi kontrolü (ownerUid || ownerId)
+          (currentUserUid && ownerUidResolved === currentUserUid);
 
         logger.info('Onay politikası yetkisi kontrolü', {
           userRoleKey,
           userRoleSimple,
           hasPermission,
           unlimitedApprovalRoles,
-          isOwner: currentUserUid && companyData?.ownerUid === currentUserUid,
+          isOwner: currentUserUid && ownerUidResolved === currentUserUid,
           ownerUid: companyData?.ownerUid,
+          ownerId: companyData?.ownerId,
           currentUserUid
         });
 
+        // Teklifbul Rule v1.0 - Sadece onay politikası bölümünü gate et; rol matrisini silme
+        const approvalPolicySection = document.getElementById('approvalPolicySection');
+        let approvalDenied = document.getElementById('approvalPolicyDenied');
+        if (!approvalDenied && approvalPage) {
+          approvalDenied = document.createElement('div');
+          approvalDenied.id = 'approvalPolicyDenied';
+          approvalDenied.className = 'section';
+          approvalDenied.style.display = 'none';
+          approvalPage.insertBefore(approvalDenied, approvalPage.firstChild);
+        }
+
         if (!hasPermission) {
-          // Sayfayı gizle ve uyarı mesajı göster
-          approvalPage.style.display = 'none';
-          approvalPage.innerHTML = `
+          if (approvalPolicySection) approvalPolicySection.style.display = 'none';
+          if (approvalDenied) {
+            approvalDenied.style.display = 'block';
+            approvalDenied.innerHTML = `
           <div style="padding:40px; text-align:center; background:#fee2e2; border-radius:8px; border:2px solid #ef4444;">
             <h3 style="color:#dc2626; margin:0 0 16px 0;">⚠️ Yetki Gerekli</h3>
             <p style="color:#991b1b; margin:0; font-size:14px;">
-              Onay politikası ayarlarını yalnızca <strong>CEO</strong>, <strong>İşveren</strong>, 
+              Onay politikası ayarlarını yalnızca <strong>CEO</strong>, <strong>İşveren</strong>,
               <strong>Yönetim Kurulu Başkanı</strong> veya <strong>Genel Müdür</strong> rolleri yönetebilir.
             </p>
             <p style="color:#991b1b; margin:12px 0 0 0; font-size:12px;">
               Mevcut rolünüz: <strong>${userRoleKey || userRoleSimple || 'Tanımlanmamış'}</strong>
             </p>
-          </div>
-        `;
-          logger.warn('Onay politikası yetkisi yok, sayfa gizlendi');
+          </div>`;
+          }
+          logger.warn('Onay politikası yetkisi yok, sadece policy section gizlendi');
           return;
         }
 
-        // Bölümü göster
-        approvalPage.style.display = 'block';
-        logger.info('Onay politikası bölümü gösterildi');
-
-        // approvalPolicySection bölümünü göster
-        const approvalPolicySection = document.getElementById('approvalPolicySection');
+        if (approvalDenied) approvalDenied.style.display = 'none';
         if (approvalPolicySection) {
           approvalPolicySection.style.display = 'block';
         }
+        logger.info('Onay politikası bölümü gösterildi')
 
         // Mevcut ayarları Firestore'dan yükle (companyData zaten yukarıda alındı, tekrar almayalım)
         if (!db) {
@@ -12628,7 +13115,7 @@
         // Eğer companyData boşsa tekrar yükle
         if (!companyData || Object.keys(companyData).length === 0) {
           const companyDoc = await safeFirestoreOperation(
-            () => getDoc(doc(db, 'companies', companyId)),
+            () => getDoc(doc(dbInst, 'companies', companyId)),
             'Şirket bilgileri yüklenemedi'
           );
           companyData = companyDoc.exists() ? companyDoc.data() : {};
@@ -12802,17 +13289,17 @@
     window.saveApprovalPolicy = async function saveApprovalPolicy(companyId) {
       try {
         // Teklifbul Rule v1.0 - Yetki kontrolü
-        const auth = window.__auth;
+        const authInst = window.__auth || auth;
         const toastFn = window.showToastNotification || showToastNotification;
-        if (!auth?.currentUser) {
+        if (!authInst?.currentUser) {
           if (toastFn && typeof toastFn === 'function') {
             toastFn('❌ Lütfen önce giriş yapın!', 'error');
           }
           return;
         }
 
-        const db = window.__db;
-        if (!db) {
+        const dbInst = window.__db || db;
+        if (!dbInst) {
           if (toastFn && typeof toastFn === 'function') {
             toastFn('❌ Veritabanı bağlantısı bulunamadı!', 'error');
           }
@@ -12826,13 +13313,13 @@
         // Get old policy for audit diff
         const safeFirestoreOperationFn = window.safeFirestoreOperation || safeFirestoreOperation;
         const oldPolicyDoc = await safeFirestoreOperationFn(
-          () => getDoc(doc(db, 'companies', companyId)),
+          () => getDoc(doc(dbInst, 'companies', companyId)),
           'Şirket bilgileri yüklenemedi'
         );
         const oldPolicy = oldPolicyDoc.exists() ? oldPolicyDoc.data()?.approvalPolicy : null;
 
         const userDoc = await safeFirestoreOperationFn(
-          () => getDoc(doc(db, 'users', auth.currentUser.uid)),
+          () => getDoc(doc(dbInst, 'users', authInst.currentUser.uid)),
           'Kullanıcı bilgileri yüklenemedi'
         );
         const userData = userDoc.exists() ? userDoc.data() : {};
@@ -12847,7 +13334,7 @@
         }
 
         // Kullanıcı UID'sini al
-        const currentUserUid = auth.currentUser?.uid || null;
+        const currentUserUid = authInst.currentUser?.uid || null;
 
         const unlimitedApprovalRoles = [
           'buyer:ceo',
@@ -12862,18 +13349,19 @@
         ];
 
         // Hem prefix'li hem prefix'siz kontrol et + şirket sahibi kontrolü
+        const ownerUidResolved = companyData?.ownerUid || companyData?.ownerId || null;
         const hasPermission = unlimitedApprovalRoles.includes(userRoleKey) ||
           unlimitedApprovalRoles.includes(userRoleSimple) ||
-          // Şirket sahibi kontrolü (ownerUid)
-          (currentUserUid && companyData?.ownerUid === currentUserUid);
+          (currentUserUid && ownerUidResolved === currentUserUid);
 
         logger.info('saveApprovalPolicy yetki kontrolü', {
           userRoleKey,
           userRoleSimple,
           hasPermission,
           unlimitedApprovalRoles,
-          isOwner: currentUserUid && companyData?.ownerUid === currentUserUid,
+          isOwner: currentUserUid && ownerUidResolved === currentUserUid,
           ownerUid: companyData?.ownerUid,
+          ownerId: companyData?.ownerId,
           currentUserUid
         });
 
@@ -13003,12 +13491,12 @@
           allowed_final_approver_roles: allowedFinalApproverRoles,
           approval_limits: approvalLimits,
           updatedAt: serverTimestamp(),
-          updatedBy: auth.currentUser?.uid || null
+          updatedBy: authInst.currentUser?.uid || null
         };
 
         // Save to Firestore with error handling
         await safeFirestoreOperationFn(
-          () => updateDoc(doc(db, 'companies', companyId), {
+          () => updateDoc(doc(dbInst, 'companies', companyId), {
             approvalPolicy: approvalPolicy
           }),
           'Onay politikası kaydedilemedi'
@@ -13031,13 +13519,13 @@
         };
 
         try {
-          const auditRef = collection(db, 'audit');
+          const auditRef = collection(dbInst, 'audit');
           await safeFirestoreOperationFn(
             () => addDoc(auditRef, {
               entity_type: 'company',
               entity_id: companyId,
               action: 'APPROVAL_POLICY_UPDATED',
-              actor_user_id: auth.currentUser?.uid || null,
+              actor_user_id: authInst.currentUser?.uid || null,
               actor_role_key: userRoleKey || userRoleSimple || '',
               result: 'success',
               policyDiff: policyDiff,

@@ -84,12 +84,20 @@ export async function loadAiModelCatalog(db: any): Promise<CatalogModel[]> {
   // TODO: catalog changes should invalidate availableModels cache (all companies)
   // Teklifbul Rule v1.0 - Ollama support added
   return [
-    { provider: 'free_local', model: 'basic', label: 'Ücretsiz Asistan (Basic)', isActive: true, freeEligible: true, sort: 1 },
-    { provider: 'groq', model: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B (Güçlü/Dengeli)', isActive: true, freeEligible: true, sort: 2 },
-    { provider: 'groq', model: 'llama-3.1-8b-instant', label: 'Llama 3.1 8B (Çok Hızlı / Anlık)', isActive: true, freeEligible: true, sort: 3 },
-    { provider: 'groq', model: 'mixtral-8x7b-32768', label: 'Mixtral 8x7B (Alternatif)', isActive: true, freeEligible: true, sort: 4 },
+    { provider: 'groq', model: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B (Ücretsiz / Dengeli)', isActive: true, freeEligible: true, sort: 1 },
+    { provider: 'groq', model: 'llama-3.1-8b-instant', label: 'Llama 3.1 8B (Ücretsiz / Hızlı)', isActive: true, freeEligible: true, sort: 2 },
+    { provider: 'groq', model: 'mixtral-8x7b-32768', label: 'Mixtral 8x7B (Ücretsiz / Alternatif)', isActive: true, freeEligible: true, sort: 3 },
+    { provider: 'free_local', model: 'basic', label: 'Ücretsiz Asistan (Basic stub)', isActive: false, freeEligible: true, sort: 99 },
     { provider: 'openai', model: 'gpt-4o-mini', label: 'OpenAI - gpt-4o-mini (Pro AI)', isActive: true, freeEligible: false, sort: 10 },
-    { provider: 'gemini', model: 'gemini-pro', label: 'Google Gemini - Pro (Pro AI)', isActive: true, freeEligible: false, sort: 20 },
+    { provider: 'gemini', model: 'gemini-pro', label: 'Google Gemini - Pro (Pro AI)', isActive: true, freeEligible: false, sort: 17 },
+    { provider: 'gemini', model: 'gemini-3.0-pro', label: 'Google Gemini 3.0 Pro (Pro AI)', isActive: true, freeEligible: false, sort: 18 },
+    { provider: 'gemini', model: 'gemini-3.0-flash', label: 'Google Gemini 3.0 Flash', isActive: true, freeEligible: false, sort: 19 },
+    { provider: 'gemini', model: 'gemini-3.5-flash', label: 'Google Gemini 3.5 Flash', isActive: true, freeEligible: false, sort: 20 },
+    { provider: 'gemini', model: 'gemini-3.5-flash-lite', label: 'Google Gemini 3.5 Flash Lite', isActive: true, freeEligible: false, sort: 21 },
+    { provider: 'gemini', model: 'gemini-2.5-pro', label: 'Google Gemini 2.5 Pro', isActive: true, freeEligible: false, sort: 22 },
+    { provider: 'gemini', model: 'gemini-2.5-flash', label: 'Google Gemini 2.5 Flash', isActive: true, freeEligible: false, sort: 23 },
+    { provider: 'gemini', model: 'gemini-3.6-flash', label: 'Google Gemini 3.6 Flash', isActive: true, freeEligible: false, sort: 24 },
+    { provider: 'gemini', model: 'gemini-2.0-flash', label: 'Google Gemini 2.0 Flash', isActive: true, freeEligible: false, sort: 25 },
   ];
 }
 

@@ -15,10 +15,25 @@ import type { Request } from 'express';
 // Provider instances cache
 const providerCache = new Map<string, IEdocProvider>();
 
+export class EdocNotAvailableError extends Error {
+  constructor(message = 'E-fatura / e-irsaliye gönderimi henüz aktif değil.') {
+    super(message);
+    this.name = 'EdocNotAvailableError';
+  }
+}
+
+function isProductionRuntime(): boolean {
+  if (process.env.NODE_ENV === 'test') return false;
+  return process.env.NODE_ENV === 'production' || Boolean(process.env.K_SERVICE);
+}
+
 /**
  * Provider instance'ları oluştur
  */
 function createProvider(providerKey: string): IEdocProvider {
+  if (isProductionRuntime()) {
+    throw new EdocNotAvailableError();
+  }
   switch (providerKey) {
     case 'mock':
       return new MockEdocProvider();

@@ -256,6 +256,14 @@
       color: #6b7280;
     }
     html[data-theme="dark"] .loading { color: #ffffff; }
+
+    /* Teklifbul Rule v1.0 - utils.css button width override */
+    #clearFilters,
+    #btnPrev,
+    #btnNext {
+      width: auto !important;
+      margin: 0;
+    }
   </style>
 </head>
 <body>
@@ -300,7 +308,8 @@
         </select>
       </div>
       <div class="filter-group">
-        <button id="clearFilters" class="btn-secondary" style="margin-top:20px; padding:8px 16px;">Filtreleri Temizle</button>
+        <button type="button" id="clearFilters" class="btn-secondary" aria-label="Filtreleri temizle"
+          style="margin-top:20px; padding:8px 16px; width:auto;">Filtreleri Temizle</button>
       </div>
     </div>
 
@@ -352,9 +361,12 @@
     
     // Initialize global header
     initGlobalHeader({ mount: '#app-header', activeRoute: 'main' });
-    import { handleError, renderEmptyState, showLoadingState, withErrorHandling } from "./assets/js/ui/errors.js";
+    import { renderEmptyState } from "./assets/js/ui/errors.js";
     import { collection, query, where, orderBy, limit, getDocs, startAfter, getCountFromServer } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
-    
+    import { debounce } from "./assets/js/utils/debounce.js";
+    import DOMPurify from "https://cdn.jsdelivr.net/npm/dompurify@3.2.2/+esm";
+    import { toast } from "./src/shared/ui/toast.js";
+
     const PAGING = {
       pageSize: 15,
       currentPage: 1,
@@ -364,6 +376,12 @@
       hasMore: false
     };
 
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text == null ? "" : String(text);
+      return div.innerHTML;
+    }
+
     // Teklifbul Rule v1.0 - public_listings koleksiyonundan aktif ilanları getir
     async function getPublicListings(reset = true) {
       try {
@@ -371,10 +389,15 @@
           PAGING.currentPage = 1;
           PAGING.lastVisible = null;
           PAGING.pageHistory = [null];
-          
-          const countQ = query(collection(db, "public_listings"), where("status", "==", "active"));
-          const countSnap = await getCountFromServer(countQ);
-          PAGING.totalItems = countSnap.data().count;
+
+          try {
+            const countQ = query(collection(db, "public_listings"), where("status", "==", "active"));
+            const countSnap = await getCountFromServer(countQ);
+            PAGING.totalItems = countSnap.data().count;
+          } catch (countErr) {
+            logger.warn("public_listings count failed", countErr);
+            PAGING.totalItems = 0;
+          }
         }
 
         let qConstraints = [
@@ -388,16 +411,25 @@
         }
 
         const q = query(collection(db, "public_listings"), ...qConstraints);
-        
         const snap = await getDocs(q);
-        const listings = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        logger.info("Public listings loaded", { count: listings.length });
+
+        let docs = snap.docs;
+        PAGING.hasMore = docs.length > PAGING.pageSize;
+        if (PAGING.hasMore) {
+          docs = docs.slice(0, PAGING.pageSize);
+        }
+        if (docs.length > 0) {
+          PAGING.lastVisible = docs[docs.length - 1];
+        }
+
+        const listings = docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
+        logger.info("Public listings loaded", { count: listings.length, hasMore: PAGING.hasMore });
         return listings;
       } catch (error) {
         logger.error("Failed to load public listings", error);
-        // Index hatası olabilir, boş array döndür
-        if (error.message && error.message.includes('index')) {
+        if (error.message && error.message.includes("index")) {
           logger.warn("Firestore index required for public_listings", { error: error.message });
+          toast.error("İlan listesi için Firestore index gerekli. Lütfen daha sonra tekrar deneyin.");
           return [];
         }
         throw error;
@@ -410,159 +442,173 @@
         const mod = await import("./categories.js");
         const categories = mod.CATEGORIES || [];
         const categoryFilter = document.getElementById("categoryFilter");
-        
+        if (!categoryFilter) return;
+
         categories.forEach(category => {
           const option = document.createElement("option");
-          option.value = category;
-          option.textContent = category;
+          // Teklifbul Rule v1.0 - CATEGORIES artık { id, name } objesi
+          const id = typeof category === "string" ? category : (category?.id || "");
+          const name = typeof category === "string" ? category : (category?.name || id);
+          if (!id) return;
+          option.value = id;
+          option.textContent = name;
           categoryFilter.appendChild(option);
         });
       } catch (e) {
         logger.warn("Categories not loaded", e);
+        toast.error("Kategoriler yüklenemedi");
       }
     }
 
+    function resolveCategoryLabel(tagOrId, categoriesById) {
+      if (!tagOrId) return "Genel";
+      if (categoriesById?.has(tagOrId)) return categoriesById.get(tagOrId);
+      return String(tagOrId);
+    }
+
+    let categoriesById = new Map();
+
     // Load main demands with error handling
-    const loadMainDemands = withErrorHandling(async (reset = true) => {
+    async function loadMainDemands(reset = true) {
       const productsGrid = document.getElementById("productsGrid");
       const emptyState = document.getElementById("emptyState");
       const loadingState = document.getElementById("loadingState");
 
-      loadingState.style.display = "block";
-      productsGrid.innerHTML = "";
-      emptyState.style.display = "none";
-      document.getElementById("pagination-controls").style.display = "none";
+      try {
+        if (loadingState) loadingState.style.display = "block";
+        if (productsGrid) productsGrid.innerHTML = "";
+        if (emptyState) emptyState.style.display = "none";
+        const pager = document.getElementById("pagination-controls");
+        if (pager) pager.style.display = "none";
 
-      logger.info("Loading public listings...");
+        logger.info("Loading public listings...");
 
-      // Teklifbul Rule v1.0 - public_listings koleksiyonundan aktif ilanları getir
-      const listings = await getPublicListings(reset);
-      
-      logger.info("Found public listings", { count: listings.length });
+        const listings = await getPublicListings(reset);
+        logger.info("Found public listings", { count: listings.length });
 
-      if (listings.length === 0) {
-        showEmptyState();
-        loadingState.style.display = "none";
+        if (listings.length === 0) {
+          showEmptyState(PAGING.totalItems === 0
+            ? "Şu an yayınlanmış talep bulunmuyor"
+            : "Arama kriterlerinize uygun talep bulunamadı");
+          if (loadingState) loadingState.style.display = "none";
+          updatePagerUI();
+          return;
+        }
+
+        const filteredListings = filterListings(listings);
+
+        if (filteredListings.length === 0) {
+          showEmptyState("Arama kriterlerinize uygun talep bulunamadı");
+          if (loadingState) loadingState.style.display = "none";
+          updatePagerUI();
+          return;
+        }
+
+        filteredListings.sort((a, b) => {
+          const aDate = a.createdAt?.toDate?.() || new Date(a.createdAt || 0);
+          const bDate = b.createdAt?.toDate?.() || new Date(b.createdAt || 0);
+          return bDate - aDate;
+        });
+
+        renderProductCards(filteredListings);
+        if (loadingState) loadingState.style.display = "none";
         updatePagerUI();
-        return;
+      } catch (error) {
+        logger.error("Main demands loading failed", error);
+        if (loadingState) loadingState.style.display = "none";
+        toast.error(`Talepler yüklenemedi: ${error.message}`);
+        if (productsGrid) {
+          renderEmptyState(productsGrid, error.message || "Talepler yüklenemedi", {
+            icon: "❌",
+            actionText: "Tekrar Dene",
+            onAction: () => loadMainDemands(true)
+          });
+        }
       }
-
-      // Filter listings based on current filters
-      const filteredListings = filterListings(listings);
-      
-      if (filteredListings.length === 0) {
-        showEmptyState();
-        loadingState.style.display = "none";
-        return;
-      }
-
-      // Sort by date (newest first)
-      filteredListings.sort((a, b) => {
-        const aDate = a.createdAt?.toDate?.() || new Date(a.createdAt || 0);
-        const bDate = b.createdAt?.toDate?.() || new Date(b.createdAt || 0);
-        return bDate - aDate;
-      });
-
-      // Render listings as product cards
-      renderProductCards(filteredListings);
-      loadingState.style.display = "none";
-      updatePagerUI();
-    }, document.getElementById("productsGrid"), {
-      context: "Main demands loading",
-      loadingMessage: "Talep verileri yükleniyor..."
-    });
+    }
 
     // Teklifbul Rule v1.0 - Filter listings based on current filter values
     function filterListings(listings) {
-      const categoryFilter = document.getElementById("categoryFilter").value;
-      const searchInput = document.getElementById("searchInput").value.toLowerCase();
-      const locationFilter = document.getElementById("locationFilter").value.toLowerCase();
+      const categoryFilter = document.getElementById("categoryFilter")?.value || "";
+      const searchInput = (document.getElementById("searchInput")?.value || "").toLowerCase().trim();
+      const locationFilter = (document.getElementById("locationFilter")?.value || "").toLowerCase().trim();
 
       return listings.filter(listing => {
-        // Category filter
-        if (categoryFilter && !listing.categoryTags?.includes(categoryFilter)) {
-          return false;
+        if (categoryFilter) {
+          const tags = [
+            ...(Array.isArray(listing.categoryIds) ? listing.categoryIds : []),
+            ...(Array.isArray(listing.categoryTags) ? listing.categoryTags : []),
+            ...(Array.isArray(listing.supplierCategoryKeys) ? listing.supplierCategoryKeys : [])
+          ].map(String);
+          const catName = categoriesById.get(categoryFilter) || "";
+          const matches =
+            tags.includes(categoryFilter) ||
+            (catName && tags.some(t => t.toLowerCase() === catName.toLowerCase())) ||
+            tags.some(t => t.toLowerCase().includes(categoryFilter.toLowerCase().replace(/^CAT\./, "").toLowerCase()));
+          if (!matches) return false;
         }
 
-        // Search filter
         if (searchInput) {
-          // Check if it's a SATFK search (exact match)
-          if (searchInput.match(/^SATFK-\d{8}-[0-9A-Z]+$/)) {
-            if (listing.satfk !== searchInput) {
-              return false;
-            }
+          if (searchInput.match(/^satfk-\d{8}-[0-9a-z]+$/i)) {
+            if (String(listing.satfk || "").toLowerCase() !== searchInput) return false;
           } else {
-            // Regular text search - listing.title + satfk
             const searchText = `${listing.title || ""} ${listing.satfk || ""}`.toLowerCase();
-            if (!searchText.includes(searchInput)) {
-              return false;
-            }
+            if (!searchText.includes(searchInput)) return false;
           }
         }
 
-        // Location filter
         if (locationFilter && listing.deliveryLocation) {
-          if (!listing.deliveryLocation.toLowerCase().includes(locationFilter)) {
+          if (!String(listing.deliveryLocation).toLowerCase().includes(locationFilter)) {
             return false;
           }
+        } else if (locationFilter && !listing.deliveryLocation) {
+          return false;
         }
 
         return true;
       });
     }
 
-    // Teklifbul Rule v1.0 - Render product cards from listings
     function renderProductCards(listings) {
       const grid = document.getElementById("productsGrid");
+      if (!grid) return;
       grid.innerHTML = "";
 
       listings.forEach(listing => {
-        const card = createProductCard(listing);
-        grid.appendChild(card);
+        grid.appendChild(createProductCard(listing));
       });
     }
 
-    // Teklifbul Rule v1.0 - Create product card element from listing
     function createProductCard(listing) {
       const card = document.createElement("div");
       card.className = "product-card";
-      // Kart tıklanınca demand-detail sayfasına git
-      // Teklifbul Rule v1.0 - Middle click / new tab intent desteği
-      card.addEventListener('click', async (event) => {
-        // Teklifbul Rule v1.0 - Direkt middle click kontrolü (import bağımsız)
-        const isMiddleClickDirect = event.type === 'auxclick' || event.button === 1 || event.which === 2 || (event.buttons !== undefined && (event.buttons & 4) === 4);
-        const isNewTabIntent = isMiddleClickDirect || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey;
+      card.setAttribute("role", "button");
+      card.setAttribute("tabindex", "0");
+      card.setAttribute("aria-label", `Talep: ${listing.title || listing.satfk || "Detay"}`);
+
+      const openDetail = async (event) => {
+        const isMiddleClickDirect = event?.type === "auxclick" || event?.button === 1 || event?.which === 2;
+        const isNewTabIntent = isMiddleClickDirect || event?.ctrlKey || event?.metaKey || event?.shiftKey || event?.altKey;
+        const href = `./demand-detail.html?id=${encodeURIComponent(listing.demandId || listing.id)}`;
         if (isNewTabIntent) {
-          const tempLink = document.createElement('a');
-          tempLink.href = `./demand-detail.html?id=${listing.demandId}`;
-          tempLink.target = '_blank';
-          tempLink.style.display = 'none';
-          document.body.appendChild(tempLink);
-          tempLink.click();
-          document.body.removeChild(tempLink);
+          window.open(href, "_blank", "noopener,noreferrer");
           return;
         }
-        // Fallback: shouldSkipPreventDefault kontrolü
-        try {
-          const { shouldSkipPreventDefault } = await import('./assets/js/utils/link-handler.js');
-          if (shouldSkipPreventDefault && shouldSkipPreventDefault(event)) {
-            const tempLink = document.createElement('a');
-            tempLink.href = `./demand-detail.html?id=${listing.demandId}`;
-            tempLink.target = '_blank';
-            tempLink.style.display = 'none';
-            document.body.appendChild(tempLink);
-            tempLink.click();
-            document.body.removeChild(tempLink);
-            return;
-          }
-        } catch (err) {
-          // Import başarısız, devam et
+        location.href = href;
+      };
+
+      card.addEventListener("click", openDetail);
+      card.addEventListener("auxclick", openDetail);
+      card.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          openDetail(e);
         }
-        location.href = `./demand-detail.html?id=${listing.demandId}`;
       });
 
-      const category = listing.categoryTags?.[0] || "Genel";
-      // Normalize deadline: Timestamp veya string olabilir
+      const rawCategory = listing.categoryIds?.[0] || listing.categoryTags?.[0] || "Genel";
+      const category = resolveCategoryLabel(rawCategory, categoriesById);
+
       let deadline = "Belirtilmemiş";
       if (listing.deadline) {
         try {
@@ -574,13 +620,11 @@
           logger.warn("Deadline parse error", { deadline: listing.deadline, error: e.message });
         }
       }
-      
+
       const deliveryLocation = listing.deliveryLocation || "Belirtilmemiş";
-      // Normalize qty: listing.qty zaten normalize edilmiş olmalı
       const qty = listing.qty || 0;
       const unit = listing.unit || "adet";
-      
-      // Normalize createdAt
+
       let createdAtText = "Tarih yok";
       try {
         const createdAt = listing.createdAt?.toDate?.() || new Date(listing.createdAt || 0);
@@ -591,54 +635,57 @@
         logger.warn("CreatedAt parse error", { createdAt: listing.createdAt, error: e.message });
       }
 
-      card.innerHTML = `
+      card.innerHTML = DOMPurify.sanitize(`
         <div class="product-info">
-          <h3 class="product-title">${listing.title || "Başlıksız Talep"}</h3>
+          <h3 class="product-title">${escapeHtml(listing.title || "Başlıksız Talep")}</h3>
           <div class="product-code" style="font-size: 12px; color: #6b7280; margin: 4px 0;">
-            <strong>SATFK:</strong> ${listing.satfk || "Kod yok"}
+            <strong>SATFK:</strong> ${escapeHtml(listing.satfk || "Kod yok")}
           </div>
-          <span class="product-category">${category}</span>
+          <span class="product-category">${escapeHtml(category)}</span>
           <div class="product-details">
             <div class="product-detail">
               <span>Miktar:</span>
-              <strong>${qty} ${unit}</strong>
+              <strong>${escapeHtml(String(qty))} ${escapeHtml(String(unit))}</strong>
             </div>
             <div class="product-detail">
               <span>Teslim Yeri:</span>
-              <strong>${deliveryLocation}</strong>
+              <strong>${escapeHtml(deliveryLocation)}</strong>
             </div>
             <div class="product-detail">
               <span>Teslim Tarihi:</span>
-              <strong>${deadline}</strong>
+              <strong>${escapeHtml(deadline)}</strong>
             </div>
           </div>
           <div class="product-meta">
-            <div class="product-deadline">${createdAtText}</div>
+            <div class="product-deadline">${escapeHtml(createdAtText)}</div>
           </div>
         </div>
-      `;
+      `);
 
       return card;
     }
 
-    // Show empty state
-    function showEmptyState() {
+    function showEmptyState(message) {
       const productsGrid = document.getElementById("productsGrid");
       const emptyState = document.getElementById("emptyState");
-      
-      productsGrid.innerHTML = "";
-      emptyState.style.display = "block";
+
+      if (productsGrid) productsGrid.innerHTML = "";
+      if (emptyState) {
+        const title = emptyState.querySelector("h3");
+        if (title && message) title.textContent = message;
+        emptyState.style.display = "block";
+      }
     }
 
     function updatePagerUI() {
-      const pageInfo = document.getElementById('pageInfo');
-      const totalInfo = document.getElementById('totalItemsInfo');
-      const btnPrev = document.getElementById('btnPrev');
-      const btnNext = document.getElementById('btnNext');
-      const pagerCont = document.getElementById('pagination-controls');
+      const pageInfo = document.getElementById("pageInfo");
+      const totalInfo = document.getElementById("totalItemsInfo");
+      const btnPrev = document.getElementById("btnPrev");
+      const btnNext = document.getElementById("btnNext");
+      const pagerCont = document.getElementById("pagination-controls");
 
       if (pagerCont) {
-        pagerCont.style.display = (PAGING.totalItems > 0) ? 'flex' : 'none';
+        pagerCont.style.display = (PAGING.totalItems > 0 || PAGING.currentPage > 1) ? "flex" : "none";
       }
 
       if (pageInfo) pageInfo.textContent = `Sayfa ${PAGING.currentPage}`;
@@ -649,15 +696,17 @@
     }
 
     // Event listeners
-    document.getElementById("categoryFilter").addEventListener("change", () => loadMainDemands(true));
-    document.getElementById("searchInput").addEventListener("input", () => loadMainDemands(true));
-    document.getElementById("locationFilter").addEventListener("input", () => loadMainDemands(true));
-    document.getElementById("f-pageSize").addEventListener("change", (e) => {
-      PAGING.pageSize = parseInt(e.target.value, 10);
+    const debouncedReload = debounce(() => loadMainDemands(true), 300);
+
+    document.getElementById("categoryFilter")?.addEventListener("change", () => loadMainDemands(true));
+    document.getElementById("searchInput")?.addEventListener("input", debouncedReload);
+    document.getElementById("locationFilter")?.addEventListener("input", debouncedReload);
+    document.getElementById("f-pageSize")?.addEventListener("change", (e) => {
+      PAGING.pageSize = parseInt(e.target.value, 10) || 15;
       loadMainDemands(true);
     });
 
-    document.getElementById("btnPrev").addEventListener("click", () => {
+    document.getElementById("btnPrev")?.addEventListener("click", () => {
       if (PAGING.currentPage > 1) {
         PAGING.currentPage--;
         PAGING.lastVisible = PAGING.pageHistory[PAGING.currentPage - 1];
@@ -665,7 +714,7 @@
       }
     });
 
-    document.getElementById("btnNext").addEventListener("click", () => {
+    document.getElementById("btnNext")?.addEventListener("click", () => {
       if (PAGING.hasMore) {
         PAGING.pageHistory[PAGING.currentPage] = PAGING.lastVisible;
         PAGING.currentPage++;
@@ -673,7 +722,7 @@
       }
     });
 
-    document.getElementById("clearFilters").addEventListener("click", () => {
+    document.getElementById("clearFilters")?.addEventListener("click", () => {
       document.getElementById("categoryFilter").value = "";
       document.getElementById("searchInput").value = "";
       document.getElementById("locationFilter").value = "";
@@ -681,16 +730,23 @@
     });
 
     // Initialize
+    try {
+      await requireAuth();
+    } catch (authErr) {
+      logger.warn("Auth required for main demands", authErr);
+    }
+
+    const catMod = await import("./categories.js").catch(() => null);
+    if (catMod?.CATEGORIES) {
+      categoriesById = new Map(catMod.CATEGORIES.map(c => [c.id, c.name]));
+    }
     await loadCategories();
     await loadMainDemands();
 
-    // Listen for company changes
-    window.addEventListener('company:changed', async (e) => {
-      const { companyId } = e.detail;
-      logger.info('Company changed, reloading main demands', { companyId });
-      
-      // Re-run data loading
-      await loadMainDemands();
+    window.addEventListener("company:changed", async (e) => {
+      const { companyId } = e.detail || {};
+      logger.info("Company changed, reloading main demands", { companyId });
+      await loadMainDemands(true);
     });
   </script>
 

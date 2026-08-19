@@ -17,16 +17,23 @@ const app = initializeApp(firebaseConfig);
 const isBrowser = typeof window !== "undefined";
 if (isBrowser) {
   const siteKey = import.meta.env.VITE_RECAPTCHA_ENTERPRISE_SITE_KEY;
-  if (!siteKey) {
-    // eslint-disable-next-line no-console -- bootstrap aşaması, logger henüz yüklenmemis olabilir
-    console.warn("[AppCheck] VITE_RECAPTCHA_ENTERPRISE_SITE_KEY tanımlı değil, App Check başlatılmadı.");
-  } else {
+  const skipEnforce = String(import.meta.env.VITE_APP_CHECK_ENFORCE || "").trim() === "0";
+  const isLocalHost = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+  const isDevMode = import.meta.env.MODE === "development";
+  const isProduction = !isLocalHost && !isDevMode;
+
+  if (siteKey) {
     initializeAppCheck(app, {
       provider: new ReCaptchaEnterpriseProvider(siteKey),
       isTokenAutoRefreshEnabled: true,
     });
     // eslint-disable-next-line no-console -- bootstrap aşaması
     console.info("[AppCheck] ReCAPTCHA Enterprise ile App Check başlatıldı.");
+  } else if (isProduction && !skipEnforce) {
+    throw new Error("AppCheck configuration missing - cannot proceed in production");
+  } else {
+    // eslint-disable-next-line no-console -- bootstrap aşaması, logger henüz yüklenmemis olabilir
+    console.warn("[AppCheck] VITE_RECAPTCHA_ENTERPRISE_SITE_KEY tanımlı değil, App Check başlatılmadı.");
   }
 }
 

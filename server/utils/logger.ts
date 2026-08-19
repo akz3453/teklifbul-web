@@ -127,29 +127,37 @@ export const serverLogger = {
     }
   },
   
-  // Teklifbul Rule v1.0 - Security: Kritik güvenlik olaylarını logla
+  // Teklifbul Rule v1.0 - Security: Kritik güvenlik olaylarını logla + Firestore'a yaz
   security: {
     authFailure: (req: any, reason: string) => {
-      logger.warn('Auth failure', sanitizeLogData({
+      const meta = sanitizeLogData({
         path: req.path,
         method: req.method,
         ip: req.ip || req.connection?.remoteAddress,
-        userAgent: req.get('user-agent'),
-        reason
-      }));
+        userAgent: req.get?.('user-agent'),
+        reason,
+        userId: req.user?.uid || null,
+        email: req.user?.email || null,
+      });
+      logger.warn('Auth failure', meta);
+      void persistSecurityLog('authFailure', meta, 'Auth failure');
     },
     
     rateLimitHit: (req: any, limiter: string) => {
-      logger.warn('Rate limit hit', sanitizeLogData({
+      const meta = sanitizeLogData({
         path: req.path,
         method: req.method,
         ip: req.ip || req.connection?.remoteAddress,
-        limiter
-      }));
+        limiter,
+        userId: req.user?.uid || null,
+        email: req.user?.email || null,
+      });
+      logger.warn('Rate limit hit', meta);
+      void persistSecurityLog('rateLimitHit', meta, `Rate limit hit: ${limiter}`);
     },
     
     adminAction: (req: any, action: string, target?: string) => {
-      logger.info('Admin action', sanitizeLogData({
+      const meta = sanitizeLogData({
         userId: req.user?.uid,
         email: req.user?.email,
         action,
@@ -157,20 +165,64 @@ export const serverLogger = {
         path: req.path,
         method: req.method,
         ip: req.ip || req.connection?.remoteAddress
-      }));
+      });
+      logger.info('Admin action', meta);
+      void persistSecurityLog('adminAction', meta, `Admin action: ${action}`);
     },
     
     serverError: (req: any, error: Error, statusCode: number) => {
-      logger.error('Server error', error, sanitizeLogData({
+      const meta = sanitizeLogData({
         path: req.path,
         method: req.method,
         statusCode,
         ip: req.ip || req.connection?.remoteAddress,
-        userId: req.user?.uid
-      }));
+        userId: req.user?.uid,
+        email: req.user?.email || null,
+        error: error?.message,
+      });
+      logger.error('Server error', error, meta);
+      void persistSecurityLog('serverError', meta, error?.message || 'Server error');
     }
   }
 };
+
+/**
+ * Teklifbul Rule v1.0 — Admin panel için güvenlik loglarını Firestore'a yaz
+ * Cloud Functions'ta dosya sistemi kalıcı değil; panel Firestore'dan okur.
+ */
+async function persistSecurityLog(
+  eventType: string,
+  meta: Record<string, unknown>,
+  message: string
+): Promise<void> {
+  try {
+    const { getAdminDb } = await import('./firestore.js');
+    const { FieldValue } = await import('firebase-admin/firestore');
+    const db = await getAdminDb();
+    if (!db) return;
+
+    await db.collection('security_logs').add({
+      eventType,
+      message: String(message || eventType).slice(0, 1000),
+      path: meta.path || null,
+      method: meta.method || null,
+      ip: meta.ip || null,
+      userId: meta.userId || null,
+      email: meta.email || null,
+      userAgent: meta.userAgent || null,
+      reason: meta.reason || null,
+      limiter: meta.limiter || null,
+      action: meta.action || null,
+      target: meta.target || null,
+      statusCode: meta.statusCode || null,
+      level: eventType === 'serverError' || eventType === 'authFailure' ? 'warn' : 'info',
+      createdAt: FieldValue.serverTimestamp(),
+      timestamp: FieldValue.serverTimestamp(),
+    });
+  } catch {
+    // Log yazımı asla request'i bozmamalı
+  }
+}
 
 export default serverLogger;
 

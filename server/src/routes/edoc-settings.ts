@@ -14,17 +14,9 @@ import { getAdminDb } from '../../utils/firestore.js';
 import { logger } from '../../../src/shared/log/logger.js';
 import { FieldValue } from 'firebase-admin/firestore';
 import { getEdocSettingsQuerySchema, updateEdocSettingsBodySchema, updateEdocCredentialsBodySchema } from '../schemas/edocSchemas.js';
+import { userBelongsToCompanyAsync } from '../../utils/companyAccess.js';
 
 const router = express.Router();
-
-/** users/{uid} ile şirket eşlemesi — yalnızca companyId alanına bakma (solo / çoklu şirket) */
-function userBelongsToCompany(userData: Record<string, unknown> | undefined, companyId: string): boolean {
-  if (!userData || !companyId) return false;
-  if (userData.companyId === companyId) return true;
-  if (userData.activeCompanyId === companyId) return true;
-  if (Array.isArray(userData.companies) && userData.companies.includes(companyId)) return true;
-  return false;
-}
 
 // Tüm route'lar authentication gerektirir
 router.use(verifyToken);
@@ -58,7 +50,7 @@ router.get('/settings',
     // Company kontrolü
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    if (!userBelongsToCompany(userData, companyId)) {
+    if (!(await userBelongsToCompanyAsync(userData, companyId, userId))) {
       return res.status(403).json({ ok: false, error: 'Yetkisiz erişim' });
     }
 
@@ -147,7 +139,7 @@ router.put('/settings',
     // Company kontrolü
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    if (!userBelongsToCompany(userData, body.companyId)) {
+    if (!(await userBelongsToCompanyAsync(userData, body.companyId, userId))) {
       return res.status(403).json({ ok: false, error: 'Yetkisiz erişim' });
     }
 
@@ -231,7 +223,7 @@ router.put('/credentials',
     // Company kontrolü
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    if (!userBelongsToCompany(userData, body.companyId)) {
+    if (!(await userBelongsToCompanyAsync(userData, body.companyId, userId))) {
       return res.status(403).json({ ok: false, error: 'Yetkisiz erişim' });
     }
 

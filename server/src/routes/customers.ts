@@ -18,6 +18,7 @@ import { getAdminDb } from '../../utils/firestore.js';
 import { logger } from '../../../src/shared/log/logger.js';
 import { FieldValue } from 'firebase-admin/firestore';
 import ExcelJS from 'exceljs';
+import { userBelongsToCompanyAsync } from '../../utils/companyAccess.js';
 
 const router = express.Router();
 
@@ -46,7 +47,7 @@ router.post('/', async (req: any, res) => {
 
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    if (userData?.companyId !== body.companyId) {
+    if (!(await userBelongsToCompanyAsync(userData, body.companyId, userId))) {
       return res.status(403).json({ ok: false, error: 'Yetkisiz erişim' });
     }
 
@@ -110,7 +111,7 @@ router.put('/:id', async (req: any, res) => {
 
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    if (userData?.companyId !== body.companyId) {
+    if (!(await userBelongsToCompanyAsync(userData, body.companyId, userId))) {
       return res.status(403).json({ ok: false, error: 'Yetkisiz erişim' });
     }
 
@@ -183,7 +184,7 @@ router.post('/:id/approve', async (req: any, res) => {
 
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    if (userData?.companyId !== body.companyId) {
+    if (!(await userBelongsToCompanyAsync(userData, body.companyId, userId))) {
       return res.status(403).json({ ok: false, error: 'Yetkisiz erişim' });
     }
 
@@ -268,7 +269,7 @@ router.post('/:id/reject', async (req: any, res) => {
 
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    if (userData?.companyId !== body.companyId) {
+    if (!(await userBelongsToCompanyAsync(userData, body.companyId, userId))) {
       return res.status(403).json({ ok: false, error: 'Yetkisiz erişim' });
     }
 
@@ -391,7 +392,7 @@ router.post('/:id/archive', async (req: any, res) => {
 
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    if (userData?.companyId !== body.companyId) {
+    if (!(await userBelongsToCompanyAsync(userData, body.companyId, userId))) {
       return res.status(403).json({ ok: false, error: 'Yetkisiz erişim' });
     }
 
@@ -457,7 +458,7 @@ router.get('/:id/movements', async (req: any, res) => {
     // Company kontrolü
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    if (userData?.companyId !== companyId) {
+    if (!(await userBelongsToCompanyAsync(userData, companyId, userId))) {
       return res.status(403).json({ ok: false, error: 'Yetkisiz erişim' });
     }
 
@@ -593,6 +594,27 @@ router.get('/:id/extre', async (req: any, res) => {
     const startDate = req.query.startDate && req.query.startDate !== '' ? new Date(req.query.startDate as string) : null;
     const endDate = req.query.endDate && req.query.endDate !== '' ? new Date(req.query.endDate as string) : null;
 
+    // Teklifbul Rule v1.0 — seçilebilir extre türleri
+    const ALL_EXPORT_TYPES = ['customerInfo', 'sale', 'invoice', 'deliveryNote', 'payment'] as const;
+    const rawTypes = String(req.query.types || '')
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean);
+    const selectedTypes = new Set(
+      (rawTypes.length > 0 ? rawTypes : [...ALL_EXPORT_TYPES]).filter((t) =>
+        (ALL_EXPORT_TYPES as readonly string[]).includes(t)
+      )
+    );
+    if (selectedTypes.size === 0) {
+      return res.status(400).json({ ok: false, error: 'En az bir extre türü seçiniz' });
+    }
+
+    const includeCustomerInfo = selectedTypes.has('customerInfo');
+    const includeSale = selectedTypes.has('sale');
+    const includeInvoice = selectedTypes.has('invoice');
+    const includeDeliveryNote = selectedTypes.has('deliveryNote');
+    const includePayment = selectedTypes.has('payment');
+
     const db = await getAdminDb();
     if (!db) {
       return res.status(500).json({ ok: false, error: 'Firestore unavailable' });
@@ -610,7 +632,7 @@ router.get('/:id/extre', async (req: any, res) => {
     // Company kontrolü
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    if (userData?.companyId !== companyId) {
+    if (!(await userBelongsToCompanyAsync(userData, companyId, userId))) {
       return res.status(403).json({ ok: false, error: 'Yetkisiz erişim' });
     }
 
@@ -618,6 +640,7 @@ router.get('/:id/extre', async (req: any, res) => {
     const movements: any[] = [];
 
     // Satışlar
+    if (includeSale) {
     let salesQuery = db.collection('sales')
       .where('companyId', '==', companyId)
       .where('customerId', '==', customerId)
@@ -648,8 +671,10 @@ router.get('/:id/extre', async (req: any, res) => {
         status: sale.status || 'draft'
       });
     });
+    }
 
     // Faturalar
+    if (includeInvoice) {
     let invoicesQuery = db.collection('invoices')
       .where('companyId', '==', companyId)
       .where('customerId', '==', customerId)
@@ -680,8 +705,10 @@ router.get('/:id/extre', async (req: any, res) => {
         paymentStatus: invoice.paymentStatus || 'unpaid'
       });
     });
+    }
 
     // İrsaliyeler
+    if (includeDeliveryNote) {
     const deliveryNotesQuery = db.collection('delivery_notes')
       .where('companyId', '==', companyId)
       ;
@@ -715,8 +742,10 @@ router.get('/:id/extre', async (req: any, res) => {
         }
       }
     }
+    }
 
     // Tahsilatlar & Cari İşlemler
+    if (includePayment) {
     let transactionsQuery = db.collection('customer_transactions')
       .where('companyId', '==', companyId)
       .where('customerId', '==', customerId)
@@ -731,12 +760,46 @@ router.get('/:id/extre', async (req: any, res) => {
       transactionsQuery = transactionsQuery.where('date', '<=', endDateWithTime);
     }
 
-    const transactionsSnapshot = await transactionsQuery.get();
-    transactionsSnapshot.forEach((doc) => {
-      const tx = doc.data();
-      // Yalnızca tahsilat (payment) veya diğer manuel nakit hareketlerini alalım (Satış/Fatura mükerrer olmasın)
-      // Sistemin mantığında satış ve faturanın cariye otomatik aktarılması var mı? Eğer transactionType 'payment' ise alalım
-      if (tx.transactionType === 'payment' || tx.type === 'credit') {
+    try {
+      const transactionsSnapshot = await transactionsQuery.get();
+      transactionsSnapshot.forEach((doc) => {
+        const tx = doc.data();
+        if (tx.transactionType === 'payment' || tx.type === 'credit') {
+          movements.push({
+            id: doc.id,
+            type: 'payment',
+            documentNumber: tx.documentNumber || '',
+            date: tx.date || tx.createdAt,
+            amount: tx.amount || 0,
+            subTotal: 0,
+            taxAmount: 0,
+            notes: tx.description || '',
+            currency: tx.currency || 'TRY',
+            status: 'completed'
+          });
+        }
+      });
+    } catch (txErr: any) {
+      const msg = String(txErr?.message || '');
+      if (!msg.includes('FAILED_PRECONDITION') && !msg.includes('requires an index')) {
+        throw txErr;
+      }
+      logger.warn('Extre tahsilat: index yok, fallback sorgu', { customerId, companyId });
+      const fallbackSnap = await db.collection('customer_transactions')
+        .where('customerId', '==', customerId)
+        .limit(300)
+        .get();
+      fallbackSnap.docs.forEach((doc) => {
+        const tx = doc.data();
+        if (tx.companyId !== companyId) return;
+        if (!(tx.transactionType === 'payment' || tx.type === 'credit')) return;
+        const txDate = tx.date?.toDate ? tx.date.toDate() : (tx.date ? new Date(tx.date) : null);
+        if (startDate && txDate && txDate < startDate) return;
+        if (endDate && txDate) {
+          const endDateWithTime = new Date(endDate);
+          endDateWithTime.setHours(23, 59, 59, 999);
+          if (txDate > endDateWithTime) return;
+        }
         movements.push({
           id: doc.id,
           type: 'payment',
@@ -749,8 +812,9 @@ router.get('/:id/extre', async (req: any, res) => {
           currency: tx.currency || 'TRY',
           status: 'completed'
         });
-      }
-    });
+      });
+    }
+    }
 
     // Tarihe göre sırala
     movements.sort((a, b) => {
@@ -787,7 +851,10 @@ router.get('/:id/extre', async (req: any, res) => {
     // Bakiye (Fatura - Tahsilat)
     const balance = totalMovementsAmount - totalCollected - paidMovementsAmount;
 
+    const sheets: ExcelJS.Worksheet[] = [];
+
     // --- Müşteri Bilgileri Sayfası ---
+    if (includeCustomerInfo) {
     const customerSheet = workbook.addWorksheet('Müşteri Bilgileri');
     customerSheet.columns = [
       { header: 'Özellik', key: 'key', width: 25 },
@@ -807,8 +874,11 @@ router.get('/:id/extre', async (req: any, res) => {
     customerSheet.addRow({ key: 'Toplam Tahsilat', val: (totalCollected + paidMovementsAmount) });
     customerSheet.addRow({ key: 'Kalan Bakiye', val: balance });
     customerSheet.addRow({ key: 'Para Birimi', val: customer?.currency || 'TRY' });
+    sheets.push(customerSheet);
+    }
 
     // --- Hareketler Sayfası ---
+    if (includeSale || includeInvoice || includeDeliveryNote || includePayment) {
     const movementsSheet = workbook.addWorksheet('Hareketler');
     movementsSheet.columns = [
       { header: 'Tarih', key: 'date', width: 15 },
@@ -850,9 +920,15 @@ router.get('/:id/extre', async (req: any, res) => {
     });
 
     movementsSheet.autoFilter = 'A1:I1';
+    sheets.push(movementsSheet);
+    }
+
+    if (sheets.length === 0) {
+      return res.status(400).json({ ok: false, error: 'İndirilecek içerik seçilmedi' });
+    }
 
     // Stil Ekle (Tüm Sayfalar için Header kalın ve Border)
-    [customerSheet, movementsSheet].forEach(sheet => {
+    sheets.forEach(sheet => {
       sheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
       sheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4F46E5' } };
       sheet.eachRow((row) => {
@@ -873,7 +949,11 @@ router.get('/:id/extre', async (req: any, res) => {
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename=musteri-extre-${customer?.code || customerId}-${new Date().toISOString().split('T')[0]}.xlsx`);
 
-    logger.info('Müşteri extre çıktısı oluşturuldu', { customerId, movementsCount: movements.length });
+    logger.info('Müşteri extre çıktısı oluşturuldu', {
+      customerId,
+      movementsCount: movements.length,
+      types: Array.from(selectedTypes)
+    });
 
     return res.send(Buffer.from(buffer));
   } catch (error: any) {
@@ -914,24 +994,60 @@ router.get('/:id/transactions', async (req: any, res) => {
       return res.status(404).json({ ok: false, error: 'Müşteri bulunamadı' });
     }
     const customer = customerDoc.data();
-    if (customer?.companyId !== userData?.companyId) {
+    const companyId = customer?.companyId;
+    if (!(await userBelongsToCompanyAsync(userData, companyId, userId))) {
       return res.status(403).json({ ok: false, error: 'Yetkisiz erişim' });
     }
 
     // Hareketleri çek
-    const transactionsQuery = db.collection('customer_transactions')
-      .where('customerId', '==', customerId)
-      .where('companyId', '==', userData?.companyId)
-      .orderBy('date', 'desc')
-      .limit(limit);
+    // Teklifbul Rule v1.0 — composite index yoksa customerId sorgusu + bellek içi sıralama
+    let transactions: any[] = [];
 
-    const snapshot = await transactionsQuery.get();
-    const transactions = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      date: doc.data().date?.toDate() || null,
-      createdAt: doc.data().createdAt?.toDate() || null
-    }));
+    try {
+      const snapshot = await db.collection('customer_transactions')
+        .where('customerId', '==', customerId)
+        .where('companyId', '==', companyId)
+        .orderBy('date', 'desc')
+        .limit(limit)
+        .get();
+
+      transactions = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        date: doc.data().date?.toDate?.() || doc.data().date || null,
+        createdAt: doc.data().createdAt?.toDate?.() || doc.data().createdAt || null
+      }));
+    } catch (indexErr: any) {
+      const msg = String(indexErr?.message || '');
+      if (!msg.includes('FAILED_PRECONDITION') && !msg.includes('requires an index')) {
+        throw indexErr;
+      }
+
+      logger.warn('Cari hareketler: index yok, fallback sorgu kullanılıyor', {
+        customerId,
+        companyId
+      });
+
+      const fallbackSnap = await db.collection('customer_transactions')
+        .where('customerId', '==', customerId)
+        .limit(Math.min(Math.max(limit * 3, 100), 300))
+        .get();
+
+      transactions = fallbackSnap.docs
+        .map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          date: doc.data().date?.toDate?.() || doc.data().date || null,
+          createdAt: doc.data().createdAt?.toDate?.() || doc.data().createdAt || null
+        }))
+        .filter((tx: any) => tx.companyId === companyId)
+        .sort((a: any, b: any) => {
+          const da = a.date ? new Date(a.date).getTime() : 0;
+          const dbTime = b.date ? new Date(b.date).getTime() : 0;
+          return dbTime - da;
+        })
+        .slice(0, limit);
+    }
 
     return res.json({
       ok: true,
@@ -962,15 +1078,29 @@ router.post('/:id/payment', async (req: any, res) => {
     }
 
     const db = await getAdminDb();
-    const userDoc = await db!.collection('users').doc(userId).get();
+    if (!db) {
+      return res.status(500).json({ ok: false, error: 'Firestore unavailable' });
+    }
+
+    const customerDoc = await db.collection('customers').doc(customerId).get();
+    if (!customerDoc.exists) {
+      return res.status(404).json({ ok: false, error: 'Müşteri bulunamadı' });
+    }
+    const customer = customerDoc.data();
+    const companyId = customer?.companyId;
+
+    const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
+    if (!(await userBelongsToCompanyAsync(userData, companyId, userId))) {
+      return res.status(403).json({ ok: false, error: 'Yetkisiz erişim' });
+    }
 
     // Transaction servisini çağır
     const { addTransaction } = await import('../services/transactionService.js');
 
     await addTransaction({
       customerId,
-      companyId: userData?.companyId,
+      companyId,
       userId,
       type: 'credit', // Tahsilat = Alacak
       transactionType: 'payment',

@@ -1,8 +1,9 @@
 // Teklifbul Rule v1.0 - Admin/Premium yardımcıları
 export function isAdminUser(user) {
   if (!user) return false;
-  if (user.isAdmin === true) return true;
-  if (user.role === 'admin') return true;
+  const claims = user.customClaims || user.claims || {};
+  if (claims.superAdmin === true || claims.admin === true || claims.isAdmin === true) return true;
+  if (claims.role === 'admin') return true;
 
   const adminEmails = ((window.ADMIN_EMAILS || '')).split(',')
     .map((e) => e.trim().toLowerCase())

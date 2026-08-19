@@ -283,6 +283,15 @@
       }
     }
 
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
     function renderDemands(status, demands) {
       let tbody;
       if (status === 'pending') {
@@ -306,37 +315,83 @@
         const statusBadge = getStatusBadge(demand.status);
 
         if (status === 'pending') {
-          row.innerHTML = `
-            <td><a href="/internal-demand-detail.html?id=${demand.id}" style="color:#2563eb; text-decoration:none;">${demand.title || 'Başlıksız'}</a></td>
-            <td>${demand.createdByName || 'Bilinmiyor'}</td>
-            <td>${demand.items?.length || 0}</td>
-            <td>${statusBadge}</td>
-            <td>${createdAt}</td>
-            <td>
-              <button class="btn btn-primary btn-sm" data-action="take-demand" data-demand-id="${demand.id}">İşleme Al</button>
-            </td>
-          `;
+          const titleLink = document.createElement('a');
+          titleLink.href = '/internal-demand-detail.html?id=' + encodeURIComponent(demand.id);
+          titleLink.style.cssText = 'color:#2563eb; text-decoration:none;';
+          titleLink.textContent = demand.title || 'Başlıksız';
+
+          row.appendChild(document.createElement('td')).appendChild(titleLink);
+          const tdBy = document.createElement('td');
+          tdBy.textContent = demand.createdByName || 'Bilinmiyor';
+          row.appendChild(tdBy);
+          const tdItems = document.createElement('td');
+          tdItems.textContent = String(demand.items?.length || 0);
+          row.appendChild(tdItems);
+          const tdStatus = document.createElement('td');
+          tdStatus.innerHTML = statusBadge;
+          row.appendChild(tdStatus);
+          const tdDate = document.createElement('td');
+          tdDate.textContent = createdAt;
+          row.appendChild(tdDate);
+          const tdAct = document.createElement('td');
+          const takeBtn = document.createElement('button');
+          takeBtn.className = 'btn btn-primary btn-sm';
+          takeBtn.setAttribute('data-action', 'take-demand');
+          takeBtn.setAttribute('data-demand-id', String(demand.id));
+          takeBtn.textContent = 'İşleme Al';
+          tdAct.appendChild(takeBtn);
+          row.appendChild(tdAct);
         } else if (status === 'in_progress') {
-          row.innerHTML = `
-            <td><a href="/internal-demand-detail.html?id=${demand.id}" style="color:#2563eb; text-decoration:none;">${demand.title || 'Başlıksız'}</a></td>
-            <td>${demand.createdByName || 'Bilinmiyor'}</td>
-            <td>${demand.processedBy || 'Bilinmiyor'}</td>
-            <td>${demand.items?.length || 0}</td>
-            <td>${statusBadge}</td>
-            <td>
-              <a href="/internal-demand-detail.html?id=${demand.id}" class="btn btn-primary btn-sm">Detay</a>
-            </td>
-          `;
+          const titleLink = document.createElement('a');
+          titleLink.href = '/internal-demand-detail.html?id=' + encodeURIComponent(demand.id);
+          titleLink.style.cssText = 'color:#2563eb; text-decoration:none;';
+          titleLink.textContent = demand.title || 'Başlıksız';
+          row.appendChild(document.createElement('td')).appendChild(titleLink);
+          const tdBy = document.createElement('td');
+          tdBy.textContent = demand.createdByName || 'Bilinmiyor';
+          row.appendChild(tdBy);
+          const tdProc = document.createElement('td');
+          tdProc.textContent = demand.processedBy || 'Bilinmiyor';
+          row.appendChild(tdProc);
+          const tdItems = document.createElement('td');
+          tdItems.textContent = String(demand.items?.length || 0);
+          row.appendChild(tdItems);
+          const tdStatus = document.createElement('td');
+          tdStatus.innerHTML = statusBadge;
+          row.appendChild(tdStatus);
+          const tdAct = document.createElement('td');
+          const det = document.createElement('a');
+          det.href = '/internal-demand-detail.html?id=' + encodeURIComponent(demand.id);
+          det.className = 'btn btn-primary btn-sm';
+          det.textContent = 'Detay';
+          tdAct.appendChild(det);
+          row.appendChild(tdAct);
         } else {
-          row.innerHTML = `
-            <td><a href="/internal-demand-detail.html?id=${demand.id}" style="color:#2563eb; text-decoration:none;">${demand.title || 'Başlıksız'}</a></td>
-            <td>${demand.createdByName || 'Bilinmiyor'}</td>
-            <td>${demand.items?.length || 0}</td>
-            <td>${demand.completedAt?.toDate ? new Date(demand.completedAt.toDate()).toLocaleDateString('tr-TR') : '-'}</td>
-            <td>
-              <a href="/internal-demand-detail.html?id=${demand.id}" class="btn btn-primary btn-sm">Detay</a>
-            </td>
-          `;
+          const titleLink = document.createElement('a');
+          titleLink.href = '/internal-demand-detail.html?id=' + encodeURIComponent(demand.id);
+          titleLink.style.cssText = 'color:#2563eb; text-decoration:none;';
+          titleLink.textContent = demand.title || 'Başlıksız';
+          const tdTitle = document.createElement('td');
+          tdTitle.appendChild(titleLink);
+          row.appendChild(tdTitle);
+          const tdBy = document.createElement('td');
+          tdBy.textContent = demand.createdByName || 'Bilinmiyor';
+          row.appendChild(tdBy);
+          const tdItems = document.createElement('td');
+          tdItems.textContent = String(demand.items?.length || 0);
+          row.appendChild(tdItems);
+          const tdDone = document.createElement('td');
+          tdDone.textContent = demand.completedAt?.toDate
+            ? new Date(demand.completedAt.toDate()).toLocaleDateString('tr-TR')
+            : '-';
+          row.appendChild(tdDone);
+          const tdAct = document.createElement('td');
+          const det = document.createElement('a');
+          det.href = '/internal-demand-detail.html?id=' + encodeURIComponent(demand.id);
+          det.className = 'btn btn-primary btn-sm';
+          det.textContent = 'Detay';
+          tdAct.appendChild(det);
+          row.appendChild(tdAct);
         }
 
         tbody.appendChild(row);
@@ -350,7 +405,7 @@
         completed: '<span class="status-badge status-completed">Tamamlandı</span>',
         cancelled: '<span class="status-badge status-cancelled">İptal</span>'
       };
-      return badges[status] || status;
+      return badges[status] || `<span class="status-badge">${escapeHtml(status)}</span>`;
     }
 
     function setupActionButtons() {

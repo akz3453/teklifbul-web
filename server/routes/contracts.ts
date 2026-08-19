@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { verifyToken, type AuthenticatedRequest } from '../middleware/auth.js';
 import { logger } from '../../src/shared/log/logger.js';
 import { getAdminDb } from '../utils/firestore.js';
+import { getCompanyIdFromRequest } from '../src/services/permissionService.js';
 import { FieldValue } from 'firebase-admin/firestore';
 import ExcelJS from 'exceljs';
 // Teklifbul Rule v1.0 - Input Validation
@@ -18,17 +19,7 @@ router.use(verifyToken);
  * Company ID helper - Teklifbul Rule v1.0
  */
 async function getCompanyId(req: AuthenticatedRequest): Promise<string | null> {
-  const userId = req.user?.uid;
-  if (!userId) return null;
-
-  const db = await getAdminDb();
-  if (!db) return null;
-
-  const userDoc = await db.collection('users').doc(userId).get();
-  if (!userDoc.exists) return null;
-
-  const userData = userDoc.data();
-  return userData?.companyId || userData?.activeCompanyId || null;
+  return getCompanyIdFromRequest(req);
 }
 
 // Teklifbul Rule v1.0 - Input Validation Schema for list
@@ -82,6 +73,36 @@ router.get('/',
       createdAt: doc.data().createdAt?.toDate?.()?.toISOString(),
       updatedAt: doc.data().updatedAt?.toDate?.()?.toISOString(),
     }));
+
+    // Teklifbul Rule v1.0 — siteName yoksa lokasyondan doldur
+    const missingSiteIds = [
+      ...new Set(
+        contracts
+          .filter((c) => c.siteId && !c.siteName)
+          .map((c) => c.siteId as string)
+      ),
+    ];
+    if (missingSiteIds.length) {
+      const nameById = new Map<string, string>();
+      await Promise.all(
+        missingSiteIds.map(async (sid) => {
+          try {
+            const loc = await db.collection('stock_locations').doc(sid).get();
+            if (loc.exists) {
+              const d = loc.data() || {};
+              nameById.set(sid, d.title || d.siteName || d.name || sid);
+            }
+          } catch {
+            /* ignore */
+          }
+        })
+      );
+      contracts = contracts.map((c) =>
+        c.siteId && !c.siteName && nameById.has(c.siteId)
+          ? { ...c, siteName: nameById.get(c.siteId) }
+          : c
+      );
+    }
 
     // Client-side search (contractName, contractNo)
     if (search) {
@@ -155,19 +176,29 @@ router.get('/:id',
   }
 });
 
+// Teklifbul Rule v1.0 — Form date (YYYY-MM-DD) veya ISO datetime
+const optionalDateString = z
+  .union([
+    z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    z.string().datetime(),
+  ])
+  .optional()
+  .nullable();
+
 // Teklifbul Rule v1.0 - Input Validation Schema for create
 const createBodySchema = z.object({
   contractNo: z.string().optional(),
   contractName: z.string().min(1),
   siteId: z.string().optional().nullable(),
-  startDate: z.string().datetime().optional().nullable(),
-  endDate: z.string().datetime().optional().nullable(),
+  siteName: z.string().optional().nullable(),
+  startDate: optionalDateString,
+  endDate: optionalDateString,
   contractValue: z.coerce.number().min(0).optional().default(0),
   kdvRate: z.coerce.number().min(0).max(100).optional().default(20),
   stopajRate: z.coerce.number().min(0).max(100).optional().default(5),
   guaranteeRate: z.coerce.number().min(0).max(100).optional().default(6),
   advanceRate: z.coerce.number().min(0).max(100).optional().default(10),
-  status: z.string().optional().default('active'),
+  status: z.enum(['active', 'draft']).optional().default('active'),
 });
 
 /**
@@ -197,6 +228,7 @@ router.post('/',
       contractNo,
       contractName,
       siteId,
+      siteName,
       startDate,
       endDate,
       contractValue = 0,
@@ -237,6 +269,7 @@ router.post('/',
       contractNo: finalContractNo,
       contractName,
       siteId: siteId || null,
+      siteName: siteName || null,
       startDate: startDate || null,
       endDate: endDate || null,
       contractValue: Number(contractValue) || 0,
@@ -267,14 +300,15 @@ const updateBodySchema = z.object({
   contractNo: z.string().optional(),
   contractName: z.string().min(1).optional(),
   siteId: z.string().optional().nullable(),
-  startDate: z.string().datetime().optional().nullable(),
-  endDate: z.string().datetime().optional().nullable(),
+  siteName: z.string().optional().nullable(),
+  startDate: optionalDateString,
+  endDate: optionalDateString,
   contractValue: z.coerce.number().min(0).optional(),
   kdvRate: z.coerce.number().min(0).max(100).optional(),
   stopajRate: z.coerce.number().min(0).max(100).optional(),
   guaranteeRate: z.coerce.number().min(0).max(100).optional(),
   advanceRate: z.coerce.number().min(0).max(100).optional(),
-  status: z.string().optional(),
+  status: z.enum(['active', 'draft', 'completed', 'cancelled']).optional(),
 });
 
 /**
@@ -310,11 +344,18 @@ router.put('/:id',
       return res.status(403).json({ error: 'FORBIDDEN', message: 'Bu sözleşmeye erişim yetkiniz yok' });
     }
 
-    const updateData = {
-      ...req.body,
+    // Allowlist — companyId/createdBy client'tan yazılamaz
+    const CONTRACT_UPDATE_KEYS = [
+      'contractNo', 'contractName', 'siteId', 'siteName', 'startDate', 'endDate',
+      'contractValue', 'kdvRate', 'stopajRate', 'guaranteeRate', 'advanceRate', 'status',
+    ] as const;
+    const updateData: Record<string, unknown> = {
       updatedAt: FieldValue.serverTimestamp(),
       updatedBy: userId,
     };
+    for (const key of CONTRACT_UPDATE_KEYS) {
+      if (req.body[key] !== undefined) updateData[key] = req.body[key];
+    }
 
     await db.collection('contracts').doc(id).update(updateData);
 
@@ -565,11 +606,14 @@ router.put('/:id/items/:itemId',
       return res.status(404).json({ error: 'NOT_FOUND', message: 'Poz bulunamadı' });
     }
 
-    const updateData = {
-      ...req.body,
+    const updateData: Record<string, unknown> = {
       updatedAt: FieldValue.serverTimestamp(),
       updatedBy: userId,
     };
+    const ITEM_UPDATE_KEYS = ['code', 'description', 'unit', 'unitPrice', 'contractQtyLimit'] as const;
+    for (const key of ITEM_UPDATE_KEYS) {
+      if (req.body[key] !== undefined) updateData[key] = req.body[key];
+    }
 
     await db.collection('contracts').doc(id).collection('items').doc(itemId).update(updateData);
 

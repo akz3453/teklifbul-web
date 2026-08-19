@@ -11,8 +11,8 @@
   <!-- Header -->
   <header class="site-header">
     <div class="header-content">
-      <a href="/index.html" class="header-logo">
-        <span>NEFISOFT</span>
+      <a href="/index.html" class="header-logo" aria-label="NEFISOFT">
+        <img src="/assets/images/brand/nefisoft-web-stacked.png" alt="NEFISOFT" width="160" height="160" decoding="async" />
       </a>
       
       <nav class="header-nav">
@@ -145,8 +145,8 @@
         <div class="footer-section">
           <h3 data-i18n="footer.downloadApp">Uygulamayı indir</h3>
           <ul>
-            <li><a href="#" data-i18n="footer.downloadGoogle">Google Play'den indir</a></li>
-            <li><a href="#" data-i18n="footer.downloadApple">App Store'dan indir</a></li>
+            <li>Google Play — Yakında</li>
+            <li>App Store — Yakında</li>
           </ul>
         </div>
         
@@ -178,6 +178,9 @@
     import { initCommonLayout } from '/assets/js/commonLayout.js';
     import { initChatWidget } from '/assets/js/chatWidget.js';
     import { t } from '/assets/js/i18n.js';
+    import { resolveApiBaseUrl } from '/assets/js/utils/api-helpers.js';
+    import { toast } from '/src/shared/ui/toast.js';
+    import { logger } from '/src/shared/log/logger.js';
     
     // Initialize all modules
     initI18n('tr');
@@ -185,19 +188,61 @@
     initCommonLayout();
     initChatWidget();
     
-    // Contact form handler
-    document.getElementById('contactForm').addEventListener('submit', (e) => {
+    // Contact form handler — Teklifbul Rule v1.0
+    document.getElementById('contactForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      
-      // Show success message
+      const form = e.target;
+      const submitBtn = form.querySelector('button[type="submit"]');
       const successDiv = document.getElementById('contactSuccess');
-      successDiv.style.display = 'block';
-      
-      // Reset form
-      e.target.reset();
-      
-      // Scroll to success message
-      successDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      const originalText = submitBtn ? submitBtn.textContent : '';
+
+      const payload = {
+        name: document.getElementById('contactName')?.value?.trim() || '',
+        company: document.getElementById('contactCompany')?.value?.trim() || '',
+        email: document.getElementById('contactEmail')?.value?.trim() || '',
+        phone: document.getElementById('contactPhone')?.value?.trim() || '',
+        message: document.getElementById('contactMessage')?.value?.trim() || '',
+      };
+
+      try {
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Gönderiliyor...';
+        }
+        toast.info('Mesaj gönderiliyor...');
+
+        const apiBase = resolveApiBaseUrl();
+        const response = await fetch(`${apiBase}/api/contact`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(data?.message || 'Mesaj gönderilemedi');
+        }
+
+        if (successDiv) {
+          successDiv.style.display = 'block';
+          successDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+        form.reset();
+        toast.success(data?.message || 'İşlem tamamlandı');
+        import('/assets/js/analytics.js').then(({ track, ANALYTICS_EVENTS }) => {
+          track(ANALYTICS_EVENTS.CONTACT);
+          if (new URLSearchParams(window.location.search).get('intent') === 'demo') {
+            track(ANALYTICS_EVENTS.DEMO_REQUEST, { source: 'contact' });
+          }
+        }).catch(() => {});
+      } catch (error) {
+        logger.error('İletişim formu gönderilemedi', error);
+        toast.error(error?.message || 'Mesaj gönderilemedi');
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = originalText || 'Gönder';
+        }
+      }
     });
   </script>
   

@@ -35,7 +35,7 @@ function sanitizeSupplier(id: string, data: Record<string, any>) {
     uid: id,
     id,
     displayName: data.displayName || data.name || data.companyName || null,
-    email: data.email || null,
+    email: null,
     companyId: data.companyId || data.activeCompanyId || null,
     roles: data.roles || null,
     role: data.role || null,

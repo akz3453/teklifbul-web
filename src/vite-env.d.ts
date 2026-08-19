@@ -8,6 +8,8 @@
 
 interface ImportMetaEnv {
   readonly VITE_RECAPTCHA_ENTERPRISE_SITE_KEY?: string;
+  /** "1" = AppCheck key zorunlu; "0" veya boş = key yokken skip (geçici test) */
+  readonly VITE_APP_CHECK_ENFORCE?: string;
   readonly VITE_FIREBASE_API_KEY?: string;
   readonly VITE_FIREBASE_AUTH_DOMAIN?: string;
   readonly VITE_FIREBASE_PROJECT_ID?: string;
@@ -25,4 +27,13 @@ interface ImportMetaEnv {
 
 interface ImportMeta {
   readonly env: ImportMetaEnv;
+}
+
+interface CapacitorGlobal {
+  isNativePlatform?: () => boolean;
+  getPlatform?: () => string;
+}
+
+interface Window {
+  Capacitor?: CapacitorGlobal;
 }

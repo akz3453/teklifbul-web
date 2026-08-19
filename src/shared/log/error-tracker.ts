@@ -9,10 +9,24 @@
  * - Kullanıcı bilgilerini ekleme
  */
 
-import { db } from '../../../firebase.js';
-import { auth } from '../../../firebase.js';
-import { collection, query, where, getDocs, addDoc, updateDoc, doc, serverTimestamp, Timestamp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+import { collection, query, where, getDocs, addDoc, updateDoc, doc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
 import { logger } from './logger.js';
+
+type FirebaseAuthLike = { currentUser?: { uid?: string; email?: string } | null };
+type FirebaseDbLike = Parameters<typeof collection>[0];
+
+let cachedAuth: FirebaseAuthLike | null = null;
+let cachedDb: FirebaseDbLike | null = null;
+
+async function getFirebase() {
+  if (cachedAuth && cachedDb) {
+    return { auth: cachedAuth, db: cachedDb };
+  }
+  const mod = await import('../../../firebase.js');
+  cachedAuth = mod.auth;
+  cachedDb = mod.db;
+  return { auth: cachedAuth, db: cachedDb };
+}
 
 // Rate limiting için cache (aynı hata 1 dakikada 1 kez kaydedilir)
 const errorCache = new Map<string, number>();
@@ -113,6 +127,8 @@ async function saveErrorToFirestore(errorData: {
       errorCache.delete(cacheKey);
     }, 60 * 60 * 1000);
     
+    const { auth, db } = await getFirebase();
+
     // Teklifbul Rule v1.0 - userId zorunlu (Firestore kurali kullanici bazli okumaya izin verir)
     const currentUid = auth.currentUser?.uid || errorData.userId;
     if (!currentUid) {
@@ -187,6 +203,7 @@ export function initializeErrorTracker() {
   window.addEventListener('error', (event) => {
     void (async () => {
       try {
+        const { auth } = await getFirebase();
         const user = auth.currentUser;
         const errorId = generateErrorId(
           event.message,
@@ -224,6 +241,7 @@ export function initializeErrorTracker() {
   window.addEventListener('unhandledrejection', (event) => {
     void (async () => {
       try {
+        const { auth } = await getFirebase();
         const user = auth.currentUser;
         const reason = event.reason;
         const message = reason instanceof Error ? reason.message : String(reason);
@@ -269,6 +287,7 @@ export async function logError(
   metadata?: Record<string, any>
 ) {
   try {
+    const { auth } = await getFirebase();
     const user = auth.currentUser;
     const message = typeof error === 'string' ? error : error.message;
     const stack = typeof error === 'string' ? undefined : error.stack;

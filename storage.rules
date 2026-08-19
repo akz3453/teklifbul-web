@@ -2,18 +2,95 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
     function signedIn() { return request.auth != null; }
+
+    function demandDoc(demandId) {
+      return firestore.get(/databases/(default)/documents/demands/$(demandId));
+    }
+
+    function userDoc() {
+      return firestore.get(/databases/(default)/documents/users/$(request.auth.uid));
+    }
+
+    function hasAcceptedJoin() {
+      return userDoc().exists &&
+        userDoc().data.companyJoinStatus in ['accepted', 'approved'];
+    }
+
+    function memberDoc(companyId) {
+      return firestore.get(/databases/(default)/documents/companies/$(companyId)/members/$(request.auth.uid));
+    }
+
+    function isAcceptedMemberOf(companyId) {
+      return signedIn() &&
+        companyId is string &&
+        !companyId.matches('solo-.*') &&
+        (
+          (
+            hasAcceptedJoin() &&
+            (
+              companyId == userDoc().data.companyId ||
+              companyId == userDoc().data.activeCompanyId ||
+              (userDoc().data.companies is list && companyId in userDoc().data.companies)
+            )
+          ) ||
+          (
+            memberDoc(companyId).exists &&
+            memberDoc(companyId).data.status in ['accepted', 'approved']
+          )
+        );
+    }
+
+    function canAccessDemandCompany(demandId) {
+      return demandDoc(demandId).exists &&
+        'creatorCompanyId' in demandDoc(demandId).data &&
+        isAcceptedMemberOf(demandDoc(demandId).data.creatorCompanyId);
+    }
+
+    function canReadDemandFile(demandId, fileOwnerUid) {
+      return signedIn() && (
+        request.auth.uid == fileOwnerUid ||
+        (
+          demandDoc(demandId).exists &&
+          (
+            demandDoc(demandId).data.createdBy == request.auth.uid ||
+            canAccessDemandCompany(demandId)
+          )
+        )
+      );
+    }
     
     // supplier documents (tax certificates, etc.)
     // Teklifbul Rule v1.0 - Security: Sadece dosya sahibi okuyabilir
     match /suppliers/{uid}/{fileName} {
-      allow read: if signedIn() && request.auth.uid == uid; // only owner can read
-      allow write, delete: if signedIn() && request.auth.uid == uid; // only owner can upload/delete
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow write, delete: if signedIn() && request.auth.uid == uid;
     }
 
-    // demand files
+    // demand files — yazma: dosya sahibi VE talep üyeliği
     match /demands/{demandId}/{userId}/{fileName} {
-      allow read: if signedIn();
-      allow write, delete: if signedIn() && request.auth.uid == userId;
+      allow read: if canReadDemandFile(demandId, userId);
+      allow write: if signedIn() &&
+        request.auth.uid == userId &&
+        demandDoc(demandId).exists &&
+        (
+          demandDoc(demandId).data.createdBy == request.auth.uid ||
+          canAccessDemandCompany(demandId)
+        ) &&
+        request.resource.size < 15 * 1024 * 1024 &&
+        (
+          request.resource.contentType.matches('image/.*') ||
+          request.resource.contentType == 'application/pdf' ||
+          request.resource.contentType.matches('application/vnd\\..*') ||
+          request.resource.contentType == 'text/plain' ||
+          request.resource.contentType == 'application/msword'
+        );
+      allow delete: if signedIn() &&
+        request.auth.uid == userId &&
+        demandDoc(demandId).exists &&
+        (
+          demandDoc(demandId).data.createdBy == request.auth.uid ||
+          canAccessDemandCompany(demandId)
+        );
     }
   }
 }

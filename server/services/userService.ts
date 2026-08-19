@@ -38,12 +38,9 @@ export async function getUserAIProvider(userId: string): Promise<AIProvider> {
     logger.info('Fetching user AI provider', { userId });
 
     // Teklifbul Rule v1.0 - Ortam konfigürasyonuna göre güvenli varsayılan provider seçimi
-    // Default: ollama for premium_plus users
+    // Varsayılan: ücretsiz Groq
     const getSafeDefaultProvider = (): AIProvider => {
-      if (process.env.GROQ_API_KEY) return 'groq';
-      if (process.env.GEMINI_API_KEY) return 'gemini';
-      if (process.env.OPENAI_API_KEY) return 'openai';
-      return 'groq'; // Default to groq
+      return 'groq';
     };
 
     const db = await getAdminDb();
@@ -73,9 +70,8 @@ export async function getUserAIProvider(userId: string): Promise<AIProvider> {
   } catch (error: any) {
     logger.error('Error fetching user AI provider', error);
     logger.end();
-    // Teklifbul Rule v1.0 - Hata durumunda ortam konfigürasyonuna göre güvenli varsayılan döndür
-    if (process.env.OPENAI_API_KEY && !process.env.GEMINI_API_KEY) return 'openai';
-    return 'gemini';
+    // Teklifbul Rule v1.0 - Hata durumunda ücretsiz Groq
+    return 'groq';
   }
 }
 

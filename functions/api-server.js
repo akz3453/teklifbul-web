@@ -7,13 +7,14 @@ const { defineSecret } = require('firebase-functions/params');
 
 // Secrets Manager'dan Groq Key'i tanimla (Deploy sirasinda sorulur)
 const groqSecret = defineSecret('GROQ_API_KEY');
+const paymentWebhookSecret = defineSecret('PAYMENT_WEBHOOK_SECRET');
 
 /**
  * Main API Cloud Function
  * Bu fonksiyon, tÃ¼m /api isteklelerini Express sunucusuna yÃ¶nlendirir.
  */
 exports.api = onRequest({
-    secrets: [groqSecret],
+    secrets: [groqSecret, paymentWebhookSecret],
     minInstances: 0,
     memory: "512MiB",
     timeoutSeconds: 60

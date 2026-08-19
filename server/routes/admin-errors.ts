@@ -434,6 +434,43 @@ router.patch('/:id', async (req: AuthenticatedRequest, res) => {
 });
 
 /**
+ * DELETE /api/admin/errors/:id
+ * Hata kaydını sil
+ */
+router.delete('/:id', async (req: AuthenticatedRequest, res) => {
+  logger.group('admin-errors:delete');
+  try {
+    const db = await getAdminDb();
+    if (!db) {
+      logger.end();
+      return res.status(500).json({ ok: false, error: 'Firestore unavailable' });
+    }
+
+    const { id } = req.params;
+    const docRef = db.collection('error_logs').doc(id);
+    const doc = await docRef.get();
+
+    if (!doc.exists) {
+      logger.end();
+      return res.status(404).json({ ok: false, error: 'error_not_found' });
+    }
+
+    await docRef.delete();
+    logger.info('Error deleted', { id });
+    logger.end();
+    res.json({ ok: true, message: 'Hata silindi' });
+  } catch (error: any) {
+    logger.error('Failed to delete error', error);
+    logger.end();
+    res.status(500).json({
+      ok: false,
+      error: 'failed_to_delete_error',
+      message: error.message || 'Hata silinemedi'
+    });
+  }
+});
+
+/**
  * POST /api/admin/errors/:id/analyze
  * Tek hata AI analizi
  */

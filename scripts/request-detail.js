@@ -2,7 +2,10 @@ import { db, auth, requireAuth } from '/firebase.js';
 import { createNotification } from '/scripts/inventory-notifications.js';
 import { logger } from '/src/shared/log/logger.js';
 import { toast } from '/src/shared/ui/toast.js';
-import { doc, getDoc, getDocs, collection, updateDoc, addDoc, setDoc, query, where, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+import { authFetch } from '../assets/js/utils/api-helpers.js';
+import { MESSAGES } from '/src/shared/constants/messages.js';
+import { appendTextCell, setTableEmpty } from '/assets/js/utils/safe-table.js';
+import { doc, getDoc, getDocs, collection, updateDoc, addDoc, query, where, serverTimestamp, limit } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
 
 const qs = s => document.querySelector(s);
 
@@ -36,6 +39,19 @@ const PURCHASING_ROLES = [
   'buyer:yonetim_kurulu_baskani',
   'buyer:isveren'
 ];
+
+async function patchRequestStatus(status, extra = {}) {
+  const res = await authFetch(`/api/internal-requests/${encodeURIComponent(requestId)}/status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status, ...extra }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data.error || MESSAGES.ERROR_OPERATION_FAILED);
+  }
+  return data;
+}
 
 async function loadRequest() {
   try {
@@ -94,7 +110,13 @@ function renderRequest() {
   qs('#reqType').textContent = req.type || '-';
   qs('#reqRequester').textContent = req.requesterName || '-';
   qs('#reqLocation').textContent = location ? `${location.name} (${location.type})` : '-';
-  qs('#reqStatus').innerHTML = `<span class="badge b-${req.status?.toLowerCase()}">${req.status || '-'}</span>`;
+  const statusEl = qs('#reqStatus');
+  statusEl.textContent = '';
+  const statusSpan = document.createElement('span');
+  const statusKey = String(req.status || 'DRAFT').toLowerCase().replace(/[^a-z0-9_-]/g, '');
+  statusSpan.className = `badge b-${statusKey}`;
+  statusSpan.textContent = req.status || '-';
+  statusEl.appendChild(statusSpan);
   qs('#reqCreated').textContent = req.createdAt ? new Date(req.createdAt.toDate()).toLocaleString('tr-TR') : '-';
   qs('#reqDelivery').textContent = req.deliveryAddress || '-';
   qs('#reqFreight').textContent = req.deliveryIsFreightIncluded ? 'Evet' : 'Hayır';
@@ -102,28 +124,29 @@ function renderRequest() {
 
 function renderLines() {
   const tbody = qs('#linesTable tbody');
-  tbody.innerHTML = '';
-  
   if (!state.lines.length) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#6b7280">Satır bulunamadı.</td></tr>';
+    setTableEmpty(tbody, 8, 'Satır bulunamadı.');
     return;
   }
-  
-  state.lines.forEach(line => {
+
+  tbody.textContent = '';
+  state.lines.forEach((line) => {
     const tr = document.createElement('tr');
     const badge = line.matchStatus === 'FOUND' ? 'b-found' : line.matchStatus === 'MULTI' ? 'b-multi' : 'b-new';
     const badgeText = line.matchStatus === 'FOUND' ? '✅ Bulundu' : line.matchStatus === 'MULTI' ? '⚠️ Çok' : '🆕 Yeni';
-    
-    tr.innerHTML = `
-      <td>${line.lineNo}</td>
-      <td>${line.sku}</td>
-      <td>${line.name}</td>
-      <td>${line.brandModel}</td>
-      <td>${line.qty}</td>
-      <td>${line.unit}</td>
-      <td>${line.requestedDate || '-'}</td>
-      <td><span class="badge ${badge}">${badgeText}</span></td>
-    `;
+    appendTextCell(tr, line.lineNo);
+    appendTextCell(tr, line.sku);
+    appendTextCell(tr, line.name);
+    appendTextCell(tr, line.brandModel);
+    appendTextCell(tr, line.qty);
+    appendTextCell(tr, line.unit);
+    appendTextCell(tr, line.requestedDate || '-');
+    const badgeTd = document.createElement('td');
+    const badgeSpan = document.createElement('span');
+    badgeSpan.className = `badge ${badge}`;
+    badgeSpan.textContent = badgeText;
+    badgeTd.appendChild(badgeSpan);
+    tr.appendChild(badgeTd);
     tbody.appendChild(tr);
   });
 }
@@ -155,14 +178,7 @@ qs('#btnToPurchasing').addEventListener('click', async () => {
     logger.group('Talep satın alma sürecine gönderiliyor');
     
     // Teklifbul Rule v1.0 - Talep durumunu güncelle ve satın alma sürecine gönder
-    await updateDoc(doc(db, 'internal_requests', requestId), {
-      status: 'APPROVED',
-      approvedAt: serverTimestamp(),
-      forwardedToPurchasing: true,
-      forwardedAt: serverTimestamp(),
-      forwardedBy: state.user.uid,
-      forwardedByName: state.user.displayName || state.user.email
-    });
+    await patchRequestStatus('APPROVED', { forwardedToPurchasing: true });
     
     // Satın alma kullanıcılarına bildirim gönder
     try {
@@ -220,12 +236,7 @@ qs('#btnApprove').addEventListener('click', async () => {
     logger.group('ŞMTF Onay İşlemi');
     
     // Talep durumunu güncelle
-    await updateDoc(doc(db, 'internal_requests', requestId), {
-      status: 'APPROVED',
-      approvedAt: serverTimestamp(),
-      approvedBy: state.user.uid,
-      approvedByName: state.user.displayName || state.user.email
-    });
+    await patchRequestStatus('APPROVED');
     
     // Her satır için stok kontrolü ve transfer işlemi
     const transferResults = [];
@@ -364,129 +375,67 @@ qs('#btnApprove').addEventListener('click', async () => {
 });
 
 /**
- * Transfer hareketi oluştur
+ * Transfer hareketi oluştur (API)
  * Teklifbul Rule v1.0 - Stok transfer kaydı
  */
 async function createTransferMovement(line, stockData, fromLocationId, fromLocationData, qty) {
   try {
-    // Hedef lokasyon (şantiye)
     const toLocationId = state.request.siteId ? `site_${state.request.siteId}` : null;
-    
-    // Stok bakiyesinden ortalama maliyet al
-    const balanceDocId = `${state.companyId}_${line.sku}_${fromLocationId}`;
-    const balanceDoc = await getDoc(doc(db, 'stock_balances', balanceDocId));
-    const balanceData = balanceDoc.exists() ? balanceDoc.data() : null;
-    const avgCost = balanceData?.avgCost || stockData.avgCost || 0;
-    
-    // OUT movement (depodan çıkış)
-    const outMovementRef = await addDoc(collection(db, 'stock_movements'), {
-      stockId: line.sku,
-      sku: line.sku,
-      locationId: fromLocationId,
-      siteId: state.request.siteId,
-      toLocationId: toLocationId,
-      type: 'TRANSFER',
-      qty: qty,
-      unit: line.unit || stockData.unit || 'ADT',
-      unitCost: avgCost,
-      totalCost: avgCost * qty,
-      ref: {
-        kind: 'INTERNAL_REQUEST',
-        id: requestId,
-        lineId: line.id
-      },
-      stockName: line.name || stockData.productName || '',
-      toSiteName: state.request.siteName || '',
-      createdBy: state.user.uid,
-      companyId: state.companyId,
-      createdAt: serverTimestamp()
+
+    let stockId = line.sku;
+    try {
+      const stockQuery = query(
+        collection(db, 'stocks'),
+        where('companyId', '==', state.companyId),
+        where('sku', '==', line.sku),
+        limit(1)
+      );
+      const stockSnap = await getDocs(stockQuery);
+      if (!stockSnap.empty) {
+        stockId = stockSnap.docs[0].id;
+      }
+    } catch (_) {
+      // company inventory modelinde stockId = sku olabilir
+    }
+
+    toast.info('Yükleniyor...');
+    const response = await authFetch('/api/stock-movements', {
+      method: 'POST',
+      body: JSON.stringify({
+        type: 'TRANSFER',
+        stockId,
+        sku: line.sku,
+        stockName: line.name || stockData.productName || '',
+        unit: line.unit || stockData.unit || 'ADT',
+        locationId: fromLocationId,
+        siteId: state.request.siteId || null,
+        toLocationId,
+        qty,
+        ref: {
+          kind: 'INTERNAL_REQUEST',
+          id: requestId,
+          lineId: line.id,
+        },
+        toSiteName: state.request.siteName || null,
+        createdByName: state.user.displayName || state.user.email || null,
+        confirmNegative: false,
+      }),
     });
-    
-    // Stok bakiyelerini güncelle (kaynak ve hedef)
-    await updateStockBalancesForTransfer({
-      companyId: state.companyId,
-      sku: line.sku,
-      fromLocationId,
-      toLocationId,
-      qty,
-      avgCost,
-      movementId: outMovementRef.id
-    });
-    
+
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || result.ok === false) {
+      throw new Error(result.error || result.message || 'Transfer kaydedilemedi');
+    }
+
     logger.info('Transfer hareketi oluşturuldu', {
       sku: line.sku,
       fromLocationId,
       toLocationId,
-      qty
+      qty,
+      movementId: result.movementId,
     });
-    
   } catch (error) {
     logger.error('Transfer hareketi oluşturma hatası', error);
-    throw error;
-  }
-}
-
-/**
- * Stok bakiyelerini güncelle (transfer için)
- * Teklifbul Rule v1.0 - Çift güncelleme (kaynak ve hedef)
- */
-async function updateStockBalancesForTransfer({ companyId, sku, fromLocationId, toLocationId, qty, avgCost, movementId }) {
-  try {
-    // Kaynak lokasyon balance'ı (çıkış)
-    const fromBalanceId = `${companyId}_${sku}_${fromLocationId}`;
-    const fromBalanceRef = doc(db, 'stock_balances', fromBalanceId);
-    const fromBalanceDoc = await getDoc(fromBalanceRef);
-    const fromBalance = fromBalanceDoc.exists() ? fromBalanceDoc.data() : null;
-    
-    const newFromQty = Math.max(0, (fromBalance?.quantity || 0) - qty);
-    
-    if (fromBalance) {
-      await updateDoc(fromBalanceRef, {
-        quantity: newFromQty,
-        lastUpdated: serverTimestamp(),
-        lastMovementId: movementId
-      });
-    }
-    
-    // Hedef lokasyon balance'ı (giriş)
-    if (toLocationId) {
-      const toBalanceId = `${companyId}_${sku}_${toLocationId}`;
-      const toBalanceRef = doc(db, 'stock_balances', toBalanceId);
-      const toBalanceDoc = await getDoc(toBalanceRef);
-      const toBalance = toBalanceDoc.exists() ? toBalanceDoc.data() : null;
-      
-      const oldToQty = toBalance?.quantity || 0;
-      const oldToAvg = toBalance?.avgCost || 0;
-      const newToQty = oldToQty + qty;
-      
-      // Ağırlıklı ortalama maliyet hesapla
-      const newToAvg = oldToQty > 0 
-        ? ((oldToQty * oldToAvg) + (qty * avgCost)) / newToQty
-        : avgCost;
-      
-      if (toBalance) {
-        await updateDoc(toBalanceRef, {
-          quantity: newToQty,
-          avgCost: newToAvg,
-          lastUpdated: serverTimestamp(),
-          lastMovementId: movementId
-        });
-      } else {
-        await setDoc(toBalanceRef, {
-          companyId,
-          sku,
-          locationId: toLocationId,
-          stockId: sku,
-          quantity: newToQty,
-          avgCost: newToAvg,
-          lastUpdated: serverTimestamp(),
-          lastMovementId: movementId
-        });
-      }
-    }
-    
-  } catch (error) {
-    logger.error('Stok bakiyesi güncelleme hatası', error);
     throw error;
   }
 }
@@ -502,6 +451,8 @@ async function createInternalRequestForMissingItems(missingItems) {
     const internalRequestData = {
       type: 'IMTF',
       title: `Eksik Malzeme Talebi - ${state.request.title}`,
+      companyId: state.companyId,
+      createdBy: state.user.uid,
       requesterUserId: state.user.uid,
       requesterName: state.user.displayName || state.user.email,
       parentRequestId: requestId,
@@ -542,11 +493,7 @@ qs('#btnReject').addEventListener('click', async () => {
   if (!reason) return;
   
   try {
-    await updateDoc(doc(db, 'internal_requests', requestId), {
-      status: 'REJECTED',
-      rejectedAt: serverTimestamp(),
-      rejectionReason: reason
-    });
+    await patchRequestStatus('REJECTED', { rejectionReason: reason });
     
     toast.success('Talep reddedildi!');
     location.reload();

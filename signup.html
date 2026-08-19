@@ -283,9 +283,8 @@
     <!-- Brand Header -->
     <header class="brand-header">
       <div class="brand-header-content">
-        <a href="./index.html" class="brand-logo">
-          <span>📋</span>
-          <span>NEFISOFT</span>
+        <a href="./index.html" class="brand-logo" aria-label="NEFISOFT">
+          <img src="/assets/images/brand/nefisoft-web-stacked.png" alt="NEFISOFT" width="160" height="160" decoding="async" style="height:52px;width:auto;object-fit:contain;" />
         </a>
         <div class="header-login">
           <span>Zaten hesabınız var mı?</span>
@@ -384,7 +383,7 @@
             
             <button id="signupBtn">Kayıt Ol</button>
 
-            <small>Devam ederek <a href="#">KVKK Aydınlatma Metni</a> ve <a href="#">Kullanıcı Sözleşmesi</a>'ni kabul etmiş olursunuz.</small>
+            <small>Devam ederek <a href="/legal/kvkk-aydinlatma.html" target="_blank" rel="noopener noreferrer">KVKK Aydınlatma Metni</a> ve <a href="/legal/alici-sozlesme.html" target="_blank" rel="noopener noreferrer">Kullanıcı Sözleşmesi</a>'ni kabul etmiş olursunuz. Hukuki metinler şirket bilgileri kesinleşene kadar taslak olarak yayımlanır.</small>
           </div>
 
           <!-- Right Column: Info Block -->
@@ -412,10 +411,12 @@
     import { toast } from './src/shared/ui/toast.js';
     // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
     import { MESSAGES } from './src/shared/constants/messages.js';
+    import { resolveApiBaseUrl } from './assets/js/utils/api-helpers.js';
     import { doc, getDoc, setDoc, updateDoc, serverTimestamp, collection, query, where, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
-    import { sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+    import { sendVerificationEmailBranded } from "./assets/js/utils/send-verification-email.js";
+    import('/assets/js/analytics.js').then((mod) => mod.initAnalytics()).catch(() => {});
 
-    const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5174';
+    const API_BASE_URL = resolveApiBaseUrl();
 
     const displayNameEl = document.getElementById("displayName");
     const emailEl = document.getElementById("email");
@@ -630,21 +631,11 @@
           throw new Error("Ad Soyad, E-posta, Telefon ve şifre gerekli.");
         }
 
-        // Telefon numarası benzersizlik kontrolü
+        // Telefon numarası normalizasyonu
         const rawPhone = phoneEl.value.trim();
         const normalizedPhone = normalizePhone(rawPhone);
         
-        logger.info('Telefon numarası kontrol ediliyor', { normalizedPhone });
-        
-        const phoneQuery = query(
-          collection(db, 'users'), 
-          where('contactPhones', 'array-contains', normalizedPhone)
-        );
-        const phoneSnap = await getDocs(phoneQuery);
-        
-        if (!phoneSnap.empty) {
-          throw new Error("Bu telefon numarası zaten bir hesapta kullanılıyor. Lütfen başka bir numara girin veya giriş yapın.");
-        }
+        logger.info('Kayıt bilgileri doğrulandı', { email: emailEl.value.trim() });
 
         // Teklifbul Rule v1.0 - reCAPTCHA v3 kaldırıldı, App Check kullanılıyor
         // App Check Firebase tarafından otomatik olarak yönetiliyor
@@ -658,10 +649,11 @@
         const companyActionForEmail = document.querySelector('input[name="companyAction"]:checked')?.value || 'new';
         if (companyActionForEmail === 'join') {
           try {
-            await sendEmailVerification(user);
+            await sendVerificationEmailBranded(user);
             logger.info("Email doğrulama mesajı gönderildi (şirkete katılma akışı)", { email: user.email });
           } catch (verifyErr) {
             logger.warn("Email doğrulama mesajı gönderilemedi", verifyErr);
+            toast.error("Doğrulama e-postası gönderilemedi. Girişte tekrar denenecek.");
           }
         }
         
@@ -786,20 +778,17 @@
             throw new Error("Şirket kodu ve rol seçimi zorunludur.");
           }
           
-          // Şirketi kontrol et
-          const companyQuery = query(
-            collection(db, 'companies'),
-            where('code', '==', joinCode)
-          );
-          const companySnapshot = await getDocs(companyQuery);
-          
-          if (companySnapshot.empty) {
+          // Teklifbul Rule v1.0 - Sirket kodu lookup (companyCodes; companies code== sorgusu yasak)
+          const codeSnap = await getDoc(doc(db, 'companyCodes', joinCode));
+          if (!codeSnap.exists()) {
             throw new Error(`Şirket kodu "${joinCode}" ile eşleşen bir şirket bulunamadı.`);
           }
           
-          const companyDoc = companySnapshot.docs[0];
-          const companyId = companyDoc.id;
-          const companyData = companyDoc.data();
+          const codeData = codeSnap.data();
+          const companyId = codeData.companyId;
+          if (!companyId) {
+            throw new Error(`Şirket kodu "${joinCode}" geçersiz kayıt içeriyor.`);
+          }
           
           // Rol tipini belirle (buyer/supplier)
           const requestedRoleSimple = joinRole.includes('supplier') ? 'supplier' : 'buyer';
@@ -819,7 +808,7 @@
           }, { merge: true });
           
           // Teklifbul Rule v1.0 - Otomatik onay kontrolü (güvenlik için pending olarak başlatılır)
-          const autoApprove = companyData.autoApproveJoinRequests === true;
+          const autoApprove = codeData.autoApproveJoinRequests === true;
           if (autoApprove) {
             logger.warn('Şirket otomatik onay aktif, ancak e-posta onayı bekleniyor', { companyId });
           }
@@ -853,7 +842,27 @@
         }
       } catch (e) {
         logger.error("Kayıt hatası", e);
-        toast.error(MESSAGES.ERROR_SIGNUP + ": " + (e.message || e));
+        
+        let errorMessage = MESSAGES.ERROR_SIGNUP;
+        if (e && e.code) {
+          if (e.code === 'auth/email-already-in-use') {
+            errorMessage = 'Bu e-posta adresi zaten kullanılıyor. Lütfen başka bir e-posta adresi deneyin veya giriş yapın.';
+          } else if (e.code === 'auth/invalid-email') {
+            errorMessage = 'Geçersiz bir e-posta adresi girdiniz.';
+          } else if (e.code === 'auth/weak-password') {
+            errorMessage = 'Şifre çok zayıf. Şifreniz en az 6 karakter olmalıdır.';
+          } else if (e.code === 'auth/operation-not-allowed') {
+            errorMessage = 'E-posta ve şifre ile kayıt olma özelliği şu anda aktif değil.';
+          } else {
+            errorMessage = MESSAGES.ERROR_SIGNUP + ": " + (e.message || e.code);
+          }
+        } else if (e && e.message) {
+          errorMessage = e.message;
+        } else {
+          errorMessage = MESSAGES.ERROR_SIGNUP + ": " + String(e);
+        }
+        
+        toast.error(errorMessage);
         // Hata durumunda butonu tekrar aktif et
         btn.disabled = false;
         btn.textContent = 'Kayıt Ol';

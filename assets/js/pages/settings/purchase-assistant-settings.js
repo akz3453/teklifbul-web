@@ -710,6 +710,13 @@ async function buyPackage(packageId) {
   if (!resp.ok) {
     throw new Error(data?.message || data?.error || 'Satın alma başarısız');
   }
+
+  if (data?.requiresPayment === true && data?.checkoutUrl) {
+    toast.info('Ödeme başlatılıyor...');
+    window.location.assign(data.checkoutUrl);
+    return { ...data, paymentStarted: true };
+  }
+
   return data;
 }
 
@@ -1057,6 +1064,12 @@ async function handleRecommendedPurchase(packageId) {
 
     if (!resp.ok) {
       throw new Error(data?.message || data?.error || 'Satın alma başarısız');
+    }
+
+    if (data?.requiresPayment === true && data?.checkoutUrl) {
+      toast.info('Ödeme başlatılıyor...');
+      window.location.assign(data.checkoutUrl);
+      return;
     }
 
     toast.success('Paket başarıyla satın alındı!');
@@ -1606,8 +1619,8 @@ function bindHandlersOnce() {
         const resp = await authFetch('/api/settings/purchase-assistant', {
           method: 'POST',
           body: JSON.stringify({
-            provider: 'free_local',
-            model: 'basic',
+            provider: 'groq',
+            model: 'llama-3.3-70b-versatile',
             profile: 'fast', // Default for free model
             dictionaryLearning: true,
           }),
@@ -1646,6 +1659,8 @@ function bindHandlersOnce() {
       const result = await buyPackage(packageId);
       if (result.alreadyProcessed) {
         toast.info('Satın alma zaten işlendi.');
+      } else if (result.paymentStarted) {
+        return;
       } else {
         toast.success('Satın alma tamamlandı.');
       }

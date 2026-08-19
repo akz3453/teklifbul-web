@@ -4,6 +4,7 @@ import {
   getAuth,
   setPersistence,
   browserLocalPersistence,
+  browserSessionPersistence,
   GoogleAuthProvider,
   signInWithPopup,
   signInWithRedirect,
@@ -12,25 +13,52 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
-  updateProfile
+  updateProfile,
+  sendEmailVerification
 } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app-check.js";
 // Teklifbul Rule v1.0 - Structured Logging
 import { logger } from './src/shared/log/logger.js';
-import { toast } from './src/shared/ui/toast.js';
-// Teklifbul Rule v1.0 - Error Tracker
-import { initializeErrorTracker } from './src/shared/log/error-tracker.js';
+import { MESSAGES } from './src/shared/constants/messages.js';
+import { isNativePlatform } from './assets/js/utils/is-native-platform.js';
 
-// Teklifbul Rule v1.0 - authDomain her zaman Firebase Hosting domain'i olmalı
-// Firebase auth handler (_/auth/handler) Firebase Hosting'de çalışır, localhost'ta değil
-// Bu yüzden authDomain'i her zaman teklifbul.firebaseapp.com olarak kullanmalıyız
-// Firebase Console'da localhost authorized domains listesinde olmalı (Google Login için)
+// Teklifbul Rule v1.0 — authDomain, uygulama origin'i ile AYNI olmalı.
+// Farklı domain (firebaseapp.com vs web.app) Android WebView'da
+// third-party storage yüzünden getRedirectResult → null bırakır.
 const getAuthDomain = () => {
-  // Her zaman Firebase Hosting domain'ini kullan
-  // Localhost'ta çalışırken bile Firebase'in production auth handler'ını kullan
-  return "teklifbul.firebaseapp.com";
+  if (typeof window === 'undefined') return 'teklifbul.web.app';
+  const host = String(window.location.hostname || '').toLowerCase();
+
+  // Teklifbul Rule v1.0 — Canlı marka domainleri (same-origin OAuth)
+  if (host === 'nefisoft.com' || host === 'www.nefisoft.com') {
+    return host;
+  }
+  if (host === 'nefisoft.com.tr' || host === 'www.nefisoft.com.tr') {
+    return host;
+  }
+
+  // Native / Firebase Hosting
+  if (host === 'teklifbul.web.app' || host === 'www.teklifbul.web.app') {
+    return 'teklifbul.web.app';
+  }
+  if (host === 'teklifbul.firebaseapp.com') {
+    return 'teklifbul.firebaseapp.com';
+  }
+
+  // localhost / bilinmeyen: production hosting
+  return 'teklifbul.web.app';
 };
+
+function logBoot(level, msg, extra) {
+  try {
+    if (level === 'error') logger.error(msg, extra);
+    else if (level === 'warn') logger.warn(msg, extra);
+    else logger.debug(msg, extra);
+  } catch {
+    // shared-core döngüsünde logger TDZ olursa login'i düşürme
+  }
+}
 
 const firebaseConfig = {
   apiKey: "AIzaSyAbX3UWRPpw-yo4I4HbSdTg82LxvM-fqTE",
@@ -114,48 +142,52 @@ if (typeof window !== 'undefined' && window.__TEKLIFBUL_FIREBASE_APP) {
 }
 
 // App Check (compat-modular karışık; sadece browser'da)
+// Teklifbul Rule v1.0 - Production'da App Check açık. Yalnızca VITE_APP_CHECK_ENFORCE=0 acil skip (dev/acil).
 const isBrowser = typeof window !== 'undefined';
 const isLocalDevHost = isBrowser && ['localhost', '127.0.0.1'].includes(window.location.hostname);
 const isDevMode = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.MODE === 'development';
-if (isBrowser) {
+
+function isAppCheckEmergencyDisabled() {
+  const raw =
+    (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_APP_CHECK_ENFORCE) ||
+    (typeof window !== 'undefined' && window.VITE_APP_CHECK_ENFORCE) ||
+    '';
+  return String(raw).trim() === '0';
+}
+
+function startAppCheckIfEligible() {
   try {
     const isProduction = !isLocalDevHost && !isDevMode;
-
-    if (isProduction) {
-      // Production'da AppCheck ZORUNLU
-      const siteKey =
-        (typeof import.meta !== "undefined" &&
-          import.meta.env &&
-          import.meta.env.VITE_RECAPTCHA_ENTERPRISE_SITE_KEY) ||
-        (typeof window !== "undefined" && window.VITE_RECAPTCHA_ENTERPRISE_SITE_KEY) ||
-        null;
-
-      if (!siteKey) {
-        logger.error("CRITICAL: VITE_RECAPTCHA_ENTERPRISE_SITE_KEY required for production AppCheck");
-        throw new Error("AppCheck configuration missing - cannot proceed in production");
-      }
-
-      initializeAppCheck(app, {
-        provider: new ReCaptchaEnterpriseProvider(siteKey),
-        isTokenAutoRefreshEnabled: true,
-      });
-      logger.debug("AppCheck enabled for production");
-
-    } else {
-      // Development: Optional AppCheck (localhost'ta çalışmaz)
-      logger.debug('Development environment: AppCheck optional');
+    if (!isProduction) {
+      logBoot('debug', 'Development environment: AppCheck optional');
+      return;
     }
-
+    if (isAppCheckEmergencyDisabled()) {
+      logBoot('warn', 'AppCheck skipped: VITE_APP_CHECK_ENFORCE=0');
+      return;
+    }
+    const siteKey =
+      (typeof import.meta !== 'undefined' &&
+        import.meta.env &&
+        import.meta.env.VITE_RECAPTCHA_ENTERPRISE_SITE_KEY) ||
+      (typeof window !== 'undefined' && window.VITE_RECAPTCHA_ENTERPRISE_SITE_KEY) ||
+      null;
+    if (!siteKey) {
+      logBoot('warn', 'AppCheck skipped: VITE_RECAPTCHA_ENTERPRISE_SITE_KEY missing');
+      return;
+    }
+    initializeAppCheck(app, {
+      provider: new ReCaptchaEnterpriseProvider(siteKey),
+      isTokenAutoRefreshEnabled: true,
+    });
+    logBoot('debug', 'AppCheck enabled for production');
   } catch (err) {
-    const isProduction = !isLocalDevHost && !isDevMode;
-    if (isProduction) {
-      logger.error("CRITICAL: AppCheck failed in production", err);
-      // Production'da AppCheck hatası varsa uygulamayı başlatma
-      throw new Error("AppCheck initialization failed - security violation");
-    } else {
-      logger.debug("AppCheck skipped in development", err);
-    }
+    logBoot('warn', 'AppCheck skipped after init failure', err);
   }
+}
+
+if (isBrowser) {
+  startAppCheckIfEligible();
 }
 
 
@@ -177,14 +209,21 @@ const persistenceReady = (async () => {
 })();
 
 // redirectReady: getRedirectResult tamamlandığında resolve edilir (sadece browser'da)
+// Teklifbul Rule v1.0 — Sonucu bir kez sakla; checkGoogleRedirect tekrar consume edemesin
+let _redirectAuthUser = null;
 const redirectReady = (typeof window !== 'undefined') ? (async () => {
   try {
-    await getRedirectResult(auth);
-    logger.debug("Auth redirect ready");
+    const result = await getRedirectResult(auth);
+    if (result?.user) {
+      _redirectAuthUser = result.user;
+      logger.info('Auth redirect result recovered', { email: result.user.email });
+    } else {
+      logger.debug('Auth redirect ready (no pending result)');
+    }
   } catch (e) {
     // Redirect result hatası beklenen bir durum olabilir (redirect yoksa)
     if (e.code !== 'auth/operation-not-allowed') {
-      logger.warn("getRedirectResult error (non-critical)", e);
+      logger.warn('getRedirectResult error (non-critical)', e);
     }
   }
 })() : Promise.resolve();
@@ -213,9 +252,12 @@ export { persistenceReady, redirectReady, authStateReady };
 
 // Teklifbul Rule v1.0 - Initialize error tracker after Firebase is ready
 if (typeof window !== 'undefined') {
-  // Auth state değiştiğinde error tracker'ı başlat (kullanıcı bilgileri için)
   onAuthStateChanged(auth, () => {
-    initializeErrorTracker();
+    import('./src/shared/log/error-tracker.js')
+      .then((mod) => mod.initializeErrorTracker())
+      .catch((err) => {
+        logBoot('warn', 'Error tracker başlatılamadı', err);
+      });
   });
 }
 
@@ -308,6 +350,14 @@ async function logoutIfNoActiveTabs() {
 function setupTabTracker() {
   if (typeof window === 'undefined') return;
   if (window.__teklifbulTabTrackerInitialized) return;
+
+  // Teklifbul Rule v1.0 — Capacitor WebView'da tek "sekme" vardır; arka plana alınca
+  // heartbeat kesilir ve yanlışlıkla signOut + çökme/oturum kaybı oluşabilir.
+  if (isNativePlatform()) {
+    logger.debug('Tab Tracker: native platformda devre dışı');
+    return;
+  }
+
   window.__teklifbulTabTrackerInitialized = true;
 
   // Teklifbul Rule v1.0 - Navigasyon timestamp'ini temizle (sayfa açıkken navigasyon yok)
@@ -580,9 +630,69 @@ export async function requireAuth() {
 export function getUser() { return auth.currentUser; }
 
 // E-posta/şifre
-export async function register(email, password) { return createUserWithEmailAndPassword(auth, email, password); }
-export async function login(email, password) { return signInWithEmailAndPassword(auth, email, password); }
-export function logout() { return signOut(auth); }
+export async function register(email, password) {
+  const cred = await createUserWithEmailAndPassword(auth, email, password);
+  import('./assets/js/analytics.js').then(({ track, ANALYTICS_EVENTS }) => {
+    track(ANALYTICS_EVENTS.SIGNUP, { method: 'password' });
+  }).catch(() => {});
+  return cred;
+}
+export async function login(email, password) {
+  const cred = await signInWithEmailAndPassword(auth, email, password);
+  import('./assets/js/analytics.js').then(({ track, ANALYTICS_EVENTS }) => {
+    track(ANALYTICS_EVENTS.LOGIN, { method: 'password' });
+  }).catch(() => {});
+  return cred;
+}
+
+// Teklifbul Rule v1.0 — sendEmailVerification aynı Auth/App Check örneğinden gitmeli.
+// Ayrı firebase-auth kopyası (dynamic import) production'da sendOobCode 400 üretir.
+export async function sendAuthEmailVerification(user, continueUrl) {
+  const target =
+    auth.currentUser && user?.uid && auth.currentUser.uid === user.uid
+      ? auth.currentUser
+      : (user || auth.currentUser);
+  if (!target) throw new Error('Kullanıcı yok');
+
+  const url = typeof continueUrl === 'string' && continueUrl.startsWith('https://')
+    ? continueUrl
+    : (typeof window !== 'undefined' ? `${window.location.origin}/login.html` : '');
+
+  try {
+    if (url) {
+      await sendEmailVerification(target, { url, handleCodeInApp: false });
+      return;
+    }
+    await sendEmailVerification(target);
+  } catch (err) {
+    const code = String(err?.code || '');
+    if (url && (code.includes('invalid-continue-uri') || code.includes('unauthorized-continue-uri'))) {
+      logger.warn('Continue URL reddedildi, varsayılan Firebase doğrulama gönderiliyor', { code });
+      await sendEmailVerification(target);
+      return;
+    }
+    throw err;
+  }
+}
+export async function logout() {
+  try {
+    const { clearAuthLocalState } = await import('./assets/js/utils/clear-auth-local-state.js');
+    clearAuthLocalState();
+  } catch (err) {
+    logger.warn('Logout local state temizliği atlandı', err);
+  }
+  return signOut(auth);
+}
+
+/** Teklifbul Rule v1.0 — Beni hatırla: local vs session persistence */
+export async function applyLoginPersistence(rememberMe) {
+  const native = isNativePlatform();
+  const persistence = native || rememberMe ? browserLocalPersistence : browserSessionPersistence;
+  await setPersistence(auth, persistence);
+  logger.debug('Auth persistence set', { rememberMe: !!rememberMe, native });
+}
+
+export { isNativePlatform };
 export function watchAuth(cb) { return onAuthStateChanged(auth, cb); }
 export async function updateUserProfile(user, profile) { return updateProfile(user, profile); }
 
@@ -599,26 +709,69 @@ googleProvider.setCustomParameters({
 // Check for redirect result on page load (for signInWithRedirect fallback)
 export async function checkGoogleRedirect() {
   try {
+    await redirectReady;
+    if (_redirectAuthUser) {
+      const user = _redirectAuthUser;
+      _redirectAuthUser = null;
+      try { sessionStorage.removeItem('googleLoginPending'); } catch (_) { /* ignore */ }
+      logger.info('Google redirect login successful (cached)', { email: user.email });
+      return user;
+    }
     const result = await getRedirectResult(auth);
     if (result && result.user) {
-      logger.info("Google redirect login successful", { email: result.user.email });
+      try { sessionStorage.removeItem('googleLoginPending'); } catch (_) { /* ignore */ }
+      logger.info('Google redirect login successful', { email: result.user.email });
       return result.user;
     }
+
+    // Teklifbul Rule v1.0 — Native WebView: redirect sonucu kaybolursa currentUser yedek
+    let pending = false;
+    try { pending = sessionStorage.getItem('googleLoginPending') === 'true'; } catch (_) { /* ignore */ }
+    if (pending && auth.currentUser) {
+      try { sessionStorage.removeItem('googleLoginPending'); } catch (_) { /* ignore */ }
+      logger.info('Google login recovered via currentUser', { email: auth.currentUser.email });
+      return auth.currentUser;
+    }
+
     return null;
   } catch (error) {
-    logger.warn("Redirect result check failed", error);
+    logger.warn('Redirect result check failed', error);
     return null;
   }
 }
 
 export async function loginWithGoogle() {
+  const redirectInProgress = MESSAGES.GOOGLE_REDIRECT_IN_PROGRESS;
   try {
+    // Teklifbul Rule v1.0 — Capacitor WebView'da popup güvenilir değil; native'de redirect
+    if (isNativePlatform()) {
+      const authDomain = auth?.app?.options?.authDomain || '(unknown)';
+      logger.info('Google login: native platform — same-origin redirect', {
+        authDomain,
+        origin: window.location.origin,
+        href: window.location.href,
+      });
+      try {
+        sessionStorage.setItem('googleLoginPending', 'true');
+        sessionStorage.setItem('pendingLoginTs', Date.now().toString());
+        sessionStorage.setItem('googleAuthDomain', authDomain);
+      } catch (_) { /* ignore */ }
+      await signInWithRedirect(auth, googleProvider);
+      throw new Error(redirectInProgress);
+    }
+
     const r = await signInWithPopup(auth, googleProvider);
-    logger.info("Google login successful (popup)", { email: r?.user?.email });
+    logger.info("Google login successful (popup)");
+    import('./assets/js/analytics.js').then(({ track, ANALYTICS_EVENTS }) => {
+      track(ANALYTICS_EVENTS.LOGIN, { method: 'google' });
+    }).catch(() => {});
     return r.user;
   } catch (error) {
 
-    // Diğer hatalar için error logla
+    if (error?.message === redirectInProgress) {
+      throw error;
+    }
+
     logger.error("Google login error", error);
     logger.error("Error details", {
       code: error.code,
@@ -626,50 +779,47 @@ export async function loginWithGoogle() {
       stack: error.stack
     });
 
+    const msg = String(error?.message || '');
+    if (
+      error?.code === 'auth/unauthorized-domain' ||
+      msg.includes('disallowed_useragent') ||
+      (msg.includes('403') && msg.toLowerCase().includes('useragent'))
+    ) {
+      throw new Error(MESSAGES.ERROR_LOGIN_GOOGLE_WEBVIEW);
+    }
+
     if (error.code === 'auth/popup-closed-by-user') {
       throw new Error('Giriş penceresi kapatıldı. Lütfen tekrar deneyin.');
     } else if (error.code === 'auth/popup-blocked') {
-      // If popup is blocked, try redirect method
       logger.info("Popup blocked, trying redirect method");
       try {
         await signInWithRedirect(auth, googleProvider);
-        // Note: signInWithRedirect will redirect the page, so we won't reach here
-        // The result will be handled by checkGoogleRedirect() on page load
-        throw new Error('Tarayıcı yeni bir sayfaya yönlendiriliyor...');
+        throw new Error(redirectInProgress);
       } catch (redirectError) {
+        if (redirectError?.message === redirectInProgress) {
+          throw redirectError;
+        }
         logger.error("Redirect also failed", redirectError);
         throw new Error('Popup engellendi ve yönlendirme de başarısız. Lütfen tarayıcı ayarlarından popup\'lara izin verin.');
       }
     } else if (error.code === 'auth/cancelled-popup-request') {
       throw new Error('Giriş iptal edildi. Lütfen tekrar deneyin.');
     } else if (error.code === 'auth/multi-factor-auth-required') {
-      // Teklifbul Rule v1.0 - Let caller resolve MFA with getMultiFactorResolver
       throw error;
     } else if (error.code === 'auth/internal-error') {
-      // Internal error usually means Firebase Console configuration issue
-      // Try redirect as fallback
       logger.info("Internal error detected, trying redirect method as fallback");
       try {
         await signInWithRedirect(auth, googleProvider);
-        throw new Error('Tarayıcı yeni bir sayfaya yönlendiriliyor...');
+        throw new Error(redirectInProgress);
       } catch (redirectError) {
+        if (redirectError?.message === redirectInProgress) {
+          throw redirectError;
+        }
         logger.error("Redirect fallback also failed", redirectError);
-        const detailedError = `
-Firebase yapılandırma hatası (auth/internal-error).
-
-Kontrol listesi:
-1. Firebase Console → Authentication → Sign-in method → Google → ENABLED olmalı
-2. Firebase Console → Authentication → Settings → Authorized domains → localhost eklenmeli
-3. Google Cloud Console → OAuth 2.0 Client ID yapılandırması kontrol edilmeli
-4. Tarayıcı konsolunda tam hata mesajını kontrol edin
-
-Hata kodu: ${error.code}
-Hata mesajı: ${error.message}
-        `.trim();
-        throw new Error(detailedError);
+        throw new Error(MESSAGES.ERROR_LOGIN_GOOGLE_WEBVIEW);
       }
     } else {
-      throw new Error(error.message || 'Google ile giriş yapılamadı. Lütfen tekrar deneyin.');
+      throw new Error(error.message || MESSAGES.ERROR_LOGIN_GOOGLE);
     }
   }
 }

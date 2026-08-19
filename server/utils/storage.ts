@@ -51,11 +51,12 @@ export async function uploadFile(
       },
     });
 
-    // Public URL oluştur (signed URL yerine)
-    await file.makePublic();
-    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
-    
-    return publicUrl;
+    const expiresMs = Date.now() + 7 * 24 * 60 * 60 * 1000;
+    const [signedUrl] = await file.getSignedUrl({
+      action: 'read',
+      expires: expiresMs,
+    });
+    return signedUrl;
   } catch (error: any) {
     logger.error('Dosya yükleme hatası', error);
     throw new Error(`Dosya yüklenemedi: ${error.message}`);
@@ -89,9 +90,12 @@ export async function getFileUrl(bucket: any, filePath: string): Promise<string>
       throw new Error('Dosya bulunamadı');
     }
 
-    // Public URL oluştur
-    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
-    return publicUrl;
+    const expiresMs = Date.now() + 7 * 24 * 60 * 60 * 1000;
+    const [signedUrl] = await file.getSignedUrl({
+      action: 'read',
+      expires: expiresMs,
+    });
+    return signedUrl;
   } catch (error: any) {
     logger.error('Dosya URL alma hatası', error);
     throw new Error(`Dosya URL'i alınamadı: ${error.message}`);

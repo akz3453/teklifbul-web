@@ -5,7 +5,8 @@ node_modules/
 /dist/
 /build/
 /tmp/
-functions/dist/
+# functions/dist API derlemesi Firebase deploy için yüklenmeli — ignore etme
+# functions/dist/
 functions/lib/
 functions/excel-export/lib/
 
@@ -91,3 +92,22 @@ audit-report.txt
 
 # Geçici commit message dosyaları (Cursor agent kullanımı)
 .commit-msg-tmp.txt
+
+# Capacitor / native build artifacts
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
+android/captures/
+android/key.properties
+android/keystore/
+android/app/google-services.json
+ios/App/App/GoogleService-Info.plist
+GoogleService-Info.plist
+android/keystore/CREDENTIALS-BACKUP.txt
+ios/App/Pods/
+ios/App/Podfile.lock
+ios/DerivedData/
+*.keystore
+*.jks
+key.properties

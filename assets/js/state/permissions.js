@@ -524,8 +524,24 @@ let currentState = {
   roleKey: /** @type {string | null} */ (null),
   permissions: /** @type {Record<string, boolean>} */ ({}),
   isEditor: false,
+  isAdmin: false,
+  isOwner: false,
   loadedAt: 0
 };
+
+/** Teklifbul Rule v1.0 — Logout / şirket değişiminde permission cache sıfırla */
+export function clearPermissionCache() {
+  permCache.clear();
+  currentState = {
+    companyId: null,
+    roleKey: null,
+    permissions: {},
+    isEditor: false,
+    isAdmin: false,
+    isOwner: false,
+    loadedAt: 0
+  };
+}
 
 function getCacheKey(companyId, roleKeyInternal) {
   return `${companyId}::${roleKeyInternal}`;
@@ -564,8 +580,8 @@ async function loadRolePermissions(companyId, roleKeyInternal) {
   try {
     const { doc, getDoc } = await getFirestoreModules();
 
-    const allPermKeys = (rolePermissionsTemplate.permissions || []).map((p) => p.key);
-    const defaults = rolePermissionsTemplate.matrixDefaults || {};
+    const allPermKeys = (rolePermissionsTemplate?.permissions || []).map((p) => p.key);
+    const defaults = rolePermissionsTemplate?.matrixDefaults || {};
     const roleDefaults = defaults[roleKeyInternal] || {};
 
     let docPerms = {};
@@ -573,7 +589,17 @@ async function loadRolePermissions(companyId, roleKeyInternal) {
       const ref = doc(db, 'companies', companyId, 'rolePermissions', roleKeyInternal);
       const snap = await getDoc(ref);
       const data = snap && snap.exists() ? snap.data() || {} : {};
-      docPerms = data.permissions || {};
+      // Nested permissions map
+      if (data.permissions && typeof data.permissions === 'object' && !Array.isArray(data.permissions)) {
+        docPerms = { ...data.permissions };
+      }
+      // Legacy: setDoc dotted keys (permissions.foo top-level alanları)
+      Object.keys(data).forEach((k) => {
+        if (k.startsWith('permissions.') && typeof data[k] === 'boolean') {
+          const permKey = k.slice('permissions.'.length);
+          if (!(permKey in docPerms)) docPerms[permKey] = data[k];
+        }
+      });
     } catch (e) {
       logger.warn('loadRolePermissions: Firestore doc okunamadı', {
         companyId,
@@ -656,7 +682,28 @@ export async function initPermissions(options = {}) {
     const perms = await loadRolePermissions(companyId, roleKeyInternal);
     const isEditor = !!(roleKey && ROLE_PERMISSIONS_EDITORS.has(roleKey));
     const isPremium = !!(userData.isPremium === true || userData.isPremium === 'true' || userData.isPremium === 1);
-    const isAdmin = !!(userData.isAdmin === true || userData.role === 'admin' || roleKey === 'admin');
+    let isAdmin = false;
+    try {
+      const tokenResult = await auth.currentUser?.getIdTokenResult();
+      const claims = tokenResult?.claims || {};
+      isAdmin = claims.superAdmin === true || claims.admin === true || claims.isAdmin === true || claims.role === 'admin';
+    } catch (_claimErr) {
+      isAdmin = false;
+    }
+    const email = String(auth.currentUser?.email || '').toLowerCase();
+    const adminEmails = String((typeof window !== 'undefined' && window.ADMIN_EMAILS) || '')
+      .split(',')
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean);
+    if (email && adminEmails.includes(email)) isAdmin = true;
+    const uid = auth.currentUser?.uid || null;
+    const companyDoc = ctx.companyDocData || {};
+    const isOwner = !!(
+      uid && (
+        companyDoc.ownerId === uid ||
+        companyDoc.ownerUid === uid
+      )
+    );
 
     currentState = {
       companyId,
@@ -664,6 +711,7 @@ export async function initPermissions(options = {}) {
       permissions: perms,
       isEditor,
       isAdmin,
+      isOwner,
       isPremium,
       loadedAt: Date.now()
     };
@@ -674,6 +722,7 @@ export async function initPermissions(options = {}) {
       permissions: perms,
       isEditor,
       isAdmin,
+      isOwner,
       isPremium
     };
   } catch (error) {
@@ -685,39 +734,38 @@ export async function initPermissions(options = {}) {
 
 /**
  * Belirli bir permKey için izin kontrolü yapar.
- * - State yoksa uyarı loglar, varsayılan true döner (fail-open)
- * - permKey bulunamazsa varsayılan true döner
+ * Teklifbul Rule v1.0 — Fail-closed: state yok / bilinmeyen key / hata → false
  *
  * @param {string} permKey
  * @returns {boolean}
  */
 export function can(permKey) {
-  if (!permKey) return true;
+  if (!permKey) return false;
 
   try {
     if (!currentState.companyId) {
-      logger.warn('can(): permissions state henüz init edilmemiş, varsayılan true döndü', {
+      logger.warn('can(): permissions state henüz init edilmemiş, varsayılan false (fail-closed)', {
         permKey,
         uid: auth.currentUser?.uid || null
       });
-      return true;
+      return false;
     }
 
-    // Teklifbul Rule v1.0 - Admin & SuperAdmin Bypass
-    if (currentState.isAdmin) return true;
+    // Teklifbul Rule v1.0 - Admin / şirket sahibi / yönetim rolleri kilitlenmesin
+    if (currentState.isAdmin || currentState.isOwner || currentState.isEditor) return true;
 
     const value = currentState.permissions[permKey];
     if (typeof value === 'boolean') return value;
 
-    logger.warn('can(): permKey bulunamadı, varsayılan true', {
+    logger.warn('can(): permKey bulunamadı, varsayılan false (fail-closed)', {
       permKey,
       companyId: currentState.companyId,
       roleKey: currentState.roleKey
     });
-    return true;
+    return false;
   } catch (error) {
     logger.error('can() hata', error);
-    return true;
+    return false;
   }
 }
 

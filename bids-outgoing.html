@@ -89,8 +89,6 @@
   </div>
 
   <script type="module">
-    // Teklifbul Rule v1.0 - XSS Protection
-    import DOMPurify from 'https://cdn.jsdelivr.net/npm/dompurify@3.2.2/+esm';
     import { auth, db } from './firebase.js';
     import {
       collection, query, where, getDocs, getDoc, doc, orderBy, limit
@@ -102,15 +100,16 @@
     import { logger } from '/src/shared/log/logger.js';
     import { requireCompanyContext } from './assets/js/state/company-context.js';
     import { initPermissions, can, getBidPerms } from './assets/js/state/permissions.js';
+    import { appendTextCell } from '/assets/js/utils/safe-table.js';
 
     const $ = (s)=>document.querySelector(s);
     const fmt = (n)=> typeof n==='number' ? new Intl.NumberFormat('tr-TR').format(n) : '—';
     const fmtDate = (ts)=>{ try{ const d = ts?.toDate ? ts.toDate() : (ts? new Date(ts): null); return d? d.toLocaleDateString('tr-TR'): '—'; }catch{return '—'} };
-    const badge=(mode)=>{
+    const badgeLabel=(mode)=>{
       const m=(mode||'').toLowerCase();
-      if(m==='open') return '<span class="badge b-open">Açık</span>';
-      if(m==='hybrid') return '<span class="badge b-hybrid">Hibrit</span>';
-      return '<span class="badge b-secret">Gizli</span>';
+      if(m==='open') return { className: 'badge b-open', text: 'Açık' };
+      if(m==='hybrid') return { className: 'badge b-hybrid', text: 'Hibrit' };
+      return { className: 'badge b-secret', text: 'Gizli' };
     };
 
     const CACHE_DEMANDS=new Map();
@@ -151,38 +150,34 @@
       if(filtered.length===0){ $('#empty').classList.remove('hidden'); return } else { $('#empty').classList.add('hidden'); }
       filtered.forEach(r=>{
         const tr=document.createElement('tr');
-        // Teklifbul Rule v1.0 - XSS Protection
-        const safeDemandTitle = DOMPurify.sanitize(r.demandTitle||r.demandId||'', { ALLOWED_TAGS: [] });
-        const safeBuyerCompanyName = DOMPurify.sanitize(r.buyerCompanyName||'—', { ALLOWED_TAGS: [] });
-        const safeBrand = DOMPurify.sanitize(r.brand||'—', { ALLOWED_TAGS: [] });
-        const safePaymentMethod = DOMPurify.sanitize(getPaymentMethodLabel(r.paymentMethod||'unknown')||'', { ALLOWED_TAGS: [] });
-        const safeStatus = DOMPurify.sanitize(getStatusLabel(r.status||'pending')||'', { ALLOWED_TAGS: [] });
-        const safeBadge = DOMPurify.sanitize(badge(r.biddingMode)||'', {
-          ALLOWED_TAGS: ['span'],
-          ALLOWED_ATTR: ['class']
+        // Teklifbul Rule v1.0 — DOMPurify <tr>/<td>'yi table dışında siler; createElement kullan
+        appendTextCell(tr, r.demandTitle||r.demandId||'');
+        appendTextCell(tr, r.buyerCompanyName||'—');
+        appendTextCell(tr, `₺ ${fmt(r.netPrice ?? r.price)}`);
+        appendTextCell(tr, r.leadTimeDays ?? '—');
+        appendTextCell(tr, r.brand||'—');
+        appendTextCell(tr, getPaymentMethodLabel(r.paymentMethod||'unknown')||'');
+        appendTextCell(tr, getStatusLabel(r.status||'pending')||'');
+        const badgeTd = document.createElement('td');
+        const badgeInfo = badgeLabel(r.biddingMode);
+        const badgeSpan = document.createElement('span');
+        badgeSpan.className = badgeInfo.className;
+        badgeSpan.textContent = badgeInfo.text;
+        badgeTd.appendChild(badgeSpan);
+        tr.appendChild(badgeTd);
+        appendTextCell(tr, fmtDate(r.createdAt));
+        const actionTd = document.createElement('td');
+        const viewBtn = document.createElement('button');
+        viewBtn.className = 'btn-link';
+        viewBtn.textContent = 'Görüntüle →';
+        viewBtn.setAttribute('aria-label', 'Teklifi görüntüle');
+        viewBtn.addEventListener('click', () => {
+          const id = r.demandId || '';
+          window.location.href = `demand-detail.html?id=${encodeURIComponent(id)}#bids`;
         });
-        const safeDemandId = DOMPurify.sanitize(r.demandId||'', { ALLOWED_TAGS: [] });
-        tr.innerHTML = DOMPurify.sanitize(`
-          <td>${safeDemandTitle}</td>
-          <td>${safeBuyerCompanyName}</td>
-          <td>₺ ${fmt(r.netPrice ?? r.price)}</td>
-          <td>${r.leadTimeDays ?? '—'}</td>
-          <td>${safeBrand}</td>
-          <td>${safePaymentMethod}</td>
-          <td>${safeStatus}</td>
-          <td>${safeBadge}</td>
-          <td>${fmtDate(r.createdAt)}</td>
-          <td><button class="btn-link" data-demand="${safeDemandId}">Görüntüle →</button></td>`, {
-          ALLOWED_TAGS: ['td', 'button', 'span'],
-          ALLOWED_ATTR: ['class', 'data-demand']
-        });
+        actionTd.appendChild(viewBtn);
+        tr.appendChild(actionTd);
         body.appendChild(tr);
-      });
-      body.querySelectorAll('button[data-demand]').forEach(b=>{
-        b.addEventListener('click', (e)=>{
-          const id=e.currentTarget.dataset.demand;
-          window.location.href=`demand-detail.html?id=${encodeURIComponent(id)}#bids`;
-        });
       });
     }
 

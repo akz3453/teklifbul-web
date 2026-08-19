@@ -208,6 +208,13 @@
             </tbody>
           </table>
         </div>
+        <div id="payments-pagination" style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:16px; flex-wrap:wrap;">
+          <span id="payments-page-info" style="font-size:13px; color:var(--text-muted,#6b7280);" aria-live="polite"></span>
+          <div style="display:flex; gap:8px;">
+            <button type="button" class="btn btn-outline btn-sm" id="btn-payments-prev" aria-label="Önceki sayfa" title="Önceki sayfa" disabled>Önceki</button>
+            <button type="button" class="btn btn-outline btn-sm" id="btn-payments-next" aria-label="Sonraki sayfa" title="Sonraki sayfa" disabled>Sonraki</button>
+          </div>
+        </div>
       </div>
     </div>
   </main>
@@ -236,9 +243,13 @@
       downloadInterimPaymentExcel,
       exportInterimPaymentsListExcel,
     } from './assets/js/utils/interim-export.js';
+    import { setTableEmpty, appendTextCell } from './assets/js/utils/safe-table.js';
 
     /** @type {Array<Record<string, unknown>>} */
     let lastLoadedPayments = [];
+    let paymentsPageOffset = 0;
+    const PAYMENTS_PAGE_LIMIT = 50;
+    let paymentsTotal = 0;
     
     // Teklifbul Rule v1.0 - Firebase Module Caching (Performance optimization)
     const firebaseModuleCache = {
@@ -276,16 +287,16 @@
       const cid = userData?.companyId;
       const aid = userData?.activeCompanyId;
       const arr0 = Array.isArray(userData?.companies) && userData.companies.length ? userData.companies[0] : null;
-      if (cid && typeof cid === "string" && !cid.startsWith("solo-") && !cid.startsWith("tax-")) return cid;
+      if (cid && typeof cid === "string" && !cid.startsWith("solo-")) return cid;
       if (aid && typeof aid === "string" && aid.startsWith("solo-") && cid) return cid;
       return aid || cid || arr0;
     }
     
-    // Premium veya Premium Plus kontrolü (company-bazlı, tek kaynak: companies/{companyId}.planId)
-    // Teklifbul Rule v1.0 - Premium ve Premium Plus planlarında hakediş modülü kullanılabilir
+    // Premium Plus kontrolü (company-bazlı, tek kaynak: companies/{companyId}.planId)
+    // Teklifbul Rule v1.0 - Hakediş modülü yalnızca Premium Plus
     async function checkPremiumAccess() {
       try {
-        logger.group('Premium Erişim Kontrolü (company-based)');
+        logger.group('Premium Plus Erişim Kontrolü (company-based)');
 
         const ctx = await requireCompanyContext({ redirectOnPending: true });
         if (!ctx || !ctx.companyId) {
@@ -294,25 +305,22 @@
           return false;
         }
 
-        const { getCompanyPlan, isPremium, isPremiumPlus } = await import('./assets/js/state/company-plan.js');
+        const { getCompanyPlan, isPremiumPlus } = await import('./assets/js/state/company-plan.js');
         const plan = await getCompanyPlan(ctx.companyId);
-        const hasPremium = isPremium(plan.planId);
-        const hasPremiumPlus = isPremiumPlus(plan.planId);
-        const hasAccess = hasPremium || hasPremiumPlus;
+        const hasAccess = isPremiumPlus(plan.planId);
 
-        logger.info('Premium erişim kontrolü sonucu (company-based)', {
+        logger.info('Premium Plus erişim kontrolü sonucu (company-based)', {
           companyId: ctx.companyId,
           planId: plan.planId,
           planSource: plan.planSource,
-          isPremium: hasPremium,
-          isPremiumPlus: hasPremiumPlus,
+          isPremiumPlus: hasAccess,
           hasAccess
         });
         logger.end();
 
         return hasAccess;
       } catch (error) {
-        logger.error('Premium erişim kontrolü başarısız', error);
+        logger.error('Premium Plus erişim kontrolü başarısız', error);
         logger.end();
         return false;
       }
@@ -492,6 +500,14 @@
       document.getElementById('btn-clear-filters')?.addEventListener('click', clearFilters);
       document.getElementById('btn-save-filter')?.addEventListener('click', saveCurrentFilter);
       document.getElementById('saved-filters')?.addEventListener('change', loadSavedFilter);
+      document.getElementById('btn-payments-prev')?.addEventListener('click', () => {
+        paymentsPageOffset = Math.max(0, paymentsPageOffset - PAYMENTS_PAGE_LIMIT);
+        loadPayments({ keepOffset: true });
+      });
+      document.getElementById('btn-payments-next')?.addEventListener('click', () => {
+        paymentsPageOffset = paymentsPageOffset + PAYMENTS_PAGE_LIMIT;
+        loadPayments({ keepOffset: true });
+      });
       
       // Kaydedilen filtreleri yükle
       loadSavedFiltersList();
@@ -499,6 +515,8 @@
         // İlk yükleme
         logger.info('Şantiyeler yükleniyor...');
         await loadSites();
+        logger.info('Sözleşmeler yükleniyor...');
+        await loadContractsFilter();
         logger.info('Hakedişler yükleniyor...');
         await loadPayments();
         
@@ -689,10 +707,63 @@
         toast.error('Şantiyeler yüklenemedi: ' + (error.message || 'Bilinmeyen hata'));
       }
     }
+
+    // Teklifbul Rule v1.0 - Sözleşme filtresi doldur
+    async function loadContractsFilter() {
+      try {
+        logger.group('Sözleşme Filtresi Yükleniyor');
+        const response = await authFetch('/api/contracts?limit=200');
+        if (!response.ok) {
+          throw new Error('Sözleşmeler yüklenemedi');
+        }
+        const data = await response.json();
+        const contracts = Array.isArray(data.contracts) ? data.contracts : [];
+        const contractSelect = document.getElementById('filter-contract');
+        if (!contractSelect) {
+          logger.end();
+          return;
+        }
+
+        contractSelect.innerHTML = DOMPurify.sanitize('<option value="">Tümü</option>', {
+          ALLOWED_TAGS: ['option'],
+          ALLOWED_ATTR: ['value']
+        });
+
+        contracts
+          .slice()
+          .sort((a, b) =>
+            String(a.contractName || a.name || a.contractNo || '').localeCompare(
+              String(b.contractName || b.name || b.contractNo || ''),
+              'tr'
+            )
+          )
+          .forEach((contract) => {
+            const option = document.createElement('option');
+            option.value = contract.id;
+            option.textContent = DOMPurify.sanitize(
+              contract.contractName || contract.name || contract.contractNo || contract.id,
+              { ALLOWED_TAGS: [] }
+            );
+            contractSelect.appendChild(option);
+          });
+
+        logger.info('Sözleşme filtresi dolduruldu', { count: contracts.length });
+        logger.end();
+      } catch (error) {
+        logger.error('Sözleşme filtresi yüklenirken hata', error);
+        logger.end();
+        toast.error('Sözleşmeler yüklenemedi: ' + (error.message || 'Bilinmeyen hata'));
+      }
+    }
     
     // Teklifbul Rule v1.0 - Gelişmiş filtreleme ile hakedişleri yükle
-    async function loadPayments() {
+    async function loadPayments(options = {}) {
       try {
+        const keepOffset = options.keepOffset === true;
+        if (!keepOffset) {
+          paymentsPageOffset = 0;
+        }
+
         const user = await getCurrentUser();
         if (!user) return;
 
@@ -707,23 +778,19 @@
             'Hakedişleri görüntüleme yetkiniz yok.';
           toast.error(msg);
           logger.warn('Hakedişler: interim.view izni yok, loadPayments iptal edildi', {
-            permKey: viewKey
+            permKey: viewKey3
           });
           const tbody = document.getElementById('payments-table-body');
           if (tbody) {
-            // Teklifbul Rule v1.0 - XSS Protection
-            tbody.innerHTML = DOMPurify.sanitize(
-              '<tr><td colspan="11" class="empty-state">Hakedişleri görüntüleme yetkiniz yok.</td></tr>',
-              {
-                ALLOWED_TAGS: ['tr', 'td'],
-                ALLOWED_ATTR: ['colspan', 'class']
-              }
-            );
+            // Teklifbul Rule v1.0 — DOMPurify <tr>/<td>'yi table dışında siler
+            setTableEmpty(tbody, 11, 'Hakedişleri görüntüleme yetkiniz yok.');
           }
           return;
         }
         
         const params = new URLSearchParams();
+        params.append('limit', String(PAYMENTS_PAGE_LIMIT));
+        params.append('offset', String(paymentsPageOffset));
         
         // Multi-select şantiyeler
         const siteSelect = document.getElementById('filter-site');
@@ -780,24 +847,35 @@
         
         const data = await response.json();
         const payments = data.payments || [];
+        paymentsTotal = Number(data.total) || payments.length;
         lastLoadedPayments = payments;
         
         renderPaymentsTable(payments);
+        updatePaymentsPagination();
       } catch (error) {
         logger.error('Hakedişler yüklenirken hata', error);
         toast.error('Hakedişler yüklenemedi');
         const tbody = document.getElementById('payments-table-body');
         if (tbody) {
-          // Teklifbul Rule v1.0 - XSS Protection
-          tbody.innerHTML = DOMPurify.sanitize(
-            '<tr><td colspan="11" class="empty-state">Hata oluştu</td></tr>',
-            {
-              ALLOWED_TAGS: ['tr', 'td'],
-              ALLOWED_ATTR: ['colspan', 'class']
-            }
-          );
+          // Teklifbul Rule v1.0 — DOMPurify <tr>/<td>'yi table dışında siler
+          setTableEmpty(tbody, 11, 'Hata oluştu');
         }
       }
+    }
+
+    function updatePaymentsPagination() {
+      const info = document.getElementById('payments-page-info');
+      const prevBtn = document.getElementById('btn-payments-prev');
+      const nextBtn = document.getElementById('btn-payments-next');
+      const from = paymentsTotal === 0 ? 0 : paymentsPageOffset + 1;
+      const to = Math.min(paymentsPageOffset + PAYMENTS_PAGE_LIMIT, paymentsTotal);
+      if (info) {
+        info.textContent = paymentsTotal
+          ? `${from}-${to} / ${paymentsTotal} kayıt`
+          : 'Kayıt yok';
+      }
+      if (prevBtn) prevBtn.disabled = paymentsPageOffset <= 0;
+      if (nextBtn) nextBtn.disabled = paymentsPageOffset + PAYMENTS_PAGE_LIMIT >= paymentsTotal;
     }
     
     // Teklifbul Rule v1.0 - Filtreleri temizle
@@ -905,76 +983,100 @@
     }
     
     // Tabloyu render et
+    // Teklifbul Rule v1.0 — DOMPurify <tr>/<td>'yi table dışında siler; createElement kullan
     function renderPaymentsTable(payments) {
       const tbody = document.getElementById('payments-table-body');
       if (!tbody) return;
-      
+
       if (payments.length === 0) {
-        // Teklifbul Rule v1.0 - XSS Protection
-        tbody.innerHTML = DOMPurify.sanitize(
-          '<tr><td colspan="11" class="empty-state">Henüz hakediş bulunmuyor</td></tr>',
-          {
-            ALLOWED_TAGS: ['tr', 'td'],
-            ALLOWED_ATTR: ['colspan', 'class']
-          }
-        );
+        setTableEmpty(tbody, 11, 'Henüz hakediş bulunmuyor');
         return;
       }
-      
-      // Teklifbul Rule v1.0 - XSS Protection
-      const paymentsHTML = payments.map(payment => {
+
+      const statusMeta = {
+        draft: { className: 'badge draft', label: 'Taslak' },
+        pending: { className: 'badge sent', label: 'Onay Bekliyor' },
+        approved: { className: 'badge approved', label: 'Onaylı' },
+        sent: { className: 'badge sent', label: 'Gönderildi' },
+        paid: { className: 'badge sent', label: 'Gönderildi' },
+        rejected: { className: 'badge cancelled', label: 'Reddedildi' },
+        cancelled: { className: 'badge cancelled', label: 'İptal' },
+      };
+
+      tbody.textContent = '';
+      payments.forEach((payment) => {
         const periodStart = payment.periodStart ? new Date(payment.periodStart).toLocaleDateString('tr-TR') : '-';
         const periodEnd = payment.periodEnd ? new Date(payment.periodEnd).toLocaleDateString('tr-TR') : '-';
         const period = `${periodStart} - ${periodEnd}`;
-        
-        const grossAmount = payment.summary?.grossAmount || 0;
-        const deductionsTotal = payment.summary?.deductionsTotal || 0;
-        const netAmount = payment.summary?.netAmount || 0;
-        const kdvAmount = payment.summary?.kdvAmount || 0;
-        const totalAmount = payment.summary?.totalAmount || 0;
-        
-        const statusBadge = {
-          draft: '<span class="badge draft">Taslak</span>',
-          approved: '<span class="badge approved">Onaylı</span>',
-          sent: '<span class="badge sent">Gönderildi</span>',
-          cancelled: '<span class="badge cancelled">İptal</span>'
-        }[payment.status] || '<span class="badge draft">Taslak</span>';
-        
-        // Teklifbul Rule v1.0 - XSS Protection
-        const safePaymentNumber = DOMPurify.sanitize(payment.paymentNumber || '-', { ALLOWED_TAGS: [] });
-        const safeSiteName = DOMPurify.sanitize(payment.siteName || '-', { ALLOWED_TAGS: [] });
-        const safeContractName = DOMPurify.sanitize(payment.contractName || '-', { ALLOWED_TAGS: [] });
-        const safePeriod = DOMPurify.sanitize(period || '-', { ALLOWED_TAGS: [] });
-        const safePaymentId = DOMPurify.sanitize(payment.id || '', { ALLOWED_TAGS: [] });
-        
-        return `
-          <tr>
-            <td>${safePaymentNumber}</td>
-            <td>${safeSiteName}</td>
-            <td>${safeContractName}</td>
-            <td>${safePeriod}</td>
-            <td>${grossAmount.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}</td>
-            <td>${deductionsTotal.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}</td>
-            <td>${netAmount.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}</td>
-            <td>${kdvAmount.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}</td>
-            <td><strong>${totalAmount.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}</strong></td>
-            <td>${statusBadge}</td>
-            <td>
-              <div class="action-buttons-cell">
-                <button class="btn btn-sm btn-outline" onclick="viewPayment('${safePaymentId}')">Görüntüle</button>
-                <button class="btn btn-sm btn-primary" onclick="editPayment('${safePaymentId}')">Düzenle</button>
-                <button class="btn btn-sm btn-outline" onclick="exportPayment('${safePaymentId}')" title="PDF indir">PDF</button>
-                <button class="btn btn-sm btn-outline" onclick="exportPaymentExcel('${safePaymentId}')" title="Excel indir">Excel</button>
-              </div>
-            </td>
-          </tr>
-        `;
-      }).join('');
-      
-      tbody.innerHTML = DOMPurify.sanitize(paymentsHTML, {
-        ALLOWED_TAGS: ['tr', 'td', 'strong', 'span', 'div', 'button'],
-        ALLOWED_ATTR: ['class', 'onclick'],
-        ALLOW_DATA_ATTR: false
+        const currency = (amount) => (amount || 0).toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' });
+        const paymentId = String(payment.id || '');
+        const meta = statusMeta[payment.status] || statusMeta.draft;
+
+        const tr = document.createElement('tr');
+        appendTextCell(tr, payment.paymentNumber || '-');
+        appendTextCell(tr, payment.siteName || '-');
+        appendTextCell(tr, payment.contractName || '-');
+        appendTextCell(tr, period);
+        appendTextCell(tr, currency(payment.summary?.grossAmount));
+        appendTextCell(tr, currency(payment.summary?.deductionsTotal));
+        appendTextCell(tr, currency(payment.summary?.netAmount));
+        appendTextCell(tr, currency(payment.summary?.kdvAmount));
+
+        const totalTd = document.createElement('td');
+        const strong = document.createElement('strong');
+        strong.textContent = currency(payment.summary?.totalAmount);
+        totalTd.appendChild(strong);
+        tr.appendChild(totalTd);
+
+        const statusTd = document.createElement('td');
+        const badge = document.createElement('span');
+        badge.className = meta.className;
+        badge.textContent = meta.label;
+        badge.setAttribute('aria-label', meta.label);
+        statusTd.appendChild(badge);
+        tr.appendChild(statusTd);
+
+        const actionsTd = document.createElement('td');
+        const actions = document.createElement('div');
+        actions.className = 'action-buttons-cell';
+
+        const btnView = document.createElement('button');
+        btnView.type = 'button';
+        btnView.className = 'btn btn-sm btn-outline';
+        btnView.textContent = 'Görüntüle';
+        btnView.setAttribute('aria-label', 'Hakedişi görüntüle');
+        btnView.addEventListener('click', () => window.viewPayment(paymentId));
+
+        const btnEdit = document.createElement('button');
+        btnEdit.type = 'button';
+        btnEdit.className = 'btn btn-sm btn-primary';
+        btnEdit.textContent = 'Düzenle';
+        btnEdit.setAttribute('aria-label', 'Hakedişi düzenle');
+        btnEdit.addEventListener('click', () => window.editPayment(paymentId));
+
+        const btnPdf = document.createElement('button');
+        btnPdf.type = 'button';
+        btnPdf.className = 'btn btn-sm btn-outline';
+        btnPdf.textContent = 'PDF';
+        btnPdf.title = 'PDF indir';
+        btnPdf.setAttribute('aria-label', 'PDF indir');
+        btnPdf.addEventListener('click', () => window.exportPayment(paymentId));
+
+        const btnExcel = document.createElement('button');
+        btnExcel.type = 'button';
+        btnExcel.className = 'btn btn-sm btn-outline';
+        btnExcel.textContent = 'Excel';
+        btnExcel.title = 'Excel indir';
+        btnExcel.setAttribute('aria-label', 'Excel indir');
+        btnExcel.addEventListener('click', () => window.exportPaymentExcel(paymentId));
+
+        actions.appendChild(btnView);
+        actions.appendChild(btnEdit);
+        actions.appendChild(btnPdf);
+        actions.appendChild(btnExcel);
+        actionsTd.appendChild(actions);
+        tr.appendChild(actionsTd);
+        tbody.appendChild(tr);
       });
     }
     

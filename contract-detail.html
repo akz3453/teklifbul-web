@@ -251,6 +251,7 @@
     import { logger } from './src/shared/log/logger.js';
     import { toast } from './src/shared/ui/toast.js';
     import DOMPurify from 'https://cdn.jsdelivr.net/npm/dompurify@3.2.2/+esm';
+    import { setTableEmpty, appendTextCell } from './assets/js/utils/safe-table.js';
     
     initAuthGuard().catch(err => {
       console.error('Auth guard init failed', err);
@@ -409,58 +410,57 @@
         toast.error('Pozlar yüklenemedi');
         const tbody = document.getElementById('items-table-body');
         if (tbody) {
-          // Teklifbul Rule v1.0 - XSS Protection
-          tbody.innerHTML = DOMPurify.sanitize('<tr><td colspan="6" class="empty-state">Hata oluştu</td></tr>', {
-            ALLOWED_TAGS: ['tr', 'td'],
-            ALLOWED_ATTR: ['colspan', 'class']
-          });
+          // Teklifbul Rule v1.0 — DOMPurify <tr>/<td>'yi table dışında siler
+          setTableEmpty(tbody, 6, 'Hata oluştu');
         }
       }
     }
     
     // Pozlar tablosunu render et
+    // Teklifbul Rule v1.0 — DOMPurify <tr>/<td>'yi table dışında siler; createElement kullan
     function renderItemsTable(items) {
       const tbody = document.getElementById('items-table-body');
       if (!tbody) return;
-      
+
       if (items.length === 0) {
-        // Teklifbul Rule v1.0 - XSS Protection
-        tbody.innerHTML = DOMPurify.sanitize('<tr><td colspan="6" class="empty-state">Henüz poz bulunmuyor</td></tr>', {
-          ALLOWED_TAGS: ['tr', 'td'],
-          ALLOWED_ATTR: ['colspan', 'class']
-        });
+        setTableEmpty(tbody, 6, 'Henüz poz bulunmuyor');
         return;
       }
-      
-      const sanitize = (str) => DOMPurify.sanitize(String(str || ''), { ALLOWED_TAGS: [] });
-      const sanitizeAttr = (str) => DOMPurify.sanitize(String(str || ''), { ALLOWED_TAGS: [] });
-      
-      const html = items.map(item => {
-        const safeId = sanitizeAttr(item.id);
-        const safeCode = sanitize(item.code || '-');
-        const safeDescription = sanitize(item.description || '-');
-        const safeUnit = sanitize(item.unit || '-');
-        const safeUnitPrice = (item.unitPrice || 0).toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' });
-        const safeQtyLimit = item.contractQtyLimit ? item.contractQtyLimit.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) : '-';
-        
-        return `
-          <tr>
-            <td>${safeCode}</td>
-            <td>${safeDescription}</td>
-            <td>${safeUnit}</td>
-            <td>${safeUnitPrice}</td>
-            <td>${safeQtyLimit}</td>
-            <td>
-              <button class="btn btn-outline btn-sm" onclick="editItem('${safeId}')">Düzenle</button>
-              <button class="btn btn-danger btn-sm" onclick="deleteItem('${safeId}')">Sil</button>
-            </td>
-          </tr>
-        `;
-      }).join('');
-      
-      tbody.innerHTML = DOMPurify.sanitize(html, {
-        ALLOWED_TAGS: ['tr', 'td', 'button'],
-        ALLOWED_ATTR: ['class', 'onclick']
+
+      tbody.textContent = '';
+      items.forEach((item) => {
+        const itemId = String(item.id || '');
+        const unitPrice = (item.unitPrice || 0).toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' });
+        const qtyLimit = item.contractQtyLimit
+          ? item.contractQtyLimit.toLocaleString('tr-TR', { minimumFractionDigits: 2 })
+          : '-';
+
+        const tr = document.createElement('tr');
+        appendTextCell(tr, item.code || '-');
+        appendTextCell(tr, item.description || '-');
+        appendTextCell(tr, item.unit || '-');
+        appendTextCell(tr, unitPrice);
+        appendTextCell(tr, qtyLimit);
+
+        const actionsTd = document.createElement('td');
+        const btnEdit = document.createElement('button');
+        btnEdit.type = 'button';
+        btnEdit.className = 'btn btn-outline btn-sm';
+        btnEdit.textContent = 'Düzenle';
+        btnEdit.setAttribute('aria-label', 'Pozu düzenle');
+        btnEdit.addEventListener('click', () => window.editItem(itemId));
+
+        const btnDelete = document.createElement('button');
+        btnDelete.type = 'button';
+        btnDelete.className = 'btn btn-danger btn-sm';
+        btnDelete.textContent = 'Sil';
+        btnDelete.setAttribute('aria-label', 'Pozu sil');
+        btnDelete.addEventListener('click', () => window.deleteItem(itemId));
+
+        actionsTd.appendChild(btnEdit);
+        actionsTd.appendChild(btnDelete);
+        tr.appendChild(actionsTd);
+        tbody.appendChild(tr);
       });
     }
     

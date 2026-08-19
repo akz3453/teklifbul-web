@@ -593,6 +593,58 @@ async function sendViaMailjet(
     }
 }
 
+/**
+ * Teklifbul Rule v1.0 — Markalı transactional mail gerçekten gönderilebilir mi?
+ */
+export function isBrandedEmailReady(): boolean {
+    const sender = String(process.env.SENDER_EMAIL || '').trim();
+    if (!sender || sender.toLowerCase().includes('resend.dev')) {
+        return false;
+    }
+    return getAvailableProviders().length > 0;
+}
+
+/** Markalı transactional e-posta (doğrulama vb.) */
+export async function sendBrandedEmail(params: {
+    to: string;
+    subject: string;
+    html: string;
+}): Promise<SendEmailResult> {
+    const sender = String(process.env.SENDER_EMAIL || '').trim();
+    if (!sender || sender.includes('resend.dev')) {
+        logger.error('sendBrandedEmail: SENDER_EMAIL yapılandırılmamış');
+        return { success: false, error: 'E-posta gönderici yapılandırılmamış' };
+    }
+
+    const availableProviders = getAvailableProviders();
+    if (availableProviders.length === 0) {
+        return { success: false, error: 'Tüm e-posta servisleri şu an kullanılamıyor' };
+    }
+
+    for (const provider of availableProviders) {
+        let result: { success: boolean; messageId?: string; error?: string };
+        try {
+            if (provider === 'resend') {
+                result = await sendViaResend(params.to, params.subject, params.html, sender);
+            } else if (provider === 'brevo') {
+                result = await sendViaBrevo(params.to, params.subject, params.html, sender);
+            } else {
+                result = await sendViaMailjet(params.to, params.subject, params.html, sender);
+            }
+        } catch (err: any) {
+            result = { success: false, error: err?.message || String(err) };
+        }
+
+        if (result.success) {
+            logger.info('Branded email sent', { provider, to: params.to.substring(0, 3) + '***' });
+            return { success: true, messageId: result.messageId, provider };
+        }
+        logger.warn('Branded email provider failed', { provider, error: result.error });
+    }
+
+    return { success: false, error: 'E-posta gönderilemedi' };
+}
+
 // ============================================
 // MAIN EMAIL SENDING FUNCTION
 // ============================================
@@ -600,7 +652,11 @@ async function sendViaMailjet(
 export async function sendSupplierQuoteEmail(
     payload: SupplierEmailPayload
 ): Promise<SendEmailResult> {
-    const SENDER_EMAIL = process.env.SENDER_EMAIL || 'onboarding@resend.dev';
+    const SENDER_EMAIL = process.env.SENDER_EMAIL || '';
+    if (!SENDER_EMAIL || SENDER_EMAIL.toLowerCase().includes('onboarding@resend.dev')) {
+        logger.error('sendSupplierQuoteEmail: production sender yapılandırılmamış');
+        return { success: false, error: 'E-posta gönderici adresi yapılandırılmamış' };
+    }
 
     // Get available providers
     const availableProviders = getAvailableProviders();

@@ -22,6 +22,7 @@ import {
   doc,
   getDoc,
   updateDoc,
+  setDoc,
   serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
 import { db } from './firebase-config.js';
@@ -111,6 +112,22 @@ export async function approveRequest(requestId, approverId) {
     });
     
     console.log('✅ Request document updated');
+
+    await setDoc(doc(db, 'companies', companyId, 'pendingMembers', userId), {
+      userId,
+      status: 'accepted',
+      approvedRole: requestedRole,
+      approvedAt: serverTimestamp(),
+      approvedBy: approverId
+    }, { merge: true });
+
+    await setDoc(doc(db, 'companies', companyId, 'members', userId), {
+      userId,
+      status: 'accepted',
+      approvedRole: requestedRole,
+      approvedAt: serverTimestamp(),
+      approvedBy: approverId
+    }, { merge: true });
     
     // Step 6: Update user document
     const roleType = requestedRole.includes('supplier') ? 'supplier' : 'buyer';
@@ -359,6 +376,22 @@ exports.approveCompanyJoinRequest = functions.https.onCall(async (data, context)
       roles: updatedUserRoles, // ✅ roles array'ini güncelle
       approvedAt: admin.firestore.FieldValue.serverTimestamp()
     });
+
+    await db.collection('companies').doc(companyId).collection('pendingMembers').doc(userId).set({
+      userId,
+      status: 'accepted',
+      approvedRole: requestedRole,
+      approvedAt: admin.firestore.FieldValue.serverTimestamp(),
+      approvedBy: approverId
+    }, { merge: true });
+
+    await db.collection('companies').doc(companyId).collection('members').doc(userId).set({
+      userId,
+      status: 'accepted',
+      approvedRole: requestedRole,
+      approvedAt: admin.firestore.FieldValue.serverTimestamp(),
+      approvedBy: approverId
+    }, { merge: true });
     
     return { success: true, message: 'User approved successfully' };
     

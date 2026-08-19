@@ -13,9 +13,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // SAP Level Idempotency Key (Benzersiz islem IDsi - Ag hatalarinda cift cekimi onler)
     const idempotencyKey = crypto.randomUUID();
 
-    statusPanel.className = 'status-panel';
-    statusPanel.innerHTML = 'Islem SAP FEFO Motoruna iletiliyor...';
+    statusPanel.className = 'status-panel status-danger';
+    statusPanel.textContent = 'Bu özellik henüz aktif değil. FEFO satış API production’da kapalıdır.';
     statusPanel.style.display = 'block';
+    return;
 
     try {
       const res = await fetch('/api/inventory/sale', {
@@ -61,7 +62,12 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         // Hata ya da HARD BLOCK
         statusPanel.classList.add('status-danger');
-        statusPanel.innerHTML = `<strong>❌ Islem Reddedildi!</strong><br>${data.message}`;
+        statusPanel.textContent = '';
+        const title = document.createElement('strong');
+        title.textContent = '❌ Islem Reddedildi!';
+        statusPanel.appendChild(title);
+        statusPanel.appendChild(document.createElement('br'));
+        statusPanel.appendChild(document.createTextNode(String(data.message || '')));
       }
 
     } catch (err) {

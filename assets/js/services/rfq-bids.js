@@ -67,6 +67,9 @@ export async function createRFQBid(bidData) {
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
+    import('../analytics.js').then(({ track, ANALYTICS_EVENTS }) => {
+      track(ANALYTICS_EVENTS.BID_CREATED, { status: 'draft' });
+    }).catch(() => {});
 
     // Teklifbul Rule v1.3 - Update demand metadata for better sorting and metrics
     if (bidData.demandId) {

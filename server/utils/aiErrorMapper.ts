@@ -89,6 +89,10 @@ export function mapAiError(code: string, existingMeta?: any): AiErrorMapping {
         { status: 400, userMessage: 'Geçersiz provider. Paket providerKey içermelidir.', code },
         existingMeta
       );
+    case AI_ERROR_CODES.AI_REQUEST_IN_PROGRESS:
+      return { status: 409, userMessage: 'Bu istek zaten işleniyor. Lütfen bekleyin.', code };
+    case AI_ERROR_CODES.AI_REQUEST_ALREADY_PROCESSED:
+      return { status: 409, userMessage: 'Bu istek daha önce işlendi. Yeni bir istek gönderin.', code };
     default:
       return { status: 500, userMessage: 'Bilinmeyen AI hatası.', code };
   }

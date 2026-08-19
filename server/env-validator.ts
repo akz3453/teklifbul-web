@@ -120,6 +120,16 @@ interface ValidationResult {
   warnings: EnvSpec[];
 }
 
+/** Cloud Run / Cloud Functions Gen2 — metadata ADC kullanır, SA dosyası gerekmez. */
+function isGcpServerless(): boolean {
+  return Boolean(
+    process.env.K_SERVICE ||
+      process.env.FUNCTION_TARGET ||
+      process.env.FUNCTION_NAME ||
+      process.env.CLOUD_RUN_JOB
+  );
+}
+
 /**
  * Env degiskenlerini kontrol eder ve sonuc rapor eder.
  * Production'da kritik (warnOnly olmayan) eksik varsa process.exit(1) cagirir.
@@ -127,12 +137,30 @@ interface ValidationResult {
 export function validateEnv(opts?: { exitOnFatal?: boolean }): ValidationResult {
   const exitOnFatal = opts?.exitOnFatal ?? true;
   const nodeEnv = process.env.NODE_ENV || 'development';
+  const onGcp = isGcpServerless();
   const missing: EnvSpec[] = [];
   const warnings: EnvSpec[] = [];
+
+  // Cloud Functions: uygulama kodunda fallback var; eksik secret'lar API'yi tamamen düşürmesin.
+  const gcpWarnOnlyNames = new Set([
+    'ALLOWED_ORIGINS',
+    'APP_URL',
+    'GROQ_API_KEY',
+    'PAYMENT_WEBHOOK_SECRET',
+  ]);
 
   for (const spec of ENV_SPECS) {
     const requiredIn = spec.requiredIn || ['production'];
     if (!requiredIn.includes(nodeEnv)) continue;
+
+    // Teklifbul Rule v1.0 - GCP'de ADC (metadata) yeterli; SA dosya/env zorunlu değil
+    if (
+      onGcp &&
+      (spec.name === 'FIREBASE_SERVICE_ACCOUNT' ||
+        spec.name === 'GOOGLE_APPLICATION_CREDENTIALS')
+    ) {
+      continue;
+    }
 
     const value = process.env[spec.name];
     if (value && value.trim()) continue;
@@ -146,7 +174,8 @@ export function validateEnv(opts?: { exitOnFatal?: boolean }): ValidationResult 
       if (hasAlternative) continue;
     }
 
-    if (spec.warnOnly) {
+    const treatAsWarn = Boolean(spec.warnOnly || (onGcp && gcpWarnOnlyNames.has(spec.name)));
+    if (treatAsWarn) {
       warnings.push(spec);
     } else {
       missing.push(spec);

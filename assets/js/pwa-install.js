@@ -7,25 +7,26 @@
 import { logger } from '../../src/shared/log/logger.js';
 import { toast } from '../../src/shared/ui/toast.js';
 import { MESSAGES } from '../../src/shared/constants/messages.js';
+import { isNativePlatform } from './utils/is-native-platform.js';
 
 let deferredPrompt = null;
 let installPromptShown = false;
+const PWA_INSTALL_MOUNT_TIMEOUT_MS = 15000;
 
 /**
  * PWA install prompt'u başlatır
  */
 export function initPWAInstall() {
   // Teklifbul Rule v1.0 - PWA install prompt yönetimi
-  
+  if (isNativePlatform()) {
+    return;
+  }
+
   // beforeinstallprompt event'i dinle
   window.addEventListener('beforeinstallprompt', (e) => {
-    // Varsayılan prompt'u engelle
-    e.preventDefault();
     deferredPrompt = e;
-    
     logger.debug('PWA install prompt hazır');
-    
-    // Kullanıcıya install butonu göster (eğer daha önce göstermediysek)
+
     if (!installPromptShown && !isPWAInstalled()) {
       showInstallPrompt();
     }
@@ -43,37 +44,51 @@ export function initPWAInstall() {
   });
 }
 
+function findInstallButtonMount() {
+  return document.querySelector('.topbar-right')
+    || document.querySelector('.header-actions')
+    || document.querySelector('#app-header .topbar');
+}
+
+function mountInstallButton(installBtn) {
+  const mount = findInstallButtonMount();
+  if (!mount) return false;
+  if (installBtn.parentElement !== mount) {
+    mount.insertBefore(installBtn, mount.firstChild);
+  }
+  return true;
+}
+
 /**
  * PWA yükleme butonunu gösterir
  */
 function showInstallPrompt() {
-  // Install butonu oluştur veya göster
   let installBtn = document.getElementById('pwa-install-btn');
-  
+
   if (!installBtn) {
-    // Buton yoksa oluştur
     installBtn = document.createElement('button');
     installBtn.id = 'pwa-install-btn';
+    installBtn.type = 'button';
     installBtn.className = 'pwa-install-btn';
     installBtn.innerHTML = `
       <span class="pwa-install-icon">📱</span>
       <span class="pwa-install-text">Uygulamayı Yükle</span>
     `;
     installBtn.setAttribute('aria-label', 'Teklifbul uygulamasını yükle');
-    
-    // Butona tıklama event'i ekle
+    installBtn.setAttribute('title', 'Teklifbul uygulamasını yükle');
     installBtn.addEventListener('click', handleInstallClick);
-    
-    // Butonu sayfaya ekle (header'a veya uygun bir yere)
-    const header = document.querySelector('.header-actions');
-    if (header) {
-      header.insertBefore(installBtn, header.firstChild);
-    } else {
-      // Header yoksa body'ye ekle
-      document.body.insertBefore(installBtn, document.body.firstChild);
-    }
   }
-  
+
+  if (!mountInstallButton(installBtn)) {
+    const observer = new MutationObserver(() => {
+      if (mountInstallButton(installBtn)) {
+        observer.disconnect();
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    window.setTimeout(() => observer.disconnect(), PWA_INSTALL_MOUNT_TIMEOUT_MS);
+  }
+
   installBtn.style.display = 'flex';
   installPromptShown = true;
 }

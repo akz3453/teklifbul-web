@@ -3,29 +3,12 @@ import type { Response, NextFunction } from 'express';
 import { logger } from '../../src/shared/log/logger.js';
 import type { AuthenticatedRequest } from './auth.js';
 import { isAdmin } from './auth.js';
-import { getActiveSubscription, markUserAsFree, getAccountSubscriptionSummary } from '../services/subscriptionService.js';
+import { getActiveSubscription, markUserAsFree } from '../services/subscriptionService.js';
 import { getAdminDb } from '../utils/firestore.js';
 // Teklifbul Rule v1.0 - users/{uid} cache (request-scope)
 import { getCachedUserDoc } from '../src/utils/userDocCache.js';
-
-/**
- * Şirket bazlı companyId çözümleme helper'ı
- * Teklifbul Rule v1.0 - Shared company ID resolution
- */
-function resolveSharedCompanyId(userData: any): string | null {
-  const cid = userData?.companyId;
-  const aid = userData?.activeCompanyId;
-  const arr0 = Array.isArray(userData?.companies) && userData.companies.length ? userData.companies[0] : null;
-
-  // Prefer explicit companyId if present and not a solo/tax doc
-  if (cid && typeof cid === "string" && !cid.startsWith("solo-") && !cid.startsWith("tax-")) return cid;
-
-  // If activeCompanyId is solo-* but companyId exists, still use companyId
-  if (aid && typeof aid === "string" && aid.startsWith("solo-") && cid) return cid;
-
-  // Otherwise fallback
-  return aid || cid || arr0;
-}
+import { resolveTrustedCompanyIdAsync } from '../utils/companyAccess.js';
+import { companyGrantsPremiumAccess, subscriptionGrantsPremiumAccess } from '../services/planCatalog.js';
 
 /**
  * Premium erişimi için middleware
@@ -61,7 +44,6 @@ export async function requirePremium(req: AuthenticatedRequest, res: Response, n
     }
 
     // Teklifbul Rule v1.0 - Şirket bazlı premium kontrolü
-    // Önce x-company-id header'ından al (frontend'den gönderilmişse)
     const headerCompanyId = req.headers['x-company-id'] as string | undefined;
     let companyHasPremium = false;
     let effectivePlanId: string | null = null;
@@ -69,37 +51,31 @@ export async function requirePremium(req: AuthenticatedRequest, res: Response, n
     
     try {
       const db = await getAdminDb();
-      // Teklifbul Rule v1.0 - cached user doc (req-scope + 30s TTL)
       const userDoc = await getCachedUserDoc(userId, req);
       if (db && userDoc.exists) {
         {
           const userData = userDoc.data || {};
-          // Teklifbul Rule v1.0 - x-company-id header'ı varsa onu kullan, yoksa resolveSharedCompanyId kullan
-          const companyId = headerCompanyId || resolveSharedCompanyId(userData);
+          const companyId = await resolveTrustedCompanyIdAsync(userData, headerCompanyId, {
+            userId,
+            path: req.path,
+          });
           
-          if (headerCompanyId) {
-            logger.info('x-company-id header kullanıldı', { headerCompanyId, userId });
+          if (headerCompanyId && !companyId) {
+            logger.warn('requirePremium: spoofed x-company-id ignored', { headerCompanyId, userId });
           }
           
-          if (companyId && !companyId.startsWith('solo-') && !companyId.startsWith('tax-')) {
+          if (companyId && !companyId.startsWith('solo-')) {
+            // Teklifbul Rule v1.0 — tax-{vkn} gerçek şirket id'sidir; solo- hariç companies/{id} kontrol edilir
             const companyDoc = await db.collection('companies').doc(companyId).get();
             if (companyDoc.exists) {
               const companyData = companyDoc.data() || {};
               const companyPlanId = companyData.planId || companyData.plan || companyData.subscriptionPlanId || companyData.subscription?.planId || 'free';
-              const companyIsPremium = companyData.isPremium === true || (companyPlanId && companyPlanId !== 'free');
-              
-              // ExpiresAt kontrolü
               const expiresAt = companyData.premiumExpiresAt || companyData.expiresAt || companyData.subscription?.expiresAt;
               if (expiresAt) {
                 const parsed: Date = expiresAt.toDate ? expiresAt.toDate() : new Date(expiresAt);
                 companyExpiresAt = parsed;
-                const now = new Date();
-                if (parsed >= now && companyIsPremium) {
-                  companyHasPremium = true;
-                  effectivePlanId = companyPlanId;
-                }
-              } else if (companyIsPremium) {
-                // ExpiresAt yoksa ama isPremium true ise, premium kabul et
+              }
+              if (companyGrantsPremiumAccess(companyData)) {
                 companyHasPremium = true;
                 effectivePlanId = companyPlanId;
               }
@@ -117,26 +93,14 @@ export async function requirePremium(req: AuthenticatedRequest, res: Response, n
     if (!companyHasPremium) {
       logger.info('Company premium not found, checking user subscription', { userId });
       const subscription = await getActiveSubscription(userId);
-      
-      if (!subscription) {
+
+      if (!subscription || !subscriptionGrantsPremiumAccess(subscription)) {
         await markUserAsFree(userId);
-        logger.warn('No active subscription found', { userId });
+        logger.warn('No paid active subscription found', { userId, planId: subscription?.planId, status: subscription?.status });
         logger.end();
         res.status(402).json({
           error: 'premium_required',
           message: 'Premium plan gereklidir. Lütfen abonelik satın alın.'
-        });
-        return;
-      }
-
-      const now = new Date();
-      if (subscription.currentPeriodEnd <= now || subscription.status !== 'active') {
-        await markUserAsFree(userId);
-        logger.warn('Subscription expired or inactive', { userId, status: subscription.status, currentPeriodEnd: subscription.currentPeriodEnd });
-        logger.end();
-        res.status(402).json({
-          error: 'subscription_expired',
-          message: 'Premium aboneliğinizin süresi dolmuş. Lütfen planınızı yenileyin.'
         });
         return;
       }

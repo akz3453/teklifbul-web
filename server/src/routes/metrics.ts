@@ -4,7 +4,7 @@
  * 
  * GET /metrics - Request metrics snapshot (JSON)
  * 
- * Security: Only enabled when ENABLE_METRICS=true
+ * Security: ENABLE_METRICS=true AND METRICS_ACCESS_SECRET header required
  */
 
 import express from 'express';
@@ -17,13 +17,9 @@ const router = express.Router();
 
 /**
  * GET /metrics
- * Returns metrics snapshot as JSON
- * 
- * Security: Requires ENABLE_METRICS=true environment variable
  */
-router.get('/', (_req, res) => {
+router.get('/', (req, res) => {
   try {
-    // Teklifbul Rule v1.0 - Metrics kapalıyken 200 + JSON (404 yerine; istemci ve konsol gürültüsü azalır)
     if (process.env.ENABLE_METRICS !== 'true') {
       return res.status(200).json({
         ok: false,
@@ -32,7 +28,25 @@ router.get('/', (_req, res) => {
       });
     }
 
-    // Get metrics snapshot
+    const secret = String(process.env.METRICS_ACCESS_SECRET || '').trim();
+    if (!secret) {
+      logger.warn('ENABLE_METRICS=true but METRICS_ACCESS_SECRET missing — denying');
+      return res.status(403).json({
+        ok: false,
+        error: 'metrics_misconfigured',
+        message: 'METRICS_ACCESS_SECRET tanımlı değil.',
+      });
+    }
+
+    const provided = String(req.headers['x-metrics-secret'] || '').trim();
+    if (!provided || provided !== secret) {
+      return res.status(401).json({
+        ok: false,
+        error: 'unauthorized',
+        message: 'Geçersiz metrics erişimi.',
+      });
+    }
+
     const snapshot = metricsStore.getSnapshot();
 
     return res.json({
@@ -49,4 +63,3 @@ router.get('/', (_req, res) => {
 });
 
 export default router;
-

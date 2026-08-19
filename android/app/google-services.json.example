@@ -1,0 +1,30 @@
+{
+  "_comment": "Firebase Console > Project settings > Your apps > Add Android app (package: com.nefisoft.app) > Download google-services.json and place at android/app/google-services.json",
+  "project_info": {
+    "project_number": "REPLACE",
+    "project_id": "teklifbul",
+    "storage_bucket": "teklifbul.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:REPLACE:android:REPLACE",
+        "android_client_info": {
+          "package_name": "com.nefisoft.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "REPLACE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -50,15 +50,6 @@ async function fixCatalog() {
         sort: 10
     };
 
-    const geminiData = {
-        provider: 'gemini',
-        model: 'gemini-pro',
-        label: 'Google Gemini - Pro (Pro AI)',
-        isActive: true,
-        freeEligible: false,
-        sort: 20
-    };
-
     const existingOpenai = snapshot.docs.find(d => d.data().provider === 'openai');
     if (!existingOpenai) {
         await catalogRef.add(openaiData);
@@ -67,12 +58,85 @@ async function fixCatalog() {
         await existingOpenai.ref.update(openaiData);
     }
 
-    const existingGemini = snapshot.docs.find(d => d.data().provider === 'gemini');
-    if (!existingGemini) {
-        await catalogRef.add(geminiData);
-        console.log('Added Gemini to catalog');
-    } else {
-        await existingGemini.ref.update(geminiData);
+    const geminiModels = [
+      {
+        provider: 'gemini',
+        model: 'gemini-3.0-pro',
+        label: 'Google Gemini 3.0 Pro',
+        isActive: true,
+        freeEligible: false,
+        sort: 18,
+      },
+      {
+        provider: 'gemini',
+        model: 'gemini-3.0-flash',
+        label: 'Google Gemini 3.0 Flash',
+        isActive: true,
+        freeEligible: false,
+        sort: 19,
+      },
+      {
+        provider: 'gemini',
+        model: 'gemini-3.5-flash',
+        label: 'Google Gemini 3.5 Flash',
+        isActive: true,
+        freeEligible: false,
+        sort: 20,
+      },
+      {
+        provider: 'gemini',
+        model: 'gemini-3.5-flash-lite',
+        label: 'Google Gemini 3.5 Flash Lite',
+        isActive: true,
+        freeEligible: false,
+        sort: 21,
+      },
+      {
+        provider: 'gemini',
+        model: 'gemini-2.5-pro',
+        label: 'Google Gemini 2.5 Pro',
+        isActive: true,
+        freeEligible: false,
+        sort: 22,
+      },
+      {
+        provider: 'gemini',
+        model: 'gemini-2.5-flash',
+        label: 'Google Gemini 2.5 Flash',
+        isActive: true,
+        freeEligible: false,
+        sort: 23,
+      },
+      {
+        provider: 'gemini',
+        model: 'gemini-3.6-flash',
+        label: 'Google Gemini 3.6 Flash',
+        isActive: true,
+        freeEligible: false,
+        sort: 24,
+      },
+      {
+        provider: 'gemini',
+        model: 'gemini-2.0-flash',
+        label: 'Google Gemini 2.0 Flash',
+        isActive: true,
+        freeEligible: false,
+        sort: 25,
+      },
+    ];
+
+    for (const geminiDataItem of geminiModels) {
+      const existingGemini = snapshot.docs.find(d => {
+        const data = d.data() || {};
+        return data.provider === 'gemini' && data.model === geminiDataItem.model;
+      });
+      if (!existingGemini) {
+        await catalogRef.add(geminiDataItem);
+        console.log(`Added Gemini model: ${geminiDataItem.model}`);
+      } else {
+        await existingGemini.ref.update(geminiDataItem);
+        console.log(`Updated Gemini model: ${geminiDataItem.model}`);
+      }
     }
 
     console.log('Catalog cleanup finished');

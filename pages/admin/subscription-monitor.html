@@ -231,8 +231,8 @@
   </div>
 
   <script type="module">
-    // Teklifbul Rule v1.0 - XSS Protection
-    import DOMPurify from 'https://cdn.jsdelivr.net/npm/dompurify@3.2.2/+esm';
+    // Teklifbul Rule v1.0 — DOMPurify <tr>/<td>'yi table dışında siler; createElement kullan
+    import { setTableEmpty, appendTextCell, fillTableRows } from '../../assets/js/utils/safe-table.js';
     // Teklifbul Rule v1.0
     import { initGlobalHeader } from '../../assets/js/ui/header.js';
     import { auth, waitAuthReady } from '/firebase.js';
@@ -279,11 +279,8 @@
 
     function renderSubscriptions(items = []) {
       if (!items.length) {
-        // Teklifbul Rule v1.0 - XSS Protection
-        subscriptionTableBody.innerHTML = DOMPurify.sanitize('<tr><td colspan="7" class="empty">Kayıt bulunamadı</td></tr>', {
-          ALLOWED_TAGS: ['tr', 'td'],
-          ALLOWED_ATTR: ['colspan', 'class']
-        });
+        // Teklifbul Rule v1.0 — DOMPurify <tr>/<td>'yi table dışında siler; createElement kullan
+        setTableEmpty(subscriptionTableBody, 7, 'Kayıt bulunamadı', 'empty');
         return;
       }
       subscriptionTableBody.innerHTML = '';
@@ -351,70 +348,48 @@
 
     function renderUpcoming(items = []) {
       if (!items.length) {
-        // Teklifbul Rule v1.0 - XSS Protection
-        upcomingTableBody.innerHTML = DOMPurify.sanitize('<tr><td colspan="4" class="empty">Yaklaşan yenileme bulunamadı</td></tr>', {
-          ALLOWED_TAGS: ['tr', 'td'],
-          ALLOWED_ATTR: ['colspan', 'class']
-        });
+        // Teklifbul Rule v1.0 — DOMPurify <tr>/<td>'yi table dışında siler; createElement kullan
+        setTableEmpty(upcomingTableBody, 4, 'Yaklaşan yenileme bulunamadı', 'empty');
         return;
       }
-      // Teklifbul Rule v1.0 - XSS Protection
-      const upcomingHTML = items.map(item => {
-        const safeUserId = DOMPurify.sanitize(item.userId || '', { ALLOWED_TAGS: [] });
-        const safePlanName = DOMPurify.sanitize(item.planName || item.planId || '', { ALLOWED_TAGS: [] });
-        const safeStatus = DOMPurify.sanitize(item.status || '', { ALLOWED_TAGS: [] });
-        return `
-          <tr>
-            <td>${safeUserId}</td>
-            <td>${safePlanName}</td>
-            <td>${formatDate(item.currentPeriodEnd)}</td>
-            <td><span class="badge ${safeStatus}">${safeStatus}</span></td>
-          </tr>
-        `;
-      }).join('');
-      upcomingTableBody.innerHTML = DOMPurify.sanitize(upcomingHTML, {
-        ALLOWED_TAGS: ['tr', 'td', 'span'],
-        ALLOWED_ATTR: ['class']
-      });
+      // Teklifbul Rule v1.0 — DOMPurify <tr>/<td>'yi table dışında siler; createElement kullan
+      upcomingTableBody.textContent = '';
+      for (const item of items) {
+        const status = String(item.status || '');
+        const tr = document.createElement('tr');
+        appendTextCell(tr, item.userId || '');
+        appendTextCell(tr, item.planName || item.planId || '');
+        appendTextCell(tr, formatDate(item.currentPeriodEnd));
+        const statusTd = document.createElement('td');
+        const badge = document.createElement('span');
+        badge.className = `badge ${status}`;
+        badge.textContent = status;
+        statusTd.appendChild(badge);
+        tr.appendChild(statusTd);
+        upcomingTableBody.appendChild(tr);
+      }
     }
 
     function renderFailedPayments(items = []) {
+      // Teklifbul Rule v1.0 — DOMPurify <tr>/<td>'yi table dışında siler; createElement kullan
       if (!items.length) {
-        // Teklifbul Rule v1.0 - XSS Protection
-        failedPaymentsBody.innerHTML = DOMPurify.sanitize('<tr><td colspan="5" class="empty">Başarısız ödeme bulunamadı</td></tr>', {
-          ALLOWED_TAGS: ['tr', 'td'],
-          ALLOWED_ATTR: ['colspan', 'class']
-        });
+        setTableEmpty(failedPaymentsBody, 5, 'Başarısız ödeme bulunamadı', 'empty');
         return;
       }
-      // Teklifbul Rule v1.0 - XSS Protection
-      const failedPaymentsHTML = items.map(item => {
-        const safeId = DOMPurify.sanitize(item.id || '', { ALLOWED_TAGS: [] });
-        const safeUserId = DOMPurify.sanitize(item.userId || '-', { ALLOWED_TAGS: [] });
-        const safePlanId = DOMPurify.sanitize(item.planId || '', { ALLOWED_TAGS: [] });
-        return `
-          <tr>
-            <td>${safeId}</td>
-            <td>${safeUserId}</td>
-            <td>${safePlanId}</td>
-            <td>${new Intl.NumberFormat('tr-TR', { style: 'currency', currency: item.currency || 'TRY' }).format(item.amount || 0)}</td>
-            <td>${formatDate(item.updatedAt)}</td>
-          </tr>
-        `;
-      }).join('');
-      failedPaymentsBody.innerHTML = DOMPurify.sanitize(failedPaymentsHTML, {
-        ALLOWED_TAGS: ['tr', 'td'],
-        ALLOWED_ATTR: []
-      });
+      const rows = items.map((item) => [
+        item.id || '',
+        item.userId || '-',
+        item.planId || '',
+        new Intl.NumberFormat('tr-TR', { style: 'currency', currency: item.currency || 'TRY' }).format(item.amount || 0),
+        formatDate(item.updatedAt),
+      ]);
+      fillTableRows(failedPaymentsBody, rows, 5, 'Başarısız ödeme bulunamadı');
     }
 
     async function loadSubscriptions() {
       try {
         // Teklifbul Rule v1.0 - XSS Protection
-        subscriptionTableBody.innerHTML = DOMPurify.sanitize('<tr><td colspan="6" class="empty">Yükleniyor...</td></tr>', {
-          ALLOWED_TAGS: ['tr', 'td'],
-          ALLOWED_ATTR: ['colspan', 'class']
-        });
+        setTableEmpty(subscriptionTableBody, 6, 'Yükleniyor...', 'empty');
         const status = filterStatus.value;
         const planId = filterPlan.value;
         const limit = filterLimit.value || 50;
@@ -449,20 +424,14 @@
         logger.error('Admin subscription fetch error', error);
         toast.error(MESSAGES.ERROR_ADMIN_SUBSCRIPTION_LIST_LOAD.replace('{message}', error.message));
         // Teklifbul Rule v1.0 - XSS Protection
-        subscriptionTableBody.innerHTML = DOMPurify.sanitize('<tr><td colspan="6" class="empty">Hata oluştu</td></tr>', {
-          ALLOWED_TAGS: ['tr', 'td'],
-          ALLOWED_ATTR: ['colspan', 'class']
-        });
+        setTableEmpty(subscriptionTableBody, 6, 'Hata oluştu', 'empty');
       }
     }
 
     async function loadUpcoming() {
       try {
         // Teklifbul Rule v1.0 - XSS Protection
-        upcomingTableBody.innerHTML = DOMPurify.sanitize('<tr><td colspan="4" class="empty">Yükleniyor...</td></tr>', {
-          ALLOWED_TAGS: ['tr', 'td'],
-          ALLOWED_ATTR: ['colspan', 'class']
-        });
+        setTableEmpty(upcomingTableBody, 4, 'Yükleniyor...', 'empty');
         const days = upcomingDays.value || 7;
         const data = await fetchJSON(`/api/admin/subscriptions/upcoming?days=${days}`);
         renderUpcoming(data.items || []);
@@ -470,30 +439,21 @@
         logger.error('Admin upcoming fetch error', error);
         toast.error(MESSAGES.ERROR_ADMIN_SUBSCRIPTION_RENEWAL_LOAD.replace('{message}', error.message));
         // Teklifbul Rule v1.0 - XSS Protection
-        upcomingTableBody.innerHTML = DOMPurify.sanitize('<tr><td colspan="4" class="empty">Hata oluştu</td></tr>', {
-          ALLOWED_TAGS: ['tr', 'td'],
-          ALLOWED_ATTR: ['colspan', 'class']
-        });
+        setTableEmpty(upcomingTableBody, 4, 'Hata oluştu', 'empty');
       }
     }
 
     async function loadFailedPayments() {
       try {
         // Teklifbul Rule v1.0 - XSS Protection
-        failedPaymentsBody.innerHTML = DOMPurify.sanitize('<tr><td colspan="5" class="empty">Yükleniyor...</td></tr>', {
-          ALLOWED_TAGS: ['tr', 'td'],
-          ALLOWED_ATTR: ['colspan', 'class']
-        });
+        setTableEmpty(failedPaymentsBody, 5, 'Yükleniyor...', 'empty');
         const data = await fetchJSON('/api/admin/payments/failed');
         renderFailedPayments(data.items || []);
       } catch (error) {
         logger.error('Admin failed payments fetch error', error);
         toast.error(MESSAGES.ERROR_ADMIN_SUBSCRIPTION_FAILED_PAYMENTS_LOAD.replace('{message}', error.message));
         // Teklifbul Rule v1.0 - XSS Protection
-        failedPaymentsBody.innerHTML = DOMPurify.sanitize('<tr><td colspan="5" class="empty">Hata oluştu</td></tr>', {
-          ALLOWED_TAGS: ['tr', 'td'],
-          ALLOWED_ATTR: ['colspan', 'class']
-        });
+        setTableEmpty(failedPaymentsBody, 5, 'Hata oluştu', 'empty');
       }
     }
 
@@ -763,6 +723,7 @@
     async function checkAdminAccess() {
       try {
         const { requireAuth } = await import('/firebase.js');
+        const { resolveApiBaseUrl } = await import('/assets/js/utils/api-helpers.js');
         const user = await requireAuth();
         if (!user) {
           window.location.href = '/login.html';
@@ -770,27 +731,30 @@
         }
         
         const token = await user.getIdToken();
-        const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5174';
+        const API_BASE_URL = resolveApiBaseUrl();
         const response = await fetch(`${API_BASE_URL}/api/admin/check`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         
         if (!response.ok) {
           if (response.status === 403) {
-            // Admin değilse sayfa hiç gösterilmeden yönlendir
-            window.location.href = '/index.html';
+            window.location.href = '/dashboard.html';
             return false;
           }
           throw new Error('Admin kontrolü başarısız');
         }
+
+        const data = await response.json().catch(() => ({ isAdmin: false }));
+        if (!data?.isAdmin) {
+          window.location.href = '/dashboard.html';
+          return false;
+        }
         
-        // Admin kontrolü başarılı - sayfayı göster
         document.body.classList.add('admin-verified');
         return true;
       } catch (error) {
         logger.error('Admin kontrolü hatası', error);
-        // Hata durumunda sayfa gösterilmeden yönlendir
-        window.location.href = '/index.html';
+        window.location.href = '/dashboard.html';
         return false;
       }
     }

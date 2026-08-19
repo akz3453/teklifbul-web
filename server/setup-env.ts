@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { validateEnv } from './env-validator.js';
+import { CAPACITOR_ORIGINS } from './constants/allowed-origins.js';
 
 // ES modules için __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -39,6 +40,33 @@ export function ensureGoogleCredentials() {
 
 // Hemen çalıştır
 ensureGoogleCredentials();
+
+// Teklifbul Rule v1.0 - Cloud Run/Functions'ta kanonik URL/CORS fallback (env yoksa)
+const onGcp = Boolean(
+  process.env.K_SERVICE || process.env.FUNCTION_TARGET || process.env.FUNCTION_NAME
+);
+if (onGcp) {
+  if (!process.env.APP_URL?.trim()) {
+    process.env.APP_URL = 'https://teklifbul.web.app';
+  }
+  if (!process.env.ALLOWED_ORIGINS?.trim() && !process.env.CORS_ALLOWED_ORIGINS?.trim()) {
+    process.env.ALLOWED_ORIGINS = [
+      'https://teklifbul.web.app',
+      'https://teklifbul.firebaseapp.com',
+      'https://nefisoft.com',
+      'https://www.nefisoft.com',
+      ...CAPACITOR_ORIGINS,
+    ].join(',');
+  }
+}
+
+// Gen2 Cloud Run (K_SERVICE): NODE_ENV boş kalırsa mock ödeme / e-fatura açılır
+if (process.env.K_SERVICE && process.env.NODE_ENV !== 'test') {
+  process.env.NODE_ENV = 'production';
+  if (!process.env.APP_VERSION?.trim()) {
+    process.env.APP_VERSION = '1.0.1';
+  }
+}
 
 // Teklifbul Rule v1.0 - Production env validasyonu (kritik eksikse exit)
 validateEnv();

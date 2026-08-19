@@ -14,21 +14,22 @@ import { computeAvailableModels, loadAiModelCatalog } from '../services/purchase
 import { computeRestorePaidStatus } from '../services/restorePaidStatusHelper.js'; // Teklifbul Rule v3.7 - DRY helper
 import { AI_ERROR_CODES } from '../constants/aiMeta.js';
 import { mapAiError } from '../utils/aiErrorMapper.js';
-
-function resolveSharedCompanyId(userData: any): string | null {
-  const cid = userData?.companyId;
-  const aid = userData?.activeCompanyId;
-  const arr0 = Array.isArray(userData?.companies) && userData.companies.length ? userData.companies[0] : null;
-
-  if (cid && typeof cid === 'string' && !cid.startsWith('solo-') && !cid.startsWith('tax-')) return cid;
-  if (aid && typeof aid === 'string' && aid.startsWith('solo-') && cid) return cid;
-  return aid || cid || arr0;
-}
+import { resolveTrustedCompanyIdAsync } from '../utils/companyAccess.js';
 
 async function getCompanyContext(req: AuthenticatedRequest): Promise<{ userId: string; companyId: string | null }> {
   const userId = req.user?.uid || '';
-  const userData = req.user || {};
-  const companyId = resolveSharedCompanyId(userData);
+  if (!userId) return { userId: '', companyId: null };
+
+  const db = await getAdminDb();
+  if (!db) return { userId, companyId: null };
+
+  const userDoc = await db.collection('users').doc(userId).get();
+  const userData = userDoc.exists ? (userDoc.data() || {}) : {};
+  const headerCompanyId = req.headers['x-company-id'] as string | undefined;
+  const companyId = await resolveTrustedCompanyIdAsync(userData, headerCompanyId, {
+    userId,
+    path: req.path,
+  });
   return { userId, companyId };
 }
 

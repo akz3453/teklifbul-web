@@ -1,15 +1,25 @@
 import { db, auth, requireAuth } from '/firebase.js';
 import { normalizeTRLower, matchesWildcard, normalizeTR } from '/scripts/lib/tr-utils.js';
-import { weightedAvgCost, allocateExtras } from '/scripts/inventory-cost.js';
-import { updateStockBalance } from '/scripts/inventory-balances.js'; // Teklifbul Rule v1.0 - Stock balance güncelleme
-import { collection, getDocs, query, where, orderBy, addDoc, updateDoc, doc, getDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+import { allocateExtras } from '/scripts/inventory-cost.js';
+import { collection, getDocs, query, where, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
 import { toast } from '../src/shared/ui/toast.js';
 import { MESSAGES } from '../src/shared/constants/messages.js';
 import { logger } from '../src/shared/log/logger.js';
 import { requireCompanyContext } from '../assets/js/state/company-context.js';
 import { initPermissions, can, requirePerm, getStockPerms } from '../assets/js/state/permissions.js';
 import { fetchStockMovementsPage, iterateStockMovementsForExport } from '../assets/js/services/stock-movements-service.js';
+import { authFetch } from '../assets/js/utils/api-helpers.js';
 import { ensureXlsxLoaded } from '../assets/js/utils/xlsx-loader.js';
+
+/** Teklifbul Rule v1.0 — XSS escape */
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 const qs = s => document.querySelector(s);
 
@@ -100,6 +110,46 @@ async function resolveActorName(uid) {
   }
 }
 
+/**
+ * Teklifbul Rule v1.0 - Hareket tipi formunu göster
+ */
+function showMovementTypeForm(type) {
+  const inForm = qs('#inForm');
+  const outForm = qs('#outForm');
+  const transferForm = qs('#transferForm');
+  if (inForm) inForm.classList.add('hidden');
+  if (outForm) outForm.classList.add('hidden');
+  if (transferForm) transferForm.classList.add('hidden');
+
+  const formTitle = qs('#formTitle');
+  if (type === 'IN') {
+    if (inForm) inForm.classList.remove('hidden');
+    if (formTitle) formTitle.textContent = '📥 Giriş Hareketi';
+  } else if (type === 'OUT') {
+    if (outForm) outForm.classList.remove('hidden');
+    if (formTitle) formTitle.textContent = '📤 Çıkış Hareketi';
+  } else if (type === 'TRANSFER') {
+    if (transferForm) transferForm.classList.remove('hidden');
+    if (formTitle) formTitle.textContent = '🔄 Transfer Hareketi';
+  } else if (type === 'ADJUST') {
+    if (formTitle) formTitle.textContent = '⚖️ Düzeltme Hareketi';
+  }
+
+  const formCard = qs('#formCard');
+  if (formCard) formCard.classList.remove('hidden');
+  updateExpiryFieldsVisibility();
+}
+
+function resetMovementFormFields() {
+  const ids = ['#mvStockSKU', '#mvUnit', '#mvQty', '#mvUnitCost', '#mvExtras', '#mvLocation', '#mvToLocation', '#mvLotNo', '#mvExpiryDate', '#mvReason'];
+  ids.forEach((id) => {
+    const el = qs(id);
+    if (el) el.value = '';
+  });
+  state.selectedStock = null;
+  updateExpiryFieldsVisibility();
+}
+
 // Initialize event listeners after DOM is ready
 function setupEventListeners() {
   // Tab switching
@@ -129,28 +179,8 @@ function setupEventListeners() {
     if (historyCard) historyCard.classList.add('hidden');
     if (formCard) formCard.classList.remove('hidden');
   }
-  
-  // Hide all forms
-  qs('#inForm').classList.add('hidden');
-  qs('#outForm').classList.add('hidden');
-  qs('#transferForm').classList.add('hidden');
-  
-  // Show relevant form
-  if (state.currentType === 'IN') {
-    qs('#inForm').classList.remove('hidden');
-    qs('#formTitle').textContent = '📥 Giriş Hareketi';
-  } else if (state.currentType === 'OUT') {
-    qs('#outForm').classList.remove('hidden');
-    qs('#formTitle').textContent = '📤 Çıkış Hareketi';
-  } else if (state.currentType === 'TRANSFER') {
-    qs('#transferForm').classList.remove('hidden');
-    qs('#formTitle').textContent = '🔄 Transfer Hareketi';
-  } else if (state.currentType === 'ADJUST') {
-    qs('#formTitle').textContent = '⚖️ Düzeltme Hareketi';
-  }
-  
-  qs('#formCard').classList.remove('hidden');
-  updateExpiryFieldsVisibility();
+
+  showMovementTypeForm(state.currentType);
   });
 
   // Save button
@@ -165,8 +195,9 @@ function setupEventListeners() {
   const btnCancel = qs('#btnCancel');
   if (btnCancel) {
     btnCancel.addEventListener('click', () => {
-      const card = qs('#formCard');
-      if (card) card.classList.add('hidden');
+      // Teklifbul Rule v1.0 - Formu gizleme; alanları temizle
+      resetMovementFormFields();
+      toast.info('Form temizlendi');
     });
   }
   
@@ -228,9 +259,9 @@ function setupEventListeners() {
           }
           
           div.innerHTML = `
-            <div style="font-weight:600;color:#111827">${stock.sku}</div>
-            <div style="font-size:12px;color:#6b7280;margin-top:2px">${stock.name}</div>
-            <div style="font-size:11px;color:#9ca3af;margin-top:2px">Birim: ${stock.unit || 'ADT'}</div>
+            <div style="font-weight:600;color:#111827">${escapeHtml(stock.sku)}</div>
+            <div style="font-size:12px;color:#6b7280;margin-top:2px">${escapeHtml(stock.name)}</div>
+            <div style="font-size:11px;color:#9ca3af;margin-top:2px">Birim: ${escapeHtml(stock.unit || 'ADT')}</div>
           `;
           
           div.addEventListener('mouseenter', () => {
@@ -543,17 +574,17 @@ async function renderHistory(movements = state.movements) {
     }
     
     tr.innerHTML = `
-      <td>${date}</td>
-      <td><span class="badge ${typeBadge}">${typeText}</span></td>
-      <td>${mv.sku}</td>
-      <td>${mv.stockName || ''}</td>
-      <td>${sourceLocation}</td>
-      ${mv.type === 'TRANSFER' ? `<td>${targetLocation}</td>` : '<td>-</td>'}
-      <td>${mv.qty}</td>
-      <td>${(mv.unitCost || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺</td>
-      <td>${(mv.totalCost || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺</td>
-      <td>${refInfo}</td>
-      <td>${actorName || '-'}</td>
+      <td>${escapeHtml(date)}</td>
+      <td><span class="badge ${escapeHtml(typeBadge)}">${escapeHtml(typeText)}</span></td>
+      <td>${escapeHtml(mv.sku)}</td>
+      <td>${escapeHtml(mv.stockName || '')}</td>
+      <td>${escapeHtml(sourceLocation)}</td>
+      ${mv.type === 'TRANSFER' ? `<td>${escapeHtml(targetLocation)}</td>` : '<td>-</td>'}
+      <td>${escapeHtml(mv.qty)}</td>
+      <td>${escapeHtml((mv.unitCost || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))} ₺</td>
+      <td>${escapeHtml((mv.totalCost || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))} ₺</td>
+      <td>${escapeHtml(refInfo)}</td>
+      <td>${escapeHtml(actorName || '-')}</td>
     `;
     tbody.appendChild(tr);
   });
@@ -956,11 +987,12 @@ async function handleSave() {
   }
   
   const qty = parseFloat(qs('#mvQty').value);
-  if (!qty || qty <= 0) {
-    toast.error(MESSAGES.ERROR_VALID_QUANTITY_REQUIRED);
+  // Teklifbul Rule v1.0 - ADJUST için 0 (sıfırlama) geçerli
+  if (Number.isNaN(qty) || qty < 0 || (state.currentType !== 'ADJUST' && qty <= 0)) {
+    toast.error(state.currentType === 'ADJUST' ? 'Miktar 0 veya pozitif olmalıdır' : 'Miktar pozitif olmalıdır');
     return;
   }
-  
+
   try {
     // Permission Write Guard - Teklifbul Rule v1.0
     // Önce genel movement use yetkisi, sonra mevcut hareket türü için spesifik key (varsa)
@@ -1005,12 +1037,23 @@ async function handleSave() {
         return;
       }
     }
+
+    const siteId = locationId && locationId.startsWith('site_') ? locationId.replace('site_', '') : null;
+    let confirmNegative = false;
+    let toLocationId = null;
+    let unitCost = 0;
+    let extras = [];
+    let ref = { kind: 'MANUAL', id: '' };
+    let lotNo = null;
+    let expiryDateIso = null;
+
     if (state.currentType === 'IN') {
-      const unitCost = parseFloat(qs('#mvUnitCost').value) || 0;
-      const extras = parseFloat(qs('#mvExtras').value) || 0;
-      const allocatedExtras = allocateExtras(extras, qty);
-      const finalUnitCost = unitCost + allocatedExtras;
-      const lotNo = (qs('#mvLotNo')?.value || '').trim();
+      const rawUnitCost = parseFloat(qs('#mvUnitCost').value) || 0;
+      const extrasAmount = parseFloat(qs('#mvExtras').value) || 0;
+      const allocatedExtras = allocateExtras(extrasAmount, qty);
+      unitCost = rawUnitCost + allocatedExtras;
+      extras = extrasAmount ? [{ name: 'İlave', amount: extrasAmount }] : [];
+      lotNo = (qs('#mvLotNo')?.value || '').trim() || null;
       const expiryDateRaw = (qs('#mvExpiryDate')?.value || '').trim();
       const expiryRequired = shouldRequireExpiryFields(state.selectedStock);
 
@@ -1027,7 +1070,6 @@ async function handleSave() {
         }
       }
 
-      let expiryDate = null;
       if (expiryDateRaw) {
         const parsed = new Date(`${expiryDateRaw}T00:00:00`);
         if (Number.isNaN(parsed.getTime())) {
@@ -1035,312 +1077,121 @@ async function handleSave() {
           qs('#mvExpiryDate')?.focus();
           return;
         }
-        expiryDate = parsed;
+        expiryDateIso = parsed.toISOString();
       }
-      
-      // Teklifbul Rule v1.0 - locationId siteId formatında ise gerçek locationId'yi bul
-      let actualLocationId = locationId;
-      if (locationId && locationId.startsWith('site_')) {
-        // siteId'den gerçek locationId'yi bul
-        const siteId = locationId.replace('site_', '');
-        const locationQuery = query(
-          collection(db, 'stock_locations'),
-          where('siteId', '==', siteId),
-          where('companyId', '==', companyId)
-        );
-        const locationSnap = await getDocs(locationQuery);
-        if (!locationSnap.empty) {
-          actualLocationId = locationSnap.docs[0].id;
-        } else {
-          // Eğer stock_locations'ta yoksa, siteId'yi kullan (yeni depo olabilir)
-          actualLocationId = locationId;
-        }
-      }
-      
-      // Create movement
-      const movementRef = await addDoc(collection(db, 'stock_movements'), {
-        companyId: companyId,
-        stockId: state.selectedStock.id,
-        sku: state.selectedStock.sku,
-        locationId: actualLocationId,
-        siteId: locationId && locationId.startsWith('site_') ? locationId.replace('site_', '') : null,
-        type: 'IN',
-        qty,
-        unit: state.selectedStock.unit || 'ADT',
-        unitCost: finalUnitCost,
-        totalCost: finalUnitCost * qty,
-        extras: [{ name: 'İlave', amount: extras }],
-        ref: { kind: 'MANUAL', id: '' },
-        stockName: state.selectedStock.name,
-        lotNo: lotNo || null,
-        expiryDate: expiryDate || null,
-        createdBy: user.uid,
-        createdByName: createdByName,
-        createdAt: serverTimestamp()
-      });
-      
-      // Teklifbul Rule v1.0 - Stock balance'ı güncelle
-      await updateStockBalance({
-        id: movementRef.id,
-        companyId: companyId,
-        stockId: state.selectedStock.id,
-        sku: state.selectedStock.sku,
-        locationId: actualLocationId,
-        type: 'IN',
-        qty: qty,
-        unitCost: finalUnitCost
-      });
-      
-      // Update stock avgCost (stock_balances'den al)
-      const stockDoc1 = await getDoc(doc(db, 'stocks', state.selectedStock.id));
-      const stockData1 = stockDoc1.data();
-      
-      // Teklifbul Rule v1.0 - Stock balance'dan avgCost al
-      const { getStockBalance } = await import('/scripts/inventory-balances.js');
-      const balance = await getStockBalance(companyId, state.selectedStock.sku, actualLocationId);
-      const newAvg = balance?.avgCost || stockData1.avgCost || 0;
-      
-      await updateDoc(doc(db, 'stocks', state.selectedStock.id), {
-        avgCost: newAvg,
-        lastPurchasePrice: unitCost,
-        updatedAt: serverTimestamp()
-      });
-      
-      // Teklifbul Rule v1.0 - Düşük stok kontrolü ve bildirim
-      const { getStockBalance: getStockBalanceForLowCheck } = await import('/scripts/inventory-balances.js');
-      const { checkAndNotifyStockLow } = await import('/scripts/inventory-notifications.js');
-      const balanceForLowCheck = await getStockBalanceForLowCheck(companyId, state.selectedStock.sku, actualLocationId);
-      const stockDoc2 = await getDoc(doc(db, 'stocks', state.selectedStock.id));
-      const stockData2 = stockDoc2.data();
-      const location = state.locations.find(l => l.id === locationId || l.id === actualLocationId);
-      await checkAndNotifyStockLow({
-        companyId: companyId,
-        sku: state.selectedStock.sku,
-        locationId: actualLocationId,
-        currentQty: balanceForLowCheck?.quantity || 0,
-        minQty: stockData2.minQty || stockData2.minimumQty || 0,
-        stockName: state.selectedStock.name,
-        locationName: location?.name || null,
-        userId: user.uid
-      });
-      
-    } else if (state.currentType === 'OUT') {
-      const refKind = qs('#mvRefKind').value;
-      const refId = qs('#mvRefId').value;
-      
-      // Teklifbul Rule v1.0 - Stock balance'dan avgCost ve mevcut miktarı al
-      const { getStockBalance: getStockBalanceForOut } = await import('/scripts/inventory-balances.js');
-      const balanceForOut = await getStockBalanceForOut(companyId, state.selectedStock.sku, actualLocationId);
-      const avgCost = balanceForOut?.avgCost || state.selectedStock.avgCost || 0;
-      const currentQty = balanceForOut?.quantity || 0;
-      
-      // Teklifbul Rule v1.0 - Şirket ayarını kontrol et (eksiye düşme izni)
+    } else if (state.currentType === 'OUT' || state.currentType === 'TRANSFER') {
+      const { getStockBalance: getBal } = await import('/scripts/inventory-balances.js');
+      const bal = await getBal(companyId, state.selectedStock.sku, actualLocationId);
+      const currentQty = bal?.quantity || 0;
       const companyDoc = await getDoc(doc(db, 'companies', companyId));
-      const companyData = companyDoc.exists() ? companyDoc.data() : {};
-      const allowNegativeStock = companyData.allowNegativeStock === true;
-      
-      // Teklifbul Rule v1.0 - Stok miktarı kontrolü: 0 veya negatifse çıkış yapılamaz
+      const allowNegativeStock = companyDoc.exists() ? companyDoc.data()?.allowNegativeStock === true : false;
+
       if (currentQty <= 0) {
-        toast.error(`Bu lokasyonda stok miktarı ${currentQty.toFixed(2)} ${state.selectedStock.unit || 'ADT'}. Olmayan stoğun çıkışı yapılamaz.`);
+        toast.error(
+          `Bu lokasyonda stok miktarı ${currentQty.toFixed(2)} ${state.selectedStock.unit || 'ADT'}. Olmayan stoğun ${state.currentType === 'TRANSFER' ? 'transferi' : 'çıkışı'} yapılamaz.`
+        );
         return;
       }
-      
-      // Teklifbul Rule v1.0 - Yetersiz stok kontrolü (eksiye düşme izni yoksa)
       if (!allowNegativeStock && currentQty < qty) {
-        toast.error(`Yetersiz stok! Mevcut: ${currentQty.toFixed(2)} ${state.selectedStock.unit || 'ADT'}, İstenen: ${qty.toFixed(2)} ${state.selectedStock.unit || 'ADT'}. Çıkış yapılamaz.`);
+        toast.error(
+          `Yetersiz stok! Mevcut: ${currentQty.toFixed(2)} ${state.selectedStock.unit || 'ADT'}, İstenen: ${qty.toFixed(2)} ${state.selectedStock.unit || 'ADT'}.`
+        );
         return;
       }
-      
-      // Teklifbul Rule v1.0 - Eksiye düşecekse uyarı ver (izin varsa)
       if (allowNegativeStock && currentQty < qty) {
         const willBeNegative = currentQty - qty;
-        if (!confirm(`⚠️ Uyarı: Bu işlem stok miktarını ${willBeNegative.toFixed(2)} ${state.selectedStock.unit || 'ADT'}'ye düşürecek (eksi). Devam etmek istiyor musunuz?`)) {
+        if (
+          !confirm(
+            `⚠️ Uyarı: Bu işlem stok miktarını ${willBeNegative.toFixed(2)} ${state.selectedStock.unit || 'ADT'}'ye düşürecek (eksi). Devam etmek istiyor musunuz?`
+          )
+        ) {
           return;
         }
+        confirmNegative = true;
       }
-      
-      const movementRef = await addDoc(collection(db, 'stock_movements'), {
-        companyId: companyId,
-        stockId: state.selectedStock.id,
-        sku: state.selectedStock.sku,
-        locationId: actualLocationId,
-        siteId: locationId && locationId.startsWith('site_') ? locationId.replace('site_', '') : null,
-        type: 'OUT',
-        qty,
-        unit: state.selectedStock.unit || 'ADT',
-        unitCost: avgCost,
-        totalCost: avgCost * qty,
-        ref: { kind: refKind, id: refId },
-        stockName: state.selectedStock.name,
-        createdBy: user.uid,
-        createdByName: createdByName,
-        createdAt: serverTimestamp()
-      });
-      
-      // Teklifbul Rule v1.0 - Stock balance'ı güncelle
-      await updateStockBalance({
-        id: movementRef.id,
-        companyId: companyId,
-        stockId: state.selectedStock.id,
-        sku: state.selectedStock.sku,
-        locationId: actualLocationId,
-        type: 'OUT',
-        qty: qty,
-        unitCost: avgCost
-      });
-      
-      // Teklifbul Rule v1.0 - Düşük stok kontrolü ve bildirim
-      const { getStockBalance: getStockBalanceForOutLowCheck } = await import('/scripts/inventory-balances.js');
-      const { checkAndNotifyStockLow } = await import('/scripts/inventory-notifications.js');
-      const balanceForOutLowCheck = await getStockBalanceForOutLowCheck(companyId, state.selectedStock.sku, actualLocationId);
-      const stockDocForOut = await getDoc(doc(db, 'stocks', state.selectedStock.id));
-      const stockDataForOut = stockDocForOut.data();
-      const location = state.locations.find(l => l.id === locationId || l.id === actualLocationId);
-      await checkAndNotifyStockLow({
-        companyId: companyId,
-        sku: state.selectedStock.sku,
-        locationId: actualLocationId,
-        currentQty: balanceForOutLowCheck?.quantity || 0,
-        minQty: stockDataForOut.minQty || stockDataForOut.minimumQty || 0,
-        stockName: state.selectedStock.name,
-        locationName: location?.name || null,
-        userId: user.uid
-      });
-      
-    } else if (state.currentType === 'TRANSFER') {
-      const toLocationIdRaw = qs('#mvToLocation').value;
-      if (!toLocationIdRaw) {
-        toast.error(MESSAGES.ERROR_TARGET_LOCATION_REQUIRED);
-        return;
-      }
-      
-      // Teklifbul Rule v1.0 - Hedef locationId'yi de düzelt
-      let actualToLocationId = toLocationIdRaw;
-      if (toLocationIdRaw && toLocationIdRaw.startsWith('site_')) {
-        const toSiteId = toLocationIdRaw.replace('site_', '');
-        const toLocationQuery = query(
-          collection(db, 'stock_locations'),
-          where('siteId', '==', toSiteId),
-          where('companyId', '==', companyId)
-        );
-        const toLocationSnap = await getDocs(toLocationQuery);
-        if (!toLocationSnap.empty) {
-          actualToLocationId = toLocationSnap.docs[0].id;
-        }
-      }
-      
-      // Teklifbul Rule v1.0 - Stock balance'dan avgCost ve mevcut miktarı al
-      const { getStockBalance: getStockBalanceForTransfer } = await import('/scripts/inventory-balances.js');
-      const balanceForTransfer = await getStockBalanceForTransfer(companyId, state.selectedStock.sku, actualLocationId);
-      const avgCost = balanceForTransfer?.avgCost || state.selectedStock.avgCost || 0;
-      const currentQty = balanceForTransfer?.quantity || 0;
-      
-      // Teklifbul Rule v1.0 - Şirket ayarını kontrol et (eksiye düşme izni)
-      const companyDoc = await getDoc(doc(db, 'companies', companyId));
-      const companyData = companyDoc.exists() ? companyDoc.data() : {};
-      const allowNegativeStock = companyData.allowNegativeStock === true;
-      
-      // Teklifbul Rule v1.0 - Stok miktarı kontrolü: 0 veya negatifse transfer yapılamaz
-      if (currentQty <= 0) {
-        toast.error(`Bu lokasyonda stok miktarı ${currentQty.toFixed(2)} ${state.selectedStock.unit || 'ADT'}. Olmayan stoğun transferi yapılamaz.`);
-        return;
-      }
-      
-      // Teklifbul Rule v1.0 - Yetersiz stok kontrolü (eksiye düşme izni yoksa)
-      if (!allowNegativeStock && currentQty < qty) {
-        toast.error(`Yetersiz stok! Mevcut: ${currentQty.toFixed(2)} ${state.selectedStock.unit || 'ADT'}, İstenen: ${qty.toFixed(2)} ${state.selectedStock.unit || 'ADT'}. Transfer yapılamaz.`);
-        return;
-      }
-      
-      // Teklifbul Rule v1.0 - Eksiye düşecekse uyarı ver (izin varsa)
-      if (allowNegativeStock && currentQty < qty) {
-        const willBeNegative = currentQty - qty;
-        if (!confirm(`⚠️ Uyarı: Bu transfer işlemi stok miktarını ${willBeNegative.toFixed(2)} ${state.selectedStock.unit || 'ADT'}'ye düşürecek (eksi). Devam etmek istiyor musunuz?`)) {
+
+      if (state.currentType === 'OUT') {
+        ref = { kind: qs('#mvRefKind').value || 'MANUAL', id: qs('#mvRefId').value || '' };
+      } else {
+        const toLocationIdRaw = qs('#mvToLocation').value;
+        if (!toLocationIdRaw) {
+          toast.error(MESSAGES.ERROR_TARGET_LOCATION_REQUIRED);
           return;
         }
+        toLocationId = toLocationIdRaw;
+        if (toLocationIdRaw.startsWith('site_')) {
+          const toSiteId = toLocationIdRaw.replace('site_', '');
+          const toLocationQuery = query(
+            collection(db, 'stock_locations'),
+            where('siteId', '==', toSiteId),
+            where('companyId', '==', companyId)
+          );
+          const toLocationSnap = await getDocs(toLocationQuery);
+          if (!toLocationSnap.empty) {
+            toLocationId = toLocationSnap.docs[0].id;
+          }
+        }
+        ref = { kind: 'MANUAL', id: toLocationId };
       }
-      
-      // OUT movement (kaynak lokasyondan)
-      const movementRef = await addDoc(collection(db, 'stock_movements'), {
-        companyId: companyId,
+    }
+
+    toast.info('Yükleniyor...');
+    const response = await authFetch('/api/stock-movements', {
+      method: 'POST',
+      body: JSON.stringify({
+        type: state.currentType,
         stockId: state.selectedStock.id,
         sku: state.selectedStock.sku,
-        locationId: actualLocationId,
-        siteId: locationId && locationId.startsWith('site_') ? locationId.replace('site_', '') : null,
-        type: 'TRANSFER',
-        qty,
-        unit: state.selectedStock.unit || 'ADT',
-        unitCost: avgCost,
-        totalCost: avgCost * qty,
-        ref: { kind: 'MANUAL', id: actualToLocationId },
-        toLocationId: actualToLocationId,
         stockName: state.selectedStock.name,
-        createdBy: user.uid,
-        createdByName: createdByName,
-        createdAt: serverTimestamp()
-      });
-      
-      // Teklifbul Rule v1.0 - Stock balance'ı güncelle (kaynak ve hedef)
-      await updateStockBalance({
-        id: movementRef.id,
-        companyId: companyId,
-        stockId: state.selectedStock.id,
-        sku: state.selectedStock.sku,
-        locationId: actualLocationId,
-        type: 'TRANSFER',
-        qty: qty,
-        unitCost: avgCost,
-        toLocationId: actualToLocationId
-      });
-      
-    } else if (state.currentType === 'ADJUST') {
-      const movementRef = await addDoc(collection(db, 'stock_movements'), {
-        companyId: companyId,
-        stockId: state.selectedStock.id,
-        sku: state.selectedStock.sku,
-        locationId: actualLocationId,
-        siteId: locationId && locationId.startsWith('site_') ? locationId.replace('site_', '') : null,
-        type: 'ADJUST',
-        qty,
         unit: state.selectedStock.unit || 'ADT',
-        unitCost: 0,
-        totalCost: 0,
-        ref: { kind: 'MANUAL', id: '' },
-        stockName: state.selectedStock.name,
-        createdBy: user.uid,
-        createdByName: createdByName,
-        createdAt: serverTimestamp()
-      });
-      
-      // Teklifbul Rule v1.0 - Stock balance'ı güncelle
-      await updateStockBalance({
-        id: movementRef.id,
-        companyId: companyId,
-        stockId: state.selectedStock.id,
-        sku: state.selectedStock.sku,
         locationId: actualLocationId,
-        type: 'ADJUST',
-        qty: qty,
-        unitCost: 0
-      });
+        siteId,
+        toLocationId,
+        qty,
+        unitCost,
+        extras,
+        ref,
+        lotNo,
+        expiryDate: expiryDateIso,
+        createdByName,
+        confirmNegative,
+      }),
+    });
+
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || result.ok === false) {
+      throw new Error(result.error || result.message || 'Stok hareketi kaydedilemedi');
+    }
+
+    // Düşük stok bildirimi (IN/OUT sonrası)
+    if (state.currentType === 'IN' || state.currentType === 'OUT') {
+      try {
+        const { getStockBalance: getBalLow } = await import('/scripts/inventory-balances.js');
+        const { checkAndNotifyStockLow } = await import('/scripts/inventory-notifications.js');
+        const balLow = await getBalLow(companyId, state.selectedStock.sku, actualLocationId);
+        const stockSnap = await getDoc(doc(db, 'stocks', state.selectedStock.id));
+        const stockData = stockSnap.data() || {};
+        const location = state.locations.find((l) => l.id === locationId || l.id === actualLocationId);
+        await checkAndNotifyStockLow({
+          companyId,
+          sku: state.selectedStock.sku,
+          locationId: actualLocationId,
+          currentQty: result.quantity ?? balLow?.quantity ?? 0,
+          minQty: stockData.minQty || stockData.minimumQty || 0,
+          stockName: state.selectedStock.name,
+          locationName: location?.name || null,
+          userId: user.uid,
+        });
+      } catch (notifyErr) {
+        logger.warn('Düşük stok bildirimi atlandı', notifyErr);
+      }
     }
     
     toast.success(MESSAGES.SUCCESS_MOVEMENT_SAVED);
-    
-    // Reset form
-    qs('#mvStockSKU').value = '';
-    qs('#mvUnit').value = '';
-    qs('#mvQty').value = '';
-    qs('#mvUnitCost').value = '';
-    qs('#mvExtras').value = '';
-    qs('#mvLocation').value = '';
-    qs('#mvToLocation').value = '';
-    if (qs('#mvLotNo')) qs('#mvLotNo').value = '';
-    if (qs('#mvExpiryDate')) qs('#mvExpiryDate').value = '';
-    state.selectedStock = null;
-    updateExpiryFieldsVisibility();
-    qs('#formCard').classList.add('hidden');
-    
+
+    // Teklifbul Rule v1.0 - Formu gizleme; alanları temizle (kullanıcı yeni hareket girebilsin)
+    resetMovementFormFields();
+
     // Teklifbul Rule v1.0 - Eğer filtre aktifse history'yi yenile
     if (state.historySelectedStock && state.historySelectedStock.id === savedStockId) {
       await loadHistoryWithFilters({ reset: true });
@@ -1389,9 +1240,12 @@ async function initialize() {
     }
 
     setupEventListeners();
-    // Default: hareket formu açık, geçmiş sekmesi kapalı
+    // Default: hareket formu açık, geçmiş sekmesi kapalı + Giriş formu görünür
     const historyCard = qs('#historyCard');
     if (historyCard) historyCard.classList.add('hidden');
+    const formCard = qs('#formCard');
+    if (formCard) formCard.classList.remove('hidden');
+    showMovementTypeForm(state.currentType || 'IN');
 
     // UI guard - hareket kaydetme butonu
     const btnSave = qs('#btnSave');
@@ -1483,9 +1337,9 @@ async function setupHistoryStockSearch() {
         div.className = 'stock-result-item';
         div.style.background = idx % 2 === 0 ? '#fff' : '#f9fafb';
         div.innerHTML = `
-          <div style="font-weight:600;color:#111827">${stock.sku}</div>
-          <div style="font-size:12px;color:#6b7280;margin-top:2px">${stock.name}</div>
-          <div style="font-size:11px;color:#9ca3af;margin-top:2px">Birim: ${stock.unit || 'ADT'}</div>
+          <div style="font-weight:600;color:#111827">${escapeHtml(stock.sku)}</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px">${escapeHtml(stock.name)}</div>
+          <div style="font-size:11px;color:#9ca3af;margin-top:2px">Birim: ${escapeHtml(stock.unit || 'ADT')}</div>
         `;
         div.addEventListener('mouseenter', () => (div.style.background = '#eff6ff'));
         div.addEventListener('mouseleave', () => (div.style.background = idx % 2 === 0 ? '#fff' : '#f9fafb'));

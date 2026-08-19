@@ -15,6 +15,7 @@ import { userHasAiPlan } from './userService.js';
 import { getCompanyPlanFlags } from './purchaseAssistantAvailabilityService.js';
 import { assertUserHasTokensOrThrow } from './aiTokenPackService.js';
 import { getCompanyIdFromRequest } from '../src/services/permissionService.js';
+import { resolveTrustedCompanyId } from '../utils/companyAccess.js';
 import { getAdminDb } from '../utils/firestore.js';
 import { sendChat, type ChatMessage, type ChatResult, type AIProvider } from '../ai/index.js';
 import type { AuthenticatedRequest } from '../middleware/auth.js';
@@ -105,11 +106,30 @@ export async function runAI(request: RunAIRequest): Promise<RunAIResult> {
       };
     }
 
-    // OpenAI/Gemini require token packs
+    // OpenAI/Gemini require token packs — yoksa ücretsiz Groq
     if (provider === 'openai' || provider === 'gemini') {
       try {
         await assertUserHasTokensOrThrow(userId, provider);
       } catch (tokenError: any) {
+        if (process.env.GROQ_API_KEY) {
+          logger.warn('Token pack missing → free Groq', {
+            userId,
+            preferred: provider,
+            error: tokenError.message,
+          });
+          const messages: ChatMessage[] = [
+            { role: 'user', content: prompt }
+          ];
+          const result = await sendChat(messages, {
+            provider: 'groq',
+            systemPrompt: context.systemPrompt,
+            model: context.model || 'llama-3.3-70b-versatile',
+            temperature: context.temperature,
+            maxTokens: context.maxTokens,
+          });
+          logger.end();
+          return { result, provider: 'groq' };
+        }
         logger.warn('Token pack check failed', {
           userId,
           provider,
@@ -194,14 +214,13 @@ async function getPlanInfo(userId: string, req?: AuthenticatedRequest): Promise<
     }
   }
 
-  // Fallback: get from user doc
-  if (!companyId) {
+  // req varsa trusted helper zaten denendi. req yoksa yalnız accepted üyelik.
+  if (!companyId && !req) {
     const db = await getAdminDb();
     if (db) {
       const userDoc = await db.collection('users').doc(userId).get();
       if (userDoc.exists) {
-        const userData = userDoc.data() || {};
-        companyId = userData.companyId || userData.activeCompanyId || null;
+        companyId = resolveTrustedCompanyId(userDoc.data() || {}, null, { userId });
       }
     }
   }

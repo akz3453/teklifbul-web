@@ -18,10 +18,14 @@ import { toast } from '../src/shared/ui/toast.js';
 // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
 import { MESSAGES } from '../src/shared/constants/messages.js';
 // Teklifbul Rule v1.0 - Auth Guard (tek kaynaktan yönlendirme)
+import { initAuthGuard } from '/assets/js/auth-guard.js';
 import { initGlobalHeader } from '../assets/js/ui/header.js';
 
 // Teklifbul Rule v1.0 - Toast'u global scope'a ekle (onclick attribute'ları için)
 window.toast = toast;
 
 // Initialize global header
+initAuthGuard().catch((err) => {
+  logger.error('Auth guard init failed', err);
+});
 initGlobalHeader({ mount: '#app-header', activeRoute: 'inventory' });

@@ -1,8 +1,19 @@
 import { auth, db } from '../firebase.js';
-import { collection, query, where, orderBy, getDocs, deleteDoc, doc, updateDoc, writeBatch, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, orderBy, limit, getDocs, deleteDoc, doc, updateDoc, writeBatch, serverTimestamp } from 'firebase/firestore';
+import { logger } from '../src/shared/log/logger.js';
+import { toast } from '../src/shared/ui/toast.js';
 
 const notificationsList = document.getElementById('notificationsList');
 const deleteAllBtn = document.getElementById('deleteAllBtn');
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 async function init() {
   auth.onAuthStateChanged(async (user) => {
@@ -17,21 +28,49 @@ async function init() {
 }
 
 async function loadNotifications() {
+  const user = auth.currentUser;
+  if (!user) return;
+
   try {
-    const user = auth.currentUser;
-    const q = query(
-      collection(db, 'notifications'),
-      where('userId', '==', user.uid),
-      orderBy('createdAt', 'desc')
-    );
+    let snapshot;
+    let needsClientSort = false;
 
-    const snapshot = await getDocs(q);
-    const notifications = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    try {
+      const indexedQuery = query(
+        collection(db, 'notifications'),
+        where('userId', '==', user.uid),
+        orderBy('createdAt', 'desc'),
+        limit(50)
+      );
+      snapshot = await getDocs(indexedQuery);
+    } catch (indexError) {
+      logger.warn('Bildirim index sorgusu başarısız, sade sorguya düşülüyor', {
+        code: indexError?.code || '',
+        message: String(indexError?.message || '').slice(0, 180),
+      });
+      const simpleQuery = query(
+        collection(db, 'notifications'),
+        where('userId', '==', user.uid),
+        limit(50)
+      );
+      snapshot = await getDocs(simpleQuery);
+      needsClientSort = true;
+    }
 
+    const notifications = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+    if (needsClientSort) {
+      notifications.sort((a, b) => {
+        const ta = a.createdAt?.toMillis?.() || a.createdAt?.seconds * 1000 || 0;
+        const tb = b.createdAt?.toMillis?.() || b.createdAt?.seconds * 1000 || 0;
+        return tb - ta;
+      });
+    }
     renderNotifications(notifications);
   } catch (error) {
-    console.error('Bildirimler yüklenemedi:', error);
-    notificationsList.innerHTML = '<div style="padding: 40px; text-align: center; color: #ef4444;">Bildirimler yüklenirken bir hata oluştu.</div>';
+    logger.error('Bildirimler yüklenemedi', error);
+    toast.error('Hata: Bildirimler yüklenemedi');
+    notificationsList.innerHTML =
+      '<div style="padding: 40px; text-align: center; color: #6b7280;">Bildirimler şu anda görüntülenemiyor. Daha sonra tekrar deneyin.</div>';
   }
 }
 
@@ -46,22 +85,39 @@ function renderNotifications(notifications) {
     const timeAgo = getTimeAgo(date);
     const bgColor = getNotificationColor(date);
     const unreadDot = !notif.read ? '<div class="unread-dot"></div>' : '';
+    const safeId = escapeHtml(notif.id);
+    const safeTitle = escapeHtml(notif.title || 'Bildirim');
+    const safeBody = escapeHtml(notif.body || notif.message || '');
 
     return `
-      <div class="notif-item" style="background: ${bgColor};" data-id="${notif.id}" onclick="handleNotifClick('${notif.id}', ${notif.read})">
+      <div class="notif-item" style="background: ${escapeHtml(bgColor)};" data-id="${safeId}">
         ${unreadDot}
         <div class="notif-content">
-          <div class="notif-title">${notif.title || 'Bildirim'}</div>
-          <div class="notif-body">${notif.body || notif.message || ''}</div>
+          <div class="notif-title">${safeTitle}</div>
+          <div class="notif-body">${safeBody}</div>
           <div class="notif-meta">
-            <span>${timeAgo}</span>
+            <span>${escapeHtml(timeAgo)}</span>
             <span>•</span>
-            <button class="delete-btn" onclick="deleteNotification(event, '${notif.id}')">Sil</button>
+            <button type="button" class="delete-btn" data-delete-id="${safeId}" aria-label="Bildirimi sil" title="Sil">Sil</button>
           </div>
         </div>
       </div>
     `;
   }).join('');
+
+  notificationsList.querySelectorAll('.notif-item').forEach((el) => {
+    el.addEventListener('click', (e) => {
+      const btn = e.target && e.target.closest && e.target.closest('[data-delete-id]');
+      if (btn) {
+        e.stopPropagation();
+        deleteNotification(e, btn.getAttribute('data-delete-id'));
+        return;
+      }
+      const id = el.getAttribute('data-id');
+      const n = notifications.find((x) => x.id === id);
+      handleNotifClick(id, !!(n && n.read));
+    });
+  });
 }
 
 window.handleNotifClick = async (id, isRead) => {

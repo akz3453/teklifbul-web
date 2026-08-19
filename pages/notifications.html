@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
   <meta charset="utf-8" />
-  <title>Bildirimler | Teklifbul</title>
+  <title>Bildirimler | NEFISOFT</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="/assets/js/theme-init.js"></script>
   <link rel="stylesheet" href="/utils.css" />
@@ -49,7 +49,10 @@
 
   <script type="module" src="/firebase.js"></script>
   <script type="module">
+    import { initAuthGuard } from '/assets/js/auth-guard.js';
     import { initGlobalHeader } from '/assets/js/ui/header.js';
+    initAuthGuard().catch((err) => { console.error('Auth guard init failed', err); });
+
     initGlobalHeader({ mount: '#app-header' });
   </script>
   <script type="module" src="/scripts/notifications.js"></script>

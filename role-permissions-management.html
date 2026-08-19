@@ -193,6 +193,7 @@
     import { toast } from './src/shared/ui/toast.js';
     // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
     import { MESSAGES } from './src/shared/constants/messages.js';
+    import { initAuthGuard } from './assets/js/auth-guard.js';
     
     // Rol yetkileri tanımları - Teklifbul Rol & Onay Sistemi
     // NOT: Bu sayfada yapılan değişiklikler settings.html dosyasındaki rolePermissions objesine manuel olarak uygulanmalıdır
@@ -849,6 +850,9 @@
     };
 
     // Sayfa yüklendiğinde tüm rolleri göster - Teklifbul Rule v1.0
+    initAuthGuard().catch((err) => {
+      logger.error('Auth guard init failed', err);
+    });
     document.addEventListener('DOMContentLoaded', () => {
       Object.entries(rolePermissions).forEach(([roleKey, roleData]) => {
         const isBuyer = roleKey.includes('buyer');

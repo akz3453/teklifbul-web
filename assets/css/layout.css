@@ -6,7 +6,6 @@
 :root {
   --container-max: 1800px;
   --container-wide: 2000px;
-  width: auto;
 }
 
 /* Responsive container breakpoints */
@@ -95,7 +94,8 @@
   background: var(--card-bg);
   min-height: 84px;
   box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
-  flex: 1 1 320px;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 html[data-theme="dark"] .page-title-chip {
@@ -274,7 +274,24 @@ html[data-theme="dark"] .tb-sep { color: #ffffff; }
   }
   
   .col-tanim {
-    min-width: 150px;
+    min-width: 0;
+  }
+
+  .page-title-chip {
+    flex: 1 1 100%;
+    min-width: 0;
+    min-height: auto;
+    padding: 12px 16px;
+  }
+
+  .page-title-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 24px;
+  }
+
+  .page-title-text h1 {
+    font-size: 1.35rem;
   }
 }
 

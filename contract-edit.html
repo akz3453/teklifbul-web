@@ -307,6 +307,12 @@
           contractNo: document.getElementById('contract-no').value.trim() || undefined,
           contractName: contractName,
           siteId: document.getElementById('site-select').value || null,
+          siteName: (() => {
+            const sel = document.getElementById('site-select');
+            if (!sel || !sel.value) return null;
+            const opt = sel.options[sel.selectedIndex];
+            return opt ? opt.textContent.trim() : null;
+          })(),
           startDate: document.getElementById('start-date').value || null,
           endDate: document.getElementById('end-date').value || null,
           contractValue: parseFloat(document.getElementById('contract-value').value) || 0,

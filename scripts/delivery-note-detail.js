@@ -8,6 +8,7 @@ import { logger } from '../src/shared/log/logger.js';
 import { toast } from '../src/shared/ui/toast.js';
 import { can, getEinvoicePerms } from '../assets/js/state/permissions.js';
 import { requireCompanyContext } from '../assets/js/state/company-context.js';
+import { setTableEmpty, appendTextCell } from '../assets/js/utils/safe-table.js';
 import DOMPurify from 'https://cdn.jsdelivr.net/npm/dompurify@3.2.2/+esm';
 import { formatCurrency, formatDate } from './sales.js';
 
@@ -186,28 +187,28 @@ function renderSnapshot(snapshot) {
   }
 
   // Items snapshot
+  // Teklifbul Rule v1.0 — DOMPurify <tr>/<td>'yi table dışında siler; createElement kullan
   if (snapshot.items && qs('#deliveryItemsTableBody')) {
     const tbody = qs('#deliveryItemsTableBody');
+    const currency = snapshot.totals?.currency || 'TRY';
     if (snapshot.items.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:#6b7280">Kalem bulunamadı</td></tr>';
+      setTableEmpty(tbody, 7, 'Kalem bulunamadı');
     } else {
-      const itemsHTML = snapshot.items.map((item) => {
-        return `
-          <tr>
-            <td style="padding:12px; border-bottom:1px solid #e5e7eb">${DOMPurify.sanitize(item.sku || 'N/A', { ALLOWED_TAGS: [] })}</td>
-            <td style="padding:12px; border-bottom:1px solid #e5e7eb">${DOMPurify.sanitize(item.name || 'N/A', { ALLOWED_TAGS: [] })}</td>
-            <td style="padding:12px; border-bottom:1px solid #e5e7eb; text-align:right">${item.quantity || 0}</td>
-            <td style="padding:12px; border-bottom:1px solid #e5e7eb">${DOMPurify.sanitize(item.unit || 'AD', { ALLOWED_TAGS: [] })}</td>
-            <td style="padding:12px; border-bottom:1px solid #e5e7eb; text-align:right">${formatCurrency(item.unitPrice || 0, snapshot.totals?.currency || 'TRY')}</td>
-            <td style="padding:12px; border-bottom:1px solid #e5e7eb; text-align:right">${item.vatRate || 0}%</td>
-            <td style="padding:12px; border-bottom:1px solid #e5e7eb; text-align:right">${formatCurrency(item.totalWithVat || item.totalPrice || 0, snapshot.totals?.currency || 'TRY')}</td>
-          </tr>
-        `;
-      }).join('');
-
-      tbody.innerHTML = DOMPurify.sanitize(itemsHTML, {
-        ALLOWED_TAGS: ['tr', 'td'],
-        ALLOWED_ATTR: ['style']
+      tbody.textContent = '';
+      snapshot.items.forEach((item) => {
+        const tr = document.createElement('tr');
+        appendTextCell(tr, item.sku || 'N/A');
+        appendTextCell(tr, item.name || 'N/A');
+        const qtyTd = appendTextCell(tr, item.quantity || 0);
+        qtyTd.style.textAlign = 'right';
+        appendTextCell(tr, item.unit || 'AD');
+        const priceTd = appendTextCell(tr, formatCurrency(item.unitPrice || 0, currency));
+        priceTd.style.textAlign = 'right';
+        const vatTd = appendTextCell(tr, `${item.vatRate || 0}%`);
+        vatTd.style.textAlign = 'right';
+        const totalTd = appendTextCell(tr, formatCurrency(item.totalWithVat || item.totalPrice || 0, currency));
+        totalTd.style.textAlign = 'right';
+        tbody.appendChild(tr);
       });
     }
   }

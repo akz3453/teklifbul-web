@@ -360,66 +360,104 @@
         toast.error('Sözleşmeler yüklenemedi');
         const tbody = document.getElementById('contracts-table-body');
         if (tbody) {
-          // Teklifbul Rule v1.0 - XSS Protection
-          tbody.innerHTML = DOMPurify.sanitize('<tr><td colspan="8" class="empty-state">Hata oluştu</td></tr>', {
-            ALLOWED_TAGS: ['tr', 'td'],
-            ALLOWED_ATTR: ['colspan', 'class']
-          });
+          tbody.textContent = '';
+          const tr = document.createElement('tr');
+          const td = document.createElement('td');
+          td.colSpan = 8;
+          td.className = 'empty-state';
+          td.textContent = 'Hata oluştu';
+          tr.appendChild(td);
+          tbody.appendChild(tr);
         }
       }
     }
     
     // Sözleşmeler tablosunu render et
+    // Teklifbul Rule v1.0 — DOMPurify <tr>/<td>'yi table dışında siler; createElement kullan
     function renderContractsTable(contracts) {
       const tbody = document.getElementById('contracts-table-body');
       if (!tbody) return;
-      
+      tbody.textContent = '';
+
       if (contracts.length === 0) {
-        // Teklifbul Rule v1.0 - XSS Protection
-        tbody.innerHTML = DOMPurify.sanitize('<tr><td colspan="8" class="empty-state">Henüz sözleşme bulunmuyor</td></tr>', {
-          ALLOWED_TAGS: ['tr', 'td'],
-          ALLOWED_ATTR: ['colspan', 'class']
-        });
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.colSpan = 8;
+        td.className = 'empty-state';
+        td.textContent = 'Henüz sözleşme bulunmuyor';
+        tr.appendChild(td);
+        tbody.appendChild(tr);
         return;
       }
-      
-      // Teklifbul Rule v1.0 - XSS Protection
-      const sanitize = (str) => DOMPurify.sanitize(String(str || ''), { ALLOWED_TAGS: [] });
-      const sanitizeAttr = (str) => DOMPurify.sanitize(String(str || ''), { ALLOWED_TAGS: [] });
-      
-      const html = contracts.map(contract => {
-        const safeId = sanitizeAttr(contract.id);
-        const safeContractNo = sanitize(contract.contractNo || '-');
-        const safeContractName = sanitize(contract.contractName || '-');
-        const safeSiteName = sanitize(contract.siteName || '-');
-        const safeStartDate = contract.startDate ? new Date(contract.startDate).toLocaleDateString('tr-TR') : '-';
-        const safeEndDate = contract.endDate ? new Date(contract.endDate).toLocaleDateString('tr-TR') : '-';
-        const safeValue = (contract.contractValue || 0).toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' });
+
+      contracts.forEach((contract) => {
+        const tr = document.createElement('tr');
+        const id = String(contract.id || '');
         const status = contract.status || 'active';
-        const statusClass = status === 'active' ? 'active' : 'passive';
         const statusText = status === 'active' ? 'Aktif' : 'Pasif';
-        
-        return `
-          <tr>
-            <td>${safeContractNo}</td>
-            <td>${safeContractName}</td>
-            <td>${safeSiteName}</td>
-            <td>${safeStartDate}</td>
-            <td>${safeEndDate}</td>
-            <td>${safeValue}</td>
-            <td><span class="badge ${statusClass}">${statusText}</span></td>
-            <td class="action-buttons-cell">
-              <button class="btn btn-outline btn-sm" onclick="viewContract('${safeId}')">Görüntüle</button>
-              <button class="btn btn-outline btn-sm" onclick="editContract('${safeId}')">Düzenle</button>
-              <button class="btn btn-outline btn-sm" onclick="deleteContract('${safeId}')" style="color: #ef4444;">Sil</button>
-            </td>
-          </tr>
-        `;
-      }).join('');
-      
-      tbody.innerHTML = DOMPurify.sanitize(html, {
-        ALLOWED_TAGS: ['tr', 'td', 'button', 'span'],
-        ALLOWED_ATTR: ['class', 'onclick', 'style']
+        const startDate = contract.startDate
+          ? new Date(contract.startDate).toLocaleDateString('tr-TR')
+          : '-';
+        const endDate = contract.endDate
+          ? new Date(contract.endDate).toLocaleDateString('tr-TR')
+          : '-';
+        const value = (contract.contractValue || 0).toLocaleString('tr-TR', {
+          style: 'currency',
+          currency: 'TRY',
+        });
+
+        const cells = [
+          contract.contractNo || '-',
+          contract.contractName || '-',
+          contract.siteName || '-',
+          startDate,
+          endDate,
+          value,
+        ];
+        cells.forEach((text) => {
+          const td = document.createElement('td');
+          td.textContent = text;
+          tr.appendChild(td);
+        });
+
+        const statusTd = document.createElement('td');
+        const badge = document.createElement('span');
+        badge.className = `badge ${status === 'active' ? 'active' : 'passive'}`;
+        badge.textContent = statusText;
+        statusTd.appendChild(badge);
+        tr.appendChild(statusTd);
+
+        const actionsTd = document.createElement('td');
+        actionsTd.className = 'action-buttons-cell';
+
+        const btnView = document.createElement('button');
+        btnView.type = 'button';
+        btnView.className = 'btn btn-outline btn-sm';
+        btnView.textContent = 'Görüntüle';
+        btnView.setAttribute('aria-label', 'Sözleşmeyi görüntüle');
+        btnView.addEventListener('click', () => window.viewContract(id));
+
+        const btnEdit = document.createElement('button');
+        btnEdit.type = 'button';
+        btnEdit.className = 'btn btn-outline btn-sm';
+        btnEdit.textContent = 'Düzenle';
+        btnEdit.setAttribute('aria-label', 'Sözleşmeyi düzenle');
+        btnEdit.addEventListener('click', () => window.editContract(id));
+
+        const btnDel = document.createElement('button');
+        btnDel.type = 'button';
+        btnDel.className = 'btn btn-outline btn-sm';
+        btnDel.textContent = 'Sil';
+        btnDel.style.color = '#ef4444';
+        btnDel.setAttribute('aria-label', 'Sözleşmeyi sil');
+        btnDel.addEventListener('click', () => window.deleteContract(id));
+
+        actionsTd.appendChild(btnView);
+        actionsTd.appendChild(btnEdit);
+        actionsTd.appendChild(btnDel);
+        tr.appendChild(actionsTd);
+
+        tbody.appendChild(tr);
       });
     }
     

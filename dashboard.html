@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8" />
   <title>NEFISOFT — Kontrol Paneli</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
   <!-- PWA Meta Tags -->
   <meta name="theme-color" content="#2563EB" />
@@ -262,6 +262,13 @@
     html[data-theme="dark"] .nav-content p {
       color: rgba(255, 255, 255, 0.7);
     }
+
+    @media (max-width: 768px) {
+      .cards,
+      .nav-grid {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
 
@@ -269,7 +276,7 @@
   <!-- Common Header -->
   <header id="app-header"></header>
 
-  <main class="container--wide" style="padding:20px 0">
+  <main class="container--wide" style="padding:20px 16px">
     <div class="page-heading">
       <div class="page-title-chip" role="presentation">
         <span class="page-title-icon" aria-hidden="true">📊</span>
@@ -364,19 +371,21 @@
           <a href="./demands.html">Tüm Talepler</a>
         </div>
       </div>
-      <table class="table">
-        <thead>
-          <tr>
-            <th>SATFK</th>
-            <th>Başlık</th>
-            <th>Kategoriler</th>
-            <th>Durum</th>
-            <th>Teklif Sayısı</th>
-            <th>Tarih</th>
-          </tr>
-        </thead>
-        <tbody id="last-demands"></tbody>
-      </table>
+      <div class="table-responsive" role="region" aria-label="Son talepler tablosu" tabindex="0">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>SATFK</th>
+              <th>Başlık</th>
+              <th>Kategoriler</th>
+              <th>Durum</th>
+              <th>Teklif Sayısı</th>
+              <th>Tarih</th>
+            </tr>
+          </thead>
+          <tbody id="last-demands"></tbody>
+        </table>
+      </div>
     </div>
   </main>
 
@@ -395,6 +404,9 @@
     // Teklifbul Rule v1.0 - Tek kaynaktan auth guard yönetimi
     import { initGlobalHeader } from './assets/js/ui/header.js';
     import { db, auth, requireAuth } from "./firebase.js";
+    import { logger } from './src/shared/log/logger.js';
+    import { toast } from './src/shared/ui/toast.js';
+    import { MESSAGES } from './src/shared/constants/messages.js';
 
     // Teklifbul Rule v1.0 - Google login sonrası auth state'in stabilize olmasını bekle
     const isGoogleLogin = sessionStorage.getItem('googleLoginSuccess') === 'true';
@@ -485,12 +497,6 @@
     initAuthGuard().catch(err => {
       console.error('Auth guard init failed', err);
     });
-    // Teklifbul Rule v1.0 - Structured Logging
-    import { logger } from './src/shared/log/logger.js';
-    // Teklifbul Rule v1.0 - Toast Notification System
-    import { toast } from './src/shared/ui/toast.js';
-    // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
-    import { MESSAGES } from './src/shared/constants/messages.js';
 
     // Initialize global header
     initGlobalHeader({ mount: '#app-header', activeRoute: 'dashboard' });
@@ -603,27 +609,58 @@
         return fcmModule;
       };
 
+      const isNativePlatform = () => {
+        try {
+          return typeof window !== 'undefined'
+            && window.Capacitor
+            && typeof window.Capacitor.isNativePlatform === 'function'
+            && window.Capacitor.isNativePlatform();
+        } catch {
+          return false;
+        }
+      };
+
+      const applyNativePushStatus = (token) => {
+        if (!statusEl) return;
+        if (token) {
+          statusEl.textContent = MESSAGES.INFO_NATIVE_PUSH_ACTIVE;
+          if (tokenInfoEl) {
+            tokenInfoEl.textContent = `Token: ${String(token).substring(0, 30)}...`;
+            tokenInfoEl.style.display = 'block';
+          }
+          return;
+        }
+        statusEl.textContent = MESSAGES.WARN_NATIVE_PUSH_PENDING;
+      };
+
       // FCM başlat ve UI güncelle
       // Teklifbul Rule v1.0 - Push notification setup (Lazy Load)
       const startFCM = async () => {
-        const fcm = await initFCMLazy();
-        if (!fcm) return;
-
-        const { initFCM, getCurrentToken } = fcm;
-        // Teklifbul Rule v1.0 - requireAuth error handling (auth guard yönlendirecek)
         let currentUser;
         try {
           currentUser = await requireAuth();
         } catch (err) {
-          // Auth guard yönlendirmeyi yapacak
           if (statusEl) {
             statusEl.textContent = '⏳ Giriş bekleniyor...';
           }
           return;
         }
 
-        if (currentUser && statusEl) {
-          statusEl.textContent = '⏳ FCM başlatılıyor...';
+        if (!currentUser || !statusEl) return;
+
+        if (isNativePlatform()) {
+          applyNativePushStatus(window.__TB_PUSH_TOKEN__);
+          window.addEventListener('tb:pushToken', (evt) => {
+            applyNativePushStatus(evt?.detail?.token || window.__TB_PUSH_TOKEN__);
+          });
+          return;
+        }
+
+        const fcm = await initFCMLazy();
+        if (!fcm) return;
+
+        const { initFCM } = fcm;
+        statusEl.textContent = '⏳ FCM başlatılıyor...';
 
           try {
             const token = await initFCM();
@@ -681,7 +718,6 @@
               tokenInfoEl.style.display = 'block';
             }
           }
-        }
       };
 
       // IntersectionObserver ile FCM card görünür olduğunda yükle
@@ -706,17 +742,19 @@
             testBtn.disabled = true;
             testBtn.textContent = '⏳ Gönderiliyor...';
 
-            // FCM modülünü yükle (eğer henüz yüklenmediyse)
-            const fcm = await initFCMLazy();
-            if (!fcm) {
-              toast.error('FCM modülü yüklenemedi');
-              testBtn.disabled = false;
-              testBtn.textContent = '📤 Test Bildirimi Gönder';
-              return;
+            let token = null;
+            if (isNativePlatform()) {
+              token = window.__TB_PUSH_TOKEN__ || null;
+            } else {
+              const fcm = await initFCMLazy();
+              if (!fcm) {
+                toast.error('FCM modülü yüklenemedi');
+                testBtn.disabled = false;
+                testBtn.textContent = '📤 Test Bildirimi Gönder';
+                return;
+              }
+              token = fcm.getCurrentToken();
             }
-
-            const { getCurrentToken } = fcm;
-            const token = getCurrentToken();
             if (!token) {
               toast.error(MESSAGES.ERROR_FCM_TOKEN);
               testBtn.disabled = false;
@@ -767,6 +805,7 @@
   <!-- Dashboard Data Script - Lazy Loading (Performance Optimization) -->
   <!-- Teklifbul Rule v1.2.26 - Dashboard data'yı sadece tablolar görünür olduğunda yükle -->
   <script type="module">
+    import { logger } from './src/shared/log/logger.js';
     // Dashboard data'yı lazy load et - sadece tablolar görünür olduğunda yükle
     (async () => {
       // Tabloları bul
@@ -796,7 +835,7 @@
             const cid = userData?.companyId;
             const aid = userData?.activeCompanyId;
             const arr0 = Array.isArray(userData?.companies) && userData.companies.length ? userData.companies[0] : null;
-            if (cid && typeof cid === "string" && !cid.startsWith("solo-") && !cid.startsWith("tax-")) return cid;
+            if (cid && typeof cid === "string" && !cid.startsWith("solo-")) return cid;
             if (aid && typeof aid === "string" && aid.startsWith("solo-") && cid) return cid;
             return aid || cid || arr0;
           }
@@ -841,9 +880,7 @@
             .split(',')
             .map((e) => e.trim().toLowerCase())
             .filter(Boolean);
-          if (!adminEmailList.length) {
-            adminEmailList.push('akyildizfaruk@gmail.com');
-          }
+          // Hardcoded default e-posta yok — ADMIN_EMAILS / custom claim ile admin olunur
 
           // Admin kontrolü - Teklifbul Rule v1.0 (claims + Firestore + API fallback)
           const tokenResult = await user.getIdTokenResult(true);
@@ -877,15 +914,8 @@
         }
       }
 
-      // Teklifbul Rule v1.0 - Dashboard data'yı hemen yükle (metrikler için)
-      // Metriklerin doğru gösterilmesi için dashboard-data.js'i hemen yükle
-      const script = document.createElement('script');
-      script.type = 'module';
-      script.src = '/assets/js/dashboard-data.js';
-      script.onerror = (evt) => {
-        logger.error('Dashboard data yüklenemedi', evt?.error || evt);
-      };
-      document.body.appendChild(script);
+      // Teklifbul Rule v1.0 - Metrikler (Vite bundle içinde)
+      await import('./assets/js/dashboard-data.js');
     })();
   </script>
 
@@ -895,33 +925,38 @@
     import { toast } from './src/shared/ui/toast.js';
 
     const FX_PROXY_URL = '/api/fx';
+    const FX_PUBLIC_URL = 'https://api.exchangerate-api.com/v4/latest/TRY';
     const FX_REFRESH_INTERVAL = 60_000;
     const placeholderText = '-';
     const timeElement = document.getElementById('fx-time');
 
-    async function loadFx() {
+    async function fetchFxPayload() {
       try {
         const response = await fetch(FX_PROXY_URL);
-        if (!response.ok) {
-          // Teklifbul Rule v1.0 - HTTP hata kodlarına göre daha açıklayıcı mesaj
-          if (response.status === 500 || response.status === 502) {
-            const errorData = await response.json().catch(() => ({}));
-            if (errorData.error === 'fx_network_error') {
-              logger.warn('FX: Network error, server may be down');
-            } else {
-              logger.error('FX: Server error', { status: response.status, error: errorData });
-            }
-          }
-          throw new Error(`HTTP ${response.status}`);
-        }
-
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
+        if (!data.ok) throw new Error(data.error || 'fx_api_error');
+        return data;
+      } catch (proxyErr) {
+        logger.warn('FX: proxy kullanılamadı, public fallback deneniyor', proxyErr);
+        const response = await fetch(FX_PUBLIC_URL, { cache: 'no-store' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const payload = await response.json();
+        const usdRateRaw = payload.rates?.USD;
+        const eurRateRaw = payload.rates?.EUR;
+        if (!usdRateRaw || !eurRateRaw) throw new Error('fx_rate_missing');
+        return {
+          ok: true,
+          usdRate: Number((1 / usdRateRaw).toFixed(4)),
+          eurRate: Number((1 / eurRateRaw).toFixed(4)),
+          timestamp: payload.time_last_update_unix ? payload.time_last_update_unix * 1000 : Date.now()
+        };
+      }
+    }
 
-        // Teklifbul Rule v1.0 - Response validation
-        if (!data.ok) {
-          logger.warn('FX: API returned error', data);
-          throw new Error(data.error || 'fx_api_error');
-        }
+    async function loadFx() {
+      try {
+        const data = await fetchFxPayload();
 
         document.getElementById('fx-usd').textContent = data.usdRate?.toFixed(4) ?? placeholderText;
         document.getElementById('fx-eur').textContent = data.eurRate?.toFixed(4) ?? placeholderText;

@@ -1,17 +1,53 @@
 const functions = require("firebase-functions");
 const ExcelJS = require("exceljs");
+const admin = require("firebase-admin");
+
+if (!admin.apps.length) {
+  admin.initializeApp();
+}
+
+const GCF_CORS_ORIGINS = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "http://localhost:3000",
+  "https://teklifbul.web.app",
+  "https://teklifbul.firebaseapp.com",
+  "https://nefisoft.com",
+  "https://www.nefisoft.com",
+  "capacitor://localhost",
+  "ionic://localhost",
+  "https://localhost",
+  "http://localhost",
+];
+
+function applyCors(req, res) {
+  const origin = req.get("origin") || "";
+  if (GCF_CORS_ORIGINS.includes(origin)) {
+    res.set("Access-Control-Allow-Origin", origin);
+    res.set("Vary", "Origin");
+  }
+  res.set("Access-Control-Allow-Methods", "POST, OPTIONS, GET");
+  res.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+}
 
 exports.exportPurchaseForm = functions
   .https
   .onRequest(async (req, res) => {
-    // CORS
-    res.set("Access-Control-Allow-Origin", "*");
-    res.set("Access-Control-Allow-Methods", "POST, OPTIONS, GET");
-    res.set("Access-Control-Allow-Headers", "Content-Type");
+    applyCors(req, res);
 
     if (req.method === "OPTIONS") return res.status(204).send("");
     if (req.method === "GET") return res.status(200).send("exportPurchaseForm OK v3.0 - TWO SHEETS (Talep + Teklif) (use POST for Excel).");
     if (req.method !== "POST") return res.status(405).send("Method Not Allowed");
+
+    const authHeader = req.headers.authorization || "";
+    if (!authHeader.startsWith("Bearer ")) {
+      return res.status(401).send("Unauthorized");
+    }
+    try {
+      await admin.auth().verifyIdToken(authHeader.slice("Bearer ".length));
+    } catch {
+      return res.status(401).send("Unauthorized");
+    }
 
     try {
       console.log("==========================================");

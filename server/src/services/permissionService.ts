@@ -5,9 +5,10 @@
  * Kullanıcının rolüne göre permission'ları resolve eder
  */
 
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { createRequire } from 'module';
 import { logger } from '../../../src/shared/log/logger.js';
 import type { AuthenticatedRequest } from '../../middleware/auth.js';
 import { getFromReqCache, setInReqCache } from '../utils/requestCache.js';
@@ -15,14 +16,41 @@ import { ttlCache, CacheKeys } from '../utils/ttlCache.js';
 // Teklifbul Rule v1.0 - users/{uid} cache
 import { getCachedUserDoc } from '../utils/userDocCache.js';
 import type { Request } from 'express';
-import { existsSync } from 'fs';
+import { getAdminDb } from '../../utils/firestore.js';
+import {
+  resolveTrustedCompanyIdAsync,
+  userBelongsToCompanyAsync,
+} from '../../utils/companyAccess.js';
 
 // ES modules için __dirname (server/src/services/ konumundan)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+const require = createRequire(import.meta.url);
 
 // Role permissions template cache (process-level, already cached)
 let rolePermissionsTemplate: any = null;
+
+/**
+ * Template JSON aday yolları — Cloud Functions cwd/packaging farklılıklarına dayanıklı
+ * Teklifbul Rule v1.0
+ */
+function resolveRolePermissionsTemplatePath(): string | null {
+  const candidates = [
+    // Derlenmiş dist: functions/dist/server/src/services → ../../../../src/shared/data
+    join(__dirname, '../../../../src/shared/data/rolePermissionsTemplate.json'),
+    // Repo kökü / local api
+    join(process.cwd(), 'src', 'shared', 'data', 'rolePermissionsTemplate.json'),
+    join(process.cwd(), '..', 'src', 'shared', 'data', 'rolePermissionsTemplate.json'),
+    // functions paketinde file:.. bağımlılığı
+    join(process.cwd(), 'node_modules', 'teklifbul-web', 'src', 'shared', 'data', 'rolePermissionsTemplate.json'),
+    join(process.cwd(), '..', 'node_modules', 'teklifbul-web', 'src', 'shared', 'data', 'rolePermissionsTemplate.json'),
+  ];
+
+  for (const p of candidates) {
+    if (existsSync(p)) return p;
+  }
+  return null;
+}
 
 /**
  * Role permissions template'i yükler (lazy loading + TTL cache)
@@ -46,20 +74,32 @@ function loadRolePermissionsTemplate(): any {
   }
 
   try {
-    // Server tarafından erişilebilir path - Teklifbul Rule v1.0 - Fix: Root dizinden path oluştur
-    // process.cwd() genelde server/ dizininde, root'a çıkmak için .. kullan
-    // Alternatif: __dirname'den root'a çık (TypeScript compile sonrası dist/ altında olabilir)
-    const rootDir = process.cwd().endsWith('server') 
-      ? join(process.cwd(), '..')
-      : process.cwd();
-    const templatePath = join(rootDir, 'src', 'shared', 'data', 'rolePermissionsTemplate.json');
+    // 1) createRequire ile paket içinden (en güvenilir Cloud Functions yolu)
+    try {
+      const fromPkg = require('teklifbul-web/src/shared/data/rolePermissionsTemplate.json');
+      if (fromPkg?.matrixDefaults) {
+        rolePermissionsTemplate = fromPkg;
+        ttlCache.set(cacheKey, rolePermissionsTemplate, 5 * 60 * 1000);
+        logger.info('Role permissions template yüklendi (package require)');
+        return rolePermissionsTemplate;
+      }
+    } catch {
+      // package resolve başarısız olabilir; dosya yollarına düş
+    }
+
+    const templatePath = resolveRolePermissionsTemplatePath();
+    if (!templatePath) {
+      logger.error('Role permissions template bulunamadı (tüm aday yollar denendi)');
+      return null;
+    }
+
     const templateContent = readFileSync(templatePath, 'utf8');
     rolePermissionsTemplate = JSON.parse(templateContent);
-    
+
     // TTL cache'e kaydet (5 dakika, file değişirse restart gerekir)
     ttlCache.set(cacheKey, rolePermissionsTemplate, 5 * 60 * 1000);
-    
-    logger.info('Role permissions template yüklendi');
+
+    logger.info('Role permissions template yüklendi', { templatePath });
     return rolePermissionsTemplate;
   } catch (error: any) {
     logger.error('Role permissions template yüklenemedi', error);
@@ -126,12 +166,9 @@ async function getUserCompanyRole(
     let companyMatches = false;
     
     if (companyId.startsWith('solo-')) {
-      // solo- ile başlıyorsa, activeCompanyId ile eşleşmeli
       companyMatches = userActiveCompanyId === companyId;
     } else {
-      // Normal companyId ise, companyId ile eşleşmeli (activeCompanyId fallback)
-      companyMatches = userCompanyId === companyId || 
-                       (userActiveCompanyId && !userActiveCompanyId.startsWith('solo-') && userActiveCompanyId === companyId);
+      companyMatches = await userBelongsToCompanyAsync(userData, companyId, userId);
     }
 
     if (!companyMatches) {
@@ -147,9 +184,24 @@ async function getUserCompanyRole(
       return null;
     }
 
-    // Role bilgisini al (companyRoleKey veya companyRole)
-    // Teklifbul Rule v1.0 - Rol formatı: "buyer:isveren" veya "isveren" (eski format)
-    let roleCode = userData?.companyRoleKey || null;
+    // Rol SoT: companies/{id}/members/{uid}.approvedRole — user.companyRoleKey self-write olmasın
+    let roleCode: string | null = null;
+    try {
+      const db = await getAdminDb();
+      if (db && !companyId.startsWith('solo-')) {
+        const memberSnap = await db.collection('companies').doc(companyId).collection('members').doc(userId).get();
+        if (memberSnap.exists) {
+          const memberData = memberSnap.data() || {};
+          roleCode = memberData.approvedRole || memberData.companyRoleKey || null;
+        }
+      }
+    } catch (memberErr) {
+      logger.warn('getUserCompanyRole: members SoT okunamadı, user fallback', memberErr);
+    }
+
+    if (!roleCode) {
+      roleCode = userData?.companyRoleKey || null;
+    }
     
     // Eğer companyRoleKey yoksa, companyRole ve companyRoleType'dan oluştur
     if (!roleCode && userData?.companyRole && userData?.companyRoleType) {
@@ -203,6 +255,26 @@ async function getUserCompanyRole(
 }
 
 /**
+ * Teklifbul Rule v1.0 — işveren / üst yönetim satış okuma fallback
+ */
+function isIsverenRole(roleCode: string | null | undefined): boolean {
+  if (!roleCode || typeof roleCode !== 'string') return false;
+  const r = roleCode.toLowerCase();
+  return (
+    r === 'isveren' ||
+    r.endsWith(':isveren') ||
+    r.includes('yonetim_kurulu') ||
+    r.endsWith(':ceo') ||
+    r.includes('genel_mudur') ||
+    r.includes('sirket_sahibi')
+  );
+}
+
+function isSalesReadPerm(permKey: string): boolean {
+  return permKey === 'sales.view' || permKey === 'sales.create' || permKey === 'sales.edit';
+}
+
+/**
  * Kullanıcının belirli bir permission'a sahip olup olmadığını kontrol eder
  * Teklifbul Rule v1.0 - Request-scope cache desteği
  */
@@ -216,6 +288,14 @@ export async function hasPermission(
     const template = loadRolePermissionsTemplate();
     if (!template || !template.matrixDefaults) {
       logger.warn('hasPermission: Template not loaded', { userId, companyId, permKey });
+      const roleCodeFallback = await getUserCompanyRole(userId, companyId, req);
+      if (isIsverenRole(roleCodeFallback) && isSalesReadPerm(permKey)) {
+        logger.warn('hasPermission: isveren sales fallback (template missing)', {
+          roleCode: roleCodeFallback,
+          permKey
+        });
+        return true;
+      }
       return false;
     }
 
@@ -227,7 +307,14 @@ export async function hasPermission(
     }
 
     // Role'un permission matrix'ini al
-    const rolePermissions = template.matrixDefaults[roleCode];
+    let rolePermissions = template.matrixDefaults[roleCode];
+    if (!rolePermissions) {
+      // Eski format: "isveren" → buyer:isveren dene
+      const legacyKey = roleCode.includes(':') ? null : `buyer:${roleCode}`;
+      if (legacyKey && template.matrixDefaults[legacyKey]) {
+        rolePermissions = template.matrixDefaults[legacyKey];
+      }
+    }
     if (!rolePermissions) {
       logger.warn('hasPermission: Role permissions not found', {
         userId,
@@ -236,11 +323,22 @@ export async function hasPermission(
         permKey,
         availableRoles: Object.keys(template.matrixDefaults).slice(0, 10) // İlk 10 rolü göster
       });
+      // Teklifbul Rule v1.0 — işveren için kritik satış okuma fallback (template eksik anahtar)
+      if (isIsverenRole(roleCode) && isSalesReadPerm(permKey)) {
+        logger.warn('hasPermission: isveren sales fallback (role matrix missing)', { roleCode, permKey });
+        return true;
+      }
       return false;
     }
 
     // Permission kontrolü
-    const hasPerm = rolePermissions[permKey] === true;
+    let hasPerm = rolePermissions[permKey] === true;
+
+    // Template eskiyse / sales.* eksikse işveren yine de satış görebilsin
+    if (!hasPerm && isIsverenRole(roleCode) && isSalesReadPerm(permKey)) {
+      logger.warn('hasPermission: isveren sales fallback (perm missing in matrix)', { roleCode, permKey });
+      hasPerm = true;
+    }
     
     // Teklifbul Rule v1.0 - Permission kontrolü başarısız olursa detaylı log
     if (!hasPerm) {
@@ -298,131 +396,68 @@ export async function hasAnyPermission(
 }
 
 /**
- * Şirket bazlı companyId çözümleme helper'ı
- * Teklifbul Rule v1.0 - Shared company ID resolution
- */
-function resolveSharedCompanyId(userData: any): string | null {
-  const cid = userData?.companyId;
-  const aid = userData?.activeCompanyId;
-  const arr0 = Array.isArray(userData?.companies) && userData.companies.length ? userData.companies[0] : null;
-
-  // Prefer explicit companyId if present and not a solo/tax doc
-  if (cid && typeof cid === "string" && !cid.startsWith("solo-") && !cid.startsWith("tax-")) return cid;
-
-  // If activeCompanyId is solo-* but companyId exists, still use companyId
-  if (aid && typeof aid === "string" && aid.startsWith("solo-") && cid) return cid;
-
-  // Otherwise fallback
-  return aid || cid || arr0;
-}
-
-/**
- * Request'ten companyId'yi alır (body, query veya user'dan)
- * Teklifbul Rule v1.0 - GÜVENLİK: x-company-id header doğrulaması eklendi
+ * Request'ten trusted companyId alır.
+ * Teklifbul Rule v1.0 — Header/body/query spoof → null (fail-closed); membership zorunlu.
  */
 export async function getCompanyIdFromRequest(req: AuthenticatedRequest): Promise<string | null> {
   const userId = req.user?.uid;
   if (!userId) return null;
 
-  // Önce kullanıcının gerçek companyId'sini al (cache ile)
-  let userCompanyId: string | null = null;
+  let userData: any = null;
   try {
     const userDoc = await getCachedUserDoc(userId, req);
     if (userDoc.exists && userDoc.data) {
-      userCompanyId = resolveSharedCompanyId(userDoc.data);
+      userData = userDoc.data;
     }
   } catch (error) {
     logger.warn('getCompanyIdFromRequest: User doc fetch error', error);
   }
 
-  // x-company-id header'ından al (doğrulama ile)
-  const headerCompanyId = req.headers['x-company-id'];
-  if (headerCompanyId && typeof headerCompanyId === 'string') {
-    // GÜVENLİK: Header'daki companyId kullanıcının gerçek companyId'si ile eşleşmeli
-    if (userCompanyId && headerCompanyId !== userCompanyId) {
-      logger.warn('GÜVENLİK UYARISI: x-company-id header kullanıcının companyId\'si ile eşleşmiyor', {
-        userId,
-        headerCompanyId,
-        userCompanyId,
-        path: req.path
-      });
-      // Header'daki companyId güvenilir değil, kullanıcının gerçek companyId'sini kullan
-      // return null; // Veya hata fırlat
-    } else {
-      // Header doğru, kullan
-      return headerCompanyId;
-    }
+  if (!userData) return null;
+
+  const headerRaw = req.headers['x-company-id'];
+  const headerCompanyId = typeof headerRaw === 'string' ? headerRaw : undefined;
+
+  // Header varsa: membership zorunlu, spoof → null
+  if (headerCompanyId && headerCompanyId.trim()) {
+    return resolveTrustedCompanyIdAsync(userData, headerCompanyId, {
+      userId,
+      path: req.path,
+    });
   }
 
-  // Body'den al (doğrulama ile)
-  if ((req.body as any)?.companyId) {
-    const bodyCompanyId = (req.body as any).companyId;
-    // GÜVENLİK: Body'deki companyId kullanıcının gerçek companyId'si ile eşleşmeli
-    if (userCompanyId && bodyCompanyId !== userCompanyId) {
-      logger.warn('GÜVENLİK UYARISI: Body companyId kullanıcının companyId\'si ile eşleşmiyor', {
-        userId,
-        bodyCompanyId,
-        userCompanyId,
-        path: req.path
-      });
-      return null; // Güvenilir değil
+  // Body / query adayı — yalnızca üyelik varsa kabul
+  const bodyCompanyId =
+    req.body && typeof (req.body as any).companyId === 'string'
+      ? String((req.body as any).companyId).trim()
+      : '';
+  const queryRaw = req.query?.companyId;
+  const queryCompanyId = Array.isArray(queryRaw)
+    ? String(queryRaw[0] || '').trim()
+    : typeof queryRaw === 'string'
+      ? queryRaw.trim()
+      : '';
+
+  const candidate = bodyCompanyId || queryCompanyId;
+  if (candidate) {
+    if (await userBelongsToCompanyAsync(userData, candidate, userId)) {
+      return candidate;
     }
-    return bodyCompanyId;
+    logger.warn('GÜVENLİK: body/query companyId spoof engellendi', {
+      userId,
+      candidate,
+      path: req.path,
+    });
+    return null;
   }
 
-  // Query'den al (doğrulama ile)
-  if (req.query?.companyId) {
-    const queryCompanyId = Array.isArray(req.query.companyId)
-      ? (req.query.companyId[0] as string)
-      : (req.query.companyId as string);
-    if (queryCompanyId) {
-      // GÜVENLİK: Query'deki companyId kullanıcının gerçek companyId'si ile eşleşmeli
-      if (userCompanyId && queryCompanyId !== userCompanyId) {
-        logger.warn('GÜVENLİK UYARISI: Query companyId kullanıcının companyId\'si ile eşleşmiyor', {
-          userId,
-          queryCompanyId,
-          userCompanyId,
-          path: req.path
-        });
-        return null; // Güvenilir değil
-      }
-      return queryCompanyId;
-    }
-  }
-
-  // User'dan al (fallback) - En güvenli yöntem
-  return userCompanyId;
+  return resolveTrustedCompanyIdAsync(userData, null, { userId, path: req.path });
 }
 
 /**
- * @deprecated Use getCompanyIdFromRequest instead (async version with validation)
- * Request'ten companyId'yi alır (body, query veya user'dan) - Eski versiyon (güvenlik açığı var)
+ * @deprecated Fail-closed. Use getCompanyIdFromRequest (async, membership-checked).
  */
-export function getCompanyIdFromRequestSync(req: AuthenticatedRequest): string | null {
-  // x-company-id header'ından al (öncelikli)
-  const headerCompanyId = req.headers['x-company-id'];
-  if (headerCompanyId && typeof headerCompanyId === 'string') {
-    return headerCompanyId;
-  }
-
-  // Body'den al
-  if ((req.body as any)?.companyId) {
-    return (req.body as any).companyId;
-  }
-
-  // Query'den al
-  if (req.query?.companyId) {
-    const companyId = Array.isArray(req.query.companyId)
-      ? (req.query.companyId[0] as string)
-      : (req.query.companyId as string);
-    return companyId || null;
-  }
-
-  // User'dan al (fallback) - Teklifbul Rule v1.0 - companyId öncelikli, activeCompanyId fallback
-  if (req.user?.activeCompanyId) {
-    return (req.user.activeCompanyId as string) || null;
-  }
-
+export function getCompanyIdFromRequestSync(_req: AuthenticatedRequest): string | null {
   return null;
 }
 

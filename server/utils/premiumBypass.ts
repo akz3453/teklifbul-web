@@ -1,11 +1,10 @@
 import type { AuthUser } from '../auth/admin-check.js';
 
-const DEFAULT_PREMIUM_BYPASS_EMAILS = ['akyildizfaruk@gmail.com'];
-
 function normalizeEmail(value: unknown): string {
   return String(value || '').trim().toLowerCase();
 }
 
+/** Yalnız env: ADMIN_PREMIUM_BYPASS_EMAILS — hardcoded default yok */
 function getConfiguredBypassEmails(): Set<string> {
   const raw = String(process.env.ADMIN_PREMIUM_BYPASS_EMAILS || '').trim();
   const configured = raw
@@ -13,7 +12,7 @@ function getConfiguredBypassEmails(): Set<string> {
     .map((email) => normalizeEmail(email))
     .filter(Boolean);
 
-  return new Set([...DEFAULT_PREMIUM_BYPASS_EMAILS, ...configured].map((email) => normalizeEmail(email)));
+  return new Set(configured);
 }
 
 export function isPremiumBypassEmail(email: unknown): boolean {
@@ -25,4 +24,3 @@ export function isPremiumBypassEmail(email: unknown): boolean {
 export function isPremiumBypassUser(user: AuthUser | null | undefined): boolean {
   return isPremiumBypassEmail(user?.email);
 }
-

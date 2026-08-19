@@ -10,9 +10,11 @@ import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/
 // Teklifbul Rule v1.0 - Client Error Reporting v1
 import { initErrorReporter } from './utils/errorReporter.js';
 
-const LOGIN_PAGE = "./index.html";
-const DASHBOARD_PAGE = "./dashboard.html";
-const WAITING_PAGE = "./company-join-waiting.html";
+// Teklifbul Rule v1.0 — Absolute paths only (nested /pages/* WebView'da relative bozulur)
+const LOGIN_PAGE = "/login.html";
+const DASHBOARD_PAGE = "/dashboard.html";
+const WAITING_PAGE = "/company-join-waiting.html";
+const ONBOARD_PAGE = "/role-select.html";
 
 // Teklifbul Rule v1.0 - Yönlendirme flag'i (aynı anda birden fazla yönlendirme yapılmasını önler)
 let isRedirecting = false;
@@ -30,7 +32,7 @@ function isEmailVerified(user) {
     if (providers.length > 0 && providers.some(p => p && p !== "password")) return true;
     return false;
   } catch (err) {
-    console.error("isEmailVerified error", err);
+    logger.error("isEmailVerified error", err);
     return false;
   }
 }
@@ -176,8 +178,9 @@ export async function initAuthGuard() {
 
   // Auth state değişikliklerini dinle
   onAuthStateChanged(auth, (user) => {
-    console.info("🧭 🔍 Auth Guard - onAuthStateChanged");
-    console.info("ℹ️ Auth state değişti", { user });
+    logger.group('Auth Guard - onAuthStateChanged');
+    logger.info('Auth state değişti', { userExists: !!user });
+    logger.end();
 
     // Teklifbul Rule v1.0 - Google login sonrası auth state değişikliği için debounce
     // Popup kapanırken auth state değişikliği biraz gecikebilir, bu yüzden kısa bir delay ekle
@@ -302,10 +305,12 @@ async function performRedirect(user) {
     return;
   }
 
-  console.info("🧭 🔍 Auth Guard - performRedirect", {
+  logger.group('Auth Guard - performRedirect');
+  logger.info('Yönlendirme kontrolü', {
     pathname: window.location.pathname,
     userExists: !!user,
   });
+  logger.end();
 
   const path = window.location.pathname || "";
   const isLoginPage =
@@ -404,7 +409,7 @@ async function performRedirect(user) {
       return;
     }
 
-    console.info("ℹ️ Auth guard: Login sayfasında, kullanıcı var, dashboard'a yönlendirme");
+    logger.info("Auth guard: Login sayfasında, kullanıcı var, dashboard'a yönlendirme");
 
     // Teklifbul Rule v1.0 - Google login sonrası auth state'in stabilize olmasını bekle
     // Popup kapanırken auth state değişikliği biraz gecikebilir
@@ -552,7 +557,7 @@ async function performRedirect(user) {
       sessionStorage.removeItem('googleLoginSuccess');
     }
 
-    console.info("ℹ️ Auth guard: Kullanıcı yok, login sayfasına yönlendirme");
+    logger.info("Auth guard: Kullanıcı yok, login sayfasına yönlendirme");
     isRedirecting = true;
     window.location.replace("/login.html");
     return;
@@ -578,11 +583,6 @@ async function performRedirect(user) {
       return;
     }
   }
-
-  console.info("ℹ️ Yönlendirme kontrolü", {
-    path,
-    userExists: !!user,
-  });
 }
 
 /**
@@ -656,8 +656,6 @@ export async function initProfileGuard() {
 
   const finalUser = auth.currentUser;
   if (!finalUser) return; // Login guard halleder
-
-  const ONBOARD_PAGE = "./role-select.html"; // veya onboarding.html
 
   try {
     const prof = await getDoc(doc(db, "users", finalUser.uid));
@@ -766,7 +764,7 @@ export async function getAuthStr() {
     const token = await user.getIdToken();
     return `Bearer ${token}`;
   } catch (e) {
-    console.error("Error getting auth token", e);
+    logger.error("Error getting auth token", e);
     return null;
   }
 }

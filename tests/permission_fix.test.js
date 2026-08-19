@@ -33,45 +33,59 @@ describe('Company Join Requests Permissions', () => {
     const companyB = 'company-b';
 
     beforeAll(async () => {
-        // Setup Admin A (Member of Company A)
         adminA = testEnv.authenticatedContext('admin-a');
-        await setDoc(doc(adminA.firestore(), 'users', 'admin-a'), {
-            companyId: companyA,
-            companyRole: 'buyer:genel_mudur',
-            email: 'admina@test.com'
-        });
-
-        // Setup Member A (Member of Company A)
         memberA = testEnv.authenticatedContext('member-a');
-        await setDoc(doc(memberA.firestore(), 'users', 'member-a'), {
-            companyId: companyA,
-            companyRole: 'buyer:satinalma_uzmani',
-            email: 'membera@test.com'
-        });
-
-        // Setup Member B (Member of Company B)
         memberB = testEnv.authenticatedContext('member-b');
-        await setDoc(doc(memberB.firestore(), 'users', 'member-b'), {
-            companyId: companyB,
-            companyRole: 'buyer:satinalma_uzmani',
-            email: 'memberb@test.com'
+
+        await testEnv.withSecurityRulesDisabled(async (ctx) => {
+            const db = ctx.firestore();
+            await setDoc(doc(db, 'companies', companyA), {
+                ownerId: 'admin-a',
+                name: 'A',
+            });
+            await setDoc(doc(db, 'companies', companyB), {
+                ownerId: 'member-b',
+                name: 'B',
+            });
+            await setDoc(doc(db, 'users', 'admin-a'), {
+                companyId: companyA,
+                companyRole: 'buyer:genel_mudur',
+                companyJoinStatus: 'accepted',
+                email: 'admina@test.com',
+            });
+            await setDoc(doc(db, 'users', 'member-a'), {
+                companyId: companyA,
+                companyRole: 'buyer:satinalma_uzmani',
+                companyJoinStatus: 'accepted',
+                email: 'membera@test.com',
+            });
+            await setDoc(doc(db, 'users', 'member-b'), {
+                companyId: companyB,
+                companyRole: 'buyer:satinalma_uzmani',
+                companyJoinStatus: 'accepted',
+                email: 'memberb@test.com',
+            });
         });
     });
 
-    test('Member A should be able to read join request for Company A', async () => {
+    test('Owner A should be able to read join request for Company A', async () => {
         const requestId = 'request-for-a';
-        const requestRef = doc(adminA.firestore(), 'companyJoinRequests', requestId);
-
-        // Create request (Admin context or same user can create)
-        await setDoc(requestRef, {
-            companyId: companyA,
-            userId: 'applicant-1',
-            status: 'pending'
+        await testEnv.withSecurityRulesDisabled(async (ctx) => {
+            await setDoc(doc(ctx.firestore(), 'companyJoinRequests', requestId), {
+                companyId: companyA,
+                userId: 'applicant-1',
+                status: 'pending'
+            });
         });
 
-        // Member A (different user, same company) should be able to read
+        const requestRef = doc(adminA.firestore(), 'companyJoinRequests', requestId);
+        await assertSucceeds(getDoc(requestRef));
+    });
+
+    test('Member A (non-owner) should NOT be able to read join request for Company A', async () => {
+        const requestId = 'request-for-a';
         const memberARef = doc(memberA.firestore(), 'companyJoinRequests', requestId);
-        await assertSucceeds(getDoc(memberARef));
+        await assertFails(getDoc(memberARef));
     });
 
     test('Member B should NOT be able to read join request for Company A', async () => {
@@ -81,11 +95,20 @@ describe('Company Join Requests Permissions', () => {
         await assertFails(getDoc(memberBRef));
     });
 
-    test('Member A should be able to update join request for Company A', async () => {
+    test('Owner A should be able to update join request for Company A', async () => {
+        const requestId = 'request-for-a';
+        const ownerRef = doc(adminA.firestore(), 'companyJoinRequests', requestId);
+
+        await assertSucceeds(updateDoc(ownerRef, {
+            status: 'approved'
+        }));
+    });
+
+    test('Member A (non-owner) should NOT be able to update join request for Company A', async () => {
         const requestId = 'request-for-a';
         const memberARef = doc(memberA.firestore(), 'companyJoinRequests', requestId);
 
-        await assertSucceeds(updateDoc(memberARef, {
+        await assertFails(updateDoc(memberARef, {
             status: 'approved'
         }));
     });

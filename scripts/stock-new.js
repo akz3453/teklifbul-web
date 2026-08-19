@@ -181,7 +181,7 @@ async function saveStock() {
     // Normalize & search keywords
     raw.name_norm = normalizeTRLower(raw.name);
     raw.search_keywords = tokenizeForIndex(raw.name);
-    raw.sku_norm = raw.sku;
+    raw.sku_norm = normalizeTRLower(raw.sku);
     raw.companyId = companyId;
     raw.updatedAt = serverTimestamp();
 
@@ -342,8 +342,10 @@ async function loadLocations() {
     
     locations.forEach(loc => {
       const option = document.createElement('option');
-      option.value = loc.id;
-      option.textContent = loc.name;
+      const code = loc.warehouseCode || loc.code || loc.name || loc.id;
+      option.value = code;
+      option.dataset.locationId = loc.id;
+      option.textContent = loc.name || code;
       select.appendChild(option);
     });
 

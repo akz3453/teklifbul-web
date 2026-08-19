@@ -81,16 +81,30 @@ export async function loadSystemStatus() {
     // authFetch import
     const { authFetch } = await import('../assets/js/utils/api-helpers.js');
 
+    // Teklifbul Rule v1.0 - Production'da /health hosting HTML döner; /api/* Cloud Function'a gider
+    const parseJsonSafe = async (res) => {
+      const ct = String(res.headers.get('content-type') || '').toLowerCase();
+      if (!ct.includes('application/json')) {
+        const preview = (await res.text()).slice(0, 80);
+        throw new Error(`Beklenen JSON değil (content-type: ${ct || 'yok'}): ${preview}`);
+      }
+      return res.json();
+    };
+
     // Load health and metrics in parallel
     const [healthResponse, metricsResponse] = await Promise.allSettled([
-      authFetch('/health', { method: 'GET' }),
-      authFetch('/metrics', { method: 'GET' })
+      authFetch('/api/health', { method: 'GET' }),
+      authFetch('/api/metrics', { method: 'GET' })
     ]);
 
     // Health data
     let healthData = null;
     if (healthResponse.status === 'fulfilled' && healthResponse.value.ok) {
-      healthData = await healthResponse.value.json();
+      try {
+        healthData = await parseJsonSafe(healthResponse.value);
+      } catch (parseErr) {
+        logger.warn('Health JSON parse hatası', parseErr);
+      }
     } else {
       logger.warn('Health endpoint hatası', healthResponse);
     }
@@ -100,12 +114,18 @@ export async function loadSystemStatus() {
     if (metricsResponse.status === 'fulfilled') {
       const res = metricsResponse.value;
       if (res.ok) {
-        const raw = await res.json();
-        if (raw.ok === true) {
-          metricsData = raw;
-        } else if (raw.disabled) {
-          logger.info('Sistem durumu: trafik metrikleri kapalı (sunucu ENABLE_METRICS)');
+        try {
+          const raw = await parseJsonSafe(res);
+          if (raw.ok === true) {
+            metricsData = raw;
+          } else if (raw.disabled) {
+            logger.info('Sistem durumu: trafik metrikleri kapalı (sunucu ENABLE_METRICS)');
+          }
+        } catch (parseErr) {
+          logger.warn('Metrics JSON parse hatası', parseErr);
         }
+      } else if (res.status === 401 || res.status === 403) {
+        logger.info('Sistem durumu: trafik metrikleri yetkisiz veya secret gerekli');
       } else if (res.status === 404) {
         logger.info('Sistem durumu: trafik metrikleri kapalı veya yok (404)');
       } else {

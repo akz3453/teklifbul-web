@@ -4,6 +4,7 @@
 import { isCategoryAllowed, onCookieConsentChange } from './cookieConsent.js';
 import { logger } from '../../src/shared/log/logger.js';
 import { sanitizeEventParams } from './analytics-params.js';
+import { resolveMeasurementId } from './analytics-id.js';
 
 export const ANALYTICS_EVENTS = {
   PAGE_VIEW: 'page_view',
@@ -20,18 +21,14 @@ export const ANALYTICS_EVENTS = {
 };
 
 export { sanitizeEventParams } from './analytics-params.js';
+export { FIREBASE_WEB_MEASUREMENT_ID, resolveMeasurementId } from './analytics-id.js';
 
 let gtagLoaded = false;
 let initStarted = false;
 let pricingViewSent = false;
 
 function measurementId() {
-  try {
-    const id = String(import.meta.env?.VITE_GA_MEASUREMENT_ID || '').trim();
-    return /^G-[A-Z0-9]+$/i.test(id) ? id : '';
-  } catch {
-    return '';
-  }
+  return resolveMeasurementId();
 }
 
 function loadGtag() {

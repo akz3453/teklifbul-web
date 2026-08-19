@@ -3891,7 +3891,9 @@
     */
 
     // Adres Yönetimi Sayfası Yükleme
+    let addressesPageLoadSeq = 0;
     async function loadAddressesPage() {
+      const loadSeq = ++addressesPageLoadSeq;
       try {
         const settingsPerms = window.__settingsPerms || getSettingsPerms();
         const addrViewKey = settingsPerms?.addresses?.view;
@@ -3944,8 +3946,11 @@
         }
 
         const userData = userDoc.data();
+        if (loadSeq !== addressesPageLoadSeq) return;
         await displayMainAddress(userData);
+        if (loadSeq !== addressesPageLoadSeq) return;
         await loadAdditionalAddressesForManagement(userData);
+        if (loadSeq !== addressesPageLoadSeq) return;
         updateAddressStatistics(userData);
 
         // Manage guard - tüm düzenleme kontrolleri
@@ -5435,13 +5440,7 @@
                 updatedAt: serverTimestamp()
               });
               toast.success(MESSAGES.SUCCESS_DEFAULT_DELIVERY_ADDRESS_UPDATED);
-              // Teklifbul Rule v1.0 - Haritayı seçili adresle yeniden yükle
-              const user = await getCurrentUser();
-              if (user) {
-                const updatedUserData = await getUserData(user.uid);
-                initializeAddressMap(updatedUserData);
-              }
-              await loadAddressesPage(); // Sayfayı yenile
+              await loadAddressesPage();
             } catch (err) {
               logger.error('Varsayılan adres güncelleme hatası', err);
               toast.error(MESSAGES.ERROR_UPDATE + ': ' + err.message);
@@ -5664,6 +5663,28 @@
     }
     // OpenStreetMap Harita Başlatma (Leaflet.js) - $0 maliyet
     let addressMapInstance = null;
+    let addressMapLoadToken = 0;
+
+    // Teklifbul Rule v1.0 - Leaflet aynı DOM node'a ikinci L.map() atamasın
+    function destroyAddressMap(mapContainer) {
+      if (addressMapInstance && addressMapInstance.map) {
+        try {
+          addressMapInstance.map.remove();
+        } catch (removeErr) {
+          logger.warn('Mevcut harita temizlenirken hata', removeErr);
+        }
+      }
+      addressMapInstance = null;
+      if (!mapContainer) return;
+      if (mapContainer._leaflet_id) {
+        try {
+          delete mapContainer._leaflet_id;
+        } catch (_) {
+          mapContainer._leaflet_id = undefined;
+        }
+      }
+      mapContainer.innerHTML = '';
+    }
 
     // OpenStreetMap helper fonksiyonları
     async function geocodeAddress(address) {
@@ -5799,6 +5820,7 @@
 
       // Eğer adres çok eksikse geocoding yapma
       if (!addressString || addressString.trim().length < 5) {
+        destroyAddressMap(mapContainer);
         mapContainer.innerHTML = `
           <div style="padding:20px; text-align:center;">
             <p style="margin:0 0 8px 0; color:#6b7280;">📍 Adres bilgisi eksik</p>
@@ -5963,9 +5985,13 @@
     // Harita Yükleme Fonksiyonu (OpenStreetMap - Leaflet.js)
     // savedCoordinates: {lat, lng} - Kaydedilen koordinatlar (öncelikli)
     async function loadAddressMap(addressString, mapContainer, savedCoordinates = null) {
+      const loadToken = ++addressMapLoadToken;
+      const isStale = () => loadToken !== addressMapLoadToken;
       try {
         // Teklifbul Rule v1.0 - Adres string'i boşsa geocoding yapma
         if (!addressString || addressString.trim().length < 5) {
+          if (isStale()) return;
+          destroyAddressMap(mapContainer);
           mapContainer.innerHTML = `
             <div style="padding:20px; text-align:center;">
               <p style="margin:0 0 8px 0; color:#6b7280;">📍 Adres bilgisi eksik</p>
@@ -5977,6 +6003,8 @@
 
         // Leaflet.js kontrolü
         if (typeof L === 'undefined') {
+          if (isStale()) return;
+          destroyAddressMap(mapContainer);
           mapContainer.innerHTML = `
             <div style="padding:20px; text-align:center;">
               <p style="margin:0 0 8px 0; color:#6b7280;">📍 Adres: ${addressString}</p>
@@ -5986,20 +6014,7 @@
           return;
         }
 
-        // Teklifbul Rule v1.0 - Mevcut harita instance'ını temizle (Map container is already initialized hatasını önlemek için)
-        if (addressMapInstance && addressMapInstance.map) {
-          try {
-            addressMapInstance.map.remove();
-            addressMapInstance = null;
-          } catch (removeErr) {
-            logger.warn('Mevcut harita temizlenirken hata', removeErr);
-          }
-        }
-
-        // Container'ı tamamen temizle (Leaflet'in DOM'da bıraktığı elementleri de temizle)
-        mapContainer.innerHTML = '';
-
-        // Container'ı loading göster
+        destroyAddressMap(mapContainer);
         mapContainer.innerHTML = '<div style="padding:20px; text-align:center; color:#6b7280;">📍 Harita yükleniyor...</div>';
 
         // Teklifbul Rule v1.0 - Öncelik: Kaydedilen koordinatlar, yoksa geocoding
@@ -6022,8 +6037,9 @@
           }
         }
 
-        // Container'ı temizle (harita için hazır)
-        mapContainer.innerHTML = '';
+        if (isStale()) return;
+
+        destroyAddressMap(mapContainer);
 
         // Harita oluştur
         const defaultLat = geocodeResult ? geocodeResult.lat : 41.0082; // İstanbul default
@@ -6031,6 +6047,14 @@
         const defaultZoom = geocodeResult ? 15 : 13;
 
         const map = L.map(mapContainer).setView([defaultLat, defaultLng], defaultZoom);
+        addressMapInstance = {
+          map,
+          marker: null,
+          getMarkerPosition: () => (addressMapInstance && addressMapInstance.marker)
+            ? addressMapInstance.marker.getLatLng()
+            : null
+        };
+        if (isStale()) return;
 
         // OpenStreetMap tile layer
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -6125,6 +6149,9 @@
               .addTo(map)
               .bindPopup(`<strong>📍 Konum</strong><br><span style="font-size:12px; color:#6b7280;">${addressText || 'Konum seçildi'}</span>`)
               .openPopup();
+            if (addressMapInstance && addressMapInstance.map === map) {
+              addressMapInstance.marker = marker;
+            }
 
             // Marker sürüklendiğinde reverse geocoding yap
             marker.on('dragstart', function () {
@@ -6192,10 +6219,13 @@
         });
 
         // Instance'ı sakla
+        if (isStale()) return;
         addressMapInstance = { map, marker, getMarkerPosition: () => marker ? marker.getLatLng() : null };
       } catch (err) {
         logger.error('Harita yükleme hatası', err);
+        if (isStale()) return;
         toast.error(MESSAGES.ERROR_MAP_LOAD + ': ' + (err.message || 'Bilinmeyen hata'));
+        destroyAddressMap(mapContainer);
         mapContainer.innerHTML = `
           <div style="padding:20px; text-align:center;">
             <p style="margin:0; font-size:12px; color:#dc2626;">❌ Harita yüklenirken hata oluştu: ${err.message || 'Bilinmeyen hata'}</p>

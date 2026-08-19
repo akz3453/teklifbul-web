@@ -12785,6 +12785,10 @@
     import { loadStreets, onStreetSelected } from '/assets/js/address-service.js';
     // Teklifbul Rule v1.0 - Structured Logging
     import { logger } from './src/shared/log/logger.js';
+    import { db, auth } from './firebase.js';
+    import { toast } from './src/shared/ui/toast.js';
+    import { showToastNotification } from './assets/js/ui/errors.js';
+    import { MESSAGES } from './src/shared/constants/messages.js';
 
     const $sokak = id => /** @type {HTMLSelectElement} */(document.getElementById(id));
 
@@ -13017,7 +13021,10 @@
 
         if (dbInst && companyId) {
           try {
-            const getFirestoreModulesFn = window.getFirestoreModules || getFirestoreModules;
+            const getFirestoreModulesFn = window.getFirestoreModules;
+            if (typeof getFirestoreModulesFn !== 'function') {
+              throw new Error('Firestore modules not ready');
+            }
             const { getDoc, doc } = await getFirestoreModulesFn();
             const companyDoc = await getDoc(doc(dbInst, 'companies', companyId));
             if (companyDoc.exists()) {
@@ -13028,9 +13035,7 @@
             // Teklifbul Rule v1.0 - getCurrentUser fonksiyonunu kontrol et
             let currentUser = null;
             const authInstance = window.__auth || auth;
-            if (typeof getCurrentUser === 'function') {
-              currentUser = await getCurrentUser();
-            } else if (window.getCurrentUser && typeof window.getCurrentUser === 'function') {
+            if (typeof window.getCurrentUser === 'function') {
               currentUser = await window.getCurrentUser();
             } else if (authInstance && authInstance.currentUser) {
               currentUser = authInstance.currentUser;
@@ -13099,17 +13104,19 @@
         logger.info('Onay politikası bölümü gösterildi')
 
         // Mevcut ayarları Firestore'dan yükle (companyData zaten yukarıda alındı, tekrar almayalım)
-        if (!db) {
+        if (!dbInst) {
           logger.error('DB bulunamadı');
-          const toastFn = window.showToastNotification || showToastNotification;
-          if (toastFn && typeof toastFn === 'function') {
-            toastFn('❌ Veritabanı bağlantısı bulunamadı.', 'error');
-          }
+          toast.error('Hata: Veritabanı bağlantısı bulunamadı.');
           return;
         }
 
         // Use cached Firestore modules
-        const getFirestoreModulesFn = window.getFirestoreModules || getFirestoreModules;
+        const getFirestoreModulesFn = window.getFirestoreModules;
+        if (typeof getFirestoreModulesFn !== 'function') {
+          logger.error('Firestore modules not ready');
+          toast.error('Hata: Onay ayarları yüklenemedi');
+          return;
+        }
         const { getDoc, doc, serverTimestamp } = await getFirestoreModulesFn();
 
         // Eğer companyData boşsa tekrar yükle
@@ -13252,7 +13259,7 @@
         const saveBtn = document.getElementById('btnSaveApprovalPolicy');
         if (saveBtn) {
           saveBtn.onclick = async () => {
-            const saveFn = window.saveApprovalPolicy || saveApprovalPolicy;
+            const saveFn = window.saveApprovalPolicy;
             if (saveFn && typeof saveFn === 'function') {
               await saveFn(companyId);
             } else {
@@ -13277,10 +13284,7 @@
 
       } catch (e) {
         logger.error('Onay mekanizması yönetimi yüklenirken hata', e);
-        // Teklifbul Rule v1.0 - MESSAGES scope dışında olabilir, fallback kullan
-        const warnMsg = (typeof MESSAGES !== 'undefined' && MESSAGES.WARN_APPROVAL_SETTINGS_LOAD)
-          ? MESSAGES.WARN_APPROVAL_SETTINGS_LOAD
-          : 'Onay politikası ayarları yüklenirken hata oluştu';
+        const warnMsg = MESSAGES.WARN_APPROVAL_SETTINGS_LOAD || 'Onay politikası ayarları yüklenirken hata oluştu';
         toast.warn(warnMsg);
       }
     }
@@ -13307,11 +13311,23 @@
         }
 
         // Use cached Firestore modules
-        const getFirestoreModulesFn = window.getFirestoreModules || getFirestoreModules;
+        const getFirestoreModulesFn = window.getFirestoreModules;
+        if (typeof getFirestoreModulesFn !== 'function') {
+          if (toastFn && typeof toastFn === 'function') {
+            toastFn('❌ Veritabanı bağlantısı bulunamadı!', 'error');
+          }
+          return;
+        }
         const { getDoc, doc, updateDoc, collection, addDoc, serverTimestamp } = await getFirestoreModulesFn();
 
         // Get old policy for audit diff
-        const safeFirestoreOperationFn = window.safeFirestoreOperation || safeFirestoreOperation;
+        const safeFirestoreOperationFn = window.safeFirestoreOperation;
+        if (typeof safeFirestoreOperationFn !== 'function') {
+          if (toastFn && typeof toastFn === 'function') {
+            toastFn('❌ Veritabanı bağlantısı bulunamadı!', 'error');
+          }
+          return;
+        }
         const oldPolicyDoc = await safeFirestoreOperationFn(
           () => getDoc(doc(dbInst, 'companies', companyId)),
           'Şirket bilgileri yüklenemedi'
@@ -13419,11 +13435,13 @@
 
           // Validate if role is selected
           if (role) {
-            const validateFn = window.validateApprovalLimit || validateApprovalLimit;
-            const validation = validateFn(maxAmount, role);
-            if (!validation.valid) {
-              validationErrors.push(`Satır ${rowNumber}: ${validation.error}`);
-              return; // Skip invalid rows
+            const validateFn = window.validateApprovalLimit;
+            if (typeof validateFn === 'function') {
+              const validation = validateFn(maxAmount, role);
+              if (!validation.valid) {
+                validationErrors.push(`Satır ${rowNumber}: ${validation.error}`);
+                return; // Skip invalid rows
+              }
             }
 
             // Teklifbul Rule v1.0 - Rol-satır mapping'i güncelle
@@ -13461,7 +13479,7 @@
 
         // Teklifbul Rule v1.0 - Sort approval limits by role priority
         // Sıralama: 1) İşveren, 2) YKB Başkanı, 3) YKB Üyesi, 4) CEO, 5) GM, 6) GM Yardımcısı, sonrası dinamik
-        const rolePriority = window.ROLE_PRIORITY || ROLE_PRIORITY || {};
+        const rolePriority = window.ROLE_PRIORITY || {};
         approvalLimits.sort((a, b) => {
           // Sabit öncelikler (1-6)
           let priorityA = rolePriority[a.role];

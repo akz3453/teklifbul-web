@@ -150,6 +150,22 @@ const safeLog = (fn) => {
         }
     };
 };
+let browserErrorGuardsBound = false;
+function bindBrowserErrorGuards() {
+    if (typeof window === 'undefined' || browserErrorGuardsBound)
+        return;
+    browserErrorGuardsBound = true;
+    window.addEventListener('unhandledrejection', (event) => {
+        logger.error('Unhandled promise rejection', event.reason);
+    });
+    window.addEventListener('error', (event) => {
+        logger.error('Window error', event.error || event.message);
+    });
+}
+export function initErrorTracking() {
+    bindBrowserErrorGuards();
+    return initializeSentry();
+}
 export const logger = {
     group: safeLog((title) => {
         console.groupCollapsed(`🧭 ${title}`);

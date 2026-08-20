@@ -130,6 +130,7 @@ export default defineConfig({
         'interim-payment-suggestions': 'interim-payment-suggestions.html',
         'forum': 'forum.html',
         'contact': 'contact.html',
+        'payment-request': 'payment-request.html',
         ...collectLegalHtmlInputs(),
         // Inventory pages
         'purchase-form': 'pages/purchase-form.html',

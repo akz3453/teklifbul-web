@@ -11,6 +11,7 @@ import { toast } from '../../../src/shared/ui/toast.js';
 import { MESSAGES } from '../../../src/shared/constants/messages.js';
 import { AUTH_FETCH_TIMEOUT_MS, COMPANY_ID_CACHE_TTL_MS } from '../../../src/shared/constants/timing.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+import { createAiChatRequestId } from './ai-chat-request-id.js';
 
 const LOGIN_PATH = '/login.html';
 
@@ -246,6 +247,11 @@ export async function authFetch(url, options = {}) {
       } else {
         finalHeaders.set('Content-Type', 'application/json');
       }
+    }
+
+    // Teklifbul Rule v1.0 — Paid /api/chat idempotency header (not a security control)
+    if (!finalHeaders.has('x-request-id') && String(url).includes('/api/chat')) {
+      finalHeaders.set('x-request-id', createAiChatRequestId());
     }
 
     // Teklifbul Rule v1.0 - API URL normalization: /api ve observability kökleri dev'de backend portuna (5174) gider.

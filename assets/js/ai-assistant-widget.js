@@ -12,6 +12,7 @@ import { MESSAGES } from '../../src/shared/constants/messages.js';
 import DOMPurify from 'https://cdn.jsdelivr.net/npm/dompurify@3.2.2/+esm';
 import { requireCompanyContext } from './state/company-context.js';
 import { initPermissions, requireExistingPerm, getAiPerms } from './state/permissions.js';
+import { createAiChatRequestId } from './utils/ai-chat-request-id.js';
 
 class AIAssistantWidget {
   constructor() {
@@ -304,6 +305,9 @@ class AIAssistantWidget {
       const { authFetch } = await import('./utils/api-helpers.js');
       const response = await authFetch('/api/chat', {
         method: 'POST',
+        headers: {
+          'x-request-id': createAiChatRequestId()
+        },
         body: JSON.stringify({
           message: message
         }),

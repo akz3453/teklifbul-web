@@ -12082,8 +12082,7 @@
       document.querySelectorAll(".btn-logout, .logout-btn, #logoutBtn").forEach(btn => {
         btn.addEventListener("click", async () => {
           try {
-            const { signOut } = await getAuthModules();
-            await signOut(auth);
+            await logout();
             window.location.href = "/login.html";
           } catch (e) {
             toast.error(MESSAGES.ERROR_LOGOUT_FAILED + ": " + (e?.message || e));

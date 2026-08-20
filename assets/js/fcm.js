@@ -7,8 +7,8 @@ import { app, db, auth } from '../../firebase.js';
 // Teklifbul Rule v1.0 - Structured Logging
 import { logger } from '../../src/shared/log/logger.js';
 import { getApp, getApps } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js';
-import { getMessaging, getToken, onMessage, isSupported } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-messaging.js';
-import { doc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+import { getMessaging, getToken, deleteToken, onMessage, isSupported } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-messaging.js';
+import { doc, setDoc, deleteDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
 
 // VAPID Public Key - Firebase Console → Project Settings → Cloud Messaging → Web Push certificates
 // Teklifbul Rule v1.0 - FCM Push Notifications
@@ -164,6 +164,66 @@ export async function saveTokenToFirestore(token, opts = {}) {
   } catch (error) {
     logger.error('Token kaydetme hatası', error);
     return false;
+  }
+}
+
+function readStoredPushToken() {
+  if (currentToken && typeof currentToken === 'string') return currentToken;
+  try {
+    const fromWindow = typeof window !== 'undefined' ? window.__TB_PUSH_TOKEN__ : null;
+    if (fromWindow && typeof fromWindow === 'string') return fromWindow;
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
+/**
+ * Logout öncesi mevcut cihaz token'ını Firestore'dan siler.
+ * signOut'tan ÖNCE çağrılmalı (rules: request.auth.uid == userId).
+ * Teklifbul Rule v1.0
+ * @returns {Promise<boolean>}
+ */
+export async function removeCurrentPushTokenFromFirestore() {
+  logger.group('FCM token logout cleanup');
+  try {
+    const user = auth.currentUser;
+    if (!user) {
+      logger.info('Oturum yok, token silinmedi');
+      return false;
+    }
+
+    const token = readStoredPushToken();
+    if (!token) {
+      logger.info('Kayıtlı push token yok');
+      return false;
+    }
+
+    const tokenRef = doc(db, 'userTokens', user.uid, 'tokens', token);
+    await deleteDoc(tokenRef);
+
+    if (messagingInstance) {
+      try {
+        await deleteToken(messagingInstance);
+      } catch (err) {
+        logger.warn('FCM deleteToken atlandı', err);
+      }
+    }
+
+    currentToken = null;
+    try {
+      if (typeof window !== 'undefined') window.__TB_PUSH_TOKEN__ = null;
+    } catch {
+      // ignore
+    }
+
+    logger.info('FCM token Firestore\'dan silindi');
+    return true;
+  } catch (error) {
+    logger.error('FCM token silme hatası', error);
+    return false;
+  } finally {
+    logger.end();
   }
 }
 

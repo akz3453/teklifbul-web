@@ -691,6 +691,12 @@ export async function sendAuthEmailVerification(user, continueUrl) {
 }
 export async function logout() {
   try {
+    const { removeCurrentPushTokenFromFirestore } = await import('./assets/js/fcm.js');
+    await removeCurrentPushTokenFromFirestore();
+  } catch (err) {
+    logger.warn('Logout FCM token temizliği atlandı', err);
+  }
+  try {
     const { clearAuthLocalState } = await import('./assets/js/utils/clear-auth-local-state.js');
     clearAuthLocalState();
   } catch (err) {

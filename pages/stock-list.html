@@ -264,7 +264,11 @@
       <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
         <button type="button" class="btn btn-primary" id="btnExport" title="Excel'e aktar" aria-label="Stok listesini Excel'e aktar">📥 Excel'e Aktar</button>
         <button type="button" class="btn btn-secondary" id="btnRefresh" title="Listeyi yenile" aria-label="Stok listesini yenile">🔄 Yenile</button>
+        <button type="button" class="btn btn-secondary" id="btnLoadMoreStocks" hidden aria-label="Daha fazla stok yükle" title="Daha fazla stok yükle">Daha fazla yükle</button>
+        <button type="button" class="btn btn-secondary" id="btnCancelStockLoad" hidden aria-label="Stok yüklemeyi iptal et" title="İptal">İptal</button>
       </div>
+      <p id="stockLoadMoreText" class="muted" style="margin:8px 0 0 0"></p>
+      <progress id="stockLoadProgress" max="100" value="0" hidden aria-label="Stok yükleme ilerlemesi" style="width:100%;margin-top:8px"></progress>
     </div>
 
     <div class="card">
@@ -290,7 +294,7 @@
           </thead>
           <tbody id="stocksTableBody">
             <tr>
-              <td colspan="13" style="text-align:center;padding:40px;color:#6b7280">Yükleniyor...</td>
+              <td colspan="14" style="text-align:center;padding:40px;color:#6b7280">Yükleniyor...</td>
             </tr>
           </tbody>
         </table>

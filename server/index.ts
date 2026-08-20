@@ -6,7 +6,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
-import { logger } from '../src/shared/log/logger.js';
+import { logger, initErrorTracking } from '../src/shared/log/logger.js';
 import { resolveAllowedOrigins, corsOriginDelegate } from './constants/allowed-origins.js';
 import { serverLogger } from './utils/logger.js';
 import importRouter from './routes/import';
@@ -91,6 +91,8 @@ import clientErrorsRouter from './src/routes/client-errors';
 // Teklifbul Rule v1.0 - External bid submission via email token
 import bidInvitesRouter from './routes/bid-invites';
 import fefoInventoryRouter from './routes/fefo-inventory.js';
+
+initErrorTracking();
 
 const app = express();
 
@@ -611,16 +613,18 @@ if (isExecutedDirectly) {
     logger.error('Uncaught exception', error);
     gracefulShutdown('uncaughtException');
   });
-  process.on('unhandledRejection', (reason, promise) => {
-    logger.error('Unhandled rejection', { reason, promise });
+  process.on('unhandledRejection', (reason) => {
+    const err = reason instanceof Error ? reason : new Error(String(reason));
+    logger.error('Unhandled rejection', err);
     gracefulShutdown('unhandledRejection');
   });
 } else {
   process.on('uncaughtException', (error) => {
     logger.error('Uncaught exception (managed runtime — process kept alive)', error);
   });
-  process.on('unhandledRejection', (reason, promise) => {
-    logger.error('Unhandled rejection (managed runtime — process kept alive)', { reason, promise });
+  process.on('unhandledRejection', (reason) => {
+    const err = reason instanceof Error ? reason : new Error(String(reason));
+    logger.error('Unhandled rejection (managed runtime — process kept alive)', err);
   });
 }
 

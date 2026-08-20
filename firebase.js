@@ -19,9 +19,11 @@ import {
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app-check.js";
 // Teklifbul Rule v1.0 - Structured Logging
-import { logger } from './src/shared/log/logger.js';
+import { logger, initErrorTracking } from './src/shared/log/logger.js';
 import { MESSAGES } from './src/shared/constants/messages.js';
 import { isNativePlatform } from './assets/js/utils/is-native-platform.js';
+
+initErrorTracking();
 
 // Teklifbul Rule v1.0 — authDomain, uygulama origin'i ile AYNI olmalı.
 // Farklı domain (firebaseapp.com vs web.app) Android WebView'da

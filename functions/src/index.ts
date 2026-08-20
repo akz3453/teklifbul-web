@@ -1003,7 +1003,7 @@ function getApiApp(): import('express').Express {
 export const api = onRequest({
   memory: "512MiB",
   timeoutSeconds: 60,
-  minInstances: 0,
+  minInstances: 1,
   cors: GCF_CORS_ORIGINS,
   invoker: "public",
   secrets: [groqApiKey, paymentWebhookSecret],

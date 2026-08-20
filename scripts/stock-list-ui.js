@@ -6,7 +6,7 @@
 // Teklifbul Rule v1.0 - XSS Protection
 import DOMPurify from 'https://cdn.jsdelivr.net/npm/dompurify@3.2.2/+esm';
 import { db, requireAuth } from '/firebase.js';
-import { collection, getDocs, query, where, doc as docFn, getDoc, orderBy, updateDoc, setDoc, serverTimestamp, limit } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+import { collection, getDocs, query, where, doc as docFn, getDoc, orderBy, updateDoc, setDoc, serverTimestamp, limit, startAfter } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
 import { searchStocks } from '/scripts/lib/stock-search.js';
 import { toast } from '../src/shared/ui/toast.js';
 import { MESSAGES } from '../src/shared/constants/messages.js';
@@ -15,7 +15,7 @@ import { requireCompanyContext } from '../assets/js/state/company-context.js';
 import { initPermissions, can, getStockPerms } from '../assets/js/state/permissions.js';
 import { debounce } from '../assets/js/utils/debounce.js';
 import { setTableEmpty } from '../assets/js/utils/safe-table.js';
-import { STOCK_LIST_QUERY_LIMIT, STOCK_LIST_QUERY_LIMIT_NATIVE, STOCK_LOCATIONS_QUERY_LIMIT } from '../src/shared/constants/timing.js';
+import { STOCK_LIST_PAGE_SIZE, STOCK_LIST_PAGE_SIZE_NATIVE, STOCK_LOCATIONS_QUERY_LIMIT, FIRESTORE_IN_QUERY_LIMIT } from '../src/shared/constants/timing.js';
 
 const qs = s => document.querySelector(s);
 const qsa = s => document.querySelectorAll(s);
@@ -34,10 +34,13 @@ const state = {
     brand: '',
     unit: '',
     archived: 'active'
-  }
+  },
+  lastStockCursor: null,
+  hasMoreStocks: false
 };
 
 let companyContext = null;
+let stockLoadAbortController = null;
 
 const STOCK_PERMS = getStockPerms();
 
@@ -52,12 +55,26 @@ function isNativePlatform() {
   }
 }
 
-function stockListQueryLimit() {
-  return isNativePlatform() ? STOCK_LIST_QUERY_LIMIT_NATIVE : STOCK_LIST_QUERY_LIMIT;
+function stockListPageSize() {
+  return isNativePlatform() ? STOCK_LIST_PAGE_SIZE_NATIVE : STOCK_LIST_PAGE_SIZE;
 }
 
-function warnIfStockQueryCapped(queryLimit) {
-  toast.warn(MESSAGES.WARN_STOCK_LIMIT_REACHED.replace('{count}', String(queryLimit)));
+function setStockLoadProgress(visible, value, max, text) {
+  const bar = qs('#stockLoadProgress');
+  const label = qs('#stockLoadMoreText');
+  const moreBtn = qs('#btnLoadMoreStocks');
+  const cancelBtn = qs('#btnCancelStockLoad');
+  if (label) label.textContent = text || '';
+  if (bar) {
+    bar.hidden = !visible;
+    bar.max = max || 100;
+    bar.value = value || 0;
+  }
+  if (moreBtn) {
+    moreBtn.hidden = visible || !state.hasMoreStocks;
+    moreBtn.disabled = visible;
+  }
+  if (cancelBtn) cancelBtn.hidden = !visible;
 }
 
 // Initialize
@@ -119,137 +136,154 @@ function renderTableError(message) {
   setTableEmpty(tbody, 14, message || 'Bir hata oluştu');
 }
 
-async function loadStocks(context) {
+function applyTotalsFromBalances() {
+  const balancesBySku = new Map();
+  state.balances.forEach((balance) => {
+    if (!balance.sku) return;
+    balancesBySku.set(balance.sku, (balancesBySku.get(balance.sku) || 0) + (balance.quantity || 0));
+  });
+  const allowNegativeStock = companyContext?.allowNegativeStock === true;
+  state.allStocks.forEach((stock) => {
+    const rawQuantity = balancesBySku.get(stock.sku) || 0;
+    stock.totalQuantity = rawQuantity;
+    stock.displayQuantity = !allowNegativeStock && rawQuantity < 0 ? 0 : rawQuantity;
+  });
+}
+
+async function fetchBalancesForSkus(companyId, skus, signal) {
+  const unique = [...new Set((skus || []).filter(Boolean))];
+  const found = [];
+  for (let i = 0; i < unique.length; i += FIRESTORE_IN_QUERY_LIMIT) {
+    if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+    const chunk = unique.slice(i, i + FIRESTORE_IN_QUERY_LIMIT);
+    const snap = await getDocs(query(
+      collection(db, 'stock_balances'),
+      where('companyId', '==', companyId),
+      where('sku', 'in', chunk)
+    ));
+    snap.forEach((balanceDoc) => {
+      const balanceData = balanceDoc.data();
+      if (balanceData.companyId === companyId && balanceData.sku) {
+        found.push({
+          sku: balanceData.sku,
+          locationId: balanceData.locationId,
+          quantity: balanceData.quantity || 0,
+          minStockLevel: balanceData.minStockLevel || null,
+          maxStockLevel: balanceData.maxStockLevel || null
+        });
+      }
+    });
+  }
+  return found;
+}
+
+async function loadStocks(context, { append = false } = {}) {
+  logger.group(append ? 'Stok listesi sonraki sayfa' : 'Stok listesi yükle');
   try {
-    // Query guard - view yetkisi yoksa Firestore sorgularını hiç çalıştırma
     if (STOCK_PERMS.view && !can(STOCK_PERMS.view)) {
       logger.warn('Stock list: view yetkisi olmadan loadStocks çağrıldı, sorgular iptal edildi');
       return;
     }
 
-    toast.info(MESSAGES.INFO_STOCK_LOADING);
     const ctx = context || companyContext;
     const companyId = ctx?.companyId || null;
-    
     if (!companyId) {
       logger.error('Stock list: companyId bulunamadı, stoklar yüklenemiyor');
-      toast.error('Şirket bilgisi bulunamadı. Stoklar yüklenemedi.');
+      toast.error(MESSAGES.ERROR_COMPANY_INFO_NOT_FOUND);
       return;
     }
-    
-    // Teklifbul Rule v1.0 - Firestore limit() zorunlu + companyId filtresi
-    const queryLimit = stockListQueryLimit();
-    const stocksQuery = query(
-      collection(db, 'stocks'),
-      where('companyId', '==', companyId),
-      limit(queryLimit)
-    );
-    const snap = await getDocs(stocksQuery);
-    let queryCapped = snap.size >= queryLimit;
-    state.allStocks = [];
-    
-    logger.info('Firestore\'dan stoklar yükleniyor');
-    let count = 0;
-    snap.forEach(doc => {
-      const data = doc.data();
-      state.allStocks.push({ id: doc.id, ...data, totalQuantity: 0 }); // Miktar başlangıçta 0
-      count++;
-    });
-    
-    logger.info(`${count} stok yüklendi`, state.allStocks.slice(0, 3)); // İlk 3 örnek
-    
-    // Teklifbul Rule v1.0 - Her stok için miktarı hesapla (stock_balances'den)
-    // Lokasyon bazlı filtreleme için tüm balance'ları sakla
-    if (companyId && state.allStocks.length > 0) {
-      logger.info('Stok miktarları yükleniyor...');
-      // Teklifbul Rule v1.0 - Firestore limit() zorunlu + companyId filtresi
-      const balancesQuery = query(
-        collection(db, 'stock_balances'),
-        where('companyId', '==', companyId),
-        limit(queryLimit)
-      );
-      const balancesSnap = await getDocs(balancesQuery);
-      if (balancesSnap.size >= queryLimit) queryCapped = true;
+
+    if (stockLoadAbortController) stockLoadAbortController.abort();
+    stockLoadAbortController = new AbortController();
+    const { signal } = stockLoadAbortController;
+    const pageSize = stockListPageSize();
+
+    if (!append) {
+      state.allStocks = [];
       state.balances = [];
-      const balancesBySku = new Map(); // Tüm lokasyonların toplamı için
-      
-      balancesSnap.forEach(balanceDoc => {
-        const balanceData = balanceDoc.data();
-        if (balanceData.companyId === companyId && balanceData.sku) {
-          // Tüm balance'ları sakla (lokasyon bazlı filtreleme için)
-          // Teklifbul Rule v1.0 - Min/Max stok seviyeleri de saklanıyor
-          state.balances.push({
-            sku: balanceData.sku,
-            locationId: balanceData.locationId,
-            quantity: balanceData.quantity || 0,
-            minStockLevel: balanceData.minStockLevel || null,
-            maxStockLevel: balanceData.maxStockLevel || null
-          });
-          
-          // Toplam miktar hesaplama (tüm lokasyonlar)
-          const currentQty = balancesBySku.get(balanceData.sku) || 0;
-          balancesBySku.set(balanceData.sku, currentQty + (balanceData.quantity || 0));
-        }
-      });
-      
-      // Stoklara toplam miktar bilgisini ekle (tüm lokasyonlar)
-      state.allStocks.forEach(stock => {
-        stock.totalQuantity = balancesBySku.get(stock.sku) || 0;
-      });
-      
-      // Teklifbul Rule v1.0 - Şirket ayarını kontrol et ve görüntüleme miktarlarını düzenle
-      const companyDoc = await getDoc(docFn(db, 'companies', companyId));
-      let allowNegativeStock = false;
-      if (companyDoc.exists()) {
-        const companyData = companyDoc.data();
-        allowNegativeStock = companyData.allowNegativeStock === true;
-        // companyContext'e kaydet (updateQuantitiesByLocation için)
-        if (companyContext) {
-          companyContext.allowNegativeStock = allowNegativeStock;
+      state.lastStockCursor = null;
+      state.hasMoreStocks = false;
+      toast.info(MESSAGES.INFO_STOCK_LOADING);
+    } else {
+      toast.info(MESSAGES.INFO_STOCK_LOAD_MORE);
+    }
+    setStockLoadProgress(true, 10, 100, append ? MESSAGES.INFO_STOCK_LOAD_MORE : MESSAGES.INFO_STOCK_LOADING);
+
+    const constraints = [
+      where('companyId', '==', companyId),
+      orderBy('sku'),
+      limit(pageSize)
+    ];
+    if (append && state.lastStockCursor) {
+      constraints.splice(2, 0, startAfter(state.lastStockCursor));
+    }
+    const snap = await getDocs(query(collection(db, 'stocks'), ...constraints));
+    if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
+
+    const pageRows = snap.docs.map((docSnap) => ({
+      id: docSnap.id,
+      ...docSnap.data(),
+      totalQuantity: 0
+    }));
+    state.lastStockCursor = snap.docs.length ? snap.docs[snap.docs.length - 1] : state.lastStockCursor;
+    state.hasMoreStocks = snap.size >= pageSize;
+    state.allStocks = append ? state.allStocks.concat(pageRows) : pageRows;
+
+    setStockLoadProgress(true, 55, 100, MESSAGES.INFO_STOCK_LOADING);
+
+    if (companyId && pageRows.length > 0) {
+      if (companyContext && typeof companyContext.allowNegativeStock !== 'boolean') {
+        const companyDoc = await getDoc(docFn(db, 'companies', companyId));
+        if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
+        if (companyDoc.exists()) {
+          companyContext.allowNegativeStock = companyDoc.data().allowNegativeStock === true;
         }
       }
-      
-      state.allStocks.forEach(stock => {
-        // Ham değer (işlemler için)
-        const rawQuantity = stock.totalQuantity || 0;
-        // Görüntüleme için (ayara göre düzenlenmiş)
-        if (!allowNegativeStock && rawQuantity < 0) {
-          stock.displayQuantity = 0;
-        } else {
-          stock.displayQuantity = rawQuantity;
-        }
+      const pageBalances = await fetchBalancesForSkus(
+        companyId,
+        pageRows.map((row) => row.sku),
+        signal
+      );
+      const seen = new Set(state.balances.map((b) => `${b.sku}::${b.locationId || ''}`));
+      pageBalances.forEach((balance) => {
+        const key = `${balance.sku}::${balance.locationId || ''}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        state.balances.push(balance);
       });
-      
-      logger.info('Stok miktarları yüklendi', { 
-        totalStocks: state.allStocks.length,
-        stocksWithQuantity: Array.from(balancesBySku.keys()).length,
-        totalBalances: state.balances.length
-      });
-      
-      // Lokasyon filtresi varsa miktarları güncelle (varsayılan: tüm lokasyonlar)
-      updateQuantitiesByLocation();
+      applyTotalsFromBalances();
     } else {
-      // CompanyId yoksa, tüm stoklar için displayQuantity = totalQuantity
-      state.allStocks.forEach(stock => {
+      state.allStocks.forEach((stock) => {
         stock.displayQuantity = stock.totalQuantity || 0;
       });
     }
-    
-    // Lokasyon filtresi varsa miktarları güncelle (varsayılan: tüm lokasyonlar)
+
     await updateQuantitiesByLocation();
-    
+
     if (state.allStocks.length === 0) {
       toast.warn(MESSAGES.WARN_STOCK_EMPTY);
-    } else if (queryCapped) {
-      warnIfStockQueryCapped(queryLimit);
     } else {
-      toast.success(`${state.allStocks.length} stok yüklendi`);
+      toast.success(MESSAGES.SUCCESS_STOCK_LIST_LOADED.replace('{count}', String(state.allStocks.length)));
+      if (state.hasMoreStocks) toast.info(MESSAGES.INFO_STOCK_HAS_MORE);
     }
-    
-    applyFilters();
+
+    logger.info('Stok sayfası yüklendi', {
+      loaded: state.allStocks.length,
+      page: pageRows.length,
+      hasMore: state.hasMoreStocks
+    });
   } catch (error) {
+    if (error?.name === 'AbortError') {
+      toast.info(MESSAGES.ERROR_OPERATION_CANCELLED);
+      return;
+    }
     logger.error('Stocks load error', error);
     toast.error(`${MESSAGES.ERROR_STOCK_EXPORT}: ${error.message}`);
+  } finally {
+    logger.end();
+    setStockLoadProgress(false, 0, 100, '');
+    applyFilters();
+    stockLoadAbortController = null;
   }
 }
 
@@ -427,7 +461,15 @@ function setupEventListeners() {
 
   // Butonlar
   qs('#btnRefresh').addEventListener('click', async () => {
-    await loadStocks();
+    await loadStocks(companyContext, { append: false });
+  });
+
+  qs('#btnLoadMoreStocks')?.addEventListener('click', async () => {
+    await loadStocks(companyContext, { append: true });
+  });
+
+  qs('#btnCancelStockLoad')?.addEventListener('click', () => {
+    if (stockLoadAbortController) stockLoadAbortController.abort();
   });
 
   qs('#btnExport').addEventListener('click', () => {
@@ -488,6 +530,17 @@ function applyFilters() {
   state.currentPage = 1; // Reset to first page
   renderTable();
   updateStats();
+  const loadBar = qs('#stockLoadProgress');
+  if (!loadBar || loadBar.hidden) {
+    const label = qs('#stockLoadMoreText');
+    const moreBtn = qs('#btnLoadMoreStocks');
+    if (moreBtn) moreBtn.hidden = !state.hasMoreStocks;
+    if (label) {
+      if (state.searchQuery && state.hasMoreStocks) label.textContent = MESSAGES.INFO_STOCK_SEARCH_PARTIAL;
+      else if (state.hasMoreStocks) label.textContent = MESSAGES.INFO_STOCK_HAS_MORE;
+      else label.textContent = '';
+    }
+  }
 }
 
 function renderTable() {

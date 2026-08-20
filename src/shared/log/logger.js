@@ -4,5 +4,5 @@
 
 // TypeScript dosyasını JavaScript olarak import et
 // Vite ve modern build sistemleri .ts uzantısını otomatik çözümler
-export { logger } from './logger.ts';
+export { logger, initErrorTracking } from './logger.ts';
 

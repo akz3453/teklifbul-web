@@ -15,7 +15,7 @@ const paymentWebhookSecret = defineSecret('PAYMENT_WEBHOOK_SECRET');
  */
 exports.api = onRequest({
     secrets: [groqSecret, paymentWebhookSecret],
-    minInstances: 0,
+    minInstances: 1,
     memory: "512MiB",
     timeoutSeconds: 60
 }, async (req, res) => {

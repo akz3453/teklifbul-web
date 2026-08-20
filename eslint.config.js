@@ -29,6 +29,12 @@ export default [
       'functions/dist/**',
       'functions/lib/**',
       'functions/excel-export/lib/**',
+      // Native build artifacts (Capacitor/Gradle); not app source
+      'android/**/build/**',
+      'android/.gradle/**',
+      'android/app/src/main/assets/**',
+      'ios/**/build/**',
+      'ios/App/App/public/**',
     ],
   },
 

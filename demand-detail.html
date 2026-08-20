@@ -1721,10 +1721,12 @@
     import { toast } from './src/shared/ui/toast.js';
     // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
     import { MESSAGES } from './src/shared/constants/messages.js';
+    import { DEMAND_RECIPIENTS_QUERY_LIMIT, BIDS_PER_DEMAND_QUERY_LIMIT, WRITE_BATCH_LIMIT, BID_ITEMS_QUERY_LIMIT } from './src/shared/constants/timing.js';
     // Teklifbul Rol & Onay Sistemi - Guard fonksiyonları (legacy, matrix ile birlikte çalışır)
     import { canIssuePO, canESignApprove, createAuditLog, isSingleUserCompany, hasActiveTopApprover, canCreateBids, canEditBids, canViewBids } from "./assets/js/services/approval-guards.js";
     // Teklifbul Rule v1.0 - Company Context Resolver + Permission Matrix
     import { requireCompanyContext } from './assets/js/state/company-context.js';
+    import { getCompanyDisplay } from './assets/js/utils/public-company-profile.js';
     import { initPermissions, can as canPermission, requirePerm, getBidPerms } from './assets/js/state/permissions.js';
     import {
       getStorage, ref, uploadBytes, getDownloadURL, deleteObject
@@ -2268,7 +2270,7 @@
         // --- NEW ACCESS CONTROL LOGIC ---
         if (!isOwner && !isCompanyOwner) {
           try {
-            const accBidsSnap = await getDocs(query(collection(db, 'bids'), where('demandId', '==', demandId), where('status', '==', 'accepted')));
+            const accBidsSnap = await getDocs(query(collection(db, 'bids'), where('demandId', '==', demandId), where('status', '==', 'accepted'), limit(BIDS_PER_DEMAND_QUERY_LIMIT)));
             if (!accBidsSnap.empty) {
               let currentUserWon = false;
               accBidsSnap.forEach(docSnap => {
@@ -2318,10 +2320,8 @@
         let creatorCompanyName = demandData.requester || '-';
         if (demandData.creatorCompanyId) {
           try {
-            const companyDoc = await getDoc(doc(db, 'companies', demandData.creatorCompanyId));
-            if (companyDoc.exists()) {
-              creatorCompanyName = companyDoc.data().name || creatorCompanyName;
-            }
+            const companyView = await getCompanyDisplay(db, demandData.creatorCompanyId);
+            creatorCompanyName = companyView.companyName || companyView.name || creatorCompanyName;
           } catch (e) {
             logger.warn('Could not load company name', e);
           }
@@ -4229,18 +4229,29 @@
         try {
           // items
           try {
-            const itemsSnap = await getDocs(collection(db, 'demands', demandId, 'items'));
-            await Promise.all(itemsSnap.docs.map(d => deleteDoc(doc(db, 'demands', demandId, 'items', d.id))));
+            const itemsRef = collection(db, 'demands', demandId, 'items');
+            let itemsSnap = await getDocs(query(itemsRef, limit(BID_ITEMS_QUERY_LIMIT)));
+            while (!itemsSnap.empty) {
+              await Promise.all(itemsSnap.docs.map(d => deleteDoc(doc(db, 'demands', demandId, 'items', d.id))));
+              if (itemsSnap.size < BID_ITEMS_QUERY_LIMIT) break;
+              itemsSnap = await getDocs(query(itemsRef, limit(BID_ITEMS_QUERY_LIMIT)));
+            }
           } catch (e) { logger.warn('items cleanup warn', e); }
-          // bids
           try {
-            const bidsSnap = await getDocs(query(collection(db, 'bids'), where('demandId', '==', demandId)));
-            await Promise.all(bidsSnap.docs.map(d => deleteDoc(doc(db, 'bids', d.id))));
+            let bidsSnap = await getDocs(query(collection(db, 'bids'), where('demandId', '==', demandId), limit(WRITE_BATCH_LIMIT)));
+            while (!bidsSnap.empty) {
+              await Promise.all(bidsSnap.docs.map(d => deleteDoc(doc(db, 'bids', d.id))));
+              if (bidsSnap.size < WRITE_BATCH_LIMIT) break;
+              bidsSnap = await getDocs(query(collection(db, 'bids'), where('demandId', '==', demandId), limit(WRITE_BATCH_LIMIT)));
+            }
           } catch (e) { logger.warn('bids cleanup warn', e); }
-          // recipients
           try {
-            const recSnap = await getDocs(query(collection(db, 'demandRecipients'), where('demandId', '==', demandId)));
-            await Promise.all(recSnap.docs.map(d => deleteDoc(doc(db, 'demandRecipients', d.id))));
+            let recSnap = await getDocs(query(collection(db, 'demandRecipients'), where('demandId', '==', demandId), limit(DEMAND_RECIPIENTS_QUERY_LIMIT)));
+            while (!recSnap.empty) {
+              await Promise.all(recSnap.docs.map(d => deleteDoc(doc(db, 'demandRecipients', d.id))));
+              if (recSnap.size < DEMAND_RECIPIENTS_QUERY_LIMIT) break;
+              recSnap = await getDocs(query(collection(db, 'demandRecipients'), where('demandId', '==', demandId), limit(DEMAND_RECIPIENTS_QUERY_LIMIT)));
+            }
           } catch (e) { logger.warn('recipients cleanup warn', e); }
           // main doc
           await deleteDoc(doc(db, 'demands', demandId));
@@ -5159,10 +5170,8 @@
                     // Company bilgisini de yükle
                     companyId = d?.companyId || (d?.companies && d.companies[0]) || `solo-${uid}`;
                     try {
-                      const companyDoc = await getDoc(doc(db, 'companies', companyId));
-                      if (companyDoc.exists()) {
-                        companyData = companyDoc.data();
-                      }
+                      const companyView = await getCompanyDisplay(db, companyId);
+                      companyData = companyView.source === 'member' ? (companyView._raw || companyView) : companyView;
                     } catch (e) {
                       logger.warn('Company bilgisi yüklenemedi', { companyId, error: e });
                     }
@@ -6156,7 +6165,7 @@
         // demandRecipients: create missing ones only
         let existingSupplierIds = new Set();
         try {
-          const existingSnap = await getDocs(query(collection(db, 'demandRecipients'), where('demandId', '==', demandId), limit(2000)));
+          const existingSnap = await getDocs(query(collection(db, 'demandRecipients'), where('demandId', '==', demandId), limit(DEMAND_RECIPIENTS_QUERY_LIMIT)));
           existingSupplierIds = new Set(existingSnap.docs.map(d => d.data()?.supplierId).filter(Boolean));
         } catch (existingErr) {
           logger.warn('Existing demandRecipients query failed; continuing with create-only', {
@@ -8070,21 +8079,19 @@ Bu teklifi göndermek istediğinizden emin misiniz?`;
                 const companyId = supplierData.companyId || (supplierData.companies && supplierData.companies[0]);
                 if (companyId) {
                   try {
-                    const companyDoc = await getDoc(doc(db, "companies", companyId));
-                    if (companyDoc.exists()) {
-                      const cData = companyDoc.data();
-                      actualCompanyName = cData.name || actualCompanyName;
-                      
+                    const companyView = await getCompanyDisplay(db, companyId);
+                    actualCompanyName = companyView.companyName || companyView.name || actualCompanyName;
+                    const cData = companyView.source === 'member' ? (companyView._raw || {}) : {};
+                    if (cData.taxOffice || cData.taxNumber) {
                       let cTax = `VD: ${cData.taxOffice || '-'} / No: ${cData.taxNumber || '-'}`;
                       if (cTax !== 'VD: - / No: -') bidData.supplierTax = cTax;
-                      
-                      let cAddress = cData.address || cData.invoiceAddress || '';
-                      if (!cAddress && cData.invoiceAddressParts) {
-                         const cParts = cData.invoiceAddressParts;
-                         cAddress = [cParts.mahalle, cParts.cadde, cParts.sokak, cParts.kapi || cParts.kapiNo ? `No: ${cParts.kapi || cParts.kapiNo}` : '', cParts.ilce, cParts.il].filter(Boolean).join(' ');
-                      }
-                      if (cAddress) bidData.supplierAddress = cAddress;
                     }
+                    let cAddress = cData.address || cData.invoiceAddress || '';
+                    if (!cAddress && cData.invoiceAddressParts) {
+                       const cParts = cData.invoiceAddressParts;
+                       cAddress = [cParts.mahalle, cParts.cadde, cParts.sokak, cParts.kapi || cParts.kapiNo ? `No: ${cParts.kapi || cParts.kapiNo}` : '', cParts.ilce, cParts.il].filter(Boolean).join(' ');
+                    }
+                    if (cAddress) bidData.supplierAddress = cAddress;
                   } catch (e) {
                     // Firmayı okuma yetkisi yoksa yoksay
                   }
@@ -8861,19 +8868,11 @@ Bu teklifi göndermek istediğinizden emin misiniz?`;
         let formattedInvoiceAddress = '';
         if (demandData.creatorCompanyId) {
           try {
-            // doc ve getDoc zaten import edilmiş (dosyanın başında)
-            const companyDoc = await getDoc(doc(db, 'companies', demandData.creatorCompanyId));
-            let companyData = {};
-            let invoiceAddressParts = {};
-            let taxNumber = '';
-            let taxOffice = '';
-
-            if (companyDoc.exists()) {
-              companyData = companyDoc.data();
-              invoiceAddressParts = companyData.invoiceAddressParts || {};
-              taxNumber = companyData.taxNumber || '';
-              taxOffice = companyData.taxOffice || '';
-            }
+            const companyView = await getCompanyDisplay(db, demandData.creatorCompanyId);
+            let companyData = companyView.source === 'member' ? (companyView._raw || {}) : {};
+            let invoiceAddressParts = companyData.invoiceAddressParts || {};
+            let taxNumber = companyData.taxNumber || '';
+            let taxOffice = companyData.taxOffice || '';
 
             // Teklifbul Rule v1.2.19 - Eğer companies'de invoiceAddressParts yoksa, users collection'ından çek
             // Talep oluşturan kullanıcının invoiceAddressParts'ini kullan
@@ -8901,7 +8900,7 @@ Bu teklifi göndermek istediğinizden emin misiniz?`;
               }
             }
 
-            if (companyDoc.exists() || invoiceAddressParts) {
+            if (companyView.source === 'member' || invoiceAddressParts) {
 
               // Teklifbul Rule v1.0 - Fatura adresi sıralaması: Mahalle, cadde, sokak, kapı no, daire no, ilçe, il, posta kodu, vergi dairesi ismi, vergi dairesi no
               const addressLines = [];

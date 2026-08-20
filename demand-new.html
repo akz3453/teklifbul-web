@@ -2743,7 +2743,8 @@ ornek2@tedarikci.com"
         import { toast } from './src/shared/ui/toast.js';
         // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
         import { MESSAGES } from './src/shared/constants/messages.js';
-        import { STOCK_LIST_QUERY_LIMIT } from './src/shared/constants/timing.js';
+        import { findCompanyStockBySku, searchCompanyStocks } from './assets/js/utils/stock-catalog-query.js';
+        import { DEMAND_RECIPIENTS_QUERY_LIMIT } from './src/shared/constants/timing.js';
         // Teklifbul Rule v1.0 - Yetki sistemi (createBtn.onclick için gerekli)
         import { requirePerm, getDemandPerms, getAiPerms, requireExistingPerm } from './assets/js/state/permissions.js';
         import { requireCompanyContext } from './assets/js/state/company-context.js';
@@ -2774,16 +2775,11 @@ ornek2@tedarikci.com"
         import { authFetch, resolveSharedCompanyId } from "./assets/js/utils/api-helpers.js";
         import { listGroupsForUser, createGroup, updateGroup, deleteGroup } from "./assets/js/services/category-groups.js";
         // Modal artık otomatik olarak yükleniyor - import gerekmiyor
-        import { searchStocks } from "./scripts/lib/stock-search.js";
 
         // Teklifbul Rule v1.0 - Kullanıcı kontrollü HTML metinlerini güvenle görüntüle.
         function escapeHtml(str) {
           return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         }
-
-        // Global stock cache
-        let COMPANY_STOCKS = null;
-        let COMPANY_STOCKS_LOADING = false;
 
         // SATFK generation moved to Cloud Functions
 
@@ -4869,45 +4865,9 @@ ornek2@tedarikci.com"
 
         // Teklifbul Rule v1.0 - Stok kodu ile stok arama
         // Teklifbul Rule v1.0 - Stok arama sistemi (Optimized & Caching)
-        async function loadAllCompanyStocks(companyId) {
-          if (COMPANY_STOCKS) return COMPANY_STOCKS;
-          if (COMPANY_STOCKS_LOADING) {
-            while (COMPANY_STOCKS_LOADING) { await new Promise(r => setTimeout(r, 100)); }
-            return COMPANY_STOCKS;
-          }
-          try {
-            COMPANY_STOCKS_LOADING = true;
-            logger.info('Şirket stokları yükleniyor...', { companyId });
-            const stocksQuery = query(
-              collection(db, 'stocks'),
-              where('companyId', '==', companyId),
-              limit(STOCK_LIST_QUERY_LIMIT)
-            );
-            const snap = await getDocs(stocksQuery);
-            COMPANY_STOCKS = [];
-            snap.forEach(doc => {
-              const data = doc.data();
-              if (data.isActive !== false) COMPANY_STOCKS.push({ id: doc.id, ...data });
-            });
-            if (snap.size >= STOCK_LIST_QUERY_LIMIT) {
-              toast.warn(MESSAGES.WARN_STOCK_LIMIT_REACHED.replace('{count}', String(STOCK_LIST_QUERY_LIMIT)));
-            }
-            logger.info('Şirket stokları önbelleğe alındı', { count: COMPANY_STOCKS.length });
-            return COMPANY_STOCKS;
-          } catch (e) {
-            logger.error('Stok listesi yüklenemedi', e);
-            return [];
-          } finally {
-            COMPANY_STOCKS_LOADING = false;
-          }
-        }
-
         async function searchStockBySku(sku, tr) {
-          // SKU araması da artık cache üzerinden yapılacak
           try {
             const skuUpper = sku.trim().toUpperCase();
-            
-            // 1. Kategori geçmişini sorgula (Learning System)
             await loadProductCategoryHistory(skuUpper, tr);
 
             const user = await requireAuth();
@@ -4916,35 +4876,24 @@ ornek2@tedarikci.com"
             const companyId = userData.companyId;
             if (!companyId) return;
 
-            const allStocks = await loadAllCompanyStocks(companyId);
-            const match = allStocks.find(s => (s.sku || '').trim().toUpperCase() === skuUpper);
-
+            const match = await findCompanyStockBySku(db, companyId, skuUpper);
             if (match) {
               showStockSelectionDropdown([match], tr);
             }
-          } catch (e) { console.error(e); }
+          } catch (e) {
+            logger.error('SKU stok arama hatası', e);
+          }
         }
 
-        // Teklifbul Rule v1.0 - Malzeme tanımı ile stok arama
         async function searchStockByName(name, tr) {
           try {
-            logger.group('Stok ismi ile arama (Client-Side)');
+            logger.group('Stok ismi ile arama');
             const user = await requireAuth();
             const userDoc = await getDoc(doc(db, 'users', user.uid));
             const companyId = userDoc.exists() ? userDoc.data().companyId : null;
             if (!companyId) { logger.end(); return; }
 
-            // 1. Önbellekten stokları getir (veya yükle)
-            const allStocks = await loadAllCompanyStocks(companyId);
-            if (!allStocks || allStocks.length === 0) {
-              logger.info('Şirkete ait aktif stok bulunamadı');
-              logger.end();
-              return;
-            }
-
-            // 2. Client-side arama yap (stock-search.js)
-            const matches = searchStocks(allStocks, name, 10);
-
+            const matches = await searchCompanyStocks(db, companyId, name, 10);
             if (matches.length === 0) {
               const existingCard = tr.querySelector('.stock-selection-card');
               if (existingCard) existingCard.remove();
@@ -8458,7 +8407,7 @@ ornek2@tedarikci.com"
             // demandRecipients kayıtları oluştur (idempotent)
             let existingSupplierIds = new Set();
             try {
-              const existingSnap = await getDocs(query(collection(db, 'demandRecipients'), where('demandId', '==', demandId), limit(2000)));
+              const existingSnap = await getDocs(query(collection(db, 'demandRecipients'), where('demandId', '==', demandId), limit(DEMAND_RECIPIENTS_QUERY_LIMIT)));
               existingSupplierIds = new Set(existingSnap.docs.map(d => d.data()?.supplierId).filter(Boolean));
             } catch (existingErr) {
               logger.warn('Existing demandRecipients query failed; continuing with create-only', {

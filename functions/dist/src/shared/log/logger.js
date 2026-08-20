@@ -1,6 +1,7 @@
 // Teklifbul Rule v1.0 - Structured Logging Sistemi
 // console.log doğrudan kullanımı yasak
 // Tüm log işlemleri logger modülü üzerinden yapılır
+import { scrubSentryEvent } from './sentry-scrub.js';
 // Production kontrolü: Vite build sistemi varsa import.meta.env kontrolü
 const isProd = (() => {
     // Vite build sistemi varsa import.meta.env kontrolü
@@ -57,21 +58,10 @@ async function initializeSentry() {
                     Sentry.init({
                         dsn: process.env.SENTRY_DSN,
                         environment: process.env.NODE_ENV || 'production',
+                        sendDefaultPii: false,
                         tracesSampleRate: Number(process.env.SENTRY_TRACES_SAMPLE_RATE) || 0.1,
                         beforeSend(event) {
-                            if (event.request?.headers) {
-                                delete event.request.headers['authorization'];
-                                delete event.request.headers['cookie'];
-                            }
-                            if (event.request?.data) {
-                                const sensitiveFields = ['password', 'token', 'secret', 'apiKey'];
-                                sensitiveFields.forEach(field => {
-                                    if (event.request.data[field]) {
-                                        event.request.data[field] = '[FILTERED]';
-                                    }
-                                });
-                            }
-                            return event;
+                            return scrubSentryEvent(event);
                         }
                     });
                     sentryInitialized = true;
@@ -96,13 +86,10 @@ async function initializeSentry() {
                 Sentry.init({
                     dsn,
                     environment: 'production',
+                    sendDefaultPii: false,
                     tracesSampleRate: 0.1,
                     beforeSend(event) {
-                        if (event.request?.headers) {
-                            delete event.request.headers['authorization'];
-                            delete event.request.headers['cookie'];
-                        }
-                        return event;
+                        return scrubSentryEvent(event);
                     }
                 });
                 sentryInitialized = true;
@@ -124,13 +111,13 @@ async function sendErrorToSentry(message, err) {
             if (err instanceof Error) {
                 Sentry.captureException(err, {
                     tags: { context: message },
-                    extra: { message }
+                    extra: scrubSentryEvent({ extra: { message } })?.extra,
                 });
             }
             else if (err) {
                 Sentry.captureMessage(`${message}: ${String(err)}`, {
                     level: 'error',
-                    extra: { error: err, message }
+                    extra: scrubSentryEvent({ extra: { message } })?.extra,
                 });
             }
             else {

@@ -47,34 +47,19 @@ function escapeXml(str: string): string {
  */
 export const SITEMAP_URLS: SitemapUrl[] = [
     {
-        loc: 'https://teklifbul.com/',
-        changefreq: 'daily',
+        loc: 'https://nefisoft.com/',
+        changefreq: 'weekly',
         priority: 1.0
     },
     {
-        loc: 'https://teklifbul.com/login.html',
+        loc: 'https://nefisoft.com/contact.html',
         changefreq: 'monthly',
-        priority: 0.8
-    },
-    {
-        loc: 'https://teklifbul.com/signup.html',
-        changefreq: 'monthly',
-        priority: 0.8
-    },
-    {
-        loc: 'https://teklifbul.com/register-buyer.html',
-        changefreq: 'monthly',
-        priority: 0.8
-    },
-    {
-        loc: 'https://teklifbul.com/contact.html',
-        changefreq: 'monthly',
-        priority: 0.6
-    },
-    {
-        loc: 'https://teklifbul.com/forum.html',
-        changefreq: 'weekly',
         priority: 0.7
+    },
+    {
+        loc: 'https://nefisoft.com/legal/cerez-politikasi.html',
+        changefreq: 'yearly',
+        priority: 0.3
     }
 ];
 

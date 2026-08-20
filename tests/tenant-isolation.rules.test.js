@@ -1,7 +1,7 @@
 /**
  * Teklifbul Rule v1.0 — CRITICAL/HIGH tenant isolation Firestore rules
  */
-import { describe, test, beforeAll, afterAll, beforeEach } from 'vitest';
+import { describe, test, beforeAll, afterAll, beforeEach, expect } from 'vitest';
 import { initializeTestEnvironment, assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
 import { doc, getDoc, getDocs, setDoc, updateDoc, collection, query, where } from 'firebase/firestore';
 import { readFileSync } from 'fs';
@@ -982,5 +982,101 @@ describe('bids list queries (dashboard outgoing)', () => {
     const ctx = testEnv.authenticatedContext(taxUser);
     const q = query(collection(ctx.firestore(), 'bids'), where('supplierCompanyId', '==', taxCompany));
     await assertSucceeds(getDocs(q));
+  });
+});
+
+describe('P1 marketplace company projection', () => {
+  test('buyer A cannot read supplier B full company document', async () => {
+    await testEnv.withSecurityRulesDisabled(async (admin) => {
+      await setDoc(doc(admin.firestore(), 'users', USER_A), {
+        email: 'usera@test.com',
+        companyId: COMPANY_A,
+        activeCompanyId: COMPANY_A,
+        companies: [COMPANY_A],
+        companyJoinStatus: 'accepted',
+        isBuyer: true,
+      }, { merge: true });
+      await setDoc(doc(admin.firestore(), 'companies', COMPANY_B), {
+        ownerId: USER_B,
+        ownerUid: USER_B,
+        name: 'B Ltd',
+        isSupplier: true,
+        isMarketplaceVisible: true,
+        taxNumber: '1111111111',
+        phone: '5550000000',
+        email: 'private@b.test',
+        planId: 'premium_monthly',
+        billing: { iban: 'TR00' },
+      }, { merge: true });
+    });
+    const buyer = testEnv.authenticatedContext(USER_A);
+    await assertFails(getDoc(doc(buyer.firestore(), 'companies', COMPANY_B)));
+  });
+
+  test('supplier B cannot read buyer A full company document', async () => {
+    const supplier = testEnv.authenticatedContext(USER_B);
+    await assertFails(getDoc(doc(supplier.firestore(), 'companies', COMPANY_A)));
+  });
+
+  test('signed-in marketplace user can read publicCompanyProfiles', async () => {
+    await testEnv.withSecurityRulesDisabled(async (admin) => {
+      await setDoc(doc(admin.firestore(), 'publicCompanyProfiles', COMPANY_B), {
+        companyId: COMPANY_B,
+        name: 'B Ltd',
+        companyName: 'B Ltd',
+        logoUrl: null,
+        about: null,
+        website: null,
+        city: 'Ankara',
+        isSupplier: true,
+        isBuyer: false,
+        isMarketplaceVisible: true,
+        supplierCategoryIds: ['cement'],
+        updatedAt: new Date(),
+      });
+    });
+    const buyer = testEnv.authenticatedContext(USER_A);
+    const snap = await assertSucceeds(getDoc(doc(buyer.firestore(), 'publicCompanyProfiles', COMPANY_B)));
+    const data = snap.data();
+    expect(data.taxNumber).toBeUndefined();
+    expect(data.phone).toBeUndefined();
+    expect(data.email).toBeUndefined();
+    expect(data.billing).toBeUndefined();
+    expect(data.planId).toBeUndefined();
+    expect(data.name).toBe('B Ltd');
+  });
+
+  test('member can read own company document', async () => {
+    const member = testEnv.authenticatedContext(USER_A);
+    await assertSucceeds(getDoc(doc(member.firestore(), 'companies', COMPANY_A)));
+  });
+
+  test('member cannot write private fields into publicCompanyProfiles', async () => {
+    const member = testEnv.authenticatedContext(USER_B);
+    await assertFails(setDoc(doc(member.firestore(), 'publicCompanyProfiles', COMPANY_B), {
+      companyId: COMPANY_B,
+      name: 'B Ltd',
+      companyName: 'B Ltd',
+      taxNumber: '1111111111',
+      phone: '555',
+    }));
+  });
+
+  test('member can write allowlisted publicCompanyProfiles fields', async () => {
+    const member = testEnv.authenticatedContext(USER_B);
+    await assertSucceeds(setDoc(doc(member.firestore(), 'publicCompanyProfiles', COMPANY_B), {
+      companyId: COMPANY_B,
+      name: 'B Ltd',
+      companyName: 'B Ltd',
+      logoUrl: null,
+      about: null,
+      website: null,
+      city: 'Ankara',
+      isSupplier: true,
+      isBuyer: false,
+      isMarketplaceVisible: true,
+      supplierCategoryIds: ['cement'],
+      updatedAt: new Date(),
+    }));
   });
 });

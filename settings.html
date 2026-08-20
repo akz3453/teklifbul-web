@@ -2055,8 +2055,10 @@
     import { toast } from './src/shared/ui/toast.js';
     // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
     import { MESSAGES } from './src/shared/constants/messages.js';
+    import { COMPANY_MEMBERS_QUERY_LIMIT } from './src/shared/constants/timing.js';
     import { requireCompanyContext, clearCompanyContextCache } from './assets/js/state/company-context.js';
     import { getCompanyPlan, getPlanStars } from './assets/js/state/company-plan.js';
+    import { getCompanyDisplay } from './assets/js/utils/public-company-profile.js';
     import rolePermissionsTemplate from './src/shared/data/rolePermissionsTemplate.json';
     import {
       initPermissions,
@@ -2437,7 +2439,7 @@
         if (!dbInst || !companyId) return { buyerRoles: [], supplierRoles: [], hasBuyer: false, hasSupplier: false };
 
         const getFirestoreModulesFn = window.getFirestoreModules || getFirestoreModules;
-        const { collection, query, where, getDocs, doc, getDoc } = await getFirestoreModulesFn();
+        const { collection, query, where, getDocs, doc, getDoc, limit } = await getFirestoreModulesFn();
 
         // Şirket bilgilerini al
         const companyDoc = await getDoc(doc(dbInst, 'companies', companyId));
@@ -2451,7 +2453,8 @@
         // Şirket kullanıcılarını al
         const usersQuery = query(
           collection(dbInst, 'users'),
-          where('companyId', '==', companyId)
+          where('companyId', '==', companyId),
+          limit(COMPANY_MEMBERS_QUERY_LIMIT)
         );
         const usersSnapshot = await getDocs(usersQuery);
 
@@ -3696,13 +3699,11 @@
         const safeDefaultOption = DOMPurify.sanitize('<option value="">Firma seçin...</option>', { ALLOWED_TAGS: ['option'], ALLOWED_ATTR: ['value'] });
         companySelect.innerHTML = safeDefaultOption;
         for (const partnerCompanyId of partnerCompanyIds) {
-          const partnerCompanyDoc = await getDoc(doc(db, 'companies', partnerCompanyId));
-          if (partnerCompanyDoc.exists()) {
-            const partnerData = partnerCompanyDoc.data();
+          const partnerView = await getCompanyDisplay(db, partnerCompanyId);
+          if (partnerView.source !== 'none' || partnerView.companyName) {
             const option = document.createElement('option');
-            // Teklifbul Rule v1.0 - XSS Protection - textContent kullan (güvenli)
             option.value = DOMPurify.sanitize(partnerCompanyId || '', { ALLOWED_TAGS: [] });
-            option.textContent = partnerData.companyName || partnerData.name || 'Bilinmeyen Şirket';
+            option.textContent = partnerView.companyName || partnerView.name || 'Bilinmeyen Şirket';
             companySelect.appendChild(option);
           }
         }
@@ -3842,10 +3843,8 @@
           if (!demandDoc || !demandDoc.exists()) continue;
           
           const demandData = demandDoc.data();
-          const buyerCompanyDoc = await getDoc(doc(db, 'companies', demandData.companyId)).catch(() => null);
-          const buyerCompanyName = buyerCompanyDoc && buyerCompanyDoc.exists() 
-            ? (buyerCompanyDoc.data().companyName || buyerCompanyDoc.data().name) 
-            : 'Bilinmeyen Şirket';
+          const buyerView = await getCompanyDisplay(db, demandData.companyId);
+          const buyerCompanyName = buyerView.companyName || buyerView.name || 'Bilinmeyen Şirket';
           
           const totalAmount = bidData.items?.reduce((sum, item) => {
             return sum + (parseFloat(item.quantity || 0) * parseFloat(item.unitPrice || 0));
@@ -7187,13 +7186,12 @@
         const partners = [];
         for (const partnerCompanyId of partnerCompanyIds) {
           try {
-            const partnerCompanyDoc = await getDoc(doc(dbInst, 'companies', partnerCompanyId));
-            if (partnerCompanyDoc.exists()) {
-              const data = partnerCompanyDoc.data() || {};
+            const partnerView = await getCompanyDisplay(dbInst, partnerCompanyId);
+            if (partnerView.source !== 'none' || partnerView.companyName) {
               partners.push({
                 id: partnerCompanyId,
-                name: data.companyName || data.name || 'Bilinmeyen Şirket',
-                data
+                name: partnerView.companyName || partnerView.name || 'Bilinmeyen Şirket',
+                data: partnerView.source === 'member' ? (partnerView._raw || partnerView) : partnerView
               });
             }
           } catch (cErr) {
@@ -10308,14 +10306,11 @@
             const companyPromises = Array.from(companyIds).map(async (cid) => {
               try {
                 const { doc, getDoc } = await getFirestoreModules();
-                const companyDoc = await getDoc(doc(db, 'companies', cid));
-                if (companyDoc.exists()) {
-                  const companyData = companyDoc.data();
-                  // Referans isteklerinde şirket adını güncelle
+                const companyView = await getCompanyDisplay(db, cid);
+                if (companyView.source !== 'none' || companyView.companyName) {
                   pendingReferrals.forEach(ref => {
                     if (ref.requestingCompanyId === cid && (!ref.requestingCompanyName || ref.requestingCompanyName === 'Şirket')) {
-                      ref.requestingCompanyName = companyData.name || 'Şirket';
-                      ref.requestingCompanyCode = companyData.code || ref.requestingCompanyCode || '';
+                      ref.requestingCompanyName = companyView.name || companyView.companyName || 'Şirket';
                     }
                   });
                 }
@@ -10538,13 +10533,17 @@
         activeUsersList.innerHTML = '<div style="text-align:center; padding:20px; color:#6b7280;"><p>Yükleniyor...</p></div>';
 
         // Şirkete ait tüm kullanıcıları bul
-        const { collection, query, where, getDocs, doc, getDoc } = await getFirestoreModules();
+        const { collection, query, where, getDocs, doc, getDoc, limit } = await getFirestoreModules();
         const usersQuery = query(
           collection(db, 'users'),
-          where('companyId', '==', companyId)
+          where('companyId', '==', companyId),
+          limit(COMPANY_MEMBERS_QUERY_LIMIT)
         );
 
         const usersSnapshot = await getDocs(usersQuery);
+        if (usersSnapshot.size >= COMPANY_MEMBERS_QUERY_LIMIT) {
+          toast.warn(MESSAGES.WARN_QUERY_LIMIT_REACHED.replace('{count}', String(COMPANY_MEMBERS_QUERY_LIMIT)));
+        }
 
         if (usersSnapshot.empty) {
           activeUsersList.innerHTML = '<div style="text-align:center; padding:20px; color:#6b7280;"><p>Henüz şirkete kayıtlı kullanıcı yok.</p></div>';

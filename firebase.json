@@ -159,6 +159,18 @@
           "region": "us-central1"
         }
       }
+    ],
+    "redirects": [
+      {
+        "source": "/fefo-dashboard.html",
+        "destination": "/404.html",
+        "type": 302
+      },
+      {
+        "source": "/fefo-pos.html",
+        "destination": "/404.html",
+        "type": 302
+      }
     ]
   },
   "emulators": {

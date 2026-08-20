@@ -6,7 +6,7 @@
 // Teklifbul Rule v1.0 - XSS Protection
 import DOMPurify from 'https://cdn.jsdelivr.net/npm/dompurify@3.2.2/+esm';
 import { db, auth, requireAuth } from '/firebase.js';
-import { collection, getDocs, query, where, orderBy, addDoc, updateDoc, doc, getDoc, serverTimestamp, deleteDoc, limit } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+import { collection, getDocs, query, where, orderBy, addDoc, updateDoc, doc, getDoc, serverTimestamp, deleteDoc, limit, startAfter } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
 import { searchStocks } from '/scripts/lib/stock-search.js';
 import { toast } from '../src/shared/ui/toast.js';
 // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
@@ -15,7 +15,7 @@ import { logger } from '../src/shared/log/logger.js';
 import { requireCompanyContext } from '../assets/js/state/company-context.js';
 import { initPermissions, can, requirePerm, getStockPerms } from '../assets/js/state/permissions.js';
 import { authFetch } from '../assets/js/utils/api-helpers.js';
-import { STOCK_LIST_QUERY_LIMIT } from '../src/shared/constants/timing.js';
+import { STOCK_LIST_PAGE_SIZE, STOCK_CATALOG_MAX_PAGES, STOCK_COUNT_ITEMS_QUERY_LIMIT } from '../src/shared/constants/timing.js';
 
 // ExcelJS global (CDN'den yükleniyor)
 const ExcelJS = window.ExcelJS;
@@ -141,56 +141,60 @@ async function loadCountData() {
 // Load stocks
 async function loadStocks() {
   try {
-    // Teklifbul Rule v1.0 - Stocks collection'ı companyId ile filtrelenmeli
     const stocksRef = collection(db, 'stocks');
-    let stocksQuery;
-
-    try {
-      stocksQuery = query(
-        stocksRef,
-        where('companyId', '==', state.companyId),
-        orderBy('sku'),
-        limit(STOCK_LIST_QUERY_LIMIT)
-      );
-    } catch (queryError) {
-      logger.warn('Stocks query with companyId+orderBy failed, retrying without orderBy', queryError);
-      stocksQuery = query(
-        stocksRef,
-        where('companyId', '==', state.companyId),
-        limit(STOCK_LIST_QUERY_LIMIT)
-      );
-    }
-
-    const snap = await getDocs(stocksQuery);
-
     state.allStocks = [];
-    snap.forEach(doc => {
-      const data = doc.data();
-      // Filter by companyId if not in query
-      if (!data.companyId || data.companyId === state.companyId) {
-        state.allStocks.push({ id: doc.id, ...data });
+    let lastDoc = null;
+    let capped = false;
+    for (let page = 0; page < STOCK_CATALOG_MAX_PAGES; page++) {
+      const pageQuery = lastDoc
+        ? query(
+          stocksRef,
+          where('companyId', '==', state.companyId),
+          orderBy('sku'),
+          startAfter(lastDoc),
+          limit(STOCK_LIST_PAGE_SIZE)
+        )
+        : query(
+          stocksRef,
+          where('companyId', '==', state.companyId),
+          orderBy('sku'),
+          limit(STOCK_LIST_PAGE_SIZE)
+        );
+      const snap = await getDocs(pageQuery);
+      snap.forEach((docSnap) => {
+        const data = docSnap.data();
+        if (!data.companyId || data.companyId === state.companyId) {
+          state.allStocks.push({ id: docSnap.id, ...data });
+        }
+      });
+      if (snap.empty || snap.size < STOCK_LIST_PAGE_SIZE) {
+        capped = false;
+        break;
       }
-    });
-
+      lastDoc = snap.docs[snap.docs.length - 1];
+      if (page === STOCK_CATALOG_MAX_PAGES - 1) capped = true;
+    }
+    if (capped) {
+      toast.warn(MESSAGES.WARN_STOCK_LIMIT_REACHED.replace('{count}', String(STOCK_LIST_PAGE_SIZE * STOCK_CATALOG_MAX_PAGES)));
+    }
     state.stocks = state.allStocks;
   } catch (error) {
     logger.error('Load stocks error', error);
-    // Fallback: Load all stocks and filter client-side
     try {
-      const stocksRef = collection(db, 'stocks');
       const snap = await getDocs(query(
-        stocksRef,
+        collection(db, 'stocks'),
         where('companyId', '==', state.companyId),
-        limit(STOCK_LIST_QUERY_LIMIT)
+        limit(STOCK_LIST_PAGE_SIZE)
       ));
       state.allStocks = [];
-      snap.forEach(doc => {
-        const data = doc.data();
+      snap.forEach((docSnap) => {
+        const data = docSnap.data();
         if (!data.companyId || data.companyId === state.companyId) {
-          state.allStocks.push({ id: doc.id, ...data });
+          state.allStocks.push({ id: docSnap.id, ...data });
         }
       });
       state.stocks = state.allStocks;
+      toast.warn(MESSAGES.WARN_STOCK_LIMIT_REACHED.replace('{count}', String(STOCK_LIST_PAGE_SIZE)));
     } catch (fallbackError) {
       logger.error('Stocks load fallback error', fallbackError);
     }
@@ -201,7 +205,7 @@ async function loadStocks() {
 async function loadCountItems() {
   try {
     const itemsRef = collection(db, 'stock_counts', state.countId, 'count_items');
-    const itemsQuery = query(itemsRef, orderBy('sku'), limit(10000)); // Teklifbul Rule v1.0 - Limit eklendi
+    const itemsQuery = query(itemsRef, orderBy('sku'), limit(STOCK_COUNT_ITEMS_QUERY_LIMIT));
     const snap = await getDocs(itemsQuery);
 
     state.countItems = [];

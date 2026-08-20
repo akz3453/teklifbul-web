@@ -15,6 +15,7 @@ import { MESSAGES } from '../../../src/shared/constants/messages.js';
 import { hasPremiumPlusAccess, hasPremiumAccess } from '../auth/userHelpers.js';
 import { shouldSkipPreventDefault } from '../utils/link-handler.js';
 import { HEADER_NOTIFICATION_POLL_MS } from '../../../src/shared/constants/timing.js';
+import { getCachedUserSnap } from '../utils/user-doc-cache.js';
 
 // Teklifbul Rule v1.0 - Firebase Module Caching (Performance optimization)
 const firebaseModuleCache = {
@@ -1391,7 +1392,9 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
             return null;
           }
 
-          const profileSnap = await getDoc(doc(db, collection, user.uid));
+          const profileSnap = collection === 'users'
+            ? await getCachedUserSnap(db, user.uid)
+            : await getDoc(doc(db, collection, user.uid));
           if (profileSnap.exists()) {
             const profileData = profileSnap.data();
             const name = profileData?.companyName ||
@@ -2001,7 +2004,7 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
       let companyPlan = null;
       try {
         const { doc, getDoc } = await getFirestoreModules();
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        const userDoc = await getCachedUserSnap(db, user.uid);
         const userData = userDoc.exists() ? userDoc.data() : {};
         const serverHiddenKeys = Array.isArray(userData?.uiPrefs?.hiddenHeaderKeys) ? userData.uiPrefs.hiddenHeaderKeys : null;
         const serverOrderedNavKeys = Array.isArray(userData?.uiPrefs?.orderedNavKeys) ? userData.uiPrefs.orderedNavKeys : null;

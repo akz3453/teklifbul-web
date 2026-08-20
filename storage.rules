@@ -66,6 +66,23 @@ service firebase.storage {
       allow write, delete: if signedIn() && request.auth.uid == uid;
     }
 
+    function isCompanyImageUpload() {
+      return request.resource.size < 5 * 1024 * 1024 &&
+        request.resource.contentType.matches('image/(jpeg|png|webp|gif)');
+    }
+
+    match /company-logos/{companyId}/{fileName} {
+      allow read: if signedIn();
+      allow create, update: if isAcceptedMemberOf(companyId) && isCompanyImageUpload();
+      allow delete: if isAcceptedMemberOf(companyId);
+    }
+
+    match /company-gallery/{companyId}/{fileName} {
+      allow read: if signedIn();
+      allow create, update: if isAcceptedMemberOf(companyId) && isCompanyImageUpload();
+      allow delete: if isAcceptedMemberOf(companyId);
+    }
+
     // demand files — yazma: dosya sahibi VE talep üyeliği
     match /demands/{demandId}/{userId}/{fileName} {
       allow read: if canReadDemandFile(demandId, userId);

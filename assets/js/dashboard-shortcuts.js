@@ -6,6 +6,7 @@ import { initDashboardExcelImport } from './dashboard-excel-utils.js';
 import { hasPremiumAccess } from './auth/userHelpers.js';
 import { getCompanyPlan, isPremium as isPremiumPlan } from './state/company-plan.js';
 import { resolveSharedCompanyId } from './utils/api-helpers.js';
+import { getCachedUserSnap } from './utils/user-doc-cache.js';
 
 const ALL_SHORTCUTS = [
   { id: 'excel-import', icon: '📄', title: 'Excel\'den Talep Oluştur', desc: 'Excel içeri aktar; form açıldığında alanlar dolu gelsin.', url: '#', isSpecial: 'excel-import' },
@@ -63,7 +64,7 @@ async function initShortcuts() {
   }
 
   try {
-    const userDoc = await getDoc(doc(db, 'users', user.uid));
+    const userDoc = await getCachedUserSnap(db, user.uid);
     const userData = userDoc.data() || {};
     userRoles = userData.roles || [];
     

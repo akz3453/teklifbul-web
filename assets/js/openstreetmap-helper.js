@@ -12,47 +12,61 @@ import { logger } from '../shared/log/logger.js';
  * Nominatim Geocoding (OpenStreetMap)
  * Rate limit: 1 request/second
  */
+/**
+ * Nominatim Geocoding (OpenStreetMap)
+ * Rate limit: 1 request/second (in-tab mutex + session last-hit)
+ */
+const NOMINATIM_MIN_GAP_MS = 1100;
+const NOMINATIM_LAST_KEY = 'nominatim:lastAt';
+let nominatimQueue = Promise.resolve();
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function throttleNominatim() {
+  const last = Number(sessionStorage.getItem(NOMINATIM_LAST_KEY) || 0);
+  const wait = Math.max(0, NOMINATIM_MIN_GAP_MS - (Date.now() - last));
+  if (wait > 0) await sleep(wait);
+  sessionStorage.setItem(NOMINATIM_LAST_KEY, String(Date.now()));
+}
+
 async function geocodeAddress(address) {
   try {
-    // Cache kontrolü (session storage)
     const cacheKey = `geocode:${encodeURIComponent(address)}`;
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
       return JSON.parse(cached);
     }
-    
-    // Nominatim API çağrısı
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`,
-      {
-        headers: {
-          'User-Agent': 'Teklifbul/1.0' // Nominatim policy gereği
+
+    const run = nominatimQueue.then(async () => {
+      await throttleNominatim();
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`,
+        {
+          headers: {
+            'User-Agent': 'Teklifbul/1.0'
+          }
         }
+      );
+      if (!response.ok) {
+        throw new Error(`Geocoding failed: ${response.statusText}`);
       }
-    );
-    
-    if (!response.ok) {
-      throw new Error(`Geocoding failed: ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    
-    if (data.length === 0) {
+      return response.json();
+    });
+    nominatimQueue = run.catch(() => {});
+    const data = await run;
+
+    if (!data || data.length === 0) {
       return null;
     }
-    
+
     const result = {
       lat: parseFloat(data[0].lat),
       lng: parseFloat(data[0].lon),
       display_name: data[0].display_name
     };
-    
-    // Cache'e kaydet (session storage - sayfa kapanana kadar)
     sessionStorage.setItem(cacheKey, JSON.stringify(result));
-    
-    // Rate limiting için bekle (1 saniye)
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
     return result;
   } catch (error) {
     logger.error('Geocoding error', error);

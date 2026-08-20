@@ -433,6 +433,7 @@
     import { requireCompanyContext } from './assets/js/state/company-context.js';
     import { initPermissions, can, getBidPerms } from './assets/js/state/permissions.js';
     import { setTableEmpty } from '/assets/js/utils/safe-table.js';
+    import { getCompanyDisplay } from './assets/js/utils/public-company-profile.js';
     import {
       doc, getDoc, getDocs, collection, query, where, orderBy, limit, startAfter, getCountFromServer
     } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
@@ -1770,12 +1771,9 @@
             const batch = companyIdsArray.slice(i, i + 10);
             await Promise.all(batch.map(async (companyId) => {
               try {
-                const companyDoc = await getDoc(doc(db, 'companies', companyId));
-                if (companyDoc.exists()) {
-                  const companyData = companyDoc.data();
-                  const companyName = companyData.name || companyData.companyName || companyId;
-                  SUPPLIER_NAME_CACHE.set(companyId, companyName);
-                }
+                const companyView = await getCompanyDisplay(db, companyId);
+                const companyName = companyView.companyName || companyView.name || companyId;
+                SUPPLIER_NAME_CACHE.set(companyId, companyName);
               } catch (e) {
                 logger.warn('Company bilgisi yüklenemedi', { companyId, error: e });
                 SUPPLIER_NAME_CACHE.set(companyId, companyId);
@@ -1798,14 +1796,12 @@
                 if (userCompanyId && !userCompanyId.startsWith('solo-')) {
                   // Company bilgisini yükle
                   try {
-                    const companyDoc = await getDoc(doc(db, 'companies', userCompanyId));
-                    if (companyDoc.exists()) {
-                      const companyData = companyDoc.data();
-                      const companyName = companyData.name || companyData.companyName || userCompanyId;
+                    const companyView = await getCompanyDisplay(db, userCompanyId);
+                    const companyName = companyView.companyName || companyView.name || userCompanyId;
+                    if (companyView.source !== 'none') {
                       SUPPLIER_NAME_CACHE.set(userId, companyName);
                       SUPPLIER_NAME_CACHE.set(userCompanyId, companyName);
                     } else {
-                      // Company yoksa user'ın companyName'ini kullan
                       const userName = userData.companyName || userData.displayName || userId;
                       SUPPLIER_NAME_CACHE.set(userId, userName);
                     }

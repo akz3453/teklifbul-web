@@ -1,5 +1,4 @@
 import { db, auth, requireAuth } from '/firebase.js';
-import { normalizeTRLower, matchesWildcard, normalizeTR } from '/scripts/lib/tr-utils.js';
 import { allocateExtras } from '/scripts/inventory-cost.js';
 import { collection, getDocs, query, where, doc, getDoc, limit } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
 import { toast } from '../src/shared/ui/toast.js';
@@ -10,7 +9,7 @@ import { initPermissions, can, requirePerm, getStockPerms } from '../assets/js/s
 import { fetchStockMovementsPage, iterateStockMovementsForExport } from '../assets/js/services/stock-movements-service.js';
 import { authFetch } from '../assets/js/utils/api-helpers.js';
 import { ensureXlsxLoaded } from '../assets/js/utils/xlsx-loader.js';
-import { STOCK_LIST_QUERY_LIMIT } from '../src/shared/constants/timing.js';
+import { searchCompanyStocks } from '../assets/js/utils/stock-catalog-query.js';
 
 /** Teklifbul Rule v1.0 — XSS escape */
 function escapeHtml(value) {
@@ -30,6 +29,7 @@ const state = {
   historySelectedStock: null,
   locations: [],
   stocks: [],
+  companyId: null,
   movements: [],
   history: {
     pageSize: 50,
@@ -219,8 +219,8 @@ function setupEventListeners() {
       }
       
       // Debounce arama
-      searchTimeout = setTimeout(() => {
-        const matches = searchStocks(query, 50);
+      searchTimeout = setTimeout(async () => {
+        const matches = await searchCatalogStocks(query, 50);
         
         if (!results) return;
         
@@ -403,87 +403,21 @@ async function loadStocks() {
     if (!companyId) {
       logger.warn('Stocks load skipped: companyId yok');
       state.stocks = [];
+      state.companyId = null;
       toast.error(MESSAGES.ERROR_COMPANY_INFO_NOT_FOUND);
       return;
     }
 
-    const q = query(
-      collection(db, 'stocks'),
-      where('companyId', '==', companyId),
-      limit(STOCK_LIST_QUERY_LIMIT)
-    );
-    const snap = await getDocs(q);
+    state.companyId = companyId;
     state.stocks = [];
-    snap.forEach(docSnap => {
-      state.stocks.push({ id: docSnap.id, ...docSnap.data() });
-    });
-    if (snap.size >= STOCK_LIST_QUERY_LIMIT) {
-      toast.warn(MESSAGES.WARN_STOCK_LIMIT_REACHED.replace('{count}', String(STOCK_LIST_QUERY_LIMIT)));
-    }
   } catch (error) {
     logger.error('Stocks load error', error);
   }
 }
 
-// Teklifbul Rule v1.0 - Gelişmiş stok arama sistemi (ETA programı gibi)
-function searchStocks(query, limit = 50) {
-  if (!query || query.trim().length === 0) {
-    return [];
-  }
-  
-  const normalizedQuery = normalizeTRLower(query.trim());
-  const hasWildcard = query.includes('*');
-  
-  // Wildcard arama (* * kullanarak)
-  if (hasWildcard) {
-    return state.stocks.filter(s => {
-      return matchesWildcard(s.name, query) || matchesWildcard(s.sku, query);
-    });
-  }
-  
-  // Normal arama - ilgili sıralama
-  const scored = state.stocks.map(stock => {
-    const nameNorm = normalizeTRLower(stock.name || '');
-    const skuNorm = normalizeTRLower(stock.sku || '');
-    
-    let score = 0;
-    
-    // Tam eşleşme (en yüksek öncelik)
-    if (nameNorm === normalizedQuery) score += 1000;
-    if (skuNorm === normalizedQuery) score += 1000;
-    
-    // Başlangıç eşleşmesi
-    if (nameNorm.startsWith(normalizedQuery)) score += 500;
-    if (skuNorm.startsWith(normalizedQuery)) score += 500;
-    
-    // İçeriyor mu
-    if (nameNorm.includes(normalizedQuery)) {
-      const index = nameNorm.indexOf(normalizedQuery);
-      score += 300 - (index * 2); // Erken bulunanlar daha yüksek skor
-    }
-    if (skuNorm.includes(normalizedQuery)) {
-      const index = skuNorm.indexOf(normalizedQuery);
-      score += 200 - (index * 2);
-    }
-    
-    // Kelime bazlı eşleşme
-    const queryWords = normalizedQuery.split(/\s+/);
-    const nameWords = nameNorm.split(/\s+/);
-    queryWords.forEach(qw => {
-      nameWords.forEach(nw => {
-        if (nw.startsWith(qw)) score += 100;
-        if (nw.includes(qw)) score += 50;
-      });
-    });
-    
-    return { stock, score };
-  })
-  .filter(item => item.score > 0)
-  .sort((a, b) => b.score - a.score)
-  .slice(0, limit)
-  .map(item => item.stock);
-  
-  return scored;
+async function searchCatalogStocks(queryText, resultLimit = 50) {
+  if (!state.companyId || !queryText) return [];
+  return searchCompanyStocks(db, state.companyId, queryText, resultLimit);
 }
 
 // Stock search event listeners moved to setupEventListeners function
@@ -1316,8 +1250,8 @@ async function setupHistoryStockSearch() {
       return;
     }
 
-    searchTimeout = setTimeout(() => {
-      const matches = searchStocks(q, 50);
+    searchTimeout = setTimeout(async () => {
+      const matches = await searchCatalogStocks(q, 50);
       results.style.display = 'block';
       results.innerHTML = '';
 

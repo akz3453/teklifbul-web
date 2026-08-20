@@ -7,6 +7,8 @@ import { toast } from '../src/shared/ui/toast.js';
 import { logger } from '../src/shared/log/logger.js';
 import { requireCompanyContext } from '../assets/js/state/company-context.js';
 import { initPermissions, can, getStockPerms } from '../assets/js/state/permissions.js';
+import { loadCompanyStocksPaged } from '../assets/js/utils/stock-catalog-query.js';
+import { MESSAGES } from '../src/shared/constants/messages.js';
 
 const qs = s => document.querySelector(s);
 const STOCK_PERMS = getStockPerms();
@@ -212,13 +214,11 @@ async function deleteGroup(id) {
 async function loadAllStocks() {
   if (state.allStocks.length > 0) return;
   try {
-    const snap = await getDocs(query(
-      collection(db, 'stocks'),
-      where('companyId', '==', state.companyId),
-      limit(10000)
-    ));
-    state.allStocks = [];
-    snap.forEach(d => state.allStocks.push({ id: d.id, ...d.data() }));
+    const { rows, capped } = await loadCompanyStocksPaged(db, state.companyId);
+    state.allStocks = rows;
+    if (capped) {
+      toast.warn(MESSAGES.WARN_STOCK_LIMIT_REACHED.replace('{count}', String(rows.length)));
+    }
     state.allStocks.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   } catch (e) {
     logger.error('Load stocks error', e);

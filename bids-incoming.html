@@ -131,6 +131,7 @@
     import { MESSAGES } from '/src/shared/constants/messages.js';
     import { logger } from '/src/shared/log/logger.js';
     import { requireCompanyContext } from './assets/js/state/company-context.js';
+    import { getCompanyDisplay } from './assets/js/utils/public-company-profile.js';
     import { initPermissions, can, getBidPerms } from './assets/js/state/permissions.js';
     
     // Teklifbul Rule v1.0 - Teslim şekli etiketi - Sadece 3 seçenek: Nakliye Dahil, Nakliye Hariç, Özel
@@ -190,38 +191,21 @@
         }
         
         const userData = userDoc.data();
-        const companyName = userData.companyName || userData.displayName || 'Bilinmeyen Firma';
-        
-        // Company ID'yi al
         const companyId = userData.companyId || (userData.companies && userData.companies[0]) || null;
-        let companyData = null;
-        
-        // Company bilgilerini yükle
+        let companyView = null;
         if (companyId) {
           try {
-            const companyDoc = await getDoc(doc(db, 'companies', companyId));
-            if (companyDoc.exists()) {
-              companyData = companyDoc.data();
-            }
+            companyView = await getCompanyDisplay(db, companyId);
           } catch (e) {
             logger.warn('Company bilgisi yüklenemedi', e);
           }
         }
-        
-        // İletişim bilgilerini topla
-        const phone = companyData?.phone || companyData?.companyPhone || 
-                     (companyData?.contactPhones && companyData.contactPhones[0]) || 
-                     userData.phone || '—';
-        
-        const email = (companyData?.contactEmails && companyData.contactEmails[0]) || 
-                     companyData?.email || 
-                     userData.email || '—';
-        
+        const companyName = companyView?.companyName || companyView?.name || userData.companyName || userData.displayName || 'Bilinmeyen Firma';
         const info = {
           name: companyName,
-          phone: phone,
-          email: email,
-          companyData: companyData,
+          phone: '—',
+          email: '—',
+          companyData: companyView,
           userData: userData
         };
         

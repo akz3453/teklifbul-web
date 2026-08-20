@@ -381,9 +381,26 @@
               </div>
             </div>
             
+            <div class="form-section" style="margin-top: 12px;">
+              <label style="display:flex; gap:8px; align-items:flex-start; font-size:13px;">
+                <input type="checkbox" id="kvkkConsent" required aria-label="KVKK aydınlatma metni onayı" />
+                <span>
+                  <a href="/legal/kvkk-aydinlatma.html" target="_blank" rel="noopener noreferrer">KVKK Aydınlatma Metni</a>
+                  sürümünü okudum. Metin taslaktır; avukat onayı yoktur.
+                </span>
+              </label>
+              <label style="display:flex; gap:8px; align-items:flex-start; font-size:13px; margin-top:8px;">
+                <input type="checkbox" id="contractConsent" required aria-label="Kullanıcı sözleşmesi onayı" />
+                <span>
+                  <a href="/legal/alici-sozlesme.html" target="_blank" rel="noopener noreferrer">Kullanıcı Sözleşmesi</a>
+                  sürümünü kabul ediyorum. Metin taslaktır; avukat onayı yoktur.
+                </span>
+              </label>
+            </div>
+            
             <button id="signupBtn">Kayıt Ol</button>
 
-            <small>Devam ederek <a href="/legal/kvkk-aydinlatma.html" target="_blank" rel="noopener noreferrer">KVKK Aydınlatma Metni</a> ve <a href="/legal/alici-sozlesme.html" target="_blank" rel="noopener noreferrer">Kullanıcı Sözleşmesi</a>'ni kabul etmiş olursunuz. Hukuki metinler şirket bilgileri kesinleşene kadar taslak olarak yayımlanır.</small>
+            <small>Onay kutuları, kabul ettiğiniz belge sürümünü hesabınıza kaydeder. Hukuki metinler şirket bilgileri kesinleşene kadar taslak olarak yayımlanır.</small>
           </div>
 
           <!-- Right Column: Info Block -->
@@ -412,6 +429,8 @@
     // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
     import { MESSAGES } from './src/shared/constants/messages.js';
     import { resolveApiBaseUrl } from './assets/js/utils/api-helpers.js';
+    import { buildAcceptedLegalConsent } from './assets/js/utils/legal-consent.js';
+    import { getCompanyDisplay } from './assets/js/utils/public-company-profile.js';
     import { doc, getDoc, setDoc, updateDoc, serverTimestamp, collection, query, where, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
     import { sendVerificationEmailBranded } from "./assets/js/utils/send-verification-email.js";
     import('/assets/js/analytics.js').then((mod) => mod.initAnalytics()).catch(() => {});
@@ -630,6 +649,13 @@
         if (!displayNameEl.value || !emailEl.value || !phoneEl.value || !passEl.value) {
           throw new Error("Ad Soyad, E-posta, Telefon ve şifre gerekli.");
         }
+        if (!document.getElementById('kvkkConsent')?.checked) {
+          throw new Error(MESSAGES.ERROR_KVKK_CONSENT_REQUIRED);
+        }
+        if (!document.getElementById('contractConsent')?.checked) {
+          throw new Error(MESSAGES.ERROR_CONTRACT_CONSENT_REQUIRED);
+        }
+        const legalConsent = buildAcceptedLegalConsent(['kvkk-aydinlatma', 'alici-sozlesme']);
 
         // Telefon numarası normalizasyonu
         const rawPhone = phoneEl.value.trim();
@@ -696,10 +722,8 @@
                 // Şirket adını al (eğer kaydedilmediyse)
                 let companyName = savedCompanyName;
                 if (!companyName) {
-                  const companyDoc = await getDoc(doc(db, 'companies', pendingReferralCompanyId));
-                  if (companyDoc.exists()) {
-                    companyName = companyDoc.data().name;
-                  }
+                  const companyView = await getCompanyDisplay(db, pendingReferralCompanyId);
+                  companyName = companyView.companyName || companyView.name || '';
                 }
                 
                 // Kodu kullanıldı olarak işaretle (TEK KULLANIM)
@@ -759,6 +783,8 @@
             createdAt: serverTimestamp()
           }, { merge: true });
         }
+
+        await setDoc(doc(db, 'users', user.uid), { legalConsent }, { merge: true });
         
         // Şirkete katılma işlemi - Teklifbul Rule v1.0
         const companyAction = document.querySelector('input[name="companyAction"]:checked')?.value || 'new';

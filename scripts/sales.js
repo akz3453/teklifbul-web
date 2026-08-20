@@ -49,6 +49,8 @@ import { initPermissions, can, getSalesPerms, getEinvoicePerms } from '../assets
 import { authFetch } from '../assets/js/utils/api-helpers.js';
 import { pageGuard, UIState, renderUIState } from './lib/page-guard.js';
 import { debounce } from '../assets/js/utils/debounce.js';
+import { loadCompanyStocksPaged } from '../assets/js/utils/stock-catalog-query.js';
+import { STOCK_LOCATIONS_QUERY_LIMIT, CUSTOMERS_QUERY_LIMIT } from '../src/shared/constants/timing.js';
 
 const qs = (s) => document.querySelector(s);
 const qsa = (s) => document.querySelectorAll(s);
@@ -407,7 +409,7 @@ export async function loadCustomers() {
       where('companyId', '==', state.companyId),
       where('isArchived', '!=', true),
       orderBy('name'),
-      limit(1000) // Müşteri listesi için makul limit
+      limit(CUSTOMERS_QUERY_LIMIT)
     );
 
     const snapshot = await getDocs(q);
@@ -415,6 +417,9 @@ export async function loadCustomers() {
       id: doc.id,
       ...doc.data()
     }));
+    if (snapshot.size >= CUSTOMERS_QUERY_LIMIT) {
+      toast.warn(MESSAGES.WARN_QUERY_LIMIT_REACHED.replace('{count}', String(CUSTOMERS_QUERY_LIMIT)));
+    }
 
     logger.info('Müşteriler yüklendi', { count: state.customers.length });
   } catch (error) {
@@ -457,17 +462,11 @@ export async function loadStocks() {
       return;
     }
 
-    // Teklifbul Rule v1.0 - Firestore limit() zorunlu + companyId filtresi
-    const q = query(
-      collection(db, 'stocks'),
-      where('companyId', '==', state.companyId),
-      limit(5000) // Stok listesi için makul limit
-    );
-    const snapshot = await getDocs(q);
-    state.stocks = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    const { rows, capped } = await loadCompanyStocksPaged(db, state.companyId);
+    state.stocks = rows;
+    if (capped) {
+      toast.warn(MESSAGES.WARN_STOCK_LIMIT_REACHED.replace('{count}', String(rows.length)));
+    }
 
     logger.info('Stoklar yüklendi', { count: state.stocks.length });
   } catch (error) {
@@ -484,7 +483,8 @@ export async function loadLocations() {
     const q = query(
       collection(db, 'stock_locations'),
       where('companyId', '==', state.companyId),
-      orderBy('name')
+      orderBy('name'),
+      limit(STOCK_LOCATIONS_QUERY_LIMIT)
     );
 
     const snapshot = await getDocs(q);

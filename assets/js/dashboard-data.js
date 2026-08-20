@@ -9,9 +9,11 @@ import { toast } from '../../src/shared/ui/toast.js';
 import { MESSAGES } from '../../src/shared/constants/messages.js';
 import { setTableEmpty } from './utils/safe-table.js';
 import { resolveSharedCompanyId } from './utils/api-helpers.js';
+import { COMPANY_JOIN_REQUESTS_QUERY_LIMIT } from '../../src/shared/constants/timing.js';
+import { getCachedUserSnap } from './utils/user-doc-cache.js';
 import { isDemandExpired } from './utils/demand-expiry.js';
 import {
-  collection, getDocs, getDoc, query, where, orderBy, limit, doc
+  collection, getDocs, query, where, orderBy, limit
 } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
 // CRITICAL: Import new ID-based category system
 import {
@@ -22,23 +24,22 @@ import {
 // Async IIFE - Teklifbul Rule v1.0
 (async function() {
   const dashUser = await requireAuth();
+  const uid = dashUser.uid;
+  let userData = {};
   
   // Şirket kodlu kayıt durumunu kontrol et - Teklifbul Rule v1.0
   try {
-    const userDoc = await getDoc(doc(db, 'users', dashUser.uid));
+    const userDoc = await getCachedUserSnap(db, dashUser.uid);
     if (userDoc.exists()) {
-      const userData = userDoc.data();
+      userData = userDoc.data() || {};
       if (userData.companyJoinStatus === 'pending' || userData.companyJoinStatus === 'rejected') {
         location.href = "./company-join-waiting.html";
-        return; // Bu return artık async fonksiyon içinde olduğu için geçerli
+        return;
       }
     }
   } catch (e) {
     logger.warn('User status check failed', e);
-    // Hata olsa bile devam et, normal kullanıcılar için sorun olmaz
   }
-  
-  const uid = dashUser.uid;
 
 // Durum çevirisi fonksiyonu
 function translateStatus(status) {
@@ -62,9 +63,6 @@ function translateStatus(status) {
 
 try {
   // Get user's company ID and supplier categories (same as demands.html)
-  const userDoc = await getDoc(doc(db, 'users', uid));
-  const userData = userDoc.exists() ? userDoc.data() : {};
-  
   let userCompanyId = resolveSharedCompanyId(userData);
   
   // Eğer companyId yoksa ama companyCode varsa, companyJoinRequests'ten al
@@ -75,7 +73,8 @@ try {
       const joinRequestsQuery = getQuery(
         joinRequestsRef,
         getWhere('userId', '==', uid),
-        getWhere('status', 'in', ['pending', 'accepted'])
+        getWhere('status', 'in', ['pending', 'accepted']),
+        limit(COMPANY_JOIN_REQUESTS_QUERY_LIMIT)
       );
       const joinRequestsSnapshot = await getDocs(joinRequestsQuery);
       
@@ -271,27 +270,8 @@ try {
 
   incomingDemands = incomingDemands.filter((demand) => !isDemandExpired(demand));
   
-  // OPTIMIZED: Load incoming bids using bidCount summation (Teklifbul Rule v1.3)
-  // Teklifbul Rule v1.2.24 - Sadece buyer veya both rolüne sahip kullanıcılar için
-  let incomingBids = [];
-  try {
-    if (hasBuyerRole) {
-      // Use pre-calculated bidCount fields for the overall metric
-      let ds;
-      if (userCompanyId) {
-        ds = await getDocs(query(collection(db, 'demands'), where('creatorCompanyId', '==', userCompanyId), where('isPublished', '==', true), limit(300)));
-      } else {
-        ds = await getDocs(query(collection(db, 'demands'), where('createdBy', '==', uid), limit(300)));
-      }
-      
-      const totalIncomingBids = ds.docs.reduce((acc, d) => acc + (Number(d.data().bidCount) || 0), 0);
-      
-      // For dashboard metrics, we just need the count.
-      incomingBids = { length: totalIncomingBids }; 
-    }
-  } catch (error) {
-    logger.error('Error loading incoming bids', error);
-  }
+  // Incoming bid metric uses demand.bidCount on the company demand page (below).
+  let incomingBids = { length: 0 };
   
   // Load outgoing bids (bids I sent)
   // Teklifbul Rule v1.2.24 - Sadece supplier veya both rolüne sahip kullanıcılar için
@@ -425,33 +405,8 @@ try {
   
   let outgoingDemands = [];
   try {
-    if (canViewOutgoingDemands(userData) && userCompanyId) {
-      // Note: Published demands have status='approved' and isPublished=true
-      const qOutgoing = query(
-        collection(db, "demands"),
-        where("creatorCompanyId", "==", userCompanyId),
-        where("isPublished", "==", true),
-        orderBy("createdAt", "desc"),
-        limit(100)
-      );
-      const outgoingSnap = await getDocs(qOutgoing);
-      outgoingDemands = outgoingSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-      // Silent: outgoing demands loaded
-    } else if (canViewOutgoingDemands(userData)) {
-      // Fallback: use createdBy if no companyId
-      // Note: Published demands have status='published' and isPublished=true
-      const qOutgoing = query(
-        collection(db, "demands"),
-        where("createdBy", "==", uid),
-        where("isPublished", "==", true),
-        orderBy("createdAt", "desc"),
-        limit(100)
-      );
-      const outgoingSnap = await getDocs(qOutgoing);
-      outgoingDemands = outgoingSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-      // Silent: outgoing demands loaded (createdBy fallback)
-    } else {
-      // Teklifbul Rule v1.2.25 - Yönetim kadrosu veya satın alma rolü yoksa giden talepler gösterilmez
+    if (canViewOutgoingDemands(userData)) {
+      outgoingDemands = allUserDemands.filter((d) => d.isPublished === true);
     }
   } catch (error) {
     logger.error('Error loading outgoing demands', error);
@@ -493,6 +448,11 @@ try {
 
   // Use allUserDemands for "Son Taleplerim" table
   const sent = allUserDemands;
+  if (hasBuyerRole) {
+    incomingBids = {
+      length: allUserDemands.reduce((acc, d) => acc + (Number(d.bidCount) || 0), 0),
+    };
+  }
 
   // Update metrics - use outgoingDemands instead of sent for consistency
   // Teklifbul Rule v1.0 - Metrikleri güncelle ve opacity'yi normale döndür

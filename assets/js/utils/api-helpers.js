@@ -5,7 +5,7 @@
  * Tüm API isteklerinde x-company-id header'ı otomatik eklenir
  */
 
-import { auth, db, requireAuth } from '../../../firebase.js';
+import { auth, db, requireAuth, getAppCheckToken } from '../../../firebase.js';
 import { logger } from '../../../src/shared/log/logger.js';
 import { toast } from '../../../src/shared/ui/toast.js';
 import { MESSAGES } from '../../../src/shared/constants/messages.js';
@@ -177,6 +177,14 @@ export async function authFetch(url, options = {}) {
 
     // Authorization header - Teklifbul Rule v1.0 - Token her zaman eklenmeli
     finalHeaders.set('Authorization', `Bearer ${token}`);
+    try {
+      const appCheckToken = await getAppCheckToken();
+      if (appCheckToken) {
+        finalHeaders.set('X-Firebase-AppCheck', appCheckToken);
+      }
+    } catch (appCheckErr) {
+      logger.debug('App Check header atlandı', appCheckErr);
+    }
 
     // Debug: Development'ta token varlığını doğrula
     if (import.meta.env.DEV || import.meta.env.MODE === 'development') {

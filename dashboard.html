@@ -806,6 +806,8 @@
   <!-- Teklifbul Rule v1.2.26 - Dashboard data'yı sadece tablolar görünür olduğunda yükle -->
   <script type="module">
     import { logger } from './src/shared/log/logger.js';
+    import { COMPANY_JOIN_REQUESTS_QUERY_LIMIT } from './src/shared/constants/timing.js';
+    import { getCachedUserSnap } from './assets/js/utils/user-doc-cache.js';
     // Dashboard data'yı lazy load et - sadece tablolar görünür olduğunda yükle
     (async () => {
       // Tabloları bul
@@ -827,7 +829,7 @@
             // Auth guard yönlendirmeyi yapacak
             return;
           }
-          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          const userDoc = await getCachedUserSnap(db, user.uid);
           const userData = userDoc.exists() ? userDoc.data() : {};
 
           // Teklifbul Rule v1.0 - Resolve shared company ID (şirket kod ile kaydolan kullanıcılar için)
@@ -845,12 +847,13 @@
           // Eğer companyId yoksa ama companyCode varsa, companyJoinRequests'ten al
           if (!userCompanyId && userData.companyCode) {
             try {
-              const { collection: getCollection, getDocs, query: getQuery, where: getWhere } = await import('https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js');
+              const { collection: getCollection, getDocs, query: getQuery, where: getWhere, limit: getLimit } = await import('https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js');
               const joinRequestsRef = getCollection(db, 'companyJoinRequests');
               const joinRequestsQuery = getQuery(
                 joinRequestsRef,
                 getWhere('userId', '==', user.uid),
-                getWhere('status', 'in', ['pending', 'accepted'])
+                getWhere('status', 'in', ['pending', 'accepted']),
+                getLimit(COMPANY_JOIN_REQUESTS_QUERY_LIMIT)
               );
               const joinRequestsSnapshot = await getDocs(joinRequestsQuery);
 

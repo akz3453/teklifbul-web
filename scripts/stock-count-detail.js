@@ -15,6 +15,7 @@ import { logger } from '../src/shared/log/logger.js';
 import { requireCompanyContext } from '../assets/js/state/company-context.js';
 import { initPermissions, can, requirePerm, getStockPerms } from '../assets/js/state/permissions.js';
 import { authFetch } from '../assets/js/utils/api-helpers.js';
+import { STOCK_LIST_QUERY_LIMIT } from '../src/shared/constants/timing.js';
 
 // ExcelJS global (CDN'den yükleniyor)
 const ExcelJS = window.ExcelJS;
@@ -149,12 +150,15 @@ async function loadStocks() {
         stocksRef,
         where('companyId', '==', state.companyId),
         orderBy('sku'),
-        limit(10000) // Teklifbul Rule v1.0 - Limit eklendi
+        limit(STOCK_LIST_QUERY_LIMIT)
       );
     } catch (queryError) {
-      // Eğer index yoksa companyId filtresi olmadan dene
-      logger.warn('Stocks query with companyId failed, trying without filter', queryError);
-      stocksQuery = query(stocksRef, orderBy('sku'), limit(10000)); // Teklifbul Rule v1.0 - Limit eklendi
+      logger.warn('Stocks query with companyId+orderBy failed, retrying without orderBy', queryError);
+      stocksQuery = query(
+        stocksRef,
+        where('companyId', '==', state.companyId),
+        limit(STOCK_LIST_QUERY_LIMIT)
+      );
     }
 
     const snap = await getDocs(stocksQuery);
@@ -174,7 +178,11 @@ async function loadStocks() {
     // Fallback: Load all stocks and filter client-side
     try {
       const stocksRef = collection(db, 'stocks');
-      const snap = await getDocs(query(stocksRef, limit(10000))); // Teklifbul Rule v1.0 - Limit eklendi
+      const snap = await getDocs(query(
+        stocksRef,
+        where('companyId', '==', state.companyId),
+        limit(STOCK_LIST_QUERY_LIMIT)
+      ));
       state.allStocks = [];
       snap.forEach(doc => {
         const data = doc.data();

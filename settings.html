@@ -9,9 +9,6 @@
     href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%233b82f6' rx='6'/%3E%3Ctext x='16' y='22' font-family='Arial' font-size='18' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E" />
   <link rel="stylesheet" href="/utils.css" />
   <link rel="stylesheet" href="/assets/css/layout.css" />
-  <!-- OpenStreetMap (Leaflet.js) - $0 maliyet, sınırsız kullanım -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <!-- Teklifbul Rule v1.0 - Tema standardı: tb_theme key, FOUC önleme -->
   <script src="/assets/js/theme-init.js"></script>
   <style>
@@ -5664,6 +5661,33 @@
     // OpenStreetMap Harita Başlatma (Leaflet.js) - $0 maliyet
     let addressMapInstance = null;
     let addressMapLoadToken = 0;
+    let leafletLoadPromise = null;
+    const LEAFLET_CSS_HREF = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+    const LEAFLET_JS_SRC = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+
+    function ensureLeafletLoaded() {
+      if (typeof L !== 'undefined') return Promise.resolve();
+      if (leafletLoadPromise) return leafletLoadPromise;
+      leafletLoadPromise = new Promise((resolve, reject) => {
+        if (!document.getElementById('leaflet-stylesheet')) {
+          const link = document.createElement('link');
+          link.id = 'leaflet-stylesheet';
+          link.rel = 'stylesheet';
+          link.href = LEAFLET_CSS_HREF;
+          document.head.appendChild(link);
+        }
+        const script = document.createElement('script');
+        script.src = LEAFLET_JS_SRC;
+        script.async = true;
+        script.onload = () => resolve();
+        script.onerror = () => {
+          leafletLoadPromise = null;
+          reject(new Error('Leaflet yüklenemedi'));
+        };
+        document.head.appendChild(script);
+      });
+      return leafletLoadPromise;
+    }
 
     // Teklifbul Rule v1.0 - Leaflet aynı DOM node'a ikinci L.map() atamasın
     function destroyAddressMap(mapContainer) {
@@ -6001,7 +6025,22 @@
           return;
         }
 
-        // Leaflet.js kontrolü
+        try {
+          await ensureLeafletLoaded();
+        } catch (leafletErr) {
+          logger.error('Leaflet yüklenemedi', leafletErr);
+          if (isStale()) return;
+          destroyAddressMap(mapContainer);
+          mapContainer.innerHTML = `
+            <div style="padding:20px; text-align:center;">
+              <p style="margin:0 0 8px 0; color:#6b7280;">📍 Adres: ${addressString}</p>
+              <p style="margin:0; font-size:12px; color:#dc2626;">⚠️ Leaflet.js yüklenemedi. Lütfen sayfayı yenileyin.</p>
+            </div>
+          `;
+          toast.error(MESSAGES.ERROR_MAP_LOAD);
+          return;
+        }
+
         if (typeof L === 'undefined') {
           if (isStale()) return;
           destroyAddressMap(mapContainer);

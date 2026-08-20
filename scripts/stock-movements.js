@@ -1,7 +1,7 @@
 import { db, auth, requireAuth } from '/firebase.js';
 import { normalizeTRLower, matchesWildcard, normalizeTR } from '/scripts/lib/tr-utils.js';
 import { allocateExtras } from '/scripts/inventory-cost.js';
-import { collection, getDocs, query, where, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+import { collection, getDocs, query, where, doc, getDoc, limit } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
 import { toast } from '../src/shared/ui/toast.js';
 import { MESSAGES } from '../src/shared/constants/messages.js';
 import { logger } from '../src/shared/log/logger.js';
@@ -10,6 +10,7 @@ import { initPermissions, can, requirePerm, getStockPerms } from '../assets/js/s
 import { fetchStockMovementsPage, iterateStockMovementsForExport } from '../assets/js/services/stock-movements-service.js';
 import { authFetch } from '../assets/js/utils/api-helpers.js';
 import { ensureXlsxLoaded } from '../assets/js/utils/xlsx-loader.js';
+import { STOCK_LIST_QUERY_LIMIT } from '../src/shared/constants/timing.js';
 
 /** Teklifbul Rule v1.0 — XSS escape */
 function escapeHtml(value) {
@@ -399,18 +400,26 @@ async function loadStocks() {
     const ctx = await requireCompanyContext({ redirectOnPending: false });
     const companyId = ctx?.companyId;
     
-    let q;
-    if (companyId) {
-      q = query(collection(db, 'stocks'), where('companyId', '==', companyId));
-    } else {
-      q = collection(db, 'stocks');
+    if (!companyId) {
+      logger.warn('Stocks load skipped: companyId yok');
+      state.stocks = [];
+      toast.error(MESSAGES.ERROR_COMPANY_INFO_NOT_FOUND);
+      return;
     }
-    
+
+    const q = query(
+      collection(db, 'stocks'),
+      where('companyId', '==', companyId),
+      limit(STOCK_LIST_QUERY_LIMIT)
+    );
     const snap = await getDocs(q);
     state.stocks = [];
-    snap.forEach(doc => {
-      state.stocks.push({ id: doc.id, ...doc.data() });
+    snap.forEach(docSnap => {
+      state.stocks.push({ id: docSnap.id, ...docSnap.data() });
     });
+    if (snap.size >= STOCK_LIST_QUERY_LIMIT) {
+      toast.warn(MESSAGES.WARN_STOCK_LIMIT_REACHED.replace('{count}', String(STOCK_LIST_QUERY_LIMIT)));
+    }
   } catch (error) {
     logger.error('Stocks load error', error);
   }

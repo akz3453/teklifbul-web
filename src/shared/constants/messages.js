@@ -378,6 +378,12 @@ export const MESSAGES = {
   WARN_STOCK_LIMIT_REACHED: "İlk {count} stok yüklendi. Daha fazla kayıt için arama veya filtre kullanın.",
   ERROR_STOCK_EXPORT_EMPTY: "Dışa aktarılacak stok yok",
   ERROR_STOCK_EXPORT: "Dışa aktarma hatası",
+  ERROR_PURCHASE_FORM_NO_COMPANY: "Şirket bilgisi bulunamadı. Stok eşleştirme yapılamadı.",
+  INFO_PURCHASE_FORM_MATCHING: "Stoklar eşleştiriliyor...",
+  INFO_PURCHASE_FORM_SAVING: "Talep kaydediliyor...",
+  WARN_PURCHASE_FORM_ROW_CAP: "Excel'den en fazla {count} satır okundu.",
+  SUCCESS_PURCHASE_FORM_CREATED: "Talep oluşturuldu",
+  ERROR_PURCHASE_FORM_SAVE: "Kayıt sırasında hata",
   
   // Template Edit Mesajları
   WARN_TEMPLATE_REQUIRED_FIELDS: "Zorunlu alanlar kapatılamaz",

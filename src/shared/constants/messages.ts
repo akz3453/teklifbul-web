@@ -37,6 +37,12 @@ export const MESSAGES = {
   ERROR_NATIVE_FILE_TOO_LARGE: "Dosya cihaza indirmek için çok büyük. Daha küçük bir dışa aktarma kullanın.",
   INFO_SHARE_CANCELLED: "Paylaşım iptal edildi",
   WARN_STOCK_LIMIT_REACHED: "İlk {count} stok yüklendi. Daha fazla kayıt için arama veya filtre kullanın.",
+  ERROR_PURCHASE_FORM_NO_COMPANY: "Şirket bilgisi bulunamadı. Stok eşleştirme yapılamadı.",
+  INFO_PURCHASE_FORM_MATCHING: "Stoklar eşleştiriliyor...",
+  INFO_PURCHASE_FORM_SAVING: "Talep kaydediliyor...",
+  WARN_PURCHASE_FORM_ROW_CAP: "Excel'den en fazla {count} satır okundu.",
+  SUCCESS_PURCHASE_FORM_CREATED: "Talep oluşturuldu",
+  ERROR_PURCHASE_FORM_SAVE: "Kayıt sırasında hata",
   
   // Uyarı Mesajları
   WARN_BELOW_COST: "Ortalama maliyetin altında satış tespit edildi",

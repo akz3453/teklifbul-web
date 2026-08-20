@@ -14,6 +14,7 @@ import { logger } from '../../../src/shared/log/logger.js';
 import { MESSAGES } from '../../../src/shared/constants/messages.js';
 import { hasPremiumPlusAccess, hasPremiumAccess } from '../auth/userHelpers.js';
 import { shouldSkipPreventDefault } from '../utils/link-handler.js';
+import { HEADER_NOTIFICATION_POLL_MS } from '../../../src/shared/constants/timing.js';
 
 // Teklifbul Rule v1.0 - Firebase Module Caching (Performance optimization)
 const firebaseModuleCache = {
@@ -37,6 +38,7 @@ let currentTheme = localStorage.getItem(THEME_STORAGE_KEY) || (window.matchMedia
 let headerInitialized = false;
 let globalNotificationInterval = null;
 let globalAuthUnsubscribe = null;
+let notificationVisibilityBound = false;
 const PREMIUM_NAV_CACHE_KEY = 'tb_premium_nav_visible';
 const PREMIUM_NAV_CACHE_TTL_MS = 12 * 60 * 60 * 1000; // 12 saat
 const HEADER_PREFS_STORAGE_PREFIX = 'tb_header_prefs_v1';
@@ -1824,15 +1826,18 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
       // Auth state yüklendikten sonra bildirimleri yükle
       if (auth.currentUser) {
         loadNotifications();
-        // Her 30 saniyede bir güncelle
-        globalNotificationInterval = setInterval(loadNotifications, 30000);
+        globalNotificationInterval = setInterval(() => {
+          if (!document.hidden) loadNotifications();
+        }, HEADER_NOTIFICATION_POLL_MS);
       } else {
         globalAuthUnsubscribe = auth.onAuthStateChanged((user) => {
           if (user) {
             // Önceki interval'ı temizle (eğer varsa)
             cleanupNotificationInterval();
             loadNotifications();
-            globalNotificationInterval = setInterval(loadNotifications, 30000);
+            globalNotificationInterval = setInterval(() => {
+              if (!document.hidden) loadNotifications();
+            }, HEADER_NOTIFICATION_POLL_MS);
           } else {
             // Kullanıcı çıkış yaptığında interval'ı temizle
             cleanupNotificationInterval();
@@ -1849,6 +1854,13 @@ export async function initGlobalHeader({ mount = '#app-header', activeRoute = ''
         globalAuthUnsubscribe = null;
       }
     });
+
+    if (!notificationVisibilityBound) {
+      notificationVisibilityBound = true;
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && auth.currentUser) loadNotifications();
+      });
+    }
   }
 
   // Setup logout button - Teklifbul Rule v1.0

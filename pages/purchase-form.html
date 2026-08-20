@@ -209,7 +209,12 @@
 
     <div class="card">
       <h2 style="margin:0 0 12px 0;font-size:18px">Excel Yükle</h2>
-      <input id="pfFile" type="file" accept=".xls,.xlsx,.csv" />
+      <input id="pfFile" type="file" accept=".xls,.xlsx,.csv" aria-label="Satın alma formu Excel dosyası" />
+      <div id="pfProgressWrap" hidden>
+        <p id="pfProgressText">Yükleniyor...</p>
+        <progress id="pfProgress" max="100" value="0" aria-label="Eşleştirme ilerlemesi"></progress>
+        <button type="button" class="btn btn-secondary" id="pfCancel" aria-label="Eşleştirmeyi iptal et">İptal</button>
+      </div>
       <p class="muted" style="margin-top:6px">Desteklenen başlıklar: Sıra No | Stok Kodu | Malzeme Tanımı | Marka/Model
         | Miktar | Birim | Ambardaki Miktar | Ürün Görseli | İstenilen Teslim Tarihi | Açıklama</p>
     </div>

@@ -2,7 +2,7 @@
  * Rate Limiting Middleware for Critical Routes
  * Teklifbul Rule v1.0 - E-Belge ve Settings Endpoint Protection
  * 
- * IP + userId + companyId bazlı key generation
+ * IP + userId bazlı key generation (client companyId spoof edilmez)
  * Standart error format: { ok: false, error: 'RATE_LIMITED', message: '...', retryAfterSec: N }
  */
 
@@ -13,27 +13,15 @@ import { Errors } from '../errors/errorCatalog.js';
 import { respondError } from '../errors/respondError.js';
 
 /**
- * Key generator: userId + companyId + IP + sessionId (optional)
- * Format: `${keyPrefix}:${userId||'anon'}:${companyId||'no_company'}:${ip}:${sessionId||'no_session'}`
- * Teklifbul Rule v1.0 - Client Error Reporting: sessionId desteği eklendi
- * Teklifbul Rule v1.0 - IPv6 desteği: ipKeyGenerator helper kullanılıyor
+ * Key generator: userId + IP
+ * Format: `${keyPrefix}:${userId||'anon'}:${ip}`
+ * Şirket id ve sessionId client body/query'den alınmaz (bucket spoof önlemi).
  */
-function createKeyGenerator(keyPrefix: string, includeSessionId: boolean = false) {
+function createKeyGenerator(keyPrefix: string) {
   return (req: Request): string => {
     const userId = (req as any).user?.uid || (req as any).user?.id || 'anon';
-    const companyId = 
-      (req as any).body?.companyId || 
-      (req as any).query?.companyId || 
-      (req as any).user?.companyId || 
-      (req as any).user?.activeCompanyId || 
-      'no_company';
-    // Teklifbul Rule v1.0 - IPv6 desteği için ipKeyGenerator helper kullan
     const ip = ipKeyGenerator(req.ip || req.socket?.remoteAddress || '');
-    const sessionId = includeSessionId 
-      ? ((req as any).body?.sessionId || (req as any).query?.sessionId || 'no_session')
-      : 'no_session';
-    
-    return `${keyPrefix}:${userId}:${companyId}:${ip}:${sessionId}`;
+    return `${keyPrefix}:${userId}:${ip}`;
   };
 }
 
@@ -44,11 +32,7 @@ function createKeyGenerator(keyPrefix: string, includeSessionId: boolean = false
 function createRateLimitHandler(keyPrefix: string) {
   return (req: Request, res: Response) => {
     const userId = (req as any).user?.uid || (req as any).user?.id || 'anon';
-    const companyId = 
-      (req as any).body?.companyId || 
-      (req as any).query?.companyId || 
-      (req as any).user?.companyId || 
-      'no_company';
+    const companyId = (req as any).user?.companyId || 'no_company';
     const ip = req.ip || req.socket.remoteAddress || 'unknown';
     
     // Log rate limit hit
@@ -85,24 +69,21 @@ function createRateLimitHandler(keyPrefix: string) {
  * @param windowMs - Time window in milliseconds
  * @param max - Maximum requests per window
  * @param keyPrefix - Prefix for rate limit key
- * @param includeSessionId - Include sessionId in key (default: false)
  * @returns Express rate limit middleware
  */
 export function createRateLimiter({
   windowMs,
   max,
-  keyPrefix,
-  includeSessionId = false
+  keyPrefix
 }: {
   windowMs: number;
   max: number;
   keyPrefix: string;
-  includeSessionId?: boolean;
 }) {
   return rateLimit({
     windowMs,
     max,
-    keyGenerator: createKeyGenerator(keyPrefix, includeSessionId),
+    keyGenerator: createKeyGenerator(keyPrefix),
     standardHeaders: true,
     legacyHeaders: false,
     handler: createRateLimitHandler(keyPrefix),
@@ -196,12 +177,11 @@ export const saleDocumentCreationLimiter = createRateLimiter({
 /**
  * Client Error Ingest Rate Limiter (çok sıkı)
  * Teklifbul Rule v1.0 - Client Error Reporting v1
- * 30 requests / 10 minutes per IP + sessionId + userId
+ * 30 requests / 10 minutes per IP + userId
  */
 export const clientErrorIngestLimiter = createRateLimiter({
   windowMs: 10 * 60 * 1000, // 10 dakika
   max: Number(process.env.RATE_LIMIT_CLIENT_ERROR_INGEST_MAX) || 30,
   keyPrefix: 'client:error:ingest',
-  includeSessionId: true // SessionId'yi key'e dahil et
 });
 

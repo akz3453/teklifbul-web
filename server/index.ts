@@ -57,7 +57,7 @@ import { verifyToken } from './middleware/auth.js';
 import { requirePremium } from './middleware/requirePremium.js';
 import { requireAdmin } from './middleware/requireAdmin.js';
 import { isAdminUser, isOpsUser } from './auth/admin-check.js';
-import { apiLimiter, authLimiter, publicTokenLimiter, webhookLimiter, exportLimiter } from './middleware/rate-limit.js';
+import { apiLimiter, authLimiter, publicTokenLimiter, webhookLimiter, exportLimiter, uploadLimiter } from './middleware/rate-limit.js';
 import adminSubscriptionsRouter from './routes/admin-subscriptions';
 import adminUsersRouter from './routes/admin-users';
 import adminLogsRouter from './routes/admin-logs';
@@ -234,7 +234,7 @@ app.use('/api/bid-invites', publicTokenLimiter, bidInvitesRouter);
 app.use('/api/submit-bid', publicTokenLimiter, bidInvitesRouter);
 
 // Protected routes (auth middleware zaten rate limit içeriyor)
-app.use('/api/import', verifyToken, requirePremium, importRouter);
+app.use('/api/import', verifyToken, requirePremium, uploadLimiter, importRouter);
 app.use('/api/template', verifyToken, templateRouter); // Teklifbul Rule v1.0 - Şablon indirme sistemi (Premium kontrolü router içinde yapılacak)
 // Teklifbul Rule v1.3 - AI Rate Limiting (company-based)
 app.use('/api/ai', verifyToken, rateLimitAi, aiRouter); // Teklifbul Rule v1.0 - Yapay zekâ satın alma asistanı
@@ -607,6 +607,21 @@ if (isExecutedDirectly) {
 
   process.on('SIGINT', () => gracefulShutdown('SIGINT'));
   process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+  process.on('uncaughtException', (error) => {
+    logger.error('Uncaught exception', error);
+    gracefulShutdown('uncaughtException');
+  });
+  process.on('unhandledRejection', (reason, promise) => {
+    logger.error('Unhandled rejection', { reason, promise });
+    gracefulShutdown('unhandledRejection');
+  });
+} else {
+  process.on('uncaughtException', (error) => {
+    logger.error('Uncaught exception (managed runtime — process kept alive)', error);
+  });
+  process.on('unhandledRejection', (reason, promise) => {
+    logger.error('Unhandled rejection (managed runtime — process kept alive)', { reason, promise });
+  });
 }
 
 export { app };
@@ -620,6 +635,11 @@ function gracefulShutdown(signal: string) {
   isShuttingDown = true;
 
   console.log(`\n🛑 API server kapatılıyor (${signal})...`);
+
+  if (!server) {
+    process.exit(0);
+    return;
+  }
 
   server.close(() => {
     console.log('✅ API server güvenli şekilde kapatıldı');
@@ -638,18 +658,6 @@ process.on('exit', (code) => {
   if (code !== 0 && !isShuttingDown) {
     console.log(`ℹ️  API server exit code: ${code}`);
   }
-});
-
-// Uncaught exception handling
-process.on('uncaughtException', (error) => {
-  logger.error('Uncaught exception', error);
-  gracefulShutdown('uncaughtException');
-});
-
-// Unhandled promise rejection
-process.on('unhandledRejection', (reason, promise) => {
-  logger.error('Unhandled rejection', { reason, promise });
-  gracefulShutdown('unhandledRejection');
 });
 
 

@@ -14,6 +14,7 @@ import { logger } from '../../src/shared/log/logger.js';
 import { toast } from '../../src/shared/ui/toast.js';
 // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
 import { MESSAGES } from '../../src/shared/constants/messages.js';
+import { BID_ITEMS_QUERY_LIMIT, BIDS_PER_DEMAND_QUERY_LIMIT, DEMAND_RECIPIENTS_QUERY_LIMIT } from '../../src/shared/constants/timing.js';
 // CRITICAL: Import new ID-based category system
 import {
   getAllCategories,
@@ -3000,19 +3001,19 @@ async function initDemandsPage() {
     try {
       // Alt koleksiyon: items
       try {
-        const itemsSnap = await getDocs(collection(db, 'demands', demandId, 'items'));
+      const itemsSnap = await getDocs(query(collection(db, 'demands', demandId, 'items'), limit(BID_ITEMS_QUERY_LIMIT)));
         await Promise.all(itemsSnap.docs.map(d => deleteDoc(doc(db, 'demands', demandId, 'items', d.id))));
       } catch (e) { logger.warn('items cleanup warn', e); }
 
       // bids (top-level)
       try {
-        const bidsSnap = await getDocs(query(collection(db, 'bids'), where('demandId', '==', demandId)));
+        const bidsSnap = await getDocs(query(collection(db, 'bids'), where('demandId', '==', demandId), limit(BIDS_PER_DEMAND_QUERY_LIMIT)));
         await Promise.all(bidsSnap.docs.map(d => deleteDoc(doc(db, 'bids', d.id))));
       } catch (e) { logger.warn('bids cleanup warn', e); }
 
       // recipients (top-level)
       try {
-        const recSnap = await getDocs(query(collection(db, 'demandRecipients'), where('demandId', '==', demandId)));
+        const recSnap = await getDocs(query(collection(db, 'demandRecipients'), where('demandId', '==', demandId), limit(DEMAND_RECIPIENTS_QUERY_LIMIT)));
         await Promise.all(recSnap.docs.map(d => deleteDoc(doc(db, 'demandRecipients', d.id))));
       } catch (e) { logger.warn('recipients cleanup warn', e); }
 
@@ -3055,7 +3056,7 @@ async function initDemandsPage() {
       const derivedSource = derivedCategoryIds.length ? 'demand.derivedCategoryIds' : 'items.union(itemCategoryIds)';
       if (!derivedCategoryIds.length) {
         try {
-          const itemsSnap = await getDocs(query(collection(db, 'demands', demandId, 'items'), limit(500)));
+          const itemsSnap = await getDocs(query(collection(db, 'demands', demandId, 'items'), limit(BID_ITEMS_QUERY_LIMIT)));
           const union = new Set();
           itemsSnap.docs.forEach(d => {
             const it = d.data() || {};

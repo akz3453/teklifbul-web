@@ -7,8 +7,9 @@ import { toast } from '../../../src/shared/ui/toast.js';
 import { initPermissions, requirePerm, getBidPerms } from '../state/permissions.js';
 import {
   collection, doc, addDoc, updateDoc, deleteDoc, getDocs, getDoc,
-  query, where, orderBy, serverTimestamp, arrayUnion
+  query, where, orderBy, serverTimestamp, arrayUnion, limit
 } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+import { BID_ITEMS_QUERY_LIMIT, BIDS_PER_DEMAND_QUERY_LIMIT } from '../../../src/shared/constants/timing.js';
 
 const BID_PERMS = getBidPerms();
 
@@ -145,7 +146,7 @@ export async function updateRFQBid(bidId, bidData) {
     // Update items if provided
     if (bidData.items) {
       // Delete existing items
-      const itemsSnapshot = await getDocs(query(collection(db, 'bids', bidId, 'items'), limit(1000))); // Teklifbul Rule v1.0 - Limit eklendi
+      const itemsSnapshot = await getDocs(query(collection(db, 'bids', bidId, 'items'), limit(BID_ITEMS_QUERY_LIMIT)));
       for (const itemDoc of itemsSnapshot.docs) {
         await deleteDoc(doc(db, 'bids', bidId, 'items', itemDoc.id));
       }
@@ -181,7 +182,7 @@ export async function getRFQBidWithItems(bidId) {
     const bidData = bidDoc.data();
     
     // Get items
-    const itemsSnapshot = await getDocs(collection(db, 'bids', bidId, 'items'));
+    const itemsSnapshot = await getDocs(query(collection(db, 'bids', bidId, 'items'), limit(BID_ITEMS_QUERY_LIMIT)));
     const items = itemsSnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
@@ -223,7 +224,8 @@ export async function getDemandBidsWithItems(demandId) {
     const bidsQuery = query(
       collection(db, 'bids'),
       where('demandId', '==', demandId),
-      orderBy('createdAt', 'desc')
+      orderBy('createdAt', 'desc'),
+      limit(BIDS_PER_DEMAND_QUERY_LIMIT)
     );
     
     const bidsSnapshot = await getDocs(bidsQuery);
@@ -232,8 +234,7 @@ export async function getDemandBidsWithItems(demandId) {
     for (const bidDoc of bidsSnapshot.docs) {
       const bidData = bidDoc.data();
       
-      // Get items for this bid
-      const itemsSnapshot = await getDocs(collection(db, 'bids', bidDoc.id, 'items'));
+      const itemsSnapshot = await getDocs(query(collection(db, 'bids', bidDoc.id, 'items'), limit(BID_ITEMS_QUERY_LIMIT)));
       const items = itemsSnapshot.docs.map(itemDoc => ({
         id: itemDoc.id,
         ...itemDoc.data()

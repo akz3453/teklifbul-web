@@ -15,7 +15,7 @@ import { requireCompanyContext } from '../assets/js/state/company-context.js';
 import { initPermissions, can, getStockPerms } from '../assets/js/state/permissions.js';
 import { debounce } from '../assets/js/utils/debounce.js';
 import { setTableEmpty } from '../assets/js/utils/safe-table.js';
-import { STOCK_LIST_QUERY_LIMIT, STOCK_LIST_QUERY_LIMIT_NATIVE } from '../src/shared/constants/timing.js';
+import { STOCK_LIST_QUERY_LIMIT, STOCK_LIST_QUERY_LIMIT_NATIVE, STOCK_LOCATIONS_QUERY_LIMIT } from '../src/shared/constants/timing.js';
 
 const qs = s => document.querySelector(s);
 const qsa = s => document.querySelectorAll(s);
@@ -265,7 +265,7 @@ async function loadLocations(context) {
       locationsRef,
       where('companyId', '==', companyId),
       orderBy('name'),
-      limit(1000) // Teklifbul Rule v1.0 - Limit eklendi
+      limit(STOCK_LOCATIONS_QUERY_LIMIT)
     );
     const snap = await getDocs(locationsQuery);
     

@@ -1,7 +1,9 @@
 import { auth, db } from '../firebase.js';
-import { collection, query, where, orderBy, limit, getDocs, deleteDoc, doc, updateDoc, writeBatch, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, orderBy, limit, getDocs, deleteDoc, doc, updateDoc, writeBatch, serverTimestamp, getDoc } from 'firebase/firestore';
 import { logger } from '../src/shared/log/logger.js';
 import { toast } from '../src/shared/ui/toast.js';
+import { MESSAGES } from '../src/shared/constants/messages.js';
+import { NOTIFICATION_DELETE_BATCH_LIMIT } from '../src/shared/constants/timing.js';
 
 const notificationsList = document.getElementById('notificationsList');
 const deleteAllBtn = document.getElementById('deleteAllBtn');
@@ -121,42 +123,77 @@ function renderNotifications(notifications) {
 }
 
 window.handleNotifClick = async (id, isRead) => {
-  if (!isRead) {
-    await updateDoc(doc(db, 'notifications', id), { read: true, readAt: serverTimestamp() });
-  }
-  
-  // Find notification to get data
-  const q = query(collection(db, 'notifications'), where('userId', '==', auth.currentUser.uid));
-  const snap = await getDocs(q);
-  const notif = snap.docs.find(d => d.id === id)?.data();
+  try {
+    if (!isRead) {
+      await updateDoc(doc(db, 'notifications', id), { read: true, readAt: serverTimestamp() });
+    }
+    const notifSnap = await getDoc(doc(db, 'notifications', id));
+    const notif = notifSnap.exists() ? notifSnap.data() : null;
 
-  if (notif?.data?.demandId) {
-    window.location.href = `/demand-detail.html?id=${notif.data.demandId}`;
-  } else if (notif?.data?.bidId || notif?.data?.rfqId) {
-    window.location.href = `/bids.html?tab=incoming`;
+    if (notif?.data?.demandId) {
+      window.location.href = `/demand-detail.html?id=${notif.data.demandId}`;
+    } else if (notif?.data?.bidId || notif?.data?.rfqId) {
+      window.location.href = `/bids.html?tab=incoming`;
+    }
+  } catch (err) {
+    logger.error('Bildirim açılırken hata', err);
+    toast.error('Hata: Bildirim açılamadı');
   }
 };
 
 window.deleteNotification = async (event, id) => {
   event.stopPropagation();
   if (!confirm('Bu bildirimi silmek istediğinize emin misiniz?')) return;
-  
-  await deleteDoc(doc(db, 'notifications', id));
-  await loadNotifications();
+
+  logger.group('Bildirim sil');
+  try {
+    await deleteDoc(doc(db, 'notifications', id));
+    toast.success('İşlem tamamlandı');
+    await loadNotifications();
+  } catch (err) {
+    logger.error('Bildirim silinemedi', err);
+    toast.error('Hata: Bildirim silinemedi');
+  } finally {
+    logger.end();
+  }
 };
 
 async function deleteAllNotifications() {
   if (!confirm('Tüm bildirimleri silmek istediğinize emin misiniz? Bu işlem geri alınamaz.')) return;
 
   const user = auth.currentUser;
-  const q = query(collection(db, 'notifications'), where('userId', '==', user.uid));
-  const snapshot = await getDocs(q);
-  
-  const batch = writeBatch(db);
-  snapshot.docs.forEach(d => batch.delete(d.ref));
-  await batch.commit();
-  
-  await loadNotifications();
+  if (!user) {
+    toast.error(MESSAGES.ERROR_AUTH);
+    return;
+  }
+
+  logger.group('Bildirimleri sil');
+  try {
+    toast.info('Yükleniyor...');
+    let deleted = 0;
+    while (true) {
+      const q = query(
+        collection(db, 'notifications'),
+        where('userId', '==', user.uid),
+        limit(NOTIFICATION_DELETE_BATCH_LIMIT)
+      );
+      const snapshot = await getDocs(q);
+      if (snapshot.empty) break;
+      const batch = writeBatch(db);
+      snapshot.docs.forEach((d) => batch.delete(d.ref));
+      await batch.commit();
+      deleted += snapshot.size;
+      if (snapshot.size < NOTIFICATION_DELETE_BATCH_LIMIT) break;
+    }
+    toast.success('İşlem tamamlandı');
+    logger.info('Bildirimler silindi', { deleted });
+    await loadNotifications();
+  } catch (err) {
+    logger.error('Toplu bildirim silme hatası', err);
+    toast.error('Hata: Bildirimler silinemedi');
+  } finally {
+    logger.end();
+  }
 }
 
 function getTimeAgo(date) {

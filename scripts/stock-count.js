@@ -11,6 +11,7 @@ import { MESSAGES } from '../src/shared/constants/messages.js';
 import { logger } from '../src/shared/log/logger.js';
 import { requireCompanyContext } from '../assets/js/state/company-context.js';
 import { initPermissions, can, requirePerm, getStockPerms } from '../assets/js/state/permissions.js';
+import { STOCK_LOCATIONS_QUERY_LIMIT, STOCK_COUNT_ITEMS_QUERY_LIMIT } from '../src/shared/constants/timing.js';
 
 const qs = s => document.querySelector(s);
 const qsa = s => document.querySelectorAll(s);
@@ -98,7 +99,7 @@ async function loadLocations() {
       locationsRef,
       where('companyId', '==', state.companyId),
       orderBy('name'),
-      limit(1000) // Teklifbul Rule v1.0 - Limit eklendi
+      limit(STOCK_LOCATIONS_QUERY_LIMIT)
     );
     const snap = await getDocs(locationsQuery);
 
@@ -462,7 +463,7 @@ async function loadStats() {
     const allCountsQuery = query(
       countsRef,
       where('companyId', '==', state.companyId),
-      limit(1000) // Teklifbul Rule v1.0 - Limit eklendi
+      limit(STOCK_LOCATIONS_QUERY_LIMIT)
     );
     const snap = await getDocs(allCountsQuery);
 
@@ -485,7 +486,7 @@ async function loadStats() {
         // Calculate total difference for approved counts
         try {
           const itemsRef = collection(db, 'stock_counts', docSnap.id, 'count_items');
-          const itemsSnap = await getDocs(query(itemsRef, limit(10000))); // Teklifbul Rule v1.0 - Limit eklendi
+          const itemsSnap = await getDocs(query(itemsRef, limit(STOCK_COUNT_ITEMS_QUERY_LIMIT)));
 
           itemsSnap.forEach(itemDoc => {
             const itemData = itemDoc.data();
@@ -522,7 +523,7 @@ function getStatusBadge(status) {
 async function calculateProgress(countId) {
   try {
     const itemsRef = collection(db, 'stock_counts', countId, 'count_items');
-    const itemsSnap = await getDocs(query(itemsRef, limit(10000))); // Teklifbul Rule v1.0 - Limit eklendi
+    const itemsSnap = await getDocs(query(itemsRef, limit(STOCK_COUNT_ITEMS_QUERY_LIMIT)));
 
     let total = 0;
     let counted = 0;

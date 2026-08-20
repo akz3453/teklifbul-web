@@ -19,12 +19,16 @@ import {
   updateDoc,
   setDoc,
   addDoc,
-  serverTimestamp
+  serverTimestamp,
+  limit
 } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
 import { toast } from '/src/shared/ui/toast.js';
 import { logger } from '/src/shared/log/logger.js';
 import { requireCompanyContext } from '/assets/js/state/company-context.js';
 import { authFetch } from '/assets/js/utils/api-helpers.js';
+import { loadCompanyStocksPaged } from '/assets/js/utils/stock-catalog-query.js';
+import { MESSAGES } from '/src/shared/constants/messages.js';
+import { STOCK_LOCATIONS_QUERY_LIMIT } from '/src/shared/constants/timing.js';
 
 const STATUS_LABELS = {
   pending_mapping: 'Eşleşme Bekliyor',
@@ -134,9 +138,11 @@ function setupListeners() {
 
 async function loadStocks() {
   try {
-    const q = query(collection(db, 'stocks'), where('companyId', '==', state.companyId));
-    const snap = await getDocs(q);
-    state.stocks = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    const { rows, capped } = await loadCompanyStocksPaged(db, state.companyId);
+    state.stocks = rows;
+    if (capped) {
+      toast.warn(MESSAGES.WARN_STOCK_LIMIT_REACHED.replace('{count}', String(rows.length)));
+    }
     renderStockSelect(state.stocks.slice(0, 50));
   } catch (err) {
     logger.error('Stoklar yüklenemedi', err);
@@ -155,7 +161,11 @@ function renderStockSelect(list) {
 
 async function loadLocations() {
   try {
-    const q = query(collection(db, 'stock_locations'), where('companyId', '==', state.companyId));
+    const q = query(
+      collection(db, 'stock_locations'),
+      where('companyId', '==', state.companyId),
+      limit(STOCK_LOCATIONS_QUERY_LIMIT)
+    );
     const snap = await getDocs(q);
     state.locations = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
     const fallback = state.locations.find((l) => l.isDefault) || state.locations[0];

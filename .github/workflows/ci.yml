@@ -2,9 +2,9 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, develop, fix/beta-traffic-readiness ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main, develop, fix/beta-traffic-readiness ]
 
 jobs:
   verify:

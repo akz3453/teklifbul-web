@@ -4,6 +4,7 @@
  */
 
 import { logger } from '../../src/shared/log/logger.js';
+import { getLegalCatalog } from './utils/legal-consent.js';
 
 const COOKIE_CONSENT_KEY = 'cookieConsent';
 const COOKIE_CONSENT_EVENT = 'cookie-consent-updated';
@@ -267,7 +268,13 @@ export function openCookieSettings() {
  * @param {Object} preferences 
  */
 function saveCookiePreferences(preferences) {
-  localStorage.setItem(COOKIE_CONSENT_KEY, JSON.stringify(preferences));
+  const catalog = getLegalCatalog();
+  const stored = {
+    ...preferences,
+    policyVersion: catalog.policyVersion,
+    cerezStatus: catalog.documents?.['cerez-politikasi']?.status || 'draft',
+  };
+  localStorage.setItem(COOKIE_CONSENT_KEY, JSON.stringify(stored));
   hideBanner();
   document.dispatchEvent(new CustomEvent(COOKIE_CONSENT_EVENT, { detail: preferences }));
 

@@ -8,6 +8,7 @@ import { t } from './i18n.js';
 import { auth } from '../firebase.js';
 import { logger } from '../../src/shared/log/logger.js';
 import { isCategoryAllowed, onCookieConsentChange } from './cookieConsent.js';
+import { createAiChatRequestId } from './utils/ai-chat-request-id.js';
 
 let chatPanel = null;
 let chatButton = null;
@@ -157,7 +158,8 @@ async function sendMessage() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        'Authorization': `Bearer ${token}`,
+        'x-request-id': createAiChatRequestId()
       },
       body: JSON.stringify({
         message: message

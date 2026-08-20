@@ -111,6 +111,7 @@
     import { initAuthGuard } from './assets/js/auth-guard.js';
     import { initGlobalHeader } from './assets/js/ui/header.js';
     import { requireCompanyContext } from './assets/js/state/company-context.js';
+    import { getCompanyDisplay } from './assets/js/utils/public-company-profile.js';
     import { initPermissions, can, requireExistingPerm } from './assets/js/state/permissions.js';
     import { getPaymentsPerms } from './assets/js/state/permissions.js';
     import { waitAuthReady } from './firebase.js';
@@ -235,10 +236,8 @@
           return;
         }
 
-        const buyerCompanyDoc = await getDoc(doc(db, 'companies', buyerCompanyId));
-        const buyerCompanyName = buyerCompanyDoc.exists() 
-          ? (buyerCompanyDoc.data().companyName || buyerCompanyDoc.data().name) 
-          : 'Bilinmeyen Şirket';
+        const buyerView = await getCompanyDisplay(db, buyerCompanyId);
+        const buyerCompanyName = buyerView.companyName || buyerView.name || 'Bilinmeyen Şirket';
 
         // Toplam tutarı hesapla
         const items = Array.isArray(bidData.items) ? bidData.items : [];
@@ -329,13 +328,11 @@
         const safeDefaultOption = DOMPurify.sanitize('<option value="">Firma seçin...</option>', { ALLOWED_TAGS: ['option'], ALLOWED_ATTR: ['value'] });
         companySelect.innerHTML = safeDefaultOption;
         for (const partnerCompanyId of partnerCompanyIds) {
-          const partnerCompanyDoc = await getDoc(doc(db, 'companies', partnerCompanyId));
-          if (partnerCompanyDoc.exists()) {
-            const partnerData = partnerCompanyDoc.data();
+          const partnerView = await getCompanyDisplay(db, partnerCompanyId);
+          if (partnerView.source !== 'none' || partnerView.companyName) {
             const option = document.createElement('option');
-            // Teklifbul Rule v1.0 - XSS Protection - textContent kullan (güvenli)
             option.value = DOMPurify.sanitize(partnerCompanyId || '', { ALLOWED_TAGS: [] });
-            option.textContent = partnerData.companyName || partnerData.name || 'Bilinmeyen Şirket';
+            option.textContent = partnerView.companyName || partnerView.name || 'Bilinmeyen Şirket';
             companySelect.appendChild(option);
           }
         }
@@ -463,10 +460,8 @@
           if (!demandDoc || !demandDoc.exists()) continue;
           
           const demandData = demandDoc.data();
-          const buyerCompanyDoc = await getDoc(doc(db, 'companies', demandData.companyId)).catch(() => null);
-          const buyerCompanyName = buyerCompanyDoc && buyerCompanyDoc.exists() 
-            ? (buyerCompanyDoc.data().companyName || buyerCompanyDoc.data().name) 
-            : 'Bilinmeyen Şirket';
+          const buyerView = await getCompanyDisplay(db, demandData.companyId);
+          const buyerCompanyName = buyerView.companyName || buyerView.name || 'Bilinmeyen Şirket';
           
           const totalAmount = bidData.items?.reduce((sum, item) => {
             return sum + (parseFloat(item.quantity || 0) * parseFloat(item.unitPrice || item.netPrice || 0));

@@ -3,7 +3,7 @@
  */
 import { describe, test, beforeAll, afterAll } from 'vitest';
 import { initializeTestEnvironment, assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
-import { doc, setDoc, updateDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, getDoc, deleteDoc } from 'firebase/firestore';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -90,5 +90,18 @@ describe('userTokens owner-only', () => {
       userId: 'push-owner-2',
       platform: 'android'
     }));
+  });
+
+  test('sahip kendi token belgesini silebilir, başkası silemez', async () => {
+    const owner = testEnv.authenticatedContext('push-del-owner');
+    const other = testEnv.authenticatedContext('push-del-other');
+    const refPath = ['userTokens', 'push-del-owner', 'tokens', 'tok-del'];
+    await assertSucceeds(setDoc(doc(owner.firestore(), ...refPath), {
+      token: 'tok-del',
+      userId: 'push-del-owner',
+      platform: 'android'
+    }));
+    await assertFails(deleteDoc(doc(other.firestore(), ...refPath)));
+    await assertSucceeds(deleteDoc(doc(owner.firestore(), ...refPath)));
   });
 });

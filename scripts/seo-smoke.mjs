@@ -40,6 +40,9 @@ if (!sitemap.includes('https://nefisoft.com/</loc>') && !sitemap.includes('https
   if (!sitemap.includes('https://nefisoft.com/')) fail.push('sitemap missing home');
 }
 if (!sitemap.includes('contact.html')) fail.push('sitemap missing contact');
+if (!sitemap.includes('https://nefisoft.com/legal.html')) fail.push('sitemap missing legal hub');
+const legalHub = read('legal.html');
+if (!legalHub.includes('/legal/cerez-politikasi.html')) fail.push('legal hub missing cerez link');
 if (!home.includes('application/ld+json')) fail.push('home missing json-ld');
 if (!home.includes('"@type":"WebSite"') && !home.includes('"@type": "WebSite"')) {
   if (!home.includes('WebSite')) fail.push('home missing WebSite json-ld');

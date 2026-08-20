@@ -32,8 +32,8 @@ Server tarafı kritik env'ler (`server/env-validator.ts`):
 | Env | Zorunluluk | Açıklama |
 |---|---|---|
 | `FIREBASE_SERVICE_ACCOUNT` veya `GOOGLE_APPLICATION_CREDENTIALS` | **Zorunlu** | Firebase Admin SDK |
-| `ALLOWED_ORIGINS` | **Zorunlu** | CORS whitelist (örn: `https://teklifbul.com`) |
-| `APP_URL` | **Zorunlu** | `https://teklifbul.com` |
+| `ALLOWED_ORIGINS` | **Zorunlu** | CORS whitelist (örn: `https://nefisoft.com`) |
+| `APP_URL` | **Zorunlu** | `https://nefisoft.com` |
 | `GROQ_API_KEY` veya `OPENAI_API_KEY` veya `GEMINI_API_KEY` | **Zorunlu** | En az bir AI sağlayıcı |
 | `PAYMENT_WEBHOOK_SECRET` | **Zorunlu** | Webhook HMAC secret |
 | `SENTRY_DSN` | Önerilen | Hata izleme |
@@ -63,7 +63,7 @@ Server tarafı kritik env'ler (`server/env-validator.ts`):
 
 **Önerilen ek aksiyonlar (deploy öncesi):**
 - [ ] Önceden expose olmuş Resend / Groq / Maps anahtarlarını **rotate** edin
-- [ ] Google Maps API key'ini Cloud Console'da **HTTP referrer** ile kısıtlayın (yalnızca `https://*.teklifbul.com/*`)
+- [ ] Google Maps API key'ini Cloud Console'da **HTTP referrer** ile kısıtlayın (yalnızca `https://nefisoft.com/*`, `https://www.nefisoft.com/*`)
 - [ ] OpenAI / Groq anahtarlarına aylık **usage limit** koyun
 
 ---
@@ -137,18 +137,23 @@ Mevcut fonksiyonlar (`functions/src/index.ts` + `functions/index.js`):
 - `shareDemandViaEmail` (HTTPS)
 - `sendTestNotification` / `onNotificationTestCreated`
 - `onDemandPublished` (FCM topic notification)
+- `syncPublicCompanyProfileOnWrite` (Firestore trigger — PII-free `publicCompanyProfiles`)
+- `pingApiHealth` (Scheduler — `/api/health` her dakika)
 - `excel-export` codebase (ayrı)
 
 **Kontroller:**
-- [ ] Functions environment config: `firebase functions:config:set` ile gerekli env'ler set edildi mi?
-- [ ] Memory & timeout ayarları (api: 512MiB / 60s) trafik beklentisine uygun mu?
-- [ ] Cold start kabul edilebilir mi? (`minInstances: 0` → ilk istekte ~3-5s gecikme)
+- [x] `api` Gen2: 512MiB / 60s / **`minInstances: 1`** (cold start için 0 değil)
+- [x] `pingApiHealth` her dakika `https://nefisoft.com/api/health` (kod: `functions/src/ping-api-health.ts`)
+- [ ] Functions environment / Secret Manager: `PAYMENT_WEBHOOK_SECRET`, `GROQ_API_KEY` bağlı mı?
+- [ ] `SENTRY_DSN` production Functions env'de set mi? (yoksa no-op — **SENTRY CONFIGURATION REQUIRED**)
+- [ ] `APP_CHECK_ENFORCE=1` **henüz açılmadı** (monitor mode). Client header canlı olduktan sonra aç.
+- [ ] `REDIS_URL` yoksa rate-limit instance-local MemoryStore (çoklu instance'da bölünür)
 
 ---
 
 ## 7) CI/CD Pipeline (`.github/workflows/ci.yml`)
 
-- [ ] PR build pipeline çalışıyor (`npm run build`, `npm run build:api`, `npm run lint`)
+- [x] PR/push pipeline `main`, `develop`, **`fix/beta-traffic-readiness`** (`type-check`, `lint:ci`, `test:run`, `test:rules`, `build:api`, `build`)
 - [ ] `npm run smoke` adımı CI'a eklenmesi önerilir (opsiyonel)
 - [ ] Deploy job ya manuel onay ile ya da main branch push tetikli olmalı
 - [ ] `FIREBASE_TOKEN` GitHub Secrets'ta tanımlı
@@ -157,10 +162,10 @@ Mevcut fonksiyonlar (`functions/src/index.ts` + `functions/index.js`):
 
 ## 8) Monitoring & Observability
 
-- [ ] **Sentry**: `SENTRY_DSN` set, dev/prod ortamları ayrı
+- [ ] **Sentry**: `SENTRY_DSN` / `VITE_SENTRY_DSN` set — **SENTRY CONFIGURATION REQUIRED** (DSN uydurulmadı)
+- [ ] **Firebase Console App Check Enforce** — **MANUAL ACTION REQUIRED** (kod monitor mode)
 - [ ] **Firebase Console**: Crashlytics, Performance Monitoring aktif
-- [ ] **Cloud Logging**: Cloud Functions loglarını görmek için Cloud Console'da gözden geçirin
-- [ ] **Uptime check**: `https://<host>/health` için bir uptime monitoring (StatusCake, UptimeRobot, GCP Uptime) kurun
+- [x] **Uptime**: `pingApiHealth` her dakika `/api/health` (Scheduler); harici UptimeRobot hâlâ önerilir
 - [ ] **Alerting**: error rate > %5, p95 latency > 2s gibi alarmlar
 
 ---
@@ -216,7 +221,8 @@ curl https://<your-domain>/api/health
   await admin.auth().setCustomUserClaims(uid, { superAdmin: true });
   ```
 - [ ] Test data temizlendi (varsa)
-- [ ] Backup politikası ayarlandı (Cloud Firestore export günlük)
+- [ ] Backup politikası ayarlandı (Cloud Firestore export günlük) — **MANUAL ACTION REQUIRED**
+- [ ] `publicCompanyProfiles` backfill: `node scripts/backfill-public-company-profiles.js` (dry-run) sonra `--apply`
 
 ---
 

@@ -6,6 +6,10 @@
  */
 import rateLimit from 'express-rate-limit';
 import { serverLogger } from '../utils/logger.js';
+import { createRedisRateLimitStore } from './redis-rate-limit-store.js';
+const apiStore = createRedisRateLimitStore('rl:api', 15 * 60 * 1000);
+const authStore = createRedisRateLimitStore('rl:auth', 15 * 60 * 1000);
+const publicStore = createRedisRateLimitStore('rl:pub', 15 * 60 * 1000);
 /**
  * Genel API rate limiter
  * 15 dakikada 100 istek
@@ -15,6 +19,7 @@ export const apiLimiter = rateLimit({
     max: Number(process.env.RATE_LIMIT_MAX) || 500, // Her IP için 500 istek (Global Rate Limiter)
     standardHeaders: true, // `RateLimit-*` headers
     legacyHeaders: false, // `X-RateLimit-*` headers (deprecated)
+    ...(apiStore ? { store: apiStore } : {}),
     message: {
         error: 'Çok fazla istek gönderildi, lütfen daha sonra tekrar deneyin',
         retryAfter: '15 dakika'
@@ -41,6 +46,7 @@ export const authLimiter = rateLimit({
     max: Number(process.env.AUTH_RATE_LIMIT_MAX) || 5, // Her IP için 5 deneme
     standardHeaders: true,
     legacyHeaders: false,
+    ...(authStore ? { store: authStore } : {}),
     message: {
         error: 'Çok fazla giriş denemesi, lütfen 15 dakika sonra tekrar deneyin',
         retryAfter: '15 dakika'
@@ -109,6 +115,7 @@ export const publicTokenLimiter = rateLimit({
     max: Number(process.env.PUBLIC_TOKEN_RATE_LIMIT_MAX) || 30,
     standardHeaders: true,
     legacyHeaders: false,
+    ...(publicStore ? { store: publicStore } : {}),
     message: {
         error: 'Çok fazla istek, lütfen 15 dakika sonra tekrar deneyin',
         retryAfter: '15 dakika'

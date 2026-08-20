@@ -865,6 +865,21 @@ service cloud.firestore {
       );
     }
 
+    // Teklifbul Rule v1.0 — Pazaryeri şirket kartı (PII/billing yok). Tam companies/{id} değil.
+    match /publicCompanyProfiles/{companyId} {
+      allow read: if isSignedIn();
+      allow create, update: if isSuperAdmin() || (
+        isSignedIn() &&
+        companyMatch(companyId) &&
+        request.resource.data.companyId == companyId &&
+        request.resource.data.keys().hasOnly([
+          'companyId', 'name', 'companyName', 'logoUrl', 'about', 'website', 'city',
+          'isSupplier', 'isBuyer', 'isMarketplaceVisible', 'supplierCategoryIds', 'updatedAt'
+        ])
+      );
+      allow delete: if isSuperAdmin() || companyMatch(companyId);
+    }
+
     match /companyJoinRequests/{id} {
       allow read: if isSuperAdmin() ||
         (isSignedIn() && resource.data.userId == request.auth.uid) ||
@@ -1003,11 +1018,9 @@ service cloud.firestore {
       );
     }
 
-    // Optional but useful for company-aware UI reads
-    // Teklifbul Rule v1.0 - companies okuma: kendi sirketi VEYA pazaryerinde
-    // gorunen sirketler (isMarketplaceVisible/isSupplier flag'i) icin
+    // Teklifbul Rule v1.0 - companies: tam belge yalnız üye/sahip/superAdmin.
+    // Pazaryeri kartı publicCompanyProfiles (PII/billing yok).
     // get: olmayan dokuman icin resource==null (vergi no varlik kontrolu)
-    // list: genis sorgular (code/taxNumber) engellenir; sadece kurala uyan dokumanlar
     match /companies/{companyId} {
       allow get: if isSuperAdmin() || (
         isSignedIn() && (
@@ -1020,37 +1033,9 @@ service cloud.firestore {
           (
             'ownerUid' in resource.data &&
             resource.data.ownerUid == request.auth.uid
-          ) ||
-          (
-            hasAcceptedCompanyMembership() &&
-            (
-              (
-                'isMarketplaceVisible' in resource.data &&
-                resource.data.isMarketplaceVisible == true
-              ) ||
-              (
-                'isSupplier' in resource.data &&
-                resource.data.isSupplier == true
-              ) ||
-              (
-                'roles' in resource.data &&
-                resource.data.roles is map &&
-                resource.data.roles.supplier == true
-              ) ||
-              (
-                'isBuyer' in resource.data &&
-                resource.data.isBuyer == true
-              ) ||
-              (
-                'roles' in resource.data &&
-                resource.data.roles is map &&
-                resource.data.roles.buyer == true
-              )
-            )
           )
         )
       );
-      // list: __name__ in (teklif/talep şirket adları) get ile aynı genişlikte olmalı
       allow list: if isSuperAdmin() || (
         isSignedIn() && (
           companyMatch(companyId) ||
@@ -1061,33 +1046,6 @@ service cloud.firestore {
           (
             'ownerUid' in resource.data &&
             resource.data.ownerUid == request.auth.uid
-          ) ||
-          (
-            hasAcceptedCompanyMembership() &&
-            (
-              (
-                'isMarketplaceVisible' in resource.data &&
-                resource.data.isMarketplaceVisible == true
-              ) ||
-              (
-                'isSupplier' in resource.data &&
-                resource.data.isSupplier == true
-              ) ||
-              (
-                'roles' in resource.data &&
-                resource.data.roles is map &&
-                resource.data.roles.supplier == true
-              ) ||
-              (
-                'isBuyer' in resource.data &&
-                resource.data.isBuyer == true
-              ) ||
-              (
-                'roles' in resource.data &&
-                resource.data.roles is map &&
-                resource.data.roles.buyer == true
-              )
-            )
           )
         )
       );

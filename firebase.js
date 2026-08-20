@@ -17,7 +17,7 @@ import {
   sendEmailVerification
 } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
-import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app-check.js";
+import { initializeAppCheck, ReCaptchaEnterpriseProvider, getToken } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app-check.js";
 // Teklifbul Rule v1.0 - Structured Logging
 import { logger, initErrorTracking } from './src/shared/log/logger.js';
 import { MESSAGES } from './src/shared/constants/messages.js';
@@ -157,6 +157,8 @@ function isAppCheckEmergencyDisabled() {
   return String(raw).trim() === '0';
 }
 
+let appCheckInstance = null;
+
 function startAppCheckIfEligible() {
   try {
     const isProduction = !isLocalDevHost && !isDevMode;
@@ -178,13 +180,24 @@ function startAppCheckIfEligible() {
       logBoot('warn', 'AppCheck skipped: VITE_RECAPTCHA_ENTERPRISE_SITE_KEY missing');
       return;
     }
-    initializeAppCheck(app, {
+    appCheckInstance = initializeAppCheck(app, {
       provider: new ReCaptchaEnterpriseProvider(siteKey),
       isTokenAutoRefreshEnabled: true,
     });
     logBoot('debug', 'AppCheck enabled for production');
   } catch (err) {
     logBoot('warn', 'AppCheck skipped after init failure', err);
+  }
+}
+
+export async function getAppCheckToken() {
+  if (!appCheckInstance) return null;
+  try {
+    const result = await getToken(appCheckInstance, false);
+    return result?.token || null;
+  } catch (error) {
+    logBoot('warn', 'AppCheck token alınamadı', error);
+    return null;
   }
 }
 
@@ -677,6 +690,12 @@ export async function sendAuthEmailVerification(user, continueUrl) {
   }
 }
 export async function logout() {
+  try {
+    const { removeCurrentPushTokenFromFirestore } = await import('./assets/js/fcm.js');
+    await removeCurrentPushTokenFromFirestore();
+  } catch (err) {
+    logger.warn('Logout FCM token temizliği atlandı', err);
+  }
   try {
     const { clearAuthLocalState } = await import('./assets/js/utils/clear-auth-local-state.js');
     clearAuthLocalState();

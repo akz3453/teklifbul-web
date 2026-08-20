@@ -21,7 +21,7 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:ui": "vitest --ui",
-    "test:rules": "node scripts/run-firebase-cli.mjs emulators:exec --only firestore \"npx vitest run --config vitest.rules.config.ts\"",
+    "test:rules": "node scripts/run-firebase-cli.mjs emulators:exec --only firestore,storage \"npx vitest run --config vitest.rules.config.ts\"",
     "test:functions": "vitest run tests/functions.test.ts",
     "test:stocks": "npm run test:rules && npm run test:functions",
     "seed:categoryRules": "node scripts/import-category-rules.js",

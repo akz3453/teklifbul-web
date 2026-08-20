@@ -30,6 +30,7 @@
     <script type="module">
         import { db, auth } from './firebase.js';
         import { logger } from './src/shared/log/logger.js';
+        import { getCompanyDisplay } from './assets/js/utils/public-company-profile.js';
         import { initAuthGuard } from './assets/js/auth-guard.js';
         import { collection, getDocs, getDoc, doc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
 
@@ -105,8 +106,8 @@
                             // İsim Güncellemesi (supplierName eksikse veya düzeltilmesi gerekiyorsa)
                             if (!bidData.supplierName || bidData.supplierName === '--' || bidData.supplierName === '—') {
                                 if (resolvedSCID) {
-                                    const cSnap = await getDoc(doc(db, 'companies', resolvedSCID));
-                                    updates.supplierName = cSnap.exists() ? (cSnap.data().name || cSnap.data().companyName) : (uData.displayName || uData.email);
+                                    const companyView = await getCompanyDisplay(db, resolvedSCID);
+                                    updates.supplierName = companyView.companyName || companyView.name || uData.displayName || uData.email;
                                 } else {
                                     updates.supplierName = uData.displayName || uData.email;
                                 }
@@ -129,8 +130,8 @@
                             // İsim Güncellemesi
                             if (!bidData.buyerName || bidData.buyerName === '--' || bidData.buyerName === '—') {
                                 if (resolvedBCID) {
-                                    const cSnap = await getDoc(doc(db, 'companies', resolvedBCID));
-                                    updates.buyerName = cSnap.exists() ? (cSnap.data().name || cSnap.data().companyName) : 'Alıcı Firma';
+                                    const companyView = await getCompanyDisplay(db, resolvedBCID);
+                                    updates.buyerName = companyView.companyName || companyView.name || dData.requester || 'Alıcı Firma';
                                 } else {
                                     updates.buyerName = dData.requester || 'Alıcı';
                                 }

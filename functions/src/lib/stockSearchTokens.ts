@@ -99,6 +99,23 @@ export function buildSearchTokens(name: string = '', sku: string = '', barcode: 
  * @param oldTokens - Old token array (can be null/undefined)
  * @returns True if tokens have changed
  */
+/**
+ * Query-side tokens for array-contains / array-contains-any (max 10).
+ */
+export function buildQuerySearchTokens(text: string): string[] {
+  const normalized = normalizeTRForSearch(text || '');
+  const words = normalized.split(/\s+/).filter(Boolean);
+  const tokens = new Set<string>();
+  for (const word of words) {
+    for (let i = 2; i <= Math.min(10, word.length); i++) {
+      if (tokens.size >= 10) break;
+      tokens.add(word.slice(0, i));
+    }
+    if (tokens.size >= 10) break;
+  }
+  return Array.from(tokens).slice(0, 10);
+}
+
 export function tokensChanged(newTokens: string[], oldTokens: string[] | null | undefined): boolean {
   const existingTokens = Array.isArray(oldTokens) ? oldTokens : [];
   return JSON.stringify(newTokens.sort()) !== JSON.stringify(existingTokens.sort());

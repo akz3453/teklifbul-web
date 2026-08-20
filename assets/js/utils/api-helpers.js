@@ -5,12 +5,13 @@
  * Tüm API isteklerinde x-company-id header'ı otomatik eklenir
  */
 
-import { auth, db, requireAuth } from '../../../firebase.js';
+import { auth, db, requireAuth, getAppCheckToken } from '../../../firebase.js';
 import { logger } from '../../../src/shared/log/logger.js';
 import { toast } from '../../../src/shared/ui/toast.js';
 import { MESSAGES } from '../../../src/shared/constants/messages.js';
 import { AUTH_FETCH_TIMEOUT_MS, COMPANY_ID_CACHE_TTL_MS } from '../../../src/shared/constants/timing.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+import { createAiChatRequestId } from './ai-chat-request-id.js';
 
 const LOGIN_PATH = '/login.html';
 
@@ -177,6 +178,14 @@ export async function authFetch(url, options = {}) {
 
     // Authorization header - Teklifbul Rule v1.0 - Token her zaman eklenmeli
     finalHeaders.set('Authorization', `Bearer ${token}`);
+    try {
+      const appCheckToken = await getAppCheckToken();
+      if (appCheckToken) {
+        finalHeaders.set('X-Firebase-AppCheck', appCheckToken);
+      }
+    } catch (appCheckErr) {
+      logger.debug('App Check header atlandı', appCheckErr);
+    }
 
     // Debug: Development'ta token varlığını doğrula
     if (import.meta.env.DEV || import.meta.env.MODE === 'development') {
@@ -238,6 +247,11 @@ export async function authFetch(url, options = {}) {
       } else {
         finalHeaders.set('Content-Type', 'application/json');
       }
+    }
+
+    // Teklifbul Rule v1.0 — Paid /api/chat idempotency header (not a security control)
+    if (!finalHeaders.has('x-request-id') && String(url).includes('/api/chat')) {
+      finalHeaders.set('x-request-id', createAiChatRequestId());
     }
 
     // Teklifbul Rule v1.0 - API URL normalization: /api ve observability kökleri dev'de backend portuna (5174) gider.

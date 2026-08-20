@@ -7,6 +7,7 @@ import { searchStocks } from '/scripts/lib/stock-search.js';
 import { authFetch } from '/assets/js/utils/api-helpers.js';
 import { toast } from '/src/shared/ui/toast.js';
 import { logger } from '/src/shared/log/logger.js';
+import { STOCK_LIST_PAGE_SIZE } from '/src/shared/constants/timing.js';
 // Teklifbul Rule v1.0 - XSS Protection
 import DOMPurify from 'https://cdn.jsdelivr.net/npm/dompurify@3.2.2/+esm';
 
@@ -943,7 +944,7 @@ function bindStockAutocompleteToAllRows() {
             const allStocksQuery = query(
               collection(db, 'stocks'),
               where('companyId', '==', companyId),
-              limit(1000) // Teklifbul Rule v1.0 - Fallback için daha fazla limit
+              limit(STOCK_LIST_PAGE_SIZE)
             );
 
             const allStocksSnapshot = await getDocs(allStocksQuery);
@@ -1235,7 +1236,7 @@ function bindNameAutocompleteToAllRows() {
             const allStocksQuery = query(
               collection(db, 'stocks'),
               where('companyId', '==', companyId),
-              limit(1000) // Teklifbul Rule v1.0 - Fallback için daha fazla limit
+              limit(STOCK_LIST_PAGE_SIZE)
             );
 
             const allStocksSnapshot = await getDocs(allStocksQuery);

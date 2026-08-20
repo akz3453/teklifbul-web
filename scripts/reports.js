@@ -8,6 +8,8 @@ import { logger } from '/src/shared/log/logger.js';
 import { MESSAGES } from '/src/shared/constants/messages.js';
 import { requireCompanyContext } from '../assets/js/state/company-context.js';
 import { initPermissions, can, getStockPerms } from '../assets/js/state/permissions.js';
+import { loadCompanyStocksPaged } from '../assets/js/utils/stock-catalog-query.js';
+import { STOCK_LOCATIONS_QUERY_LIMIT, STOCK_MOVEMENTS_REPORT_QUERY_LIMIT, STOCK_BALANCES_QUERY_LIMIT } from '../src/shared/constants/timing.js';
 
 const qs = s => document.querySelector(s);
 
@@ -153,32 +155,15 @@ async function loadInitialData() {
     // Stocks - companyId filtresi ile
     try {
       logger.info('Loading stocks', { companyId: state.companyId, collection: 'stocks' });
-      const stocksQuery = query(
-        collection(db, 'stocks'),
-        where('companyId', '==', state.companyId),
-        limit(10000) // Teklifbul Rule v1.0 - Limit eklendi
-      );
-      logger.info('Stocks query created', { query: 'stocks where companyId == ' + state.companyId });
-      const stocksSnap = await getDocs(stocksQuery);
-      logger.info('Stocks query executed', { 
-        size: stocksSnap.size, 
-        empty: stocksSnap.empty,
-        docsCount: stocksSnap.docs.length
-      });
-      state.stocks = [];
-      stocksSnap.forEach(doc => {
-        const stockData = { id: doc.id, ...doc.data() };
-        state.stocks.push(stockData);
-        
-        // Teklifbul Rule v1.0 - Debug: 001-RC3680 SKU için log
-        if (stockData.sku === '001-RC3680') {
-          logger.info('Debug: Found 001-RC3680 stock', {
-            stockId: stockData.id,
-            sku: stockData.sku,
-            name: stockData.name,
-            companyId: stockData.companyId
-          });
-        }
+      const { rows, capped } = await loadCompanyStocksPaged(db, state.companyId);
+      state.stocks = rows;
+      if (capped) {
+        toast.warn(MESSAGES.WARN_STOCK_LIMIT_REACHED.replace('{count}', String(rows.length)));
+      }
+      logger.info('Stocks query executed', {
+        size: state.stocks.length,
+        empty: state.stocks.length === 0,
+        docsCount: state.stocks.length
       });
       
       logger.info('Stocks loaded', {
@@ -200,9 +185,13 @@ async function loadInitialData() {
     const movementsQuery = query(
       collection(db, 'stock_movements'),
       where('companyId', '==', state.companyId),
-      orderBy('createdAt', 'desc')
+      orderBy('createdAt', 'desc'),
+      limit(STOCK_MOVEMENTS_REPORT_QUERY_LIMIT)
     );
     const movementsSnap = await getDocs(movementsQuery);
+    if (movementsSnap.size >= STOCK_MOVEMENTS_REPORT_QUERY_LIMIT) {
+      toast.warn(MESSAGES.WARN_QUERY_LIMIT_REACHED.replace('{count}', String(STOCK_MOVEMENTS_REPORT_QUERY_LIMIT)));
+    }
     state.movements = [];
     movementsSnap.forEach(doc => {
       state.movements.push({ id: doc.id, ...doc.data() });
@@ -214,7 +203,7 @@ async function loadInitialData() {
       const locsQuery = query(
         collection(db, 'stock_locations'),
         where('companyId', '==', state.companyId),
-        limit(1000) // Teklifbul Rule v1.0 - Limit eklendi
+        limit(STOCK_LOCATIONS_QUERY_LIMIT)
       );
       logger.info('Locations query created', { query: 'stock_locations where companyId == ' + state.companyId });
       const locsSnap = await getDocs(locsQuery);
@@ -257,10 +246,14 @@ async function loadInitialData() {
       logger.info('Loading balances', { companyId: state.companyId, collection: 'stock_balances' });
       const balancesQuery = query(
         collection(db, 'stock_balances'),
-        where('companyId', '==', state.companyId)
+        where('companyId', '==', state.companyId),
+        limit(STOCK_BALANCES_QUERY_LIMIT)
       );
       logger.info('Balances query created', { query: 'stock_balances where companyId == ' + state.companyId });
       const balancesSnap = await getDocs(balancesQuery);
+      if (balancesSnap.size >= STOCK_BALANCES_QUERY_LIMIT) {
+        toast.warn(MESSAGES.WARN_QUERY_LIMIT_REACHED.replace('{count}', String(STOCK_BALANCES_QUERY_LIMIT)));
+      }
       logger.info('Balances query executed', { 
         size: balancesSnap.size, 
         empty: balancesSnap.empty,

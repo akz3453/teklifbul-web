@@ -198,7 +198,8 @@ export const MESSAGES = {
   ERROR_SUPPLIER_CATEGORY_REQUIRED: "Tedarikçi için en az 1 kategori seçmelisiniz",
   ERROR_SUPPLIER_EMAIL_REQUIRED: "Tedarikçi için en az 1 e-posta adresi girmelisiniz",
   ERROR_BUYER_CATEGORY_REQUIRED: "Alıcı için en az 1 kategori seçmelisiniz",
-  ERROR_KVKK_CONSENT_REQUIRED: "KVKK Açık Rıza onayı zorunludur",
+  ERROR_KVKK_CONSENT_REQUIRED: "KVKK Aydınlatma onayı zorunludur",
+  ERROR_CONTRACT_CONSENT_REQUIRED: "Kullanıcı sözleşmesi onayı zorunludur",
   SUCCESS_PROFILE_COMPANY_SAVED: "Profil ve şirket kaydedildi!\n\n📝 Şirket Kodunuz: {code}\n\nBu kodu başkalarıyla paylaşarak şirketinize katılmalarını sağlayabilirsiniz.{referral}",
   
   // Company Profile Mesajları
@@ -376,6 +377,7 @@ export const MESSAGES = {
   INFO_STOCK_LOADING: "Stoklar yükleniyor...",
   WARN_STOCK_EMPTY: "Hiç stok bulunamadı. Stok içe aktarma sayfasından stok ekleyebilirsiniz.",
   WARN_STOCK_LIMIT_REACHED: "İlk {count} stok yüklendi. Daha fazla kayıt için arama veya filtre kullanın.",
+  WARN_QUERY_LIMIT_REACHED: "İlk {count} kayıt yüklendi. Daha eski kayıtlar bu görünümde yok.",
   INFO_STOCK_LOAD_MORE: "Daha fazla stok yükleniyor...",
   INFO_STOCK_HAS_MORE: "Daha fazla stok var. «Daha fazla yükle» ile devam edin.",
   INFO_STOCK_SEARCH_PARTIAL: "Arama yalnızca yüklenen stoklarda. Tüm katalog için «Daha fazla yükle» kullanın.",

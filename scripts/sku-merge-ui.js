@@ -4,13 +4,13 @@
  */
 
 import { db, requireAuth } from '/firebase.js';
-import { collection, getDocs, query, where, limit } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
 import { searchStocks } from '/scripts/lib/stock-search.js';
 import { getSkuMergePreview, mergeSkus } from '/scripts/inventory-sku-merge.js';
 import { toast } from '/src/shared/ui/toast.js';
 import { MESSAGES } from '/src/shared/constants/messages.js';
 import { logger } from '/src/shared/log/logger.js';
 import { requireCompanyContext } from '/assets/js/state/company-context.js';
+import { loadCompanyStocksPaged } from '/assets/js/utils/stock-catalog-query.js';
 
 const qs = s => document.querySelector(s);
 
@@ -79,17 +79,11 @@ async function loadStocks() {
     logger.info(`Stoklar yükleniyor (companyId: ${state.companyId})`);
     toast.info(MESSAGES.INFO_STOCK_LOADING || 'Stoklar yükleniyor...');
 
-    const stocksQuery = query(
-      collection(db, 'stocks'),
-      where('companyId', '==', state.companyId),
-      limit(10000)
-    );
-    const snap = await getDocs(stocksQuery);
-
-    const allStocks = [];
-    snap.forEach((d) => {
-      allStocks.push({ id: d.id, ...d.data() });
-    });
+    const { rows, capped } = await loadCompanyStocksPaged(db, state.companyId);
+    if (capped) {
+      toast.warn(MESSAGES.WARN_STOCK_LIMIT_REACHED.replace('{count}', String(rows.length)));
+    }
+    const allStocks = rows;
 
     state.stocks = allStocks.filter((s) => !s.archived && !s.merged);
     state.stocksLoaded = true;

@@ -11,6 +11,7 @@ import { generateFullBidFormExcel } from './lib/excelGenerator';
 import { GCF_CORS_ORIGINS, applyGcfCors } from './allowed-origins';
 import { uidBelongsToCompany } from './company-membership';
 import { buildPublicProfilePayload } from './sync-public-profile';
+import { buildPublicCompanyProfilePayload } from './sync-public-company-profile';
 
 // Cloud Run gen2: NODE_ENV çoğu zaman boş gelir — mock ödeme/e-fatura açılmasın
 if (process.env.K_SERVICE && process.env.NODE_ENV !== 'test') {
@@ -270,6 +271,37 @@ export const normalizeSupplierCategories = (functions as any).firestore.document
     } catch (error) {
       console.error(`Error normalizing supplier categories for user ${uid}:`, error);
     }
+  }
+});
+
+/**
+ * Teklifbul Rule v1.0 — companies → publicCompanyProfiles (PII-free marketplace card)
+ */
+export const syncPublicCompanyProfileOnWrite = (functions as any).firestore.document('companies/{companyId}').onWrite(async (change: { before: admin.firestore.DocumentSnapshot; after: admin.firestore.DocumentSnapshot }) => {
+  const companyId = change.after.id || change.before.id;
+  const db = admin.firestore();
+  const publicRef = db.collection('publicCompanyProfiles').doc(companyId);
+  if (!change.after.exists) {
+    try {
+      await publicRef.delete();
+    } catch (error) {
+      console.error(`publicCompanyProfiles delete failed for ${companyId}:`, error);
+    }
+    return;
+  }
+  const payload = buildPublicCompanyProfilePayload(
+    companyId,
+    change.after.data() as Record<string, unknown>,
+    admin.firestore.FieldValue.serverTimestamp()
+  );
+  try {
+    if (payload) {
+      await publicRef.set(payload);
+    } else {
+      await publicRef.delete();
+    }
+  } catch (error) {
+    console.error(`publicCompanyProfiles sync failed for ${companyId}:`, error);
   }
 });
 
@@ -1026,4 +1058,22 @@ export const recoverStuckAiTokenHolds = onSchedule({
     pageSize: 50,
     maxPages: 10,
   });
+});
+
+/**
+ * 1-minute uptime probe against the public Hosting rewrite (/api/health).
+ * Failure throws so Cloud Scheduler marks the job failed (GCP alerting).
+ */
+export const pingApiHealth = onSchedule({
+  schedule: 'every 1 minutes',
+  timeZone: 'Europe/Istanbul',
+  memory: '256MiB',
+  timeoutSeconds: 30,
+}, async () => {
+  const { runApiHealthProbe } = await import('./ping-api-health');
+  const result = await runApiHealthProbe();
+  if (!result.ok) {
+    console.error('API health probe failed', result);
+    throw new Error(`API health probe failed HTTP ${result.statusCode}`);
+  }
 });

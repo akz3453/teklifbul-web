@@ -126,8 +126,10 @@
 
     import { initGlobalHeader } from './assets/js/ui/header.js';
     import { db, auth, requireAuth } from './firebase.js';
-    import { collection, query, where, getDocs, getDoc, updateDoc, doc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+    import { collection, query, where, getDocs, getDoc, updateDoc, doc, serverTimestamp, limit } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
     import { toast } from './src/shared/ui/toast.js';
+    import { MESSAGES } from './src/shared/constants/messages.js';
+    import { INTERNAL_DEMANDS_QUERY_LIMIT } from './src/shared/constants/timing.js';
     import { getActiveCompanyId, resolveActiveCompany, setActiveCompanyId } from './assets/js/state/company.js';
 
     // Initialize global header
@@ -238,9 +240,13 @@
         // Teklifbul Rule v1.0 - Index gereksinimini kaldırmak için orderBy olmadan çek
         const demandsQuery = query(
           collection(db, 'internalDemands'),
-          where('companyId', '==', companyId)
+          where('companyId', '==', companyId),
+          limit(INTERNAL_DEMANDS_QUERY_LIMIT)
         );
         const snapshot = await getDocs(demandsQuery);
+        if (snapshot.size >= INTERNAL_DEMANDS_QUERY_LIMIT) {
+          toast.warn(MESSAGES.WARN_QUERY_LIMIT_REACHED.replace('{count}', String(INTERNAL_DEMANDS_QUERY_LIMIT)));
+        }
 
         const pending = [];
         const inProgress = [];

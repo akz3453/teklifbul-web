@@ -54,6 +54,7 @@ import authRouter from './routes/auth';
 import purchaseAssistantSettingsRouter from './routes/purchase-assistant-settings';
 import purchaseAssistantRestorePaidRouter from './routes/purchase-assistant-restore-paid'; // Teklifbul Rule v3.5.2
 import { verifyToken } from './middleware/auth.js';
+import { verifyAppCheck } from './middleware/verify-app-check.js';
 import { requirePremium } from './middleware/requirePremium.js';
 import { requireAdmin } from './middleware/requireAdmin.js';
 import { isAdminUser, isOpsUser } from './auth/admin-check.js';
@@ -95,6 +96,7 @@ import fefoInventoryRouter from './routes/fefo-inventory.js';
 initErrorTracking();
 
 const app = express();
+app.set('trust proxy', 1);
 
 // Teklifbul Rule v1.0 - Production Hardening: Security Headers
 // Helmet.js - Security headers (XSS, clickjacking, etc.)
@@ -159,7 +161,9 @@ const corsConfig = {
     'x-recaptcha-token',
     'X-Recaptcha-Token',
     'x-company-id', // Teklifbul Rule v1.0 - Company context header
-    'X-Company-Id' // Case-insensitive için büyük harf versiyonu
+    'X-Company-Id', // Case-insensitive için büyük harf versiyonu
+    'X-Firebase-AppCheck',
+    'x-firebase-appcheck',
   ],
   exposedHeaders: ['RateLimit-Limit', 'RateLimit-Remaining', 'RateLimit-Reset']
 };
@@ -206,6 +210,9 @@ app.use(express.urlencoded({ extended: true }));
 // Teklifbul Rule v1.0 - Observability v1: Request metrics middleware
 // Router'lardan önce ekle (tüm request'leri yakalamak için)
 app.use(requestMetrics);
+
+// Teklifbul Rule v1.0 — App Check (health/webhook/email-token skip; APP_CHECK_ENFORCE=1 fail-closed)
+app.use(verifyAppCheck);
 
 // Teklifbul Rule v1.0 - Performance: Static assets with cache headers
 app.use(express.static(join(process.cwd(), 'public'), {

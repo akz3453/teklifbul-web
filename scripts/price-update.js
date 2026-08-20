@@ -1,10 +1,12 @@
 import { db, auth, requireAuth } from '/firebase.js';
-import { collection, getDocs, query, where, updateDoc, doc, addDoc, getDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+import { collection, getDocs, query, where, updateDoc, doc, addDoc, getDoc, serverTimestamp, limit } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
 import { toast } from '../src/shared/ui/toast.js';
 import { MESSAGES } from '../src/shared/constants/messages.js';
 import { logger } from '../src/shared/log/logger.js';
 import { requireCompanyContext } from '../assets/js/state/company-context.js';
 import { initPermissions, can, requirePerm, getStockPerms } from '../assets/js/state/permissions.js';
+import { loadCompanyStocksPaged } from '../assets/js/utils/stock-catalog-query.js';
+import { STOCK_LOCATIONS_QUERY_LIMIT } from '../src/shared/constants/timing.js';
 
 const qs = s => document.querySelector(s);
 
@@ -81,7 +83,8 @@ async function loadFilters() {
       collection(db, 'stock_locations'),
       where('companyId', '==', companyId),
       where('type', '==', 'warehouse'),
-      where('isActive', '==', true)
+      where('isActive', '==', true),
+      limit(STOCK_LOCATIONS_QUERY_LIMIT)
     );
     const warehousesSnap = await getDocs(warehousesQuery);
     state.warehouses = [];
@@ -145,47 +148,24 @@ async function loadStocks() {
     const brand = qs('#filterBrand').value.trim();
     const unit = qs('#filterUnit').value;
     
-    let q = collection(db, 'stocks');
-    let constraints = [];
-    
-    // companyId filtresi zorunlu
-    if (state.companyId) {
-      constraints.push(where('companyId', '==', state.companyId));
+    const { rows, capped } = await loadCompanyStocksPaged(db, state.companyId);
+    if (capped) {
+      toast.warn(MESSAGES.WARN_STOCK_LIMIT_REACHED.replace('{count}', String(rows.length)));
     }
-    
-    // Teklifbul Rule v1.0 - Depo koduna göre filtreleme
-    if (warehouseCode) {
-      constraints.push(where('warehouseCode', '==', warehouseCode));
-    }
-    
-    // Özel kod filtreleme
-    if (customCode) {
-      // Özel kod code1, code2 veya code3'te olabilir
-      // Firestore'da OR sorgusu yok, bu yüzden client-side filtreleme yapacağız
-    }
-    
-    const snap = await getDocs(constraints.length ? query(q, ...constraints) : q);
     state.stocks = [];
-    
-    snap.forEach(doc => {
-      const data = doc.data();
-      
-      // Özel kod filtreleme (client-side)
+
+    rows.forEach((data) => {
+      if (warehouseCode && data.warehouseCode !== warehouseCode) return;
       if (customCode) {
-        const hasCustomCode = 
+        const hasCustomCode =
           (data.customCodes?.code1 === customCode) ||
           (data.customCodes?.code2 === customCode) ||
           (data.customCodes?.code3 === customCode);
         if (!hasCustomCode) return;
       }
-      
-      // Marka filtreleme (client-side)
       if (brand && data.brand !== brand) return;
-      
-      // Birim filtreleme (client-side)
       if (unit && data.unit !== unit) return;
-      
-      state.stocks.push({ id: doc.id, ...data });
+      state.stocks.push({ id: data.id, ...data });
     });
     
     state.filteredStocks = [...state.stocks];
@@ -201,10 +181,9 @@ async function loadStocks() {
     }
     
     renderTable();
-    
   } catch (error) {
-    console.error('Load error:', error);
-    alert('Stoklar yüklenemedi: ' + error.message);
+    logger.error('Load error', error);
+    toast.error((MESSAGES.ERROR_STOCK_PRICE_UPDATE_LOAD || 'Stoklar yüklenemedi') + ': ' + (error.message || error));
   }
 }
 

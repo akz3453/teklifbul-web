@@ -24,6 +24,7 @@ const contactSchema = z.object({
   email: z.string().trim().email('Geçerli bir e-posta giriniz').max(200),
   phone: z.string().trim().max(40).optional().nullable(),
   message: z.string().trim().min(5, 'Mesaj en az 5 karakter olmalı').max(4000),
+  website: z.string().trim().max(200).optional().nullable(),
 });
 
 async function resolveAdminUids(db: Firestore): Promise<string[]> {
@@ -120,7 +121,15 @@ contactPublicRouter.post('/', publicTokenLimiter, async (req, res) => {
       return res.status(500).json({ ok: false, error: 'db_unavailable', message: 'Kayıt şu an alınamıyor.' });
     }
 
-    const { name, company, email, phone, message } = parsed.data;
+    const { name, company, email, phone, message, website } = parsed.data;
+    if (website) {
+      logger.warn('Contact honeypot triggered');
+      logger.end();
+      return res.json({
+        ok: true,
+        message: 'Mesajınız alındı. En kısa sürede dönüş yapacağız.',
+      });
+    }
     const docRef = await db.collection(CONTACT_COLLECTION).add({
       name,
       company: company || null,

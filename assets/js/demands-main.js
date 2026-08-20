@@ -3,6 +3,7 @@ import DOMPurify from 'https://cdn.jsdelivr.net/npm/dompurify@3.2.2/+esm';
 import { appendTextCell, setTableEmpty } from './utils/safe-table.js';
 import { isDemandExpired } from './utils/demand-expiry.js';
 import { resolveSharedCompanyId } from './utils/api-helpers.js';
+import { getCompanyDisplay } from './utils/public-company-profile.js';
 import { db, requireAuth, logout } from "../firebase.js";
 import {
   collection, getDocs, getDoc, query, where, deleteDoc, doc, orderBy, limit, startAfter,
@@ -385,13 +386,8 @@ async function initDemandsPage() {
     // Teklifbul Rule v1.0 — list yerine getDoc: şirket list kuralları pazaryeri firmalarında kırılmasın
     await Promise.all(cIds.map(async (companyId) => {
       try {
-        const snap = await getDoc(doc(db, 'companies', companyId));
-        if (snap.exists()) {
-          const data = snap.data() || {};
-          COMPANY_CACHE.set(companyId, data.companyName || data.name || data.title || 'Bilinmeyen Firma');
-        } else {
-          COMPANY_CACHE.set(companyId, 'Bilinmeyen Firma');
-        }
+        const view = await getCompanyDisplay(db, companyId);
+        COMPANY_CACHE.set(companyId, view.companyName || view.name || 'Bilinmeyen Firma');
       } catch (err) {
         logger.warn('Firma adı okunamadı', { companyId, error: err?.message || err });
         COMPANY_CACHE.set(companyId, 'Bilinmeyen Firma');
@@ -3099,7 +3095,7 @@ async function initDemandsPage() {
       // demandRecipients kayıtları oluştur (idempotent + recipientCategoryIds)
       let existingSupplierIds = new Set();
       try {
-        const existingSnap = await getDocs(query(collection(db, 'demandRecipients'), where('demandId', '==', demandId), limit(2000)));
+        const existingSnap = await getDocs(query(collection(db, 'demandRecipients'), where('demandId', '==', demandId), limit(DEMAND_RECIPIENTS_QUERY_LIMIT)));
         existingSupplierIds = new Set(existingSnap.docs.map(d => d.data()?.supplierId).filter(Boolean));
       } catch (existingErr) {
         logger.warn('Existing demandRecipients query failed; continuing with create-only', {

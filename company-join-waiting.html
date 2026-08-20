@@ -217,6 +217,7 @@
     import { doc, getDoc, onSnapshot, deleteDoc, query, collection, where, getDocs } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
     import { registerListener, cleanupAllListeners } from "./assets/js/firebase/listener-manager.js";
     import { resolveCompanyContext } from "./assets/js/state/company-context.js";
+    import { getCompanyDisplay } from "./assets/js/utils/public-company-profile.js";
     
     // Wrap everything in an async IIFE
     (async () => {
@@ -294,11 +295,13 @@
             // Şirket bilgilerini yükle
             if (companyId) {
               try {
-                const companyDoc = await getDoc(doc(db, 'companies', companyId));
-                if (companyDoc.exists()) {
-                  const companyData = companyDoc.data();
-                  document.getElementById('companyName').textContent = companyData.name || '-';
+                const companyView = await getCompanyDisplay(db, companyId);
+                let displayName = companyView.companyName || companyView.name || '';
+                if ((!displayName || displayName === 'Bilinmeyen Firma') && companyCode) {
+                  const codeSnap = await getDoc(doc(db, 'companyCodes', companyCode));
+                  if (codeSnap.exists()) displayName = codeSnap.data()?.name || displayName;
                 }
+                document.getElementById('companyName').textContent = displayName || '-';
               } catch (e) {
                 logger.warn('Şirket bilgisi yüklenemedi', e);
               }
@@ -459,12 +462,9 @@
                     
                     // Şirket bilgilerini de kopyala (Geriye dönük uyumluluk için)
                     try {
-                      const companySnap = await getDoc(doc(db, 'companies', targetCompanyId));
-                      if (companySnap.exists()) {
-                        const cData = companySnap.data();
-                        if (cData.name) updatePayload.companyName = cData.name;
-                        if (cData.taxNumber) updatePayload.taxNumber = cData.taxNumber;
-                        if (cData.taxOffice) updatePayload.taxOffice = cData.taxOffice;
+                      const companyView = await getCompanyDisplay(db, targetCompanyId);
+                      if (companyView.companyName && companyView.companyName !== 'Bilinmeyen Firma') {
+                        updatePayload.companyName = companyView.companyName;
                       }
                     } catch (cErr) { logger.warn("Self-Onboarding: Şirket bilgileri alınamadı", cErr); }
 

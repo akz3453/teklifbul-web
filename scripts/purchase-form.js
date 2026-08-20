@@ -5,7 +5,8 @@ import { logger } from '/src/shared/log/logger.js';
 import { toast } from '/src/shared/ui/toast.js';
 import { MESSAGES } from '/src/shared/constants/messages.js';
 import { resolveSharedCompanyId } from '/assets/js/utils/api-helpers.js';
-import { STOCK_MATCH_QUERY_LIMIT, PURCHASE_FORM_MAX_EXCEL_ROWS, WRITE_BATCH_LIMIT } from '/src/shared/constants/timing.js';
+import { FIRESTORE_IN_QUERY_LIMIT, PURCHASE_FORM_MAX_EXCEL_ROWS, STOCK_LIST_PAGE_SIZE, STOCK_SEARCH_QUERY_LIMIT, WRITE_BATCH_LIMIT } from '/src/shared/constants/timing.js';
+import { buildQuerySearchTokens } from '/src/shared/stock-query-tokens.js';
 
 const qs = s => document.querySelector(s);
 
@@ -15,7 +16,6 @@ const state = {
 };
 
 let matchAbortController = null;
-let stockCatalogCache = null;
 
 const HEADMAP = {
   'sıra no': 'lineNo', 'sira no': 'lineNo', 'no': 'lineNo',
@@ -108,32 +108,72 @@ async function resolveCompanyId() {
   return resolveSharedCompanyId(userSnap.data());
 }
 
-async function loadCompanyStockCatalog(companyId, signal) {
-  if (stockCatalogCache && stockCatalogCache.companyId === companyId) {
-    return stockCatalogCache;
+async function loadStocksForRows(companyId, rows, signal) {
+  const skus = [...new Set(rows.map((r) => String(r.sku || '').trim()).filter(Boolean))];
+  const bySku = new Map();
+  const catalogRows = [];
+  for (let i = 0; i < skus.length; i += FIRESTORE_IN_QUERY_LIMIT) {
+    if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+    const chunk = skus.slice(i, i + FIRESTORE_IN_QUERY_LIMIT);
+    const snap = await getDocs(query(
+      collection(db, 'stocks'),
+      where('companyId', '==', companyId),
+      where('sku', 'in', chunk)
+    ));
+    snap.forEach((docSnap) => {
+      const data = docSnap.data();
+      catalogRows.push(data);
+      const sku = String(data.sku || '').trim();
+      if (!sku) return;
+      const list = bySku.get(sku) || [];
+      list.push(data);
+      bySku.set(sku, list);
+    });
   }
-  const stocksQuery = query(
-    collection(db, 'stocks'),
-    where('companyId', '==', companyId),
-    limit(STOCK_MATCH_QUERY_LIMIT)
-  );
-  const snap = await getDocs(stocksQuery);
-  if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
-  const rows = snap.docs.map((d) => d.data());
-  stockCatalogCache = {
-    companyId,
-    capped: snap.size >= STOCK_MATCH_QUERY_LIMIT,
-    bySku: new Map(),
-    rows,
-  };
-  for (const row of rows) {
-    const sku = String(row.sku || '').trim();
-    if (!sku) continue;
-    const list = stockCatalogCache.bySku.get(sku) || [];
-    list.push(row);
-    stockCatalogCache.bySku.set(sku, list);
+  return { companyId, bySku, rows: catalogRows, capped: false };
+}
+
+async function findNameCandidates(companyId, name, unit, signal) {
+  const tokens = buildQuerySearchTokens(name).slice(0, 10);
+  let docs = [];
+  if (tokens.length > 0) {
+    try {
+      if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+      const tokenQuery = tokens.length === 1
+        ? query(
+          collection(db, 'stocks'),
+          where('companyId', '==', companyId),
+          where('searchTokens', 'array-contains', tokens[0]),
+          limit(STOCK_SEARCH_QUERY_LIMIT)
+        )
+        : query(
+          collection(db, 'stocks'),
+          where('companyId', '==', companyId),
+          where('searchTokens', 'array-contains-any', tokens),
+          limit(STOCK_SEARCH_QUERY_LIMIT)
+        );
+      const snap = await getDocs(tokenQuery);
+      snap.forEach((docSnap) => docs.push(docSnap.data()));
+    } catch (error) {
+      if (error?.name === 'AbortError') throw error;
+      logger.warn('purchase-form searchTokens başarısız, sayfa fallback', error);
+    }
   }
-  return stockCatalogCache;
+  if (docs.length === 0) {
+    const pageSnap = await getDocs(query(
+      collection(db, 'stocks'),
+      where('companyId', '==', companyId),
+      limit(STOCK_LIST_PAGE_SIZE)
+    ));
+    pageSnap.forEach((docSnap) => docs.push(docSnap.data()));
+  }
+  const start = normalizeTR(name || '');
+  const unitN = normalizeTR(unit || '');
+  if (!start) return [];
+  return docs.filter((x) => {
+    if (unitN && normalizeTR(x.unit || '') !== unitN) return false;
+    return normalizeTR(x.name || '').startsWith(start);
+  });
 }
 
 function matchRowAgainstCatalog(r, catalog) {
@@ -163,10 +203,7 @@ async function validateAndMatch(signal) {
       logger.error('Purchase form: companyId yok');
       return false;
     }
-    const catalog = await loadCompanyStockCatalog(companyId, signal);
-    if (catalog.capped) {
-      toast.warn(MESSAGES.WARN_STOCK_LIMIT_REACHED.replace('{count}', String(STOCK_MATCH_QUERY_LIMIT)));
-    }
+    const catalog = await loadStocksForRows(companyId, state.rows, signal);
 
     state.validation = [];
     const total = state.rows.length;
@@ -181,7 +218,12 @@ async function validateAndMatch(signal) {
         r.requestedDate = iso || r.requestedDate;
         if (!iso) state.validation.push({ level: 'warn', msg: `Satır ${r.lineNo}: Tarih tanınamadı, olduğu gibi kaydedilecek` });
       }
-      const match = matchRowAgainstCatalog(r, catalog);
+      let match = matchRowAgainstCatalog(r, catalog);
+      if (match.status === 'NEW' && r.name) {
+        const candidates = await findNameCandidates(companyId, r.name, r.unit, signal);
+        if (candidates.length === 1) match = { status: 'FOUND', sku: candidates[0].sku };
+        else if (candidates.length > 1) match = { status: 'MULTI', options: candidates.map((x) => x.sku) };
+      }
       r.matchStatus = match.status;
       if (match.status === 'FOUND') r.sku = r.sku || match.sku;
       if (match.status === 'MULTI') state.validation.push({ level: 'warn', msg: `Satır ${r.lineNo}: Birden fazla stok adayı bulundu` });
@@ -190,7 +232,7 @@ async function validateAndMatch(signal) {
     renderPreview();
     renderValidation();
     qs('#btnCreate').disabled = state.validation.some(v => v.level === 'error');
-    logger.info('Eşleştirme tamamlandı', { rows: total, capped: catalog.capped });
+    logger.info('Eşleştirme tamamlandı', { rows: total, skuLookups: catalog.rows.length });
   } catch (err) {
     if (err?.name === 'AbortError') {
       toast.info(MESSAGES.ERROR_OPERATION_CANCELLED);

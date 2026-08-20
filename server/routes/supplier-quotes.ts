@@ -268,7 +268,7 @@ router.post('/send-email', verifyToken, async (req: AuthenticatedRequest, res: R
         }
 
         // Build quote form URL
-        const appUrl = process.env.APP_URL || 'https://teklifbul.com';
+        const appUrl = process.env.APP_URL || 'https://nefisoft.com';
         const quoteFormUrl = `${appUrl}/pages/supplier-quote.html?token=${tokenResult.token}`;
 
         // Calculate expiry days

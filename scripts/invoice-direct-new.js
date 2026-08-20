@@ -18,6 +18,8 @@ import { authFetch } from '/assets/js/utils/api-helpers.js';
 import { toast } from '/src/shared/ui/toast.js';
 import { logger } from '/src/shared/log/logger.js';
 import { requireCompanyContext } from '/assets/js/state/company-context.js';
+import { loadCompanyStocksPaged } from '/assets/js/utils/stock-catalog-query.js';
+import { MESSAGES } from '/src/shared/constants/messages.js';
 
 const DEFAULT_VAT_RATE = 20;
 
@@ -199,26 +201,15 @@ async function loadCustomers() {
 
 async function loadStocks() {
   try {
-    const qref = query(
-      collection(db, 'stocks'),
-      where('companyId', '==', state.companyId),
-      where('active', '==', true),
-      orderBy('name'),
-      limit(500)
-    );
-    const snap = await getDocs(qref);
-    state.stocks = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    const { rows, capped } = await loadCompanyStocksPaged(db, state.companyId);
+    state.stocks = rows;
+    if (capped) {
+      toast.warn(MESSAGES.WARN_STOCK_LIMIT_REACHED.replace('{count}', String(rows.length)));
+    }
     logger.info('Stoklar yüklendi', { count: state.stocks.length });
   } catch (err) {
     logger.warn('Stoklar yüklenemedi (active filtresi olmayabilir)', err);
-    try {
-      const fallback = query(collection(db, 'stocks'), where('companyId', '==', state.companyId), limit(500));
-      const snap = await getDocs(fallback);
-      state.stocks = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-    } catch (e2) {
-      logger.error('Stok yedek sorgu hatası', e2);
-      state.stocks = [];
-    }
+    state.stocks = [];
   }
 }
 

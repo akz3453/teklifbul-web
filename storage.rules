@@ -7,17 +7,29 @@ service firebase.storage {
       return firestore.get(/databases/(default)/documents/demands/$(demandId));
     }
 
+    function demandDocExists(demandId) {
+      return firestore.exists(/databases/(default)/documents/demands/$(demandId));
+    }
+
     function userDoc() {
       return firestore.get(/databases/(default)/documents/users/$(request.auth.uid));
     }
 
+    function userDocExists() {
+      return firestore.exists(/databases/(default)/documents/users/$(request.auth.uid));
+    }
+
     function hasAcceptedJoin() {
-      return userDoc().exists &&
+      return userDocExists() &&
         userDoc().data.companyJoinStatus in ['accepted', 'approved'];
     }
 
     function memberDoc(companyId) {
       return firestore.get(/databases/(default)/documents/companies/$(companyId)/members/$(request.auth.uid));
+    }
+
+    function memberDocExists(companyId) {
+      return firestore.exists(/databases/(default)/documents/companies/$(companyId)/members/$(request.auth.uid));
     }
 
     function isAcceptedMemberOf(companyId) {
@@ -34,14 +46,14 @@ service firebase.storage {
             )
           ) ||
           (
-            memberDoc(companyId).exists &&
+            memberDocExists(companyId) &&
             memberDoc(companyId).data.status in ['accepted', 'approved']
           )
         );
     }
 
     function canAccessDemandCompany(demandId) {
-      return demandDoc(demandId).exists &&
+      return demandDocExists(demandId) &&
         'creatorCompanyId' in demandDoc(demandId).data &&
         isAcceptedMemberOf(demandDoc(demandId).data.creatorCompanyId);
     }
@@ -50,7 +62,7 @@ service firebase.storage {
       return signedIn() && (
         request.auth.uid == fileOwnerUid ||
         (
-          demandDoc(demandId).exists &&
+          demandDocExists(demandId) &&
           (
             demandDoc(demandId).data.createdBy == request.auth.uid ||
             canAccessDemandCompany(demandId)
@@ -66,12 +78,29 @@ service firebase.storage {
       allow write, delete: if signedIn() && request.auth.uid == uid;
     }
 
+    function isCompanyImageUpload() {
+      return request.resource.size < 5 * 1024 * 1024 &&
+        request.resource.contentType.matches('image/(jpeg|png|webp|gif)');
+    }
+
+    match /company-logos/{companyId}/{fileName} {
+      allow read: if signedIn();
+      allow create, update: if isAcceptedMemberOf(companyId) && isCompanyImageUpload();
+      allow delete: if isAcceptedMemberOf(companyId);
+    }
+
+    match /company-gallery/{companyId}/{fileName} {
+      allow read: if signedIn();
+      allow create, update: if isAcceptedMemberOf(companyId) && isCompanyImageUpload();
+      allow delete: if isAcceptedMemberOf(companyId);
+    }
+
     // demand files — yazma: dosya sahibi VE talep üyeliği
     match /demands/{demandId}/{userId}/{fileName} {
       allow read: if canReadDemandFile(demandId, userId);
       allow write: if signedIn() &&
         request.auth.uid == userId &&
-        demandDoc(demandId).exists &&
+        demandDocExists(demandId) &&
         (
           demandDoc(demandId).data.createdBy == request.auth.uid ||
           canAccessDemandCompany(demandId)
@@ -86,7 +115,7 @@ service firebase.storage {
         );
       allow delete: if signedIn() &&
         request.auth.uid == userId &&
-        demandDoc(demandId).exists &&
+        demandDocExists(demandId) &&
         (
           demandDoc(demandId).data.createdBy == request.auth.uid ||
           canAccessDemandCompany(demandId)

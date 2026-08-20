@@ -368,6 +368,8 @@
     import { toast } from './src/shared/ui/toast.js';
     // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
     import { MESSAGES } from './src/shared/constants/messages.js';
+    import { buildAcceptedLegalConsent } from './assets/js/utils/legal-consent.js';
+    import { syncPublicCompanyProfile } from './assets/js/utils/public-company-profile.js';
     import { ensureDefaultCentralDepotLocation } from '/assets/js/services/ensure-default-central-depot.js';
     import {
       doc, setDoc, getDoc, serverTimestamp, collection, addDoc, query, where, getDocs
@@ -907,6 +909,7 @@
         payload.contractConsent = document.getElementById("contractConsent").checked || false;
         payload.marketingConsent = document.getElementById("marketingConsent").checked || false;
         payload.consentAt = serverTimestamp();
+        payload.legalConsent = buildAcceptedLegalConsent(['kvkk-aydinlatma', 'alici-sozlesme']);
         
         // Timestamps
         payload.updatedAt = serverTimestamp();
@@ -932,6 +935,11 @@
             track(ANALYTICS_EVENTS.COMPANY_CREATED, { method: 'create' });
           }).catch(() => {});
           companyId = cdoc.id;
+          await syncPublicCompanyProfile(db, companyId, {
+            name: payload.companyName,
+            taxNumber: payload.taxNumber,
+            isBuyer: true,
+          });
           await setDoc(doc(db, 'companyCodes', code), {
             companyId,
             name: payload.companyName,

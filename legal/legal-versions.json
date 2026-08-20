@@ -1,0 +1,54 @@
+{
+  "policyVersion": "1.0.0-draft",
+  "note": "Counsel has not approved these texts. status=draft is not an approval. Do not invent replacement copy.",
+  "documents": {
+    "kvkk-aydinlatma": {
+      "version": "1.0.0-draft",
+      "status": "draft",
+      "path": "/legal/kvkk-aydinlatma.html",
+      "indexable": false
+    },
+    "kvkk-politika": {
+      "version": "1.0.0-draft",
+      "status": "draft",
+      "path": "/legal/kvkk-politika.html",
+      "indexable": false
+    },
+    "acik-riza": {
+      "version": "1.0.0-draft",
+      "status": "draft",
+      "path": "/legal/acik-riza.html",
+      "indexable": false
+    },
+    "alici-sozlesme": {
+      "version": "1.0.0-draft",
+      "status": "draft",
+      "path": "/legal/alici-sozlesme.html",
+      "indexable": false
+    },
+    "tedarikci-sozlesme": {
+      "version": "1.0.0-draft",
+      "status": "draft",
+      "path": "/legal/tedarikci-sozlesme.html",
+      "indexable": false
+    },
+    "mesafeli-satis": {
+      "version": "1.0.0-draft",
+      "status": "draft",
+      "path": "/legal/mesafeli-satis.html",
+      "indexable": false
+    },
+    "elektronik-bilgilendirme": {
+      "version": "1.0.0-draft",
+      "status": "draft",
+      "path": "/legal/elektronik-bilgilendirme.html",
+      "indexable": false
+    },
+    "cerez-politikasi": {
+      "version": "1.0.0-draft",
+      "status": "draft",
+      "path": "/legal/cerez-politikasi.html",
+      "indexable": true
+    }
+  }
+}

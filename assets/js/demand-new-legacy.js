@@ -1750,7 +1750,8 @@ async function searchStockBySku(sku, tr) {
     const stocksQuery = query(
       collection(db, 'stocks'),
       where('sku', '==', sku),
-      where('companyId', '==', companyId)
+      where('companyId', '==', companyId),
+      limit(1)
     );
     const snap = await getDocs(stocksQuery);
 
@@ -1793,7 +1794,8 @@ async function searchStockByName(name, tr) {
     // Firestore'da tüm stokları yükle ve client-side filtrele
     const stocksQuery = query(
       collection(db, 'stocks'),
-      where('companyId', '==', companyId)
+      where('companyId', '==', companyId),
+      limit(200)
     );
     const snap = await getDocs(stocksQuery);
 

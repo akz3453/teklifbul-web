@@ -229,7 +229,7 @@
         const byCompanyQ = query(
           collection(db, 'internal_requests'),
           where('companyId', '==', state.companyId),
-          limit(10000)
+          limit(200)
         );
         const byCreatorQ = query(
           collection(db, 'internal_requests'),

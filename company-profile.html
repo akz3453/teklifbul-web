@@ -509,6 +509,8 @@
     import { toast } from './src/shared/ui/toast.js';
     // Teklifbul Rule v1.1 - MESSAGES constants (i18n hazırlığı)
     import { MESSAGES } from './src/shared/constants/messages.js';
+    import { COMPANY_MEMBERS_QUERY_LIMIT, COMPLETED_DEMANDS_CHECK_LIMIT, USER_BIDS_HISTORY_QUERY_LIMIT, BIDS_PER_DEMAND_QUERY_LIMIT } from './src/shared/constants/timing.js';
+    import { syncPublicCompanyProfile, getCompanyDisplay } from './assets/js/utils/public-company-profile.js';
     import { 
       doc, getDoc, setDoc, updateDoc, addDoc, collection, getDocs, query, where, orderBy, limit,
       serverTimestamp, deleteDoc
@@ -619,14 +621,16 @@
     // Load company profile
     async function loadCompanyProfile(companyId) {
       try {
-        const companyDoc = await getDoc(doc(db, "companies", companyId));
-        if (!companyDoc.exists()) {
+        const view = await getCompanyDisplay(db, companyId);
+        if (view.source === 'none') {
           document.getElementById('loadingState').innerHTML = '<p>Şirket bulunamadı.</p>';
           return;
         }
-        
-        const companyData = companyDoc.data();
+        const companyData = view.source === 'member' && view._raw ? view._raw : view;
         currentCompanyId = companyId;
+        if (view.source === 'member') {
+          await syncPublicCompanyProfile(db, companyId, companyData);
+        }
         
         // Check authorization
         isAuthorized = await checkAuthorization(companyId);
@@ -643,7 +647,9 @@
         // Load profile data (görünürlük ayarlarından sonra)
         await displayCompanyProfile(companyData);
         await loadReviews(companyId);
-        await loadGoogleBusinessLink(companyId); // Teklifbul Rule v1.0 - Ücretsiz: Google Business linki göster
+        if (isAuthorized) {
+          await loadGoogleBusinessLink(companyId);
+        }
 
         // Teklifbul Rol & Onay Sistemi - Onay mekanizması ve ticaret geçmişi
         await loadApprovalMechanism(companyId);
@@ -1156,8 +1162,8 @@
           const currentCompanyDoc = await getDoc(doc(db, 'companies', companyId));
           const currentCompanyData = currentCompanyDoc.exists() ? currentCompanyDoc.data() : {};
           
-          const referredCompanyDoc = await getDoc(doc(db, 'companies', referredCompanyId));
-          const referredCompanyData2 = referredCompanyDoc.data();
+          const referredCompany = await getCompanyDisplay(db, referredCompanyId);
+          const referredCompanyData2 = referredCompany;
           
           // Şirket sahiplerini bul
           const ownerId = referredCompanyData2?.ownerId || referredCompanyData2?.ownerUid;
@@ -1225,9 +1231,9 @@
         // Onaylanmış referanslar
         for (const ref of approvedReferrals) {
           try {
-            const refCompanyDoc = await getDoc(doc(db, 'companies', ref.referredCompanyId));
-            if (refCompanyDoc.exists()) {
-              const refCompanyData = refCompanyDoc.data();
+            const refCompany = await getCompanyDisplay(db, ref.referredCompanyId);
+            if (refCompany.source !== 'none' || ref.referredCompanyName) {
+              const refCompanyData = refCompany;
               const referralCard = document.createElement('div');
               referralCard.className = 'referral-card';
               referralCard.onclick = () => {
@@ -1795,6 +1801,7 @@
           logoUrl: downloadURL,
           logoUpdatedAt: serverTimestamp()
         });
+        await syncPublicCompanyProfile(db, companyId, { logoUrl: downloadURL });
         
         // UI'ı güncelle
         const logoElement = document.getElementById('companyLogo');
@@ -1999,6 +2006,7 @@
         if (Object.keys(updateData).length > 0) {
           updateData.updatedAt = serverTimestamp();
           await updateDoc(doc(db, 'companies', companyId), updateData);
+          await syncPublicCompanyProfile(db, companyId, updateData);
           
           logger.info('Şirket profili güncellendi', updateData);
           toast.success(MESSAGES.SUCCESS_CHANGES_SAVED);
@@ -2099,7 +2107,8 @@
         const userDemandsQuery = query(
           collection(db, 'demands'),
           where('createdBy', '==', userId),
-          where('status', '==', 'completed')
+          where('status', '==', 'completed'),
+          limit(COMPLETED_DEMANDS_CHECK_LIMIT)
         );
         const userDemandsSnap = await getDocs(userDemandsQuery);
         
@@ -2146,7 +2155,8 @@
         // - Kullanıcının verdiği teklifler arasında, bu şirketin taleplerine verdiği ve tamamlanmış olanlar
         const userBidsQuery = query(
           collection(db, 'bids'),
-          where('supplierId', '==', userId)
+          where('supplierId', '==', userId),
+          limit(USER_BIDS_HISTORY_QUERY_LIMIT)
         );
         const userBidsSnap = await getDocs(userBidsQuery);
         
@@ -2181,7 +2191,8 @@
         const usersQuery = query(
           collection(db, 'users'),
           where('companyId', '==', companyId),
-          where('companyJoinStatus', '==', 'approved')
+          where('companyJoinStatus', '==', 'approved'),
+          limit(COMPANY_MEMBERS_QUERY_LIMIT)
         );
         const usersSnap = await getDocs(usersQuery);
         return usersSnap.docs.map(doc => doc.id);
@@ -2362,11 +2373,13 @@
           // Hem companies array hem de companyId field'ını kontrol et
           const usersQuery1 = query(
             collection(db, 'users'),
-            where('companies', 'array-contains', companyId)
+            where('companies', 'array-contains', companyId),
+            limit(COMPANY_MEMBERS_QUERY_LIMIT)
           );
           const usersQuery2 = query(
             collection(db, 'users'),
-            where('companyId', '==', companyId)
+            where('companyId', '==', companyId),
+            limit(COMPANY_MEMBERS_QUERY_LIMIT)
           );
           
           const [usersSnapshot1, usersSnapshot2] = await Promise.all([
@@ -2473,11 +2486,13 @@
         // Şirketin kullanıcılarını bul (hem companies array hem de companyId field'ını kontrol et)
         const usersQuery1 = query(
           collection(db, 'users'),
-          where('companies', 'array-contains', companyId)
+          where('companies', 'array-contains', companyId),
+          limit(COMPANY_MEMBERS_QUERY_LIMIT)
         );
         const usersQuery2 = query(
           collection(db, 'users'),
-          where('companyId', '==', companyId)
+          where('companyId', '==', companyId),
+          limit(COMPANY_MEMBERS_QUERY_LIMIT)
         );
         
         const [usersSnapshot1, usersSnapshot2] = await Promise.all([
@@ -2505,7 +2520,8 @@
             const demandsQuery = query(
               collection(db, 'demands'),
               where('createdBy', '==', userId),
-              where('status', 'in', ['completed', 'accepted'])
+              where('status', 'in', ['completed', 'accepted']),
+              limit(COMPLETED_DEMANDS_CHECK_LIMIT)
             );
             const demandsSnapshot = await getDocs(demandsQuery);
             
@@ -2516,7 +2532,8 @@
               const bidsQuery = query(
                 collection(db, 'bids'),
                 where('demandId', '==', demandId),
-                where('status', 'in', ['accepted', 'completed'])
+                where('status', 'in', ['accepted', 'completed']),
+                limit(BIDS_PER_DEMAND_QUERY_LIMIT)
               );
               const bidsSnapshot = await getDocs(bidsQuery);
               
@@ -2534,9 +2551,8 @@
                     const supplierCompanyId = supplierData.companies?.[0] || null;
                     
                     if (supplierCompanyId && supplierCompanyId !== companyId) {
-                      const supplierCompanyDoc = await getDoc(doc(db, 'companies', supplierCompanyId));
-                      if (supplierCompanyDoc.exists()) {
-                        const supplierCompanyName = supplierCompanyDoc.data().name || 'Bilinmeyen Firma';
+                      const supplierCompany = await getCompanyDisplay(db, supplierCompanyId);
+                      const supplierCompanyName = supplierCompany.companyName || 'Bilinmeyen Firma';
                         
                         if (!successfulTrades.has(supplierCompanyId)) {
                           successfulTrades.set(supplierCompanyId, {
@@ -2554,7 +2570,6 @@
                         if (!trade.lastDate || bidDate > trade.lastDate) {
                           trade.lastDate = bidDate;
                         }
-                      }
                     }
                   }
                 } catch (e) {
@@ -2573,7 +2588,8 @@
             const bidsQuery = query(
               collection(db, 'bids'),
               where('supplierId', '==', userId),
-              where('status', 'in', ['accepted', 'completed'])
+              where('status', 'in', ['accepted', 'completed']),
+              limit(USER_BIDS_HISTORY_QUERY_LIMIT)
             );
             const bidsSnapshot = await getDocs(bidsQuery);
             
@@ -2599,9 +2615,8 @@
                     const buyerCompanyId = buyerData.companies?.[0] || null;
                     
                     if (buyerCompanyId && buyerCompanyId !== companyId) {
-                      const buyerCompanyDoc = await getDoc(doc(db, 'companies', buyerCompanyId));
-                      if (buyerCompanyDoc.exists()) {
-                        const buyerCompanyName = buyerCompanyDoc.data().name || 'Bilinmeyen Firma';
+                      const buyerCompany = await getCompanyDisplay(db, buyerCompanyId);
+                      const buyerCompanyName = buyerCompany.companyName || 'Bilinmeyen Firma';
                         
                         if (!successfulTrades.has(buyerCompanyId)) {
                           successfulTrades.set(buyerCompanyId, {
@@ -2619,7 +2634,6 @@
                         if (!trade.lastDate || bidDate > trade.lastDate) {
                           trade.lastDate = bidDate;
                         }
-                      }
                     }
                   }
                 }

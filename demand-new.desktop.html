@@ -2049,7 +2049,7 @@
     
     // Legacy imports (for backward compatibility during transition)
     import { CATEGORIES, getCategoryIdByName, getCategoryNameById, getAllCategoryIds } from "./categories.js";
-    import { addDoc, collection, serverTimestamp, updateDoc, doc, query, where, getDocs, getDoc, deleteDoc, setDoc, orderBy, arrayUnion } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+    import { addDoc, collection, serverTimestamp, updateDoc, doc, query, where, getDocs, getDoc, deleteDoc, setDoc, orderBy, arrayUnion, limit } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
     import { listGroupsForUser, createGroup, updateGroup, deleteGroup } from "./assets/js/services/category-groups.js";
     // Modal artık otomatik olarak yükleniyor - import gerekmiyor
     // SATFK generation moved to Cloud Functions
@@ -3781,7 +3781,8 @@
         const stocksQuery = query(
           collection(db, 'stocks'),
           where('sku', '==', sku),
-          where('companyId', '==', companyId)
+          where('companyId', '==', companyId),
+          limit(1)
         );
         const snap = await getDocs(stocksQuery);
         
@@ -3824,7 +3825,8 @@
         // Firestore'da tüm stokları yükle ve client-side filtrele
         const stocksQuery = query(
           collection(db, 'stocks'),
-          where('companyId', '==', companyId)
+          where('companyId', '==', companyId),
+          limit(200)
         );
         const snap = await getDocs(stocksQuery);
         

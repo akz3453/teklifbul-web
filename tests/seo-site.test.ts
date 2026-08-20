@@ -41,6 +41,7 @@ describe('SEO site helpers', () => {
     expect(xml.startsWith('<?xml')).toBe(true);
     expect(xml).toContain('<loc>https://nefisoft.com/</loc>');
     expect(xml).toContain('<loc>https://nefisoft.com/contact.html</loc>');
+    expect(xml).toContain('<loc>https://nefisoft.com/legal.html</loc>');
     expect(xml).toContain('<loc>https://nefisoft.com/legal/cerez-politikasi.html</loc>');
     expect(xml).not.toContain('dashboard.html');
     expect(xml).not.toContain('login.html');

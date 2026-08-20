@@ -130,6 +130,7 @@ export default defineConfig({
         'interim-payment-suggestions': 'interim-payment-suggestions.html',
         'forum': 'forum.html',
         'contact': 'contact.html',
+        'legal': 'legal.html',
         'payment-request': 'payment-request.html',
         ...collectLegalHtmlInputs(),
         // Inventory pages
@@ -186,6 +187,7 @@ export default defineConfig({
       // script-src-elem: Dynamic script loading için (Google API'leri)
       // Not: Google login için auth domain (teklifbul.firebaseapp.com) iframe içinde açılabildiğinden frame-src listesine eklendi.
       'Content-Security-Policy': "default-src 'self'; font-src 'self' https://fonts.gstatic.com data:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://apis.google.com https://www.google.com https://www.recaptcha.net https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://www.googletagmanager.com https://www.google-analytics.com; script-src-elem 'self' 'unsafe-inline' https://www.gstatic.com https://apis.google.com https://www.google.com https://www.recaptcha.net https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com https://cdn.jsdelivr.net; style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com https://cdn.jsdelivr.net; frame-src 'self' https://accounts.google.com https://www.google.com https://www.recaptcha.net https://teklifbul.firebaseapp.com https://*.firebaseapp.com; connect-src 'self' wss://localhost:5173 ws://localhost:5173 http://localhost:5174 https://apis.google.com https://www.googleapis.com https://*.googleapis.com https://*.google.com https://*.firebaseio.com https://*.firebaseapp.com https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://nominatim.openstreetmap.org https://us-central1-teklifbul.cloudfunctions.net https://*.cloudfunctions.net https://www.googletagmanager.com https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com; img-src 'self' data: blob: https:; object-src 'none'; base-uri 'self'; form-action 'self';",
+      'Permissions-Policy': 'camera=(self), microphone=(), geolocation=(self), payment=(), usb=(), browsing-topics=()',
       // Teklifbul Rule v1.0 - COOP header kaldırıldı: Firebase popup'ı window.closed kontrolü yapamıyordu
       // COOP header'ı popup'ın çalışmasını engelliyor, bu yüzden kaldırıldı
       // 'Cross-Origin-Opener-Policy': 'same-origin-allow-popups'

@@ -43,6 +43,15 @@ export const PUBLIC_PAGES: PublicPageSeo[] = [
     sitemap: true,
   },
   {
+    path: '/legal.html',
+    title: 'Hukuki Metinler — NEFISOFT',
+    description: 'NEFISOFT KVKK, çerez, sözleşme ve bilgilendirme metinleri.',
+    changefreq: 'yearly',
+    priority: 0.4,
+    robots: INDEX_FOLLOW,
+    sitemap: true,
+  },
+  {
     path: '/forum.html',
     title: 'Forum — NEFISOFT (Yakında)',
     description: 'NEFISOFT kullanıcı forumu yakında açılacak.',
@@ -267,7 +276,7 @@ export function buildRobotsTxt(): string {
   return lines.join('\n');
 }
 
-export function buildSitemapXml(lastmod = '2026-08-16'): string {
+export function buildSitemapXml(lastmod = '2026-08-20'): string {
   const urls = PUBLIC_PAGES.filter(shouldIncludeInSitemap).map((page) => {
     const loc = canonicalUrl(page.path);
     const changefreq = page.changefreq || 'monthly';
